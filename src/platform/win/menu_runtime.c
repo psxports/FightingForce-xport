@@ -613,6 +613,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     const char *checkpoint_directory = diag_enabled ? getenv("FF_CHECKPOINT_DIRECTORY") : NULL;
     const char *interval_text = getenv("FF_CHECKPOINT_INTERVAL");
     uint32 checkpoint_interval = 300, next_checkpoint = 0;
+    int stage_soak = diag_enabled && getenv("FF_STAGE_SOAK") && !strcmp(getenv("FF_STAGE_SOAK"), "1");
     char periodic_path[1024], *interval_end;
     if (checkpoint_directory && interval_text)
     {
@@ -779,6 +780,9 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             result = 0;
             break;
         }
+        /* Keep idle stage-loading diagnostics out of the game-over frontend */
+        if (stage_soak)
+            ff_w32(0x80093dd4, 0);
         result = ff_game_frame_prefix_80014DF8_stage0();
         QueryPerformanceCounter(&p1);
         if (!result)

@@ -4183,6 +4183,29 @@ GDB_CALL sint32 FUN_80024008(void)
                     FUN_800237CC(actor, table, 129);
                 }
             }
+            else if (state == 182)
+            {
+                ff_w32(actor + 12, 154);
+                ff_w16(actor + 74, 0);
+                if (ff_s16(actor + 66) > 0)
+                {
+                    ff_w32(actor + 176, ff_u32(0x80093dd0) + 45u);
+                    FUN_800237CC(actor, table, 149);
+                }
+                else if (ff_u32(0x800940b0) == 1)
+                {
+                    if (!ff_u32(0x80093dd4))
+                    {
+                        ff_w32(0x80093dd4, 1);
+                        ff_w32(0x80093d4c, 0);
+                    }
+                }
+                else if (ff_s16(0x800b435a) <= 0 && ff_s16(0x800b444e) <= 0 && !ff_u32(0x80093dd4))
+                {
+                    ff_w32(0x80093dd4, 1);
+                    ff_w32(0x80093d4c, 0);
+                }
+            }
             else if (state == 147 || state == 154 || state == 251 || state == 180)
             {
                 /* 275C0..276C0: recover after landing, or begin the continue countdown. */

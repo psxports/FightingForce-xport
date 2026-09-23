@@ -3206,6 +3206,8 @@ static sint32 npc_action_call(uint32 callback, sint32 index)
         return FUN_8004EF6C(index);
     if (callback == 0x8004f038)
         return FUN_8004F038(index);
+    if (callback == 0x8004f000)
+        return FUN_8004F000(index);
     if (callback == 0x80053ca0)
         return FUN_80053CA0(index);
     if (callback == 0x80053dd0)

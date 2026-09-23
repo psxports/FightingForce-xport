@@ -2147,23 +2147,82 @@ uint32 ff_menu_objects_800173B0(uint32 map)
     {
         uint32 kind = *(uint8 *)ff_ptr(cursor++, 1);
         sint32 mode, a, b, c, d;
-        if (kind == 14)
+        switch (kind)
         {
-            ff_w32(ff_u32(0x800941c8) ? 0x800941cc : 0x800941c8, region);
-            kind = 0;
-        }
-        if (ff_u32(0x80093d58) == 27 || ff_u32(0x80093d58) == 0)
-        {
-            if (kind != 0 && kind != 7 && kind != 8 && !(ff_u32(0x80093d58) == 0 && kind == 2))
-            {
-                fprintf(stderr, "WIP: unsupported stage MPD region\n");
-                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
-        }
-        else if (kind != 0 && kind != 2 && kind != 3)
-        {
-            fprintf(stderr, "WIP: stage %u MPD region kind %u\n", ff_u32(0x80093d58), kind);
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+            case 14:
+                ff_w32(ff_u32(0x800941c8) ? 0x800941cc : 0x800941c8, region);
+                kind = 0;
+                break;
+            case 15:
+                ff_w32(0x800941cc, region);
+                kind = 17;
+                break;
+            case 16:
+                ff_w32(0x800941d0, region);
+                kind = 0;
+                break;
+            case 18:
+            case 31:
+                ff_w32(0x800941d4, region);
+                kind = 17;
+                break;
+            case 19:
+            case 23:
+            case 26:
+                ff_w32(0x800941cc, region);
+                kind = 0;
+                break;
+            case 20:
+            case 29:
+            case 30:
+                ff_w32(0x800941d0, region);
+                kind = 17;
+                break;
+            case 21:
+                ff_w32(0x800941d4, region);
+                kind = 0;
+                break;
+            case 22:
+            case 32:
+                ff_w32(0x800941d8, region);
+                kind = 17;
+                break;
+            case 27:
+            case 33:
+                ff_w32(0x800941dc, region);
+                kind = 0;
+                break;
+            case 28:
+                ff_w32(0x800941e0, region);
+                kind = 17;
+                break;
+            case 34:
+                ff_w32(0x800941e0, region);
+                kind = 0;
+                break;
+            case 35:
+                ff_w32(0x800941e4, region);
+                kind = 0;
+                break;
+            case 37:
+                if (ff_u32(0x800941cc))
+                    ff_w32(0x800941d0, region);
+                else
+                    ff_w32(ff_u32(0x800941c8) ? 0x800941cc : 0x800941c8, region);
+                kind = 0;
+                break;
+            case 40:
+                ff_w32(0x800941e8, region);
+                kind = 0;
+                break;
+            case 41:
+                ff_w32(0x800941ec, region);
+                kind = 0;
+                break;
+            case 42:
+                ff_w32(0x800941f0, region);
+                kind = 0;
+                break;
         }
         if (region >= 0x8009f870)
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
