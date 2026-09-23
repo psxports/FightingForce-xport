@@ -61,6 +61,7 @@ sint32 spu_core_upload(uint32 byte_address, const void *source, uint32 byte_coun
     memcpy(spu.ram + byte_address, source, byte_count);
     return 1;
 }
+
 sint32 spu_core_download(uint32 byte_address, void *destination, uint32 byte_count)
 {
     if (!spu.initialized || destination == 0 || byte_address >= SPU_ram_size || byte_count > SPU_ram_size - byte_address)
@@ -330,9 +331,11 @@ void spu_core_set_master_volume(sint16 left, sint16 right)
     spu.master_left = left;
     spu.master_right = right;
 }
-void spu_core_get_master_volume(sint16 *left,sint16 *right)
+
+void spu_core_get_master_volume(sint16 *left, sint16 *right)
 {
-    *left=spu.master_left;*right=spu.master_right;
+    *left = spu.master_left;
+    *right = spu.master_right;
 }
 
 void spu_core_key_off(uint32 voice_mask)
@@ -425,4 +428,8 @@ void spu_core_render(sint16 *interleaved_stereo, uint32 frame_count)
 }
 
 #include "diagnostic_state.h"
-int spu_core_state_io(FILE *f,int load) { return FF_STATE(f,spu,load); }
+
+int spu_core_state_io(FILE *f, int load)
+{
+    return FF_STATE(f, spu, load);
+}

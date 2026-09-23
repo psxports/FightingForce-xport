@@ -19,6 +19,7 @@ extern __declspec(dllexport) volatile uint32 g_waveout_callback_overruns;
 /* BEGIN GENERATED MODULE API */
 sint32 waveout_init(void);
 void waveout_shutdown(void);
+void waveout_vblank(uint32 before, uint32 rate);
 /* END GENERATED MODULE API */
 
 #endif

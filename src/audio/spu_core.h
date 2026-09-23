@@ -43,7 +43,7 @@ void spu_core_key_off(uint32 voice_mask);
 void spu_core_key_on(uint32 voice_mask);
 void spu_core_render(sint16 *interleaved_stereo, uint32 frame_count);
 void spu_core_set_master_volume(sint16 left, sint16 right);
-void spu_core_get_master_volume(sint16 *left,sint16 *right);
+void spu_core_get_master_volume(sint16 *left, sint16 *right);
 void spu_core_set_voice_pitch(sint32 voice, uint16 pitch);
 void spu_core_set_voice_registers(sint32 voice, const SPU_voice_registers *registers);
 void spu_core_set_voice_volume(sint32 voice, sint16 left, sint16 right);

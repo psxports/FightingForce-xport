@@ -20,6 +20,8 @@ typedef struct WAVEOUT_state
 
 /* Variables. */
 static WAVEOUT_state output;
+static sint32 null_active;
+static uint64 null_frames;
 
 volatile uint32 g_waveout_submitted_buffers;
 
@@ -39,9 +41,6 @@ __declspec(dllexport) volatile uint32 g_waveout_callback_overruns;
 static void CALLBACK wave_callback(HWAVEOUT device, UINT message, DWORD_PTR instance, DWORD_PTR parameter1, DWORD_PTR parameter2)
 {
     WAVEOUT_state *state = (WAVEOUT_state *)instance;
-    (void)device;
-    (void)parameter1;
-    (void)parameter2;
     if (message == WOM_DONE && state != 0 && state->semaphore != 0 && InterlockedCompareExchange(&state->running, 1, 1) != 0)
         if (!ReleaseSemaphore(state->semaphore, 1, 0))
             InterlockedIncrement((volatile LONG *)&g_waveout_callback_overruns);
@@ -106,6 +105,13 @@ void waveout_shutdown(void)
 {
     sint32 index;
     HANDLE thread;
+    if (null_active)
+    {
+        printf("headless_audio backend=null frames=%llu submitted=0\n", (unsigned long long)null_frames);
+        null_active = 0;
+        InterlockedExchange(&output.running, 0);
+        return;
+    }
     if (output.device == 0 && output.semaphore == 0)
         return;
     InterlockedExchange(&output.running, 0);
@@ -154,6 +160,15 @@ sint32 waveout_init(void)
     g_waveout_nonzero_buffers = 0;
     g_waveout_peak = 0;
     g_waveout_callback_overruns = 0;
+    if (psx_is_headless() && g_waveout_output_muted && (!getenv("FF_AUDIO_BACKEND") || strcmp(getenv("FF_AUDIO_BACKEND"), "waveout") != 0))
+    {
+        null_active = 1;
+        null_frames = 0;
+        g_waveout_backend_active = 0;
+        InterlockedExchange(&output.running, 1);
+        printf("headless_audio backend=null\n");
+        return 1;
+    }
     memset(&format, 0, sizeof(format));
     format.wFormatTag = WAVE_FORMAT_PCM;
     format.nChannels = 2;
@@ -204,4 +219,21 @@ sint32 waveout_init(void)
 sint32 waveout_is_running(void)
 {
     return InterlockedCompareExchange(&output.running, 1, 1) != 0;
+}
+
+/* Advance the null sink on guest VBlank time without a host worker */
+void waveout_vblank(uint32 before, uint32 rate)
+{
+    sint16 samples[2048];
+    uint32 remaining, count;
+    if (!null_active || !rate)
+        return;
+    remaining = (uint32)(((uint64)(before + 1u) * SPU_sample_rate) / rate - ((uint64)before * SPU_sample_rate) / rate);
+    while (remaining)
+    {
+        count = remaining > 1024 ? 1024 : remaining;
+        ff_audio_render(samples, count);
+        null_frames += count;
+        remaining -= count;
+    }
 }

@@ -6,6 +6,7 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     #include <mmsystem.h>
+    #include "platform/win/audio_waveout.h"
     #ifdef LoadImage
         #undef LoadImage
     #endif
@@ -240,7 +241,10 @@ void psx_configure(const PSX_CONFIG *config)
     psx_headless = psx_config.headless != 0;
 }
 
-sint32 psx_is_headless(void) { return psx_headless; }
+sint32 psx_is_headless(void)
+{
+    return psx_headless;
+}
 
 void psx_set_headless(sint32 headless)
 {
@@ -250,7 +254,6 @@ void psx_set_headless(sint32 headless)
 
 sint32 ResetGraph(sint32 mode)
 {
-    (void)mode;
     if (psx_headless)
         return 0;
     if (psx_config.host.initialize != NULL)
@@ -269,7 +272,6 @@ sint32 ResetCallback(void)
 
 sint32 SetGraphDebug(sint32 level)
 {
-    (void)level;
     return 0;
 }
 
@@ -282,7 +284,6 @@ sint32 DrawSync(sint32 mode)
 
 void SetDispMask(sint32 enabled)
 {
-    (void)enabled;
 }
 
 void FlushCache(void)
@@ -293,7 +294,6 @@ void FlushCache(void)
 
 void PadInit(sint32 mode)
 {
-    (void)mode;
     psx_pad_buttons = 0;
 }
 
@@ -667,7 +667,10 @@ void SetGeomScreen(sint32 h)
 }
 
 /* Raw CTC2 H write, including zero, used by translated SDK entries. */
-void psx_gte_write_h(uint16_t h) { gte.h = h; }
+void psx_gte_write_h(uint16_t h)
+{
+    gte.h = h;
+}
 
 void ReadGeomOffset(sint32 *x, sint32 *y)
 {
@@ -1026,6 +1029,7 @@ sint32 VSync(sint32 mode)
         else if (!psx_headless)
             psx_frame_pace();
 #endif
+        waveout_vblank(psx_vblank_count, (uint32)psx_config.refresh_rate);
         ++psx_vblank_count;
     }
     return (sint32)(psx_vblank_count - previous);
@@ -1035,7 +1039,6 @@ uint32 PadRead(sint32 controller)
 {
     if (psx_config.host.pad_read != NULL)
         return psx_config.host.pad_read(psx_config.host_user, controller);
-    (void)controller;
     return psx_pad_buttons;
 }
 
@@ -1074,13 +1077,13 @@ sint32 psx_window_present(const uint32 *pixels, sint32 width, sint32 height, con
         SetWindowText(psx_window, title);
     return 1;
 #else
-    (void)pixels;
-    (void)width;
-    (void)height;
-    (void)title;
     return psx_headless;
 #endif
 }
 
 #include "diagnostic_state.h"
-int psx_state_io(FILE *f,int load) { return FF_STATE(f,gte,load)&&FF_STATE(f,matrix_stack,load)&&FF_STATE(f,matrix_stack_depth,load)&&FF_STATE(f,psx_vblank_count,load)&&FF_STATE(f,psx_pad_buttons,load); }
+
+int psx_state_io(FILE *f, int load)
+{
+    return FF_STATE(f, gte, load) && FF_STATE(f, matrix_stack, load) && FF_STATE(f, matrix_stack_depth, load) && FF_STATE(f, psx_vblank_count, load) && FF_STATE(f, psx_pad_buttons, load);
+}
