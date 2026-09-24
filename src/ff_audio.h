@@ -3,6 +3,8 @@
 #include "ff.h"
 sint32 ff_audio_init(void);
 void ff_audio_init_empty(void);
+void ff_spu_voice_snapshot(sint32 voice, uint16 registers[7]);
+void ff_spu_voice_seed(sint32 voice, const uint16 registers[7]);
 /* Cold SDK reset CPU/core path; platform IRQ/event setup is a host boundary. */
 GDB_CALL uint32 ff_spu_reset_startup(void);
 /* Master L/R, CD L/R and control register for the startup common adapter. */
@@ -29,6 +31,5 @@ uint32 ff_spu_transfer_write(uint32 source, uint32 bytes);
 void ff_spu_transfer_wait(void);
 GDB_CALL sint32 ff_spu_allocation_init(sint32 entries, uint32 table);
 GDB_CALL sint32 ff_spu_allocate_startup(uint32 bytes);
-void ff_audio_render(sint16 *stereo, uint32 frames);
 GDB_CALL uint16 ff_note_to_pitch(sint32 base, uint16 fine, sint32 note, uint16 note_fine);
 #endif

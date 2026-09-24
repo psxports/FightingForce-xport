@@ -1685,7 +1685,7 @@ static void npc_wip_abort(uint32 pc)
         FILE *f = fopen("../status/gameplay/game-loop-abort.ram", "wb");
         if (f)
         {
-            fwrite(ff_ram, 1, sizeof(ff_ram), f);
+            fwrite(DRAM, 1, sizeof(DRAM), f);
             fclose(f);
         }
         f = fopen("../status/gameplay/game-loop-abort.scratch", "wb");

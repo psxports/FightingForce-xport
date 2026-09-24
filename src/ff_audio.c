@@ -1,16 +1,56 @@
 /* Native PsyQ/SPU adapter: menu3/E3 and startupFF1F attribute masks. */
 #include "ff_audio.h"
-#include "audio/spu_core.h"
+#include "psx_spu.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "platform/win/windows_compat.h"
-static CRITICAL_SECTION audio_lock;
-static int lock_initialized;
+#include <string.h>
+static int audio_initialized;
 uint16 ff_spu_common_state[5];
 uint16 ff_spu_reverb_registers[32];
 uint16 ff_spu_reverb_state[3];
 uint16 ff_spu_reverb_channels_state[2];
 static uint32 ff_spu_dma_state[5]; /* transfer units, DPCR, MADR, BCR, CHCR */
+
+static void voice_get(sint32 voice, SpuVoiceAttr *attr)
+{
+    memset(attr, 0, sizeof(*attr));
+    attr->voice = SPU_KEYCH(voice);
+    SpuGetVoiceAttr(attr);
+}
+
+static void voice_set(sint32 voice, SpuVoiceAttr *attr)
+{
+    attr->voice = SPU_KEYCH(voice);
+    attr->mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH | SPU_VOICE_WDSA | SPU_VOICE_LSAX | SPU_VOICE_ADSR_ADSR1 | SPU_VOICE_ADSR_ADSR2;
+    SpuSetVoiceAttr(attr);
+}
+
+void ff_spu_voice_snapshot(sint32 voice, uint16 registers[7])
+{
+    SpuVoiceAttr attr;
+    voice_get(voice, &attr);
+    registers[0] = (uint16)attr.volume.left;
+    registers[1] = (uint16)attr.volume.right;
+    registers[2] = attr.pitch;
+    registers[3] = (uint16)(attr.addr >> 3);
+    registers[4] = attr.adsr1;
+    registers[5] = attr.adsr2;
+    registers[6] = (uint16)(attr.loop_addr >> 3);
+}
+
+void ff_spu_voice_seed(sint32 voice, const uint16 registers[7])
+{
+    SpuVoiceAttr attr;
+    memset(&attr, 0, sizeof(attr));
+    attr.volume.left = (sint16)registers[0];
+    attr.volume.right = (sint16)registers[1];
+    attr.pitch = registers[2];
+    attr.addr = (uint32)registers[3] << 3;
+    attr.adsr1 = registers[4];
+    attr.adsr2 = registers[5];
+    attr.loop_addr = (uint32)registers[6] << 3;
+    voice_set(voice, &attr);
+}
 
 static uint16 slus_spu_control(void)
 {
@@ -31,7 +71,6 @@ GDB_CALL uint32 FUN_SLUS_8001CF10(uint32 entry_v0, FF_SLUS_SERVICE service)
 {
     FF_FUNCTION_MARKER(0x8001cf10u, "SLUS_004.33");
     uint32 attempts = 0, callback;
-    (void)entry_v0; /* SKIP delay: synchronous native DMA. */
     slus_spu_control_write(slus_spu_control() & 0xffcf);
     while ((slus_spu_control() & 0x30) && attempts < 0xf01)
         ++attempts;
@@ -44,13 +83,12 @@ GDB_CALL uint32 FUN_SLUS_8001CF10(uint32 entry_v0, FF_SLUS_SERVICE service)
 static void slus_spu_upload(uint32 source, uint32 bytes, uint32 target)
 {
     uint32 chunk;
-    if (!lock_initialized)
+    if (!audio_initialized)
     {
-        InitializeCriticalSection(&audio_lock);
-        lock_initialized = 1;
-        spu_core_init();
+        SpuInit();
+        audio_initialized = 1;
     }
-    EnterCriticalSection(&audio_lock);
+    xport_audio_lock();
     source &= 0x1fffff;
     target &= 0x7ffff;
     while (bytes)
@@ -60,14 +98,14 @@ static void slus_spu_upload(uint32 source, uint32 bytes, uint32 target)
             chunk = 0x200000 - source;
         if (chunk > 0x80000 - target)
             chunk = 0x80000 - target;
-        if (!spu_core_upload(target, ff_ptr(source, chunk), chunk))
+        if (!spu_upload(target, ff_ptr(source, chunk), chunk))
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         source = (source + chunk) & 0x1fffff;
         target = (target + chunk) & 0x7ffff;
         bytes -= chunk;
     }
     ff_spu_dma_state[0] = target >> 3;
-    LeaveCriticalSection(&audio_lock);
+    xport_audio_unlock();
 }
 
 static void spu_dma_word(uint32 index, uint32 address, uint32 expected, uint32 value)
@@ -168,13 +206,12 @@ static uint32 spu_dma_read_entry(uint32 destination, uint32 address_units, uint3
         source = (ff_spu_dma_state[0] << 3) & 0x7ffff;
         target = ff_spu_dma_state[2] & 0x1ffffc;
         remaining = (ff_spu_dma_state[3] >> 16) * (ff_spu_dma_state[3] & 65535u) * 4;
-        if (!lock_initialized)
+        if (!audio_initialized)
         {
-            InitializeCriticalSection(&audio_lock);
-            lock_initialized = 1;
-            spu_core_init();
+            SpuInit();
+            audio_initialized = 1;
         }
-        EnterCriticalSection(&audio_lock);
+        xport_audio_lock();
         while (remaining)
         {
             chunk = remaining;
@@ -182,7 +219,7 @@ static uint32 spu_dma_read_entry(uint32 destination, uint32 address_units, uint3
                 chunk = 0x80000 - source;
             if (chunk > 0x200000 - target)
                 chunk = 0x200000 - target;
-            if (!spu_core_download(source, ff_ptr(target, chunk), chunk))
+            if (!spu_download(source, ff_ptr(target, chunk), chunk))
                 ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
             source = (source + chunk) & 0x7ffff;
             target = (target + chunk) & 0x1fffff;
@@ -190,7 +227,7 @@ static uint32 spu_dma_read_entry(uint32 destination, uint32 address_units, uint3
         }
         ff_spu_dma_state[0] = source >> 3;
         ff_spu_dma_state[4] &= ~0x01000000u;
-        LeaveCriticalSection(&audio_lock);
+        xport_audio_unlock();
     }
     return 1;
 }
@@ -352,8 +389,9 @@ uint32 ff_spu_reset_startup(void)
 {
     static const uint32 clear[] = {0x8008cfac, 0x8008cfb0, 0x8008cfc8, 0x8008cfcc, 0x8008cb30, 0x8008cb34, 0x8008cb40, 0x8008cb44, 0x8008cb48, 0x8008cb4c, 0x8008cfec, 0x8008cff0, 0x8008cff4, 0x8008cb2c, 0x8008cb28, 0x8008cb54, 0x8008cb50, 0x8008cf88};
     uint32 i;
-    SPU_voice_registers r;
-    if (!lock_initialized)
+    SpuVoiceAttr attr;
+    SpuCommonAttr common;
+    if (!audio_initialized)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     for (i = 0; i < sizeof(clear) / sizeof(clear[0]); i++)
         ff_w32(clear[i], 0);
@@ -371,25 +409,27 @@ uint32 ff_spu_reset_startup(void)
     ff_spu_reverb_state[0] = ff_spu_reverb_state[1] = 0;
     ff_spu_reverb_state[2] = (uint16)ff_u32(0x8008cff8);
     ff_spu_reverb_channels_state[0] = ff_spu_reverb_channels_state[1] = 0;
-    EnterCriticalSection(&audio_lock);
-    if (!spu_core_upload(0x1000, ff_ptr(0x8008cfd0, 16), 16))
+    xport_audio_lock();
+    if (!spu_upload(0x1000, ff_ptr(0x8008cfd0, 16), 16))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     for (i = 0; i < 24; i++)
     {
-        spu_core_get_voice_registers(i, &r);
-        r.volume_left = r.volume_right = 0;
-        r.pitch = 0x3fff;
-        r.start_address = 0x200;
-        r.adsr1 = r.adsr2 = 0;
-        spu_core_set_voice_registers(i, &r);
+        voice_get((sint32)i, &attr);
+        attr.volume.left = attr.volume.right = 0;
+        attr.pitch = 0x3fff;
+        attr.addr = 0x1000;
+        attr.adsr1 = attr.adsr2 = 0;
+        voice_set((sint32)i, &attr);
     }
-    spu_core_key_on(0xffffff);
-    spu_core_key_off(0xffffff);
-    spu_core_set_master_volume(0, 0);
+    SpuSetKey(SPU_ON, SPU_ALLCH);
+    SpuSetKey(SPU_OFF, SPU_ALLCH);
+    memset(&common, 0, sizeof(common));
+    common.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR;
+    SpuSetCommonAttr(&common);
     ff_spu_common_state[0] = ff_spu_common_state[1] = 0;
     ff_spu_common_state[2] = ff_spu_common_state[3] = 0;
     ff_spu_common_state[4] = 0xc000;
-    LeaveCriticalSection(&audio_lock);
+    xport_audio_unlock();
     /* 7726C returns the guest register address, not the written value. */
     return ff_u32(0x8008cf90) + 0x1a2;
 }
@@ -403,33 +443,38 @@ sint32 ff_spu_common_startup(uint32 a)
 
 void ff_spu_cd_volume_host(sint16 left, sint16 right)
 {
-    /* SLUS1C618 mode0 -> SpuSetCommonAttr maskC0. WIP CD input has no PCM;
-  * retain the upper-clamped, wrapped signed volume conversion. */
+    /* SLUS1C618 mode0 -> SpuSetCommonAttr maskC0 */
     if (left >= 128)
         left = 127;
     if (right >= 128)
         right = 127;
-    if (!lock_initialized)
+    if (!audio_initialized)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    EnterCriticalSection(&audio_lock);
+    xport_audio_lock();
     ff_spu_common_state[2] = (uint16)((sint32)left * 258);
     ff_spu_common_state[3] = (uint16)((sint32)right * 258);
-    LeaveCriticalSection(&audio_lock);
+    SsSetSerialVol(SS_SERIAL_A, left, right);
+    xport_audio_unlock();
 }
 
 sint32 ff_spu_common_startup_host(const uint32 a[10])
 {
-    if (a[0] != 0x2c3 || !lock_initialized)
+    SpuCommonAttr attr;
+    if (a[0] != 0x2c3 || !audio_initialized)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    EnterCriticalSection(&audio_lock);
+    xport_audio_lock();
     ff_spu_common_state[0] = (uint16)a[1] & 0x7fff;
     ff_spu_common_state[1] = (uint16)(a[1] >> 16) & 0x7fff;
     ff_spu_common_state[2] = (uint16)a[4];
     ff_spu_common_state[3] = (uint16)(a[4] >> 16);
     ff_spu_common_state[4] = (ff_spu_common_state[4] & 0xfffe) | (a[6] ? 1 : 0);
-    spu_core_set_master_volume((sint16)ff_spu_common_state[0], (sint16)ff_spu_common_state[1]);
-    /* WIP CD input has no decoded PCM; retain its volumes/control for startup. */
-    LeaveCriticalSection(&audio_lock);
+    memset(&attr, 0, sizeof(attr));
+    attr.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR;
+    attr.mvol.left = (sint16)ff_spu_common_state[0];
+    attr.mvol.right = (sint16)ff_spu_common_state[1];
+    SpuSetCommonAttr(&attr);
+    SsSetSerialVol(SS_SERIAL_A, (sint16)(ff_spu_common_state[2] / 129), (sint16)(ff_spu_common_state[3] / 129));
+    xport_audio_unlock();
     return 0;
 }
 
@@ -506,24 +551,24 @@ static sint32 key(sint32 enabled, uint32 channels)
     /* Deferred SDK event mode is not used in the captured menu. */
     if (ff_u32(0x8008cf88) & 1)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    EnterCriticalSection(&audio_lock);
+    xport_audio_lock();
     if (enabled == 1)
     {
-        spu_core_key_on(mask);
+        SpuSetKey(SPU_ON, mask);
         active |= mask;
     }
     else if (!enabled)
     {
-        spu_core_key_off(mask);
+        SpuSetKey(SPU_OFF, mask);
         active &= ~mask;
     }
     else
     {
-        LeaveCriticalSection(&audio_lock);
+        xport_audio_unlock();
         return 1;
     }
     ff_w32(0x8008cb28, active);
-    LeaveCriticalSection(&audio_lock);
+    xport_audio_unlock();
     return (sint32)active;
 }
 
@@ -536,22 +581,22 @@ static sint32 attributes(uint32 a)
     /* Startup uses fixed volume, not hardware volume sweeps. */
     if (mask == 0xff1f && (ff_s16(a + 12) || ff_s16(a + 14)))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    EnterCriticalSection(&audio_lock);
+    xport_audio_lock();
     for (i = 0; i < 24; i++)
         if (voices & (1u << i))
         {
-            SPU_voice_registers r;
-            spu_core_get_voice_registers(i, &r);
+            SpuVoiceAttr attr;
+            voice_get(i, &attr);
             if (mask & 1)
-                r.volume_left = (sint16)((uint16)ff_s16(a + 8) & 0x7fff);
+                attr.volume.left = (sint16)((uint16)ff_s16(a + 8) & 0x7fff);
             if (mask & 2)
-                r.volume_right = (sint16)((uint16)ff_s16(a + 10) & 0x7fff);
+                attr.volume.right = (sint16)((uint16)ff_s16(a + 10) & 0x7fff);
             if (mask == 0x20)
             {
                 /* 79254:79348..79390 uses the cached sample note; it does not
     * overwrite volume, ADSR, sample address or the sample-note cache. */
                 uint16 sample_note = (uint16)ff_s16(0x8008cb58 + 2u * i), note = (uint16)ff_s16(a + 22);
-                r.pitch = ff_note_to_pitch(sample_note >> 8, sample_note & 255, note >> 8, note & 255);
+                attr.pitch = ff_note_to_pitch(sample_note >> 8, sample_note & 255, note >> 8, note & 255);
             }
             if (mask == 0xff1f)
             {
@@ -568,16 +613,16 @@ static sint32 attributes(uint32 a)
                 if (sl > 15)
                     sl = 15;
                 sbits = sm == 1 ? 0 : sm == 5 ? 512 : sm == 7 ? 768 : 256;
-                r.pitch = (uint16)ff_s16(a + 20);
-                r.adsr1 = (uint16)(((ar | (ff_u32(a + 36) == 5 ? 128 : 0)) << 8) | (dr << 4) | sl);
-                r.adsr2 = (uint16)(((sr | sbits) << 6) | rr | (ff_u32(a + 44) == 7 ? 32 : 0));
+                attr.pitch = (uint16)ff_s16(a + 20);
+                attr.adsr1 = (uint16)(((ar | (ff_u32(a + 36) == 5 ? 128 : 0)) << 8) | (dr << 4) | sl);
+                attr.adsr2 = (uint16)(((sr | sbits) << 6) | rr | (ff_u32(a + 44) == 7 ? 32 : 0));
             }
             if (mask == 0xe3)
             {
                 uint16 sample_note = (uint16)ff_s16(a + 24), note = (uint16)ff_s16(a + 22);
                 uint32 address = ff_u32(a + 28);
                 ff_w16(0x8008cb58 + 2u * i, sample_note);
-                r.pitch = ff_note_to_pitch(sample_note >> 8, sample_note & 255, note >> 8, note & 255);
+                attr.pitch = ff_note_to_pitch(sample_note >> 8, sample_note & 255, note >> 8, note & 255);
                 if (ff_u32(0x8008cfb4))
                 {
                     uint32 alignment = ff_u32(0x8008cfbc);
@@ -586,11 +631,11 @@ static sint32 attributes(uint32 a)
                     if (address % alignment)
                         address = (address + alignment) & ~ff_u32(0x8008cfc0);
                 }
-                r.start_address = (uint16)(address >> (ff_u32(0x8008cfb8) & 31));
+                attr.addr = (address >> (ff_u32(0x8008cfb8) & 31)) << 3;
             }
-            spu_core_set_voice_registers(i, &r);
+            voice_set(i, &attr);
         }
-    LeaveCriticalSection(&audio_lock);
+    xport_audio_unlock();
     return 0;
 }
 
@@ -605,14 +650,8 @@ static sint32 key_on_attributes(uint32 a)
 void ff_audio_init_empty(void)
 {
     memset(ff_spu_dma_state, 0, sizeof(ff_spu_dma_state));
-    if (!lock_initialized)
-    {
-        InitializeCriticalSection(&audio_lock);
-        lock_initialized = 1;
-    }
-    EnterCriticalSection(&audio_lock);
-    spu_core_init();
-    LeaveCriticalSection(&audio_lock);
+    SpuInit();
+    audio_initialized = 1;
     ff_spu_common_state[0] = ff_spu_common_state[1] = 0x3fff;
     ff_spu_common_state[2] = ff_spu_common_state[3] = ff_spu_common_state[4] = 0;
     memset(ff_spu_reverb_registers, 0, sizeof(ff_spu_reverb_registers));
@@ -647,12 +686,12 @@ uint32 ff_spu_transfer_write(uint32 source, uint32 bytes)
     uint32 address = (uint32)(uint16)ff_s16(0x8008cfa8) << (ff_u32(0x8008cfb8) & 31);
     if (bytes > 0x7eff0)
         bytes = 0x7eff0;
-    if (!lock_initialized)
+    if (!audio_initialized)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    EnterCriticalSection(&audio_lock);
-    if (!spu_core_upload(address, ff_ptr(source, bytes), bytes))
+    xport_audio_lock();
+    if (!spu_upload(address, ff_ptr(source, bytes), bytes))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    LeaveCriticalSection(&audio_lock);
+    xport_audio_unlock();
     if (!ff_u32(0x8008cfc8))
         ff_w32(0x8008cfc4, 0);
     return bytes;
@@ -669,13 +708,9 @@ sint32 ff_audio_init(void)
 {
     static uint8 sample_ram[0x80000];
     uint16 regs[194];
+    SpuCommonAttr common;
     FILE *f;
     int i;
-    if (!lock_initialized)
-    {
-        InitializeCriticalSection(&audio_lock);
-        lock_initialized = 1;
-    }
     f = fopen("FF-menu.spu", "rb");
     if (!f)
         return 0;
@@ -694,21 +729,19 @@ sint32 ff_audio_init(void)
         return 0;
     }
     fclose(f);
-    spu_core_init();
-    spu_core_upload(0, sample_ram, sizeof(sample_ram));
-    spu_core_set_master_volume((sint16)regs[0], (sint16)regs[1]);
+    SpuInit();
+    audio_initialized = 1;
+    spu_upload(0, sample_ram, sizeof(sample_ram));
+    memset(&common, 0, sizeof(common));
+    common.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR;
+    common.mvol.left = (sint16)regs[0];
+    common.mvol.right = (sint16)regs[1];
+    SpuSetCommonAttr(&common);
     for (i = 0; i < 24; i++)
     {
         uint16 *v = regs + 2 + i * 8;
-        SPU_voice_registers r;
-        r.volume_left = (sint16)v[0];
-        r.volume_right = (sint16)v[1];
-        r.pitch = v[2];
-        r.start_address = v[3];
-        r.adsr1 = v[4];
-        r.adsr2 = v[5];
-        r.repeat_address = v[7];
-        spu_core_set_voice_registers(i, &r);
+        uint16 voice_registers[7] = {v[0], v[1], v[2], v[3], v[4], v[5], v[7]};
+        ff_spu_voice_seed(i, voice_registers);
     }
     ff_services.spu_key = key;
     ff_services.spu_voice_attributes = attributes;
@@ -717,22 +750,15 @@ sint32 ff_audio_init(void)
     return 1;
 }
 
-void ff_audio_render(sint16 *stereo, uint32 frames)
-{
-    EnterCriticalSection(&audio_lock);
-    spu_core_render(stereo, frames);
-    LeaveCriticalSection(&audio_lock);
-}
-
 #include "diagnostic_state.h"
 
 int ff_audio_state_io(FILE *f, int load)
 {
     int result;
-    if (!lock_initialized)
+    if (!audio_initialized)
         return 0;
-    EnterCriticalSection(&audio_lock);
-    result = FF_STATE(f, ff_spu_common_state, load) && FF_STATE(f, ff_spu_reverb_registers, load) && FF_STATE(f, ff_spu_reverb_state, load) && FF_STATE(f, ff_spu_reverb_channels_state, load) && FF_STATE(f, ff_spu_dma_state, load) && spu_core_state_io(f, load);
-    LeaveCriticalSection(&audio_lock);
+    xport_audio_lock();
+    result = FF_STATE(f, ff_spu_common_state, load) && FF_STATE(f, ff_spu_reverb_registers, load) && FF_STATE(f, ff_spu_reverb_state, load) && FF_STATE(f, ff_spu_reverb_channels_state, load) && FF_STATE(f, ff_spu_dma_state, load) && spu_state_io(f, load);
+    xport_audio_unlock();
     return result;
 }

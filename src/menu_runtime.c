@@ -1,9 +1,9 @@
 /* Native integration of audited callbacks. WIP: fixture bootstrap and missing
  * outer stage/scene tail. Unsupported callbacks stop explicitly. */
 #include "ff.h"
-#include "ff_gpu.h"
+#include "psx_gpu.h"
 #include "ff_audio.h"
-#include "audio_waveout.h"
+#include "xport.h"
 #include "platform_dummy.h"
 #include <stdio.h>
 #include <string.h>
@@ -311,7 +311,7 @@ static int diagnostic_checkpoint(const char *path, int load)
     uint32 magic = 0x31434646;
     char actual[64];
     /* Stop the output worker before snapshotting RAM and SPU together. */
-    waveout_shutdown();
+    xport_audio_shutdown();
     f = fopen(path, load ? "rb" : "wb");
     if (!f)
         return 0;
@@ -321,12 +321,12 @@ static int diagnostic_checkpoint(const char *path, int load)
     }
     else
         ok = fwrite(&magic, 4, 1, f) == 1 && fwrite(checkpoint_abi, 1, 64, f) == 64;
-    ok = ok && ff_state_block(f, ff_ram, sizeof(ff_ram), load) && ff_state_block(f, ff_ptr(0x1f800000, 1024), 1024, load) && psx_state_io(f, load) && ff_gpu_state_io(f, load) && ff_audio_state_io(f, load) && FF_STATE(f, ff_dummy_calls, load) && FF_STATE(f, ff_dummy_card_pending, load) && FF_STATE(f, ff_sdk_interrupts_enabled, load) && FF_STATE(f, ff_host_pad_state, load) && FF_STATE(f, ff_sdk_counter_state, load);
+    ok = ok && ff_state_block(f, DRAM, sizeof(DRAM), load) && ff_state_block(f, ff_ptr(0x1f800000, 1024), 1024, load) && psx_state_io(f, load) && gpu_state_io(f, load) && ff_audio_state_io(f, load) && FF_STATE(f, ff_dummy_calls, load) && FF_STATE(f, ff_dummy_card_pending, load) && FF_STATE(f, ff_sdk_interrupts_enabled, load) && FF_STATE(f, ff_host_pad_state, load) && FF_STATE(f, ff_sdk_counter_state, load);
     if (load && fgetc(f) != EOF)
         ok = 0;
     if (fclose(f))
         ok = 0;
-    if (!waveout_init())
+    if (!xport_audio_init())
         ok = 0;
     return ok;
 }
@@ -436,7 +436,7 @@ extern void ff_audit_end(void);
 GDB_CALL void ff_pause_refresh_pad(void)
 {
     uint32 pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
-    if (psx_quit_requested())
+    if (xport_isquit())
         longjmp(menu_exit, 1);
     ff_host_pad_publish(diag_enabled ? diag_connected : 1, buttons, 0);
 }
@@ -444,7 +444,7 @@ GDB_CALL void ff_pause_refresh_pad(void)
 static void title_host_frame(void)
 {
     uint32 i, pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
-    if (psx_quit_requested())
+    if (xport_isquit())
         longjmp(menu_exit, 1);
     ff_host_pad_publish(diag_enabled ? diag_connected : 1, buttons, 0);
     VSync(0);
@@ -452,33 +452,33 @@ static void title_host_frame(void)
 
 static uint32 prepare_host_frame(int gameplay)
 {
-    LARGE_INTEGER gpu_begin, gpu_end;
+    LARGE_INTEGER gpu_start, gpu_end;
     uint32 i, pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255), parity, display;
-    if (psx_quit_requested())
+    if (xport_isquit())
         longjmp(menu_exit, 1);
     ff_host_pad_publish(diag_enabled ? diag_connected : 1, buttons, 0);
-    if (!ff_gpu_load_clut(0x800b50b8, 0, 499) || !ff_gpu_load_image(0x80093568, 0x800a1990))
+    if (!gpu_load_clut(0x800b50b8, 0, 499) || !ff_load_image(0x80093568, 0x800a1990))
         longjmp(menu_exit, 1);
     FUN_80067820();
     FUN_80011D9C();
     VSync(2);
     parity = ff_u32(0x8008d4c4) & 1;
     display = 0x800947a0 + 20 * parity;
+    PutDispEnv((DISPENV *)ff_ptr(display, sizeof(DISPENV)));
     FUN_80064684();
     ff_display_offsets_800586D0();
-    ff_gpu_begin();
-    ff_gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
+    gpu_begin();
+    gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
     if (diag_enabled)
-        QueryPerformanceCounter(&gpu_begin);
-    if (ff_gpu_ot(ff_u32(0x8008d4b8)) < 0)
-        longjmp(menu_exit, 1);
-    ff_gpu_display_offset(ff_s16(display + 8), ff_s16(display + 10));
-    ff_gpu_present();
+        QueryPerformanceCounter(&gpu_start);
+    DrawOTag((uint32 *)ff_ptr(ff_u32(0x8008d4b8), sizeof(uint32)));
+    gpu_display_offset(ff_s16(display + 8), ff_s16(display + 10));
+    gpu_present();
     FUN_80011D50(ff_u32(0x8008d4b4));
     if (diag_enabled)
     {
         QueryPerformanceCounter(&gpu_end);
-        diag_gpu_ticks += gpu_end.QuadPart - gpu_begin.QuadPart;
+        diag_gpu_ticks += gpu_end.QuadPart - gpu_start.QuadPart;
     }
     if (gameplay == 1)
         return ff_prepare_scene_800587A8_stage0();
@@ -515,7 +515,6 @@ GDB_CALL uint32 ff_menu_prepare_80058634_stage26(void)
 
 int ff_game_prefix_preview(void)
 {
-    PSX_CONFIG config;
     FILE *f;
     int result = 9;
     if (!ff_load_ram("../status/gameplay/sequence-level-entry.ram"))
@@ -529,18 +528,12 @@ int ff_game_prefix_preview(void)
         return 4;
     }
     fclose(f);
-    ff_gpu_init_empty();
+    gpu_init_empty();
     ff_audio_init_empty();
-    memset(&config, 0, sizeof(config));
-    config.window_title = "Fighting Force gameplay audit";
-    config.window_width = 960;
-    config.window_height = 720;
-    config.refresh_rate = 60;
-    config.headless = 1;
-    psx_configure(&config);
+    xport_set_headless(1);
     ResetGraph(0);
     InitGeom();
-    if (!waveout_init())
+    if (!xport_audio_init())
         return 5;
     ff_services.game_longjmp = exit_menu;
     ff_services.menu_aux = menu_aux;
@@ -552,7 +545,7 @@ int ff_game_prefix_preview(void)
         result = ff_game_frame_prefix_80014DF8_stage0();
     }
     ff_services.frontend_frame = NULL;
-    waveout_shutdown();
+    xport_audio_shutdown();
     printf("game_prefix_result %d tick %u\n", result, ff_u32(0x80093dd0));
     ff_audit_end();
     return result;
@@ -724,8 +717,8 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         ff_audit_sound_event = diagnostic_sound;
     }
     vblank_start = (uint32)VSync(-1);
-    audio_start = g_waveout_submitted_buffers;
-    nonzero_start = g_waveout_nonzero_buffers;
+    audio_start = g_xport_audio_submitted_buffers;
+    nonzero_start = g_xport_audio_nonzero_buffers;
     for (frame = 0; !limit || frame < limit; frame++)
     {
         if (checkpoint_directory && ff_u32(0x80093dd0) == next_checkpoint)
@@ -751,11 +744,6 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             printf("checkpoint_saved tick %u path %s\n", checkpoint_tick, checkpoint);
             if (getenv("FF_CHECKPOINT_STOP"))
                 break;
-        }
-        if (!diag_enabled)
-        {
-            printf("game_frame_begin %u\n", frame);
-            fflush(stdout);
         }
         /* Original PAD polling has published this tick before the game boundary */
         if (diag_enabled)
@@ -813,11 +801,6 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         prefix_ticks += p1.QuadPart - p0.QuadPart;
         tail_ticks += p2.QuadPart - p1.QuadPart;
         record_ticks += p3.QuadPart - p2.QuadPart;
-        if (!diag_enabled)
-        {
-            printf("game_frame_complete %u tick %u\n", frame, ff_u32(0x80093dd0));
-            fflush(stdout);
-        }
         if (result == 2 && diag_enabled && ff_u32(0x80093d58) == 0)
         {
             /* 15EF0..1607C: fade the completed stage, advance, then enter the next stage */
@@ -836,9 +819,9 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             break;
         }
         if (frame == 299)
-            ff_gpu_save_frame("../status/gameplay/game-frame-300.bgrx");
+            gpu_save_frame("../status/gameplay/game-frame-300.bgrx");
         if (frame == 599)
-            ff_gpu_save_frame("../status/gameplay/game-frame-600.bgrx");
+            gpu_save_frame("../status/gameplay/game-frame-600.bgrx");
     }
     QueryPerformanceCounter(&finished);
     if (diag_enabled)
@@ -864,8 +847,8 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         if (error)
             return 8;
     }
-    printf("gameplay_metrics frames %u vblanks %u seconds %.6f audio_buffers %u nonzero %u overruns %u\n", frame, (uint32)VSync(-1) - vblank_start, (double)(finished.QuadPart - started.QuadPart) / (double)frequency.QuadPart, g_waveout_submitted_buffers - audio_start, g_waveout_nonzero_buffers - nonzero_start, g_waveout_callback_overruns);
-    ff_gpu_save_frame("../status/gameplay/game-frame-900.bgrx");
+    printf("gameplay_metrics frames %u vblanks %u seconds %.6f audio_buffers %u nonzero %u overruns %u\n", frame, (uint32)VSync(-1) - vblank_start, (double)(finished.QuadPart - started.QuadPart) / (double)frequency.QuadPart, g_xport_audio_submitted_buffers - audio_start, g_xport_audio_nonzero_buffers - nonzero_start, g_xport_audio_callback_overruns);
+    gpu_save_frame("../status/gameplay/game-frame-900.bgrx");
     f = fopen(output, "wb");
     if (!f)
     {
@@ -906,7 +889,6 @@ static int finish_game_to_menu(int result)
 
 static int game_loop_preview(int sequence)
 {
-    PSX_CONFIG config;
     FILE *f;
     int result = 9;
     if (!ff_load_ram(sequence ? "../status/gameplay/sequence-start.ram" : "../status/gameplay/sequence-level-entry.ram"))
@@ -920,7 +902,7 @@ static int game_loop_preview(int sequence)
         return 4;
     }
     fclose(f);
-    ff_gpu_init_empty();
+    gpu_init_empty();
     if (sequence)
     {
         if (!ff_audio_init())
@@ -928,16 +910,10 @@ static int game_loop_preview(int sequence)
     }
     else
         ff_audio_init_empty();
-    memset(&config, 0, sizeof(config));
-    config.window_title = "Fighting Force gameplay loop audit";
-    config.window_width = 960;
-    config.window_height = 720;
-    config.refresh_rate = 60;
-    config.headless = 1;
-    psx_configure(&config);
+    xport_set_headless(1);
     ResetGraph(0);
     InitGeom();
-    if (!waveout_init())
+    if (!xport_audio_init())
         return 5;
     ff_services.game_longjmp = exit_menu;
     ff_services.menu_aux = menu_aux;
@@ -947,7 +923,7 @@ static int game_loop_preview(int sequence)
         result = run_loaded_game(sequence, 900, sequence ? "../status/gameplay/sequence-game-loop-final.ram" : "../status/gameplay/game-loop-final.ram");
     }
     ff_services.frontend_frame = NULL;
-    waveout_shutdown();
+    xport_audio_shutdown();
     printf("game_loop_result %d tick %u\n", result, ff_u32(0x80093dd0));
     ff_audit_end();
     return result;
@@ -966,23 +942,16 @@ int ff_sequence_game_loop_preview(void)
 /* Isolated sequence fixture audit; frontend uses run_loaded_game directly. */
 int ff_sequence_preview(int headless)
 {
-    PSX_CONFIG config;
     int result = 9;
     if (!ff_load_ram("../status/gameplay/sequence-start.ram"))
         return 2;
-    ff_gpu_init_empty();
+    gpu_init_empty();
     if (!ff_audio_init())
         return 3;
-    memset(&config, 0, sizeof(config));
-    config.window_title = "Fighting Force - sequence WIP";
-    config.window_width = 960;
-    config.window_height = 720;
-    config.refresh_rate = 60;
-    config.headless = headless;
-    psx_configure(&config);
+    xport_set_headless(headless);
     ResetGraph(0);
     InitGeom();
-    if (!waveout_init())
+    if (!xport_audio_init())
         return 5;
     ff_services.game_longjmp = exit_menu;
     ff_services.menu_aux = menu_aux;
@@ -990,7 +959,7 @@ int ff_sequence_preview(int headless)
     if (!setjmp(menu_exit))
         result = ff_sequence_run_80015720_stage0(sequence_prepare_frame);
     ff_services.frontend_frame = NULL;
-    waveout_shutdown();
+    xport_audio_shutdown();
     printf("sequence_result %d tick %u stage %u\n", result, ff_u32(0x80093dd0), ff_u32(0x80093d58));
     ff_audit_end();
     return result == 1 ? 0 : result;
@@ -999,16 +968,10 @@ int ff_sequence_preview(int headless)
 /* Interactive title preview. Initial configuration still comes from fixtures. */
 int ff_title_runtime(void)
 {
-    PSX_CONFIG config;
     uint32 result = 0;
-    if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+    if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
         return 2;
-    memset(&config, 0, sizeof(config));
-    config.window_title = "Fighting Force - title WIP";
-    config.window_width = 960;
-    config.window_height = 720;
-    config.refresh_rate = 60;
-    psx_configure(&config);
+    xport_set_headless(0);
     ResetGraph(0);
     InitGeom();
     ff_w32(0x800940b0, 1);
@@ -1027,16 +990,8 @@ int ff_title_runtime(void)
     return 0;
 }
 
-/* Scripted menu jobs end at confirmation; subsequent gameplay has no input.
- * Keep physical keyboard input for the ordinary interactive runtime. */
-static uint32 scripted_neutral_pad(void *user, sint32 controller)
-{
-    return 0;
-}
-
 static int menu_runtime_impl(const char *script, uint32 limit, int headless, int startup)
 {
-    PSX_CONFIG config;
     FILE *input = NULL, *trace = NULL;
     uint32 frame = 0;
     int result = 0, i;
@@ -1095,17 +1050,17 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     }
     else if (startup == 2)
     {
-        if (!ff_load_game_image("GAME.EXE"))
+        if (!ff_load_game_image())
             return 2;
     }
     else if (!ff_load_ram("FF-menu.ram"))
         return 2;
     if (startup)
     {
-        ff_gpu_init_empty();
+        gpu_init_empty();
         ff_audio_init_empty();
     }
-    else if (!ff_gpu_load_vram("FF-menu.vram") || !ff_audio_init())
+    else if (!gpu_load_vram("FF-menu.vram") || !ff_audio_init())
         return 2;
     if (script)
     {
@@ -1114,18 +1069,11 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             return 4;
         trace = fopen("../status/menu/runtime-trace.bin", "wb");
     }
-    memset(&config, 0, sizeof(config));
-    config.window_title = "Fighting Force - menu WIP";
-    config.window_width = 960;
-    config.window_height = 720;
-    config.refresh_rate = 60;
-    config.headless = headless;
-    if (script)
-        config.host.pad_read = scripted_neutral_pad;
-    psx_configure(&config);
+    xport_set_headless(headless);
+    xport_input_override(script != NULL, 0);
     ResetGraph(0);
     InitGeom();
-    if (!waveout_init())
+    if (!xport_audio_init())
         return 5;
     if (getenv("FF_TRACE_PHASE_PATH"))
     {
@@ -1249,7 +1197,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         if (result)
             goto done;
     }
-    while (!psx_quit_requested() && (!limit || frame < limit))
+    while (!xport_isquit() && (!limit || frame < limit))
     {
         uint32 job[3] = {1, 0, 0}, callback, display;
         int cleanup;
@@ -1297,7 +1245,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
                 ff_w32(0x80093d28 + 4u * i, ff_u32(0x8008d4a4 + 4u * i));
             ff_w32(0x80093dd0, ff_u32(0x80093dd0) + 1);
             /* 80058650..80058660 uploads the current 256-color palette first. */
-            if (!ff_gpu_load_clut(0x800b50b8, 0, 499) || !ff_gpu_load_image(0x80093568, 0x800a1990))
+            if (!gpu_load_clut(0x800b50b8, 0, 499) || !ff_load_image(0x80093568, 0x800a1990))
             {
                 result = 12;
                 break;
@@ -1307,21 +1255,18 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         display = 0x800947a0 + 20 * (ff_u32(0x8008d4c4) & 1);
         display_x = ff_s16(display + 8);
         display_y = ff_s16(display + 10);
+        PutDispEnv((DISPENV *)ff_ptr(display, sizeof(DISPENV)));
         FUN_80064684();
         ff_display_offsets_800586D0();
         /* Original5868C..587A4: compress prior OT before swapping, submit it,
    * then initialize the new current OT. Fixture frame0 was already compressed. */
-        ff_gpu_begin();
+        gpu_begin();
         /* 8005876C..80058794: DrawOTagEnv(previous OT, DrawEnv[parity]).
    * Save State 1 uses horizontal VRAM draw surfaces at x=0 and x=320. */
-        ff_gpu_draw_env(0x800b8938 + 92 * (ff_u32(0x8008d4c4) & 1), 320 * (ff_u32(0x8008d4c4) & 1), 0);
-        if (ff_gpu_ot(ff_u32(0x8008d4b8)) < 0)
-        {
-            result = 7;
-            break;
-        }
-        ff_gpu_display_offset(display_x, display_y);
-        ff_gpu_present();
+        gpu_draw_env(0x800b8938 + 92 * (ff_u32(0x8008d4c4) & 1), 320 * (ff_u32(0x8008d4c4) & 1), 0);
+        DrawOTag((uint32 *)ff_ptr(ff_u32(0x8008d4b8), sizeof(uint32)));
+        gpu_display_offset(display_x, display_y);
+        gpu_present();
         FUN_80011D50(ff_u32(0x8008d4b4));
         if (frame || startup)
         {
@@ -1466,13 +1411,13 @@ done:
             result = 14;
     }
     ff_services.frontend_frame = NULL;
-    waveout_shutdown();
+    xport_audio_shutdown();
     if (input)
         fclose(input);
     if (trace)
         fclose(trace);
-    ff_gpu_save_frame("../status/menu/runtime-frame.bgrx");
-    printf("menu_frames %u result %d audio_buffers %u nonzero %u peak %u\n", frame, result, g_waveout_submitted_buffers, g_waveout_nonzero_buffers, g_waveout_peak);
+    gpu_save_frame("../status/menu/runtime-frame.bgrx");
+    printf("menu_frames %u result %d audio_buffers %u nonzero %u peak %u\n", frame, result, g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak);
     ff_audit_end();
     return result;
 }

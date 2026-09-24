@@ -4259,7 +4259,7 @@ GDB_CALL sint32 FUN_80024008(void)
                     ff_w16(actor + 62, (uint16)((uint32)facing << 5));
                 }
                 /* States43/44/125/132/139 follow the MIPS default at27CB0: idle69, no half-turn. */
-                else if (state != 122 && state != 124 && state != 125 && state != 129 && state != 132 && state != 139 && state != 192 && state != 195 && state != 196 && state != 149 && state != 0 && state != 1 && state != 2 && state != 24 && state != 26 && state != 27 && state != 28 && state != 33 && state != 35 && state != 37 && state != 38 && state != 39 && state != 43 && state != 44 && state != 66 && state != 67 && state != 158 && state != 160 && state != 162 && state != 69 && (uint32)(state - 130) >= 2 && (uint32)(state - 133) >= 2 && (uint32)(state - 152) >= 2)
+                else if (state != 122 && state != 124 && state != 125 && state != 129 && state != 132 && state != 139 && state != 192 && state != 195 && state != 196 && state != 149 && state != 0 && state != 1 && state != 2 && state != 24 && state != 26 && state != 27 && state != 28 && state != 33 && state != 35 && state != 37 && state != 38 && state != 39 && state != 43 && state != 44 && state != 66 && state != 67 && state != 158 && state != 160 && state != 162 && state != 171 && state != 69 && (uint32)(state - 130) >= 2 && (uint32)(state - 133) >= 2 && (uint32)(state - 152) >= 2)
                 {
                     fprintf(stderr, "WIP player state %u index %d tick %u at 80026D78\n", state, index, ff_u32(0x80093dd0));
                     player_wip_zero(0x80026d78);

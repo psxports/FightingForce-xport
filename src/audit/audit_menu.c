@@ -49,7 +49,7 @@ int ff_audit_menu_mode(int character)
         ranges[6][1] = 60;
     if (!ff_load_ram("FF-menu.ram"))
         return 2;
-    memcpy(fixture, ff_ram, sizeof(fixture));
+    memcpy(fixture, DRAM, sizeof(fixture));
     jobs = fopen(character == 6 ? "../status/menu/preframe-jobs.bin" : character == 5 ? "../status/menu/scores-jobs.bin" : character == 4 ? "../status/menu/controller-jobs.bin" : character == 3 ? "../status/menu/screen-jobs.bin" : character == 2 ? "../status/menu/options-jobs.bin" : character ? "../status/menu/character-jobs.bin" : "../status/menu/menu-jobs.bin", "rb");
     out = fopen(character == 6 ? "../status/menu/preframe-native.bin" : character == 5 ? "../status/menu/scores-native.bin" : character == 4 ? "../status/menu/controller-native.bin" : character == 3 ? "../status/menu/screen-native.bin" : character == 2 ? "../status/menu/options-native.bin" : character ? "../status/menu/character-native.bin" : "../status/menu/menu-native.bin", "wb");
     if (!jobs || !out)
@@ -60,7 +60,7 @@ int ff_audit_menu_mode(int character)
     ff_services.game_longjmp = record_jump;
     while (fread(j, sizeof(j), 1, jobs) == 1)
     {
-        memcpy(ff_ram, fixture, sizeof(fixture));
+        memcpy(DRAM, fixture, sizeof(fixture));
         memset(trace, 0, sizeof(trace));
         ff_w32(0x8009355c, 0x80094748);
         ff_w32(0x80093560, 0x80094770);

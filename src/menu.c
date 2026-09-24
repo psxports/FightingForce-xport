@@ -1,6 +1,6 @@
 #include "ff.h"
 #include <string.h>
-#include "ff_gpu.h"
+#include "psx_gpu.h"
 
 GDB_CALL uint32 FUN_80067940(void)
 {
@@ -14,7 +14,7 @@ GDB_CALL uint32 FUN_80067940(void)
     {
         DrawSync(0);
         ff_w16(0x80093bde, (uint16)(240 - block));
-        ff_gpu_store_image(0x80093bdc, ff_u32(0x800947f0));
+        ff_store_image(0x80093bdc, ff_u32(0x800947f0));
         DrawSync(0);
         p = ff_u32(0x800947f0);
         for (offset = 0; offset < 5120; ++offset, p += 2)
@@ -1112,7 +1112,7 @@ GDB_CALL sint32 FUN_80051E50(void)
     return 0;
 }
 
-#include "ff_gpu.h"
+#include "psx_gpu.h"
 #include "platform_dummy.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -1139,7 +1139,7 @@ GDB_CALL sint32 FUN_8005717C(void)
     ff_host_pad_state[4] = 1; /* SKIP6D178 StartPAD wrapper. */
     if (ResetGraph(0) < 0)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    ff_gpu_reset_graph_state();
+    gpu_reset_graph_state();
     SetGraphDebug(0);
     ff_w8(0x800872ee, 0);
     for (i = 0; i < 8; i++)
@@ -1153,10 +1153,10 @@ GDB_CALL sint32 FUN_8005717C(void)
 GDB_CALL void ff_display_setup_800574B4(void)
 {
     uint16 offset;
-    ff_gpu_set_def_draw_env(0x800b8938, 0, 0, 320, 256);
-    ff_gpu_set_def_draw_env(0x800b8994, 320, 0, 320, 256);
-    ff_gpu_set_def_disp_env(0x800947a0, 320, 0, 320, 256);
-    ff_gpu_set_def_disp_env(0x800947b4, 0, 0, 320, 256);
+    gpu_set_def_draw_env(0x800b8938, 0, 0, 320, 256);
+    gpu_set_def_draw_env(0x800b8994, 320, 0, 320, 256);
+    gpu_set_def_disp_env(0x800947a0, 320, 0, 320, 256);
+    gpu_set_def_disp_env(0x800947b4, 0, 0, 320, 256);
     offset = (uint16)ff_s16(0x80093d38);
     ff_w16(0x800947a8, offset);
     ff_w16(0x800947bc, offset);
@@ -1164,7 +1164,7 @@ GDB_CALL void ff_display_setup_800574B4(void)
     ff_w16(0x800947aa, offset);
     ff_w16(0x800947be, offset);
     SetDispMask(1);
-    ff_gpu_clear_menu_surfaces();
+    gpu_clear_menu_surfaces();
     FUN_80011D50(0xe7140);
     FUN_80011D50(0xe5140);
     VSync(0);
@@ -1718,11 +1718,11 @@ uint32 FUN_800611F8(uint32 name)
         for (i = 0; i < 2; i++)
         {
             parity = ff_u32(0x8008d4c4) & 1;
-            ff_gpu_put_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
-            ff_gpu_packet(&p); /* DrawSync is synchronous on the host. */
+            gpu_put_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
+            gpu_packet(&p); /* DrawSync is synchronous on the host. */
             ff_w32(0x8008d4c4, ff_u32(0x8008d4c4) + 1);
         }
-        ff_gpu_present();
+        gpu_present();
     }
     return ff_resource_find_80061384(name);
 }
@@ -1732,11 +1732,11 @@ uint32 FUN_80067108(uint32 texture_name, uint32 palette_name)
     uint32 texture = FUN_800611F8(texture_name), palette, i, result = 0;
     uint8 first = *(uint8 *)ff_ptr(texture + 32, 1), last = *(uint8 *)ff_ptr(texture + 32799, 1);
     ff_w16(0x80093b9e, 0);
-    if (!ff_gpu_load_image(0x80093b9c, texture + 32))
+    if (!ff_load_image(0x80093b9c, texture + 32))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     /* DrawSync has no work to wait for in the synchronous host upload. */
     ff_w16(0x80093b9e, 128);
-    if (!ff_gpu_load_image(0x80093b9c, texture + 32 + 32800))
+    if (!ff_load_image(0x80093b9c, texture + 32 + 32800))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     palette = FUN_800611F8(palette_name);
     ff_w32(0x8008d4c8, (uint16)ff_s16(palette + 2u * first) & 0x7fff);
@@ -1763,19 +1763,19 @@ uint32 ff_terrain_textures_80063900(uint32 name)
         memcpy(ff_ptr(0x800b4cb8 + i, 16), words, 16);
     }
     ff_w16(0x800b4cb8, 0);
-    if (!ff_gpu_load_image(0x80093a78, source))
+    if (!ff_load_image(0x80093a78, source))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     dest = ff_u32(0x800947f0) + 20u * FUN_80011F20(ff_u32(ff_u32(0x80094038))) + 4;
     ff_w32(0x800947f0, dest);
     for (y = 0; y < 128; y++)
         for (x = 0; x < 128; x++)
             *(uint8 *)ff_ptr(dest + y * 128 + x, 1) = *(uint8 *)ff_ptr(source + y * 512 + x * 2, 1);
-    if (!ff_gpu_load_image(0x80093a80, dest))
+    if (!ff_load_image(0x80093a80, dest))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     for (y = 0; y < 64; y++)
         for (x = 0; x < 64; x++)
             *(uint8 *)ff_ptr(dest + y * 64 + x, 1) = *(uint8 *)ff_ptr(source + y * 1024 + x * 4, 1);
-    if (!ff_gpu_load_image(0x80093a88, dest))
+    if (!ff_load_image(0x80093a88, dest))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     return source;
 }
@@ -2603,7 +2603,7 @@ uint32 FUN_80060394(uint32 all_characters)
                         paly = ff_s16(0x800947ce);
                         left = 8;
                     }
-                    if (!ff_gpu_load_rect(p, (sint16)palx, (sint16)paly, 16, 1))
+                    if (!gpu_load_rect(p, (sint16)palx, (sint16)paly, 16, 1))
                         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
                     paly++;
                     left--;
@@ -2613,7 +2613,7 @@ uint32 FUN_80060394(uint32 all_characters)
                 /* Temporary host bridge for the original stack RECT, restored immediately. */
                 memcpy(saved_rect, ff_ptr(rect, 8), 8);
                 FUN_80066ACC(w, h, mode, rect);
-                if (!ff_gpu_load_image(rect, p))
+                if (!ff_load_image(rect, p))
                     ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
                 memcpy(ff_ptr(rect, 8), saved_rect, 8);
                 p += size;
@@ -2946,7 +2946,7 @@ GDB_CALL sint32 FUN_80067554(uint32 name, uint32 destination)
 {
     FF_FUNCTION_MARKER(0x80067554u, "GAME.EXE");
     uint32 offset = destination & 0x1fffff;
-    sint32 size, sectors;
+    sint32 size;
     /* WIP CdSearchFile/Setloc/Read/ReadSync boundary: extracted files are copied
   * synchronously by the existing adapter. No physical CD or padded sectors. */
     size = ff_dummy_archive_read((const char *)ff_ptr(name, 1), ff_ptr(destination, 1), 0x200000 - offset);
@@ -2957,8 +2957,6 @@ GDB_CALL sint32 FUN_80067554(uint32 name, uint32 destination)
         return -1;
     }
     ff_w32(0x80094570, (uint32)size);
-    sectors = (sint32)((uint32)size + 2047) >> 11;
-    (void)sectors; /* Original read uses sectors and mode80; host completion is0. */
     return 0;
 }
 
@@ -2987,7 +2985,7 @@ uint32 FUN_8005ED78(void)
     ff_w16(0x80093564, 640);
     ff_w16(0x80093566, 65535);
     /* Host uploads are synchronous; DrawSync/VSync hardware waits are omitted. */
-    ff_gpu_clear_menu_surfaces();
+    gpu_clear_menu_surfaces();
     ff_w32(0x80094190, 0);
     ff_w32(0x800941a8, 0);
     ff_w16(0x80093e14, 0);
@@ -3001,7 +2999,7 @@ uint32 FUN_8005ED78(void)
 
 uint32 FUN_800645E8(void)
 {
-    if (!ff_gpu_load_image(0x80093b90, 0x800b4ab8))
+    if (!ff_load_image(0x80093b90, 0x800b4ab8))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     return 0;
 }
@@ -3020,8 +3018,8 @@ uint32 FUN_80067284(void)
     /* Synchronous host DrawSync/PutDrawEnv/PutDispEnv boundary. */
     ff_w16(disp + 8, (uint16)ff_s16(0x80093d38));
     ff_w16(disp + 10, (uint16)ff_s16(0x80093d3a));
-    ff_gpu_begin();
-    ff_gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
+    gpu_begin();
+    gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
     FUN_80064684();
     return FUN_80011D50(ff_u32(0x8008d4b4));
 }
@@ -3043,10 +3041,9 @@ uint32 FUN_80067358(void)
     uint32 index = ff_u32(0x80093c14), parity = ff_u32(0x8008d4c4) & 1, result;
     if (index != 0xffffffff)
         FUN_80061ADC(ff_u32(0x80094678 + 4 * index), 216);
-    if (ff_gpu_ot(ff_u32(0x8008d4b4)) < 0)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    ff_gpu_display_offset(ff_s16(0x800947a8 + 20 * parity), ff_s16(0x800947aa + 20 * parity));
-    ff_gpu_present();
+    DrawOTag((uint32 *)ff_ptr(ff_u32(0x8008d4b4), sizeof(uint32)));
+    gpu_display_offset(ff_s16(0x800947a8 + 20 * parity), ff_s16(0x800947aa + 20 * parity));
+    gpu_present();
     result = ff_u32(0x8008d4c4) + 1;
     ff_w32(0x8008d4c4, result);
     if (ff_services.frontend_frame)

@@ -2378,7 +2378,7 @@ GDB_CALL uint32 FUN_80067B8C(uint32 model, uint32 unused, sint32 bias)
     return ff_static_model_80010B18(model, unused, bias);
 }
 
-/* 80011C60: reset matrix stack to scratchpad, then pitch followed by yaw.
+/* 80011C60: Reset matrix stack to SCRATCHPAD, then pitch followed by yaw
  * The original uses unsigned halfword angle loads. Return is not consumed. */
 GDB_CALL void FUN_80011C60(void)
 {

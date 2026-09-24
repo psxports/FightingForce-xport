@@ -1,12 +1,8 @@
 #ifndef FF_H
     #define FF_H
+    #include "xport.h"
     #include "psx.h"
     #include "wip.h"
-    #if defined(_DEBUG)
-        #define GDB_CALL __declspec(dllexport) __declspec(noinline)
-    #else
-        #define GDB_CALL
-    #endif
 GDB_CALL uint32 FUN_8006F60C(uint32 table, uint32 count, uint32 entry_v0);
 GDB_CALL uint32 FUN_8006F6C4(uint32 table, uint32 count, uint32 entry_v0);
 GDB_CALL uint32 FUN_SLUS_80014F70(uint32 table, uint32 count, uint32 entry_v0);
@@ -755,7 +751,6 @@ GDB_CALL uint32 FUN_8001F41C(uint32 attacker, uint32 victim, uint32 state);
 GDB_CALL sint32 FUN_8001CE14(sint32 index);
 GDB_CALL sint32 FUN_8001B8DC(sint32 index);
 GDB_CALL sint32 FUN_8001B850(sint32 index, sint32 victim);
-extern uint8 ff_ram[0x200000];
 GDB_CALL void FUN_80010F94(sint32 x, sint32 y, sint32 z);
 GDB_CALL sint32 ff_game_over_8005FB44_live(void);
 GDB_CALL sint32 ff_characters_800593FC(void);
@@ -819,9 +814,33 @@ GDB_CALL sint32 FUN_80056BA0(void);
 GDB_CALL sint32 FUN_800569DC(void);
 GDB_CALL sint32 FUN_80056BC8(void);
 GDB_CALL sint32 FUN_80056CCC(sint32 archive);
-void *ff_ptr(uint32 address, size_t count);
+    #define ff_ptr psx_addr
+
+/* Adapt original guest addresses to the native PsyQ image API */
+static __inline sint32 ff_load_image(uint32 rectangle_address, uint32 pixels_address)
+{
+    PSX_RECT *rectangle = (PSX_RECT *)psx_addr(rectangle_address, sizeof(*rectangle));
+    size_t bytes;
+    if (rectangle->w < 0 || rectangle->h < 0)
+        return 0;
+    bytes = (size_t)rectangle->w * (size_t)rectangle->h * sizeof(uint16);
+    return LoadImagePSX(rectangle, (uint32 *)psx_addr(pixels_address, bytes)) == 0;
+}
+
+static __inline sint32 ff_store_image(uint32 rectangle_address, uint32 pixels_address)
+{
+    PSX_RECT *rectangle = (PSX_RECT *)psx_addr(rectangle_address, sizeof(*rectangle));
+    size_t bytes;
+    if (rectangle->w < 0 || rectangle->h < 0)
+        return 0;
+    bytes = (size_t)rectangle->w * (size_t)rectangle->h * sizeof(uint16);
+    return StoreImage(rectangle, (uint32 *)psx_addr(pixels_address, bytes)) == 0;
+}
+
 sint32 ff_load_ram(const char *path);
-sint32 ff_load_game_image(const char *path);
+sint32 ff_load_game_image(void);
+extern const uint8 ff_initial_data[];
+extern const size_t ff_initial_data_size;
 GDB_CALL sint32 FUN_80018670(sint32 value);
 GDB_CALL sint32 FUN_8005EFB8(uint32 text);
 GDB_CALL uint32 FUN_80012390(const sint32 *position, sint32 sprite);
@@ -983,27 +1002,27 @@ extern FF_SERVICES ff_services;
 
 static __inline uint32 ff_u32(uint32 a)
 {
-    return *(uint32 *)ff_ptr(a, 4);
+    return dword_(a);
 }
 
 static __inline sint16 ff_s16(uint32 a)
 {
-    return *(sint16 *)ff_ptr(a, 2);
+    return (sint16)word_(a);
 }
 
 static __inline void ff_w32(uint32 a, uint32 v)
 {
-    *(uint32 *)ff_ptr(a, 4) = v;
+    dword_(a) = v;
 }
 
 static __inline void ff_w8(uint32 a, uint8 v)
 {
-    *(uint8 *)ff_ptr(a, 1) = v;
+    byte_(a) = v;
 }
 
 static __inline void ff_w16(uint32 a, uint16 v)
 {
-    *(uint16 *)ff_ptr(a, 2) = v;
+    word_(a) = v;
 }
 #endif
 

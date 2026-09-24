@@ -6148,6 +6148,23 @@ GDB_CALL uint32 ff_game_stage_8001E168_stage0(void)
     }
     if (stage == 4)
         return FUN_8001DDBC();
+    if (stage == 11)
+    {
+        uint32 result = (uint32)(sint32) * (sint8 *)ff_ptr(0x80093dd9, 1);
+        if (!result)
+            return result;
+        result = ff_u32(0x80093d60);
+        if (result != 1u)
+            return result;
+        result = 3;
+        if (FUN_800473B0(0x07800000))
+        {
+            ff_w8(0x80093dd9, 0);
+            ff_w32(0x80093d60, 2);
+            ff_w16(ff_u32(0x800941d0) + 12u, 3);
+        }
+        return result;
+    }
     if (stage - 12u < 2u)
     {
         if (*(sint8 *)ff_ptr(0x80093dd9, 1) && !ff_u32(0x80093d60) && FUN_800473B0(0))

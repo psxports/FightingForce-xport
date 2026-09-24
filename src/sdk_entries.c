@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "ff_gpu.h"
+#include "psx_gpu.h"
 
 GDB_CALL sint32 FUN_SLUS_8001287C(uint32 filename, FF_SLUS_SERVICE service)
 {
@@ -70,7 +70,7 @@ GDB_CALL uint32 FUN_SLUS_80010EE4(FF_SLUS_SERVICE service)
     b = ff_u32(0x800302f8);
     ff_w32(0x801fe700, a);
     ff_w32(0x801fe704, b);
-    ff_gpu_set_def_disp_env(0x801fe708, 0, 0, 320, 240);
+    gpu_set_def_disp_env(0x801fe708, 0, 0, 320, 240);
     ff_w16(0x801fe712, 8);
     ff_w16(0x801fe716, 240);
     DrawSync(0);
@@ -78,7 +78,7 @@ GDB_CALL uint32 FUN_SLUS_80010EE4(FF_SLUS_SERVICE service)
     service(0x800153e4, 0x801fe708, 0, 0, 0, 0);
     DrawSync(0);
     VSync(0);
-    ff_gpu_load_image(0x801fe700, 0x80085920);
+    ff_load_image(0x801fe700, 0x80085920);
     DrawSync(0);
     VSync(0);
     service(0x80014a7c, 1, 0, 0, 0, 0);
@@ -253,7 +253,7 @@ GDB_CALL sint32 FUN_SLUS_8001152C(uint32 config)
     uint8 saved[40];
     uint16 tries = 0;
     sint16 result = 0;
-    uint32 frame, button = 0, p, source, mode, words, destination;
+    uint32 frame, button = 0, p, source;
     memcpy(saved, ff_ptr(0x801fe680, 40), 40);
     ff_w16(0x801fe6a0, 0);
     if (!ff_dummy_cd_search(ff_ptr(0x801fe680, 24), (const char *)ff_ptr(ff_u32(config), 1)))
@@ -279,14 +279,10 @@ GDB_CALL sint32 FUN_SLUS_8001152C(uint32 config)
     FUN_SLUS_800122A0(frame);
     while (!ff_s16(0x80030388) && !result)
     {
-        mode = (uint16)FUN_SLUS_8001263C();
+        FUN_SLUS_8001263C();
         source = ff_u32(0x80030394 + 4u * (uint32)(sint32)ff_s16(0x8003038e));
-        (void)mode;
         ff_dummy_str_decode(ff_ptr(source, 1), 0); /* WIP DecDCTin. */
-        words = FUN_SLUS_800124E0();
-        destination = ff_u32(0x8003039c + 4u * (uint32)(sint32)ff_s16(0x80030390));
-        (void)words;
-        (void)destination;
+        FUN_SLUS_800124E0();
         ++ff_dummy_calls[2]; /* WIP DecDCTout; no decoded pixels. */
         frame = FUN_SLUS_800120DC();
         if (frame)
@@ -304,7 +300,7 @@ GDB_CALL sint32 FUN_SLUS_8001152C(uint32 config)
         DrawSync(0);
         VSync(0);
         p = 0x800303a4 + 20u * (uint32)(sint32)ff_s16(0x8003038c);
-        ff_gpu_display_offset(ff_s16(p), ff_s16(p + 2));
+        gpu_display_offset(ff_s16(p), ff_s16(p + 2));
     }
     FUN_SLUS_80011EC8();
     if (ff_s16(0x80030388) || button == 2 || !button)
@@ -373,8 +369,8 @@ GDB_CALL uint32 FUN_SLUS_80011A00(uint32 config)
     ff_w32(0x8003036c, 0);
     for (i = 0; i < 5; ++i)
         ff_w16(0x80030388 + 2 * i, 0);
-    ff_gpu_set_def_disp_env(0x800303a4, 0, 240, (sint16)screen, 240);
-    ff_gpu_set_def_disp_env(0x800303b8, 0, 0, (sint16)screen, 240);
+    gpu_set_def_disp_env(0x800303a4, 0, 240, (sint16)screen, 240);
+    gpu_set_def_disp_env(0x800303b8, 0, 0, (sint16)screen, 240);
     ff_w16(0x800303b2, 240);
     ff_w16(0x800303c6, 240);
     ff_w8(0x800303c9, ff_s16(config + 4) == 1);
@@ -383,7 +379,7 @@ GDB_CALL uint32 FUN_SLUS_80011A00(uint32 config)
         FUN_SLUS_80011F54();
     VSync(0);
     p = 0x800303a4 + 20u * (uint32)(sint32)ff_s16(0x8003038c);
-    ff_gpu_display_offset(ff_s16(p), ff_s16(p + 2));
+    gpu_display_offset(ff_s16(p), ff_s16(p + 2));
     ff_w16(0x80030370, (uint16)FUN_SLUS_800125AC(x));
     ff_w16(0x80030372, y);
     ff_w16(0x80030374, (uint16)FUN_SLUS_800125AC(width));
@@ -455,14 +451,14 @@ GDB_CALL sint32 FUN_SLUS_800113F0(void)
 GDB_CALL uint32 FUN_SLUS_80011894(void)
 {
     FF_FUNCTION_MARKER(0x80011894u, "SLUS_004.33");
-    uint32 offset, words, destination;
+    uint32 offset;
     if (ff_s16(0x80030358) && ff_u32(0x80032a10))
     {
         ++ff_dummy_calls[2]; /* WIP StCdInterrupt: no new sectors. */
         ff_w32(0x80032a10, 0);
     }
     offset = (uint32)(sint32)ff_s16(0x80030390) << 2;
-    ff_gpu_load_image(0x80030380, ff_u32(0x8003039c + offset));
+    ff_load_image(0x80030380, ff_u32(0x8003039c + offset));
     ff_w16(0x80030390, (uint16)ff_s16(0x80030390) ^ 1);
     ff_w16(0x80030380, (uint16)((uint16)ff_s16(0x80030380) + (uint16)ff_s16(0x80030384)));
     offset = (uint32)(sint32)ff_s16(0x8003038c) << 3;
@@ -471,10 +467,7 @@ GDB_CALL uint32 FUN_SLUS_80011894(void)
         ff_w16(0x8003038a, 1);
         return 1;
     }
-    words = FUN_SLUS_800124E0();
-    destination = ff_u32(0x8003039c + ((uint32)(sint32)ff_s16(0x80030390) << 2));
-    (void)words;
-    (void)destination;
+    FUN_SLUS_800124E0();
     ++ff_dummy_calls[2];       /* WIP DecDCTout: no fabricated decoded pixels or IRQ. */
     return ff_u32(0x8001f26c); /* SKIP1BEA4 returns its DMA CHCR pointer. */
 }
@@ -510,7 +503,7 @@ GDB_CALL uint32 FUN_SLUS_800103F0(uint8 *development_profile_bank)
     pc += (ff_u32(tcb + 0x98) >> 31) << 2;
     address = pc < 0x200000 ? pc + 0x200000 : 0x200000;
     /* The profiling build expects a writable development-RAM bank at2M.
-  * Supply that bank explicitly; do not alias host code or infer ff_ram mirrors. */
+  * Supply that bank explicitly; do not alias host code or infer DRAM mirrors */
     memcpy(&value, development_profile_bank + (address - 0x200000), 4);
     ++value;
     memcpy(development_profile_bank + (address - 0x200000), &value, 4);
@@ -540,11 +533,11 @@ GDB_CALL sint32 FUN_SLUS_80034278(void)
         }
         source += 248;
     }
-    ff_gpu_load_image(0x800ac520, 0x801fda04);
+    ff_load_image(0x800ac520, 0x801fda04);
     DrawSync(0);
     ff_w16(0x800ac528, 31);
     ff_w32(0x801fda00, 0xffff0000);
-    ff_gpu_load_rect(0x801fda00, 640, 257, 16, 1);
+    gpu_load_rect(0x801fda00, 640, 257, 16, 1);
     ff_w16(0x800ac52a, (uint16)((257 << 6) | 40));
     DrawSync(0);
     memcpy(ff_ptr(0x801fda00, 3076), saved, 3076);
@@ -613,12 +606,7 @@ GDB_CALL uint32 FUN_SLUS_80015028(uint32 table, uint32 count, uint32 entry_v0)
 static void sdk_gpu_control(uint32 command, int slus)
 {
     uint32 address = ff_u32(slus ? 0x8001ec40 : 0x800873c0);
-    if ((address & 0x1fffffffu) == 0x1f801814)
-    {
-        if ((command >> 24) == 8)
-            ff_gpu_set_reverse(command & 128);
-    }
-    else
+    if ((address & 0x1fffffffu) != 0x1f801814)
         ff_w32(address, command);
     ff_w8((slus ? 0x800304bc : 0x80094ed4) + (command >> 24), (uint8)command);
 }
@@ -704,7 +692,8 @@ GDB_CALL sint32 FUN_SLUS_80015120(uint32 table, uint32 entry_v0)
     FF_FUNCTION_MARKER(0x80015120u, "SLUS_004.33");
     if (entry_v0 >= 2)
         fprintf(stderr, "DrawOTag(%08x)...\n", table);
-    return ff_gpu_ot(table) < 0 ? -1 : 0; /* Immediate handler returns0, not packet count. */
+    DrawOTag((uint32 *)ff_ptr(table, sizeof(uint32)));
+    return 0;
 }
 
 GDB_CALL uint32 FUN_SLUS_80014A28(uint32 callback, uint32 entry_v0)
@@ -1150,13 +1139,10 @@ static uint32 sdk_slus_release_stream(uint32 stream)
 GDB_CALL uint32 FUN_SLUS_800122A0(uint32 stream)
 {
     FF_FUNCTION_MARKER(0x800122a0u, "SLUS_004.33");
-    uint32 destination;
     if (!stream)
         return 0;
     ff_w16(0x8003038e, (uint16)ff_s16(0x8003038e) ^ 1);
-    destination = ff_u32(0x80030394 + 4u * (uint32)(sint32)ff_s16(0x8003038e));
-    (void)destination;
-    ff_dummy_str_decode(ff_ptr(stream, 1), 0); /* WIP VLC decode; preserve the original buffer selection. */
+    ff_dummy_str_decode(ff_ptr(stream, 1), 0); /* WIP VLC decode */
     return sdk_slus_release_stream(stream);
 }
 
@@ -2151,7 +2137,7 @@ GDB_CALL void FUN_80072694(sint32 x, sint32 y)
 GDB_CALL void FUN_800726B4(uint32 h)
 {
     FF_FUNCTION_MARKER(0x800726b4u, "GAME.EXE");
-    psx_gte_write_h((uint16)h);
+    gte_write_h((uint16)h);
 }
 
 GDB_CALL sint32 FUN_80064638(uint32 packet, uint32 unused, uint32 stacked)

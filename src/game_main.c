@@ -1,11 +1,11 @@
 #include "ff.h"
 #include "wip.h"
 #include "platform_dummy.h"
-#include "ff_gpu.h"
+#include "psx_gpu.h"
 #include "ff_audio.h"
-#include "audio/spu_core.h"
-#include "audio_waveout.h"
-#include "windows_compat.h"
+#include "psx_spu.h"
+#include "xport.h"
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,7 +66,8 @@ static int text_preview_frame(void)
         uint32 t = ff_u32(0x80094600 + 4u * i);
         FUN_80062C0C(t, 160 - (FUN_8005EFB8(t) >> 1), 138 - 10 * n + 20 * i, i == (sint32)ff_u32(0x80092730) ? 0x8007f81c : 0x80092804);
     }
-    return ff_gpu_ot(ot + 8188) >= 0;
+    DrawOTag((uint32 *)ff_ptr(ot + 8188, sizeof(uint32)));
+    return 1;
 }
 
 /* Isolated traffic-hit audit SDK boundary record; production uses real SPU. */
@@ -105,9 +106,9 @@ static sint32 hit_spu_on(uint32 a)
     return 0x3579;
 }
 
-int main(int argc, char **argv)
+// XPORT REVISION: 2026-09-24T13:10:20Z
+int xport_main(int argc, char **argv)
 {
-    PSX_CONFIG config;
     uint32 frame = 0, limit = 0;
     int headless = 0, preview = 0;
     if (!ff_wip_options(&argc, argv))
@@ -3770,7 +3771,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/sequence-update-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, sizeof(ff_ram), 1, f) != 1)
+        if (fwrite(DRAM, sizeof(DRAM), 1, f) != 1)
             return 6;
         fclose(f);
         f = fopen("../status/gameplay/sequence-update-native.scratch", "wb");
@@ -3896,7 +3897,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/stage-scripts-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -3934,7 +3935,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/initial-placement-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -3975,7 +3976,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/level-ready-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4015,7 +4016,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/level-prefix-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4054,7 +4055,7 @@ int main(int argc, char **argv)
             for (i = 0; i < 64; i++)
                 ff_w32(0x8009a3c8 + 36u * i, 0xffffffffu);
         }
-        f = fopen("assets/STAGE11.WAD", "rb");
+        f = fopen("DATA/STGFILES/STAGE11.WAD", "rb");
         if (!f)
             return 9;
         fseek(f, 66516, SEEK_SET);
@@ -4065,7 +4066,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/stage0-mpd-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4103,7 +4104,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/game-input-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4141,7 +4142,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/object-regions-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4179,7 +4180,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/player-resources-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4217,7 +4218,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/mace-player-resources-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4255,7 +4256,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/smasher-player-resources-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4293,7 +4294,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/enemy-resources-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4331,7 +4332,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/level-models-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -4369,7 +4370,7 @@ int main(int argc, char **argv)
         f = fopen("../status/gameplay/sequence-init-native.ram", "wb");
         if (!f)
             return 5;
-        if (fwrite(ff_ram, 1, sizeof(ff_ram), f) != sizeof(ff_ram))
+        if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
         {
             fclose(f);
             return 6;
@@ -5626,7 +5627,7 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 stage, slot, prior, i, result;
-        SPU_voice_registers r;
+        uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         out = fopen("../status/menu/sound-init-native.bin", "wb");
@@ -5656,8 +5657,8 @@ int main(int argc, char **argv)
                     fwrite(ff_ptr(0x80094820, 16), 16, 1, out);
                     for (i = 0; i < 24; i++)
                     {
-                        spu_core_get_voice_registers(i, &r);
-                        fwrite(&r, 14, 1, out);
+                        ff_spu_voice_snapshot((sint32)i, voice_registers);
+                        fwrite(voice_registers, sizeof(voice_registers), 1, out);
                     }
                     fwrite(ff_spu_common_state, 10, 1, out);
                     fwrite(ff_spu_reverb_registers, 64, 1, out);
@@ -5803,7 +5804,7 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 seed, i, result;
-        SPU_voice_registers r;
+        uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         out = fopen("../status/menu/spu-reset-native.bin", "wb");
@@ -5820,8 +5821,8 @@ int main(int argc, char **argv)
             ff_w32(0x8008cf90, 0x801e0000);
             for (i = 0; i < 24; i++)
             {
-                memset(&r, fill, sizeof(r));
-                spu_core_set_voice_registers(i, &r);
+                memset(voice_registers, fill, sizeof(voice_registers));
+                ff_spu_voice_seed((sint32)i, voice_registers);
             }
             result = ff_spu_reset_startup();
             fwrite(&result, 4, 1, out);
@@ -5831,8 +5832,8 @@ int main(int argc, char **argv)
             fwrite(ff_ptr(0x800adbc8, 20), 20, 1, out);
             for (i = 0; i < 24; i++)
             {
-                spu_core_get_voice_registers(i, &r);
-                fwrite(&r, 14, 1, out);
+                ff_spu_voice_snapshot((sint32)i, voice_registers);
+                fwrite(voice_registers, sizeof(voice_registers), 1, out);
             }
             fwrite(ff_spu_common_state, 10, 1, out);
         }
@@ -5845,7 +5846,7 @@ int main(int argc, char **argv)
         static const uint32 masks[] = {0, 0xffffff, 0x12345678};
         FILE *out;
         uint32 test, i, result;
-        SPU_voice_registers r;
+        uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         out = fopen("../status/menu/voice-defaults-native.bin", "wb");
@@ -5862,8 +5863,8 @@ int main(int argc, char **argv)
             fwrite(ff_ptr(0x801d0000, 64), 64, 1, out);
             for (i = 0; i < 24; i++)
             {
-                spu_core_get_voice_registers(i, &r);
-                fwrite(&r, 14, 1, out);
+                ff_spu_voice_snapshot((sint32)i, voice_registers);
+                fwrite(voice_registers, sizeof(voice_registers), 1, out);
             }
             fwrite(ff_ptr(0x8008cb28, 4), 4, 1, out);
         }
@@ -5876,7 +5877,7 @@ int main(int argc, char **argv)
         FILE *in, *out;
         uint8 job[42];
         uint32 result;
-        sint16 left, right;
+        SpuCommonAttr common;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         ff_audio_init_empty();
@@ -5889,8 +5890,8 @@ int main(int argc, char **argv)
             memcpy(ff_ptr(0x801d0000, 40), job, 40);
             ff_spu_common_state[4] = (uint16)(job[40] | job[41] << 8);
             result = (uint32)ff_spu_common_startup(0x801d0000);
-            spu_core_get_master_volume(&left, &right);
-            if ((uint16)left != ff_spu_common_state[0] || (uint16)right != ff_spu_common_state[1])
+            SpuGetCommonAttr(&common);
+            if ((uint16)common.mvol.left != ff_spu_common_state[0] || (uint16)common.mvol.right != ff_spu_common_state[1])
                 return 5;
             fwrite(&result, 4, 1, out);
             fwrite(ff_spu_common_state, 10, 1, out);
@@ -5905,7 +5906,7 @@ int main(int argc, char **argv)
         FILE *in, *out;
         uint8 job[64];
         uint32 i, result;
-        SPU_voice_registers r;
+        uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         ff_audio_init_empty();
@@ -5917,14 +5918,14 @@ int main(int argc, char **argv)
         {
             for (i = 0; i < 24; i++)
             {
-                r.volume_left = (sint16)(0x1100 + i);
-                r.volume_right = (sint16)(0x2200 + i);
-                r.pitch = (uint16)(0x3300 + i);
-                r.start_address = (uint16)(0x4400 + i);
-                r.adsr1 = (uint16)(0x5500 + i);
-                r.adsr2 = (uint16)(0x6600 + i);
-                r.repeat_address = (uint16)(0x7700 + i);
-                spu_core_set_voice_registers(i, &r);
+                voice_registers[0] = (uint16)(0x1100 + i);
+                voice_registers[1] = (uint16)(0x2200 + i);
+                voice_registers[2] = (uint16)(0x3300 + i);
+                voice_registers[3] = (uint16)(0x4400 + i);
+                voice_registers[4] = (uint16)(0x5500 + i);
+                voice_registers[5] = (uint16)(0x6600 + i);
+                voice_registers[6] = (uint16)(0x7700 + i);
+                ff_spu_voice_seed((sint32)i, voice_registers);
             }
             memset(ff_ptr(0x8008cb58, 48), 0xa5, 48);
             memcpy(ff_ptr(0x801d0000, 64), job, 64);
@@ -5932,8 +5933,8 @@ int main(int argc, char **argv)
             fwrite(&result, 4, 1, out);
             for (i = 0; i < 24; i++)
             {
-                spu_core_get_voice_registers(i, &r);
-                fwrite(&r, 14, 1, out);
+                ff_spu_voice_snapshot((sint32)i, voice_registers);
+                fwrite(voice_registers, sizeof(voice_registers), 1, out);
             }
             fwrite(ff_ptr(0x8008cb58, 48), 48, 1, out);
         }
@@ -6019,7 +6020,7 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 r, i;
-        SPU_voice_registers v;
+        uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         ff_audio_init_empty();
@@ -6041,8 +6042,8 @@ int main(int argc, char **argv)
         fwrite(ff_ptr(0x80116000, 143712), 143712, 1, out);
         for (i = 0; i < 24; i++)
         {
-            spu_core_get_voice_registers(i, &v);
-            fwrite(&v, 14, 1, out);
+            ff_spu_voice_snapshot((sint32)i, voice_registers);
+            fwrite(voice_registers, sizeof(voice_registers), 1, out);
         }
         fwrite(ff_spu_common_state, 10, 1, out);
         fwrite(ff_spu_reverb_registers, 64, 1, out);
@@ -6111,12 +6112,7 @@ int main(int argc, char **argv)
     {
         FILE *in, *out;
         uint32 job[7], r;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
+        xport_set_headless(1);
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         in = fopen("../status/menu/resource-progress-jobs.bin", "rb");
@@ -6145,13 +6141,8 @@ int main(int argc, char **argv)
         FILE *out;
         uint32 r, i;
         int progress = !strcmp(argv[1], "--audit-progress-preview");
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        xport_set_headless(1);
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
         ff_w32(0x8008d4c4, 0);
         ff_w32(0x80093c14, 0xffffffff);
@@ -6172,7 +6163,7 @@ int main(int argc, char **argv)
         fwrite(ff_ptr(0x80080000, 0x96000), 0x96000, 1, out);
         fwrite(ff_ptr(0x80116000, 175104), 175104, 1, out);
         fclose(out);
-        if (!ff_gpu_save_frame(progress ? "../status/menu/resource-progress-frame.bgrx" : "../status/menu/loading-init-frame.bgrx"))
+        if (!gpu_save_frame(progress ? "../status/menu/resource-progress-frame.bgrx" : "../status/menu/loading-init-frame.bgrx"))
             return 4;
         ff_audit_end();
         return 0;
@@ -6181,18 +6172,13 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 test, r, frame;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
+        xport_set_headless(1);
         out = fopen("../status/menu/menu-transition-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 30; test++)
         {
-            if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+            if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
                 return 2;
             {
                 static const uint32 frames[] = {0, 1, 0xffffffff};
@@ -6225,18 +6211,13 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 test, i, r, frame;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
+        xport_set_headless(1);
         out = fopen("../status/menu/title-packets-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 7; test++)
         {
-            if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+            if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
                 return 2;
             frame = test == 6 ? 0xffffffff : test & 1;
             ff_w32(0x8008d4c4, frame);
@@ -6278,18 +6259,13 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 test, i, r, frame;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
+        xport_set_headless(1);
         out = fopen("../status/menu/loading-screen-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 7; test++)
         {
-            if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+            if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
                 return 2;
             frame = test == 6 ? 0xffffffff : test & 1;
             ff_w32(0x8008d4c4, frame);
@@ -6330,7 +6306,7 @@ int main(int argc, char **argv)
             return 4;
         for (i = 0; i < 3; i++)
         {
-            if (!ff_load_game_image("GAME.EXE"))
+            if (!ff_load_game_image())
                 return 2;
             FUN_8003EE4C();
             FUN_8003EF78();
@@ -6351,12 +6327,10 @@ int main(int argc, char **argv)
         static const uint32 spans[][2] = {{0x800872ec, 128}, {0x80093cb0, 32}, {0x80094748, 80}, {0x8008b6d4, 4}};
         if (!out)
             return 4;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        psx_configure(&config);
+        xport_set_headless(1);
         for (i = 0; i < 2; i++)
         {
-            if (!ff_load_game_image("GAME.EXE"))
+            if (!ff_load_game_image())
                 return 2;
             for (j = 0; j < 4; j++)
                 memset(ff_ptr(spans[j][0], spans[j][1]), i ? 0xa5 : 0, spans[j][1]);
@@ -6378,7 +6352,7 @@ int main(int argc, char **argv)
             return 4;
         for (i = 0; i < 2; i++)
         {
-            if (!ff_load_game_image("GAME.EXE"))
+            if (!ff_load_game_image())
                 return 2;
             memset(ff_ptr(0x80094948, 120), i ? 0xa5 : 0, 120);
             ff_w32(0x8008b6c8, i ? 0xa5a5a5a5 : 0);
@@ -6403,7 +6377,7 @@ int main(int argc, char **argv)
         for (i = 0; i < 6; i++)
         {
             sint32 x, y, h;
-            if (!ff_load_game_image("GAME.EXE"))
+            if (!ff_load_game_image())
                 return 2;
             for (j = 0; j < 6; j++)
                 memset(ff_ptr(spans[j][0], spans[j][1]), i & 1 ? 0xa5 : 0, spans[j][1]);
@@ -6429,7 +6403,7 @@ int main(int argc, char **argv)
     {
         uint32 i, r;
         FILE *out;
-        if (!ff_load_game_image("GAME.EXE"))
+        if (!ff_load_game_image())
             return 2;
         out = fopen("../status/menu/cold-tables-native.bin", "wb");
         if (!out)
@@ -6487,13 +6461,8 @@ int main(int argc, char **argv)
     {
         uint32 r;
         FILE *out;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        xport_set_headless(1);
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
         ff_audio_init_empty();
         ff_w16(0x80093566, 0);
@@ -6513,13 +6482,8 @@ int main(int argc, char **argv)
     {
         FILE *out;
         uint32 r;
-        memset(&config, 0, sizeof(config));
-        config.headless = 1;
-        config.window_width = 320;
-        config.window_height = 240;
-        config.refresh_rate = 60;
-        psx_configure(&config);
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        xport_set_headless(1);
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
         ff_w16(0x80093566, 0);
         ff_w32(0x80093c14, 0xffffffff);
@@ -6587,7 +6551,7 @@ int main(int argc, char **argv)
             return 4;
         for (parity = 0; parity < 2; parity++)
         {
-            if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+            if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
                 return 2;
             ff_w32(0x8008d4c4, parity);
             ff_w32(0x8008d4b4, parity ? 0xe5140 : 0xe7140);
@@ -6647,7 +6611,7 @@ int main(int argc, char **argv)
                 return 4;
             if (!ff_load_ram("FF-menu.ram"))
                 return 2;
-            asset = fopen("assets/MODELSFE.WAD", "rb");
+            asset = fopen("DATA/MODFILES/MODELSFE.WAD", "rb");
             if (!asset)
                 return 2;
             if (fread(ff_ptr(0x800c1734, 59180), 59180, 1, asset) != 1)
@@ -6700,7 +6664,7 @@ int main(int argc, char **argv)
                 return 4;
             if (!ff_load_ram("FF-menu.ram"))
                 return 2;
-            asset = fopen("assets/MODELSFE.WAD", "rb");
+            asset = fopen("DATA/MODFILES/MODELSFE.WAD", "rb");
             if (!asset)
                 return 2;
             if (fread(ff_ptr(0x800c1734, 59180), 59180, 1, asset) != 1)
@@ -6793,7 +6757,7 @@ int main(int argc, char **argv)
         size_t n;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        asset = fopen("assets/STAGEFE.WAD", "rb");
+        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6832,9 +6796,9 @@ int main(int argc, char **argv)
         FILE *asset, *out;
         uint32 r;
         size_t n;
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("assets/STAGEFE.WAD", "rb");
+        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6869,9 +6833,9 @@ int main(int argc, char **argv)
         FILE *asset, *out;
         uint32 r;
         size_t n;
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("assets/STAGEFE.WAD", "rb");
+        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6908,9 +6872,9 @@ int main(int argc, char **argv)
         FILE *asset, *out;
         uint32 r;
         size_t n;
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("assets/STAGEFE.WAD", "rb");
+        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6942,9 +6906,9 @@ int main(int argc, char **argv)
         FILE *asset, *out;
         uint32 r;
         size_t n;
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("assets/STAGEFE.WAD", "rb");
+        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6979,7 +6943,7 @@ int main(int argc, char **argv)
             return 2;
         if (!strcmp(argv[1], "--audit-stage-resource-find"))
         {
-            FILE *asset = fopen("assets/STAGEFE.WAD", "rb");
+            FILE *asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
             size_t n;
             if (!asset)
                 return 2;
@@ -7595,14 +7559,14 @@ int main(int argc, char **argv)
         int i;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        memcpy(fixture, ff_ram, sizeof(fixture));
+        memcpy(fixture, DRAM, sizeof(fixture));
         in = fopen("../status/menu/tail-jobs.bin", "rb");
         out = fopen("../status/menu/tail-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&skip, 4, 1, in) == 1)
         {
-            memcpy(ff_ram, fixture, sizeof(fixture));
+            memcpy(DRAM, fixture, sizeof(fixture));
             for (i = 0; i < 4; i++)
                 if (fread(ff_ptr(ranges[i][0], ranges[i][1]), ranges[i][1], 1, in) != 1)
                     return 5;
@@ -7663,43 +7627,20 @@ int main(int argc, char **argv)
         return ff_audit_character();
     if (argc > 1 && strcmp(argv[1], "--audit-sound") == 0)
         return ff_audit_sound();
-    if (argc > 1 && strcmp(argv[1], "--sound-preview") == 0)
-    {
-        FILE *out;
-        int i;
-        static sint16 samples[44100 * 2];
-        if (!ff_load_ram("FF-menu.ram") || !ff_audio_init())
-            return 2;
-        out = fopen("../status/menu/menu-effects.pcm", "wb");
-        if (!out)
-            return 4;
-        for (i = 0; i < 2; i++)
-        {
-            if (i)
-                FUN_8004F490();
-            else
-                FUN_8004F468();
-            ff_audio_render(samples, 44100);
-            fwrite(samples, sizeof(samples), 1, out);
-        }
-        fclose(out);
-        ff_audit_end();
-        return 0;
-    }
     if (argc > 1 && strcmp(argv[1], "--sound-output") == 0)
     {
         FILE *f;
-        if (!ff_load_ram("FF-menu.ram") || !ff_audio_init() || !waveout_init())
+        if (!ff_load_ram("FF-menu.ram") || !ff_audio_init() || !xport_audio_init())
             return 2;
         FUN_8004F468();
         Sleep(1000);
         FUN_8004F490();
         Sleep(1000);
-        waveout_shutdown();
+        xport_audio_shutdown();
         f = fopen("../status/menu/sound-output-counters.txt", "w");
         if (!f)
             return 4;
-        fprintf(f, "buffers %u nonzero %u peak %u overruns %u\n", g_waveout_submitted_buffers, g_waveout_nonzero_buffers, g_waveout_peak, g_waveout_callback_overruns);
+        fprintf(f, "buffers %u nonzero %u peak %u overruns %u\n", g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak, g_xport_audio_callback_overruns);
         fclose(f);
         ff_audit_end();
         return 0;
@@ -7813,7 +7754,7 @@ int main(int argc, char **argv)
         preview = 1;
         limit = argc > 2 ? (uint32)strtoul(argv[2], 0, 0) : 120;
         headless = argc > 3 && strcmp(argv[3], "--headless") == 0;
-        if (!ff_load_ram("FF-menu.ram") || !ff_gpu_load_vram("FF-menu.vram"))
+        if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
     }
     else
@@ -7821,18 +7762,12 @@ int main(int argc, char **argv)
         fprintf(stderr, "Menu translation is WIP. Use --platform-smoke to test the imported host layer.\n");
         return 3;
     }
-    memset(&config, 0, sizeof(config));
-    config.window_title = "Fighting Force - platform test";
-    config.window_width = 960;
-    config.window_height = 720;
-    config.refresh_rate = 60;
-    config.headless = headless;
-    psx_configure(&config);
+    xport_set_headless(headless);
     ResetGraph(0);
-    while (!psx_quit_requested() && frame < limit)
+    while (!xport_isquit() && frame < limit)
     {
         POLY_G3 p;
-        ff_gpu_begin();
+        gpu_begin();
         if (preview)
         {
             if (!text_preview_frame())
@@ -7851,14 +7786,14 @@ int main(int argc, char **argv)
             p.y1 = 210;
             p.x2 = 290;
             p.y2 = 210;
-            ff_gpu_packet(&p);
+            gpu_packet(&p);
         }
-        ff_gpu_present();
+        gpu_present();
         VSync(0);
         ++frame;
     }
     printf("platform_frames %u pad %08X\n", frame, PadRead(0));
-    if (headless && !ff_gpu_save_frame(preview ? "../status/menu/text-frame.bgrx" : "../status/menu/platform-frame.bgrx"))
+    if (headless && !gpu_save_frame(preview ? "../status/menu/text-frame.bgrx" : "../status/menu/platform-frame.bgrx"))
         return 8;
     return 0;
 }

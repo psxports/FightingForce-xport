@@ -47,7 +47,7 @@ int ff_audit_sound(void)
     int i;
     if (!ff_load_ram("FF-menu.ram"))
         return 2;
-    memcpy(fixture, ff_ram, sizeof(fixture));
+    memcpy(fixture, DRAM, sizeof(fixture));
     jobs = fopen("../status/menu/sound-jobs.bin", "rb");
     out = fopen("../status/menu/sound-native.bin", "wb");
     if (!jobs || !out)
@@ -57,7 +57,7 @@ int ff_audit_sound(void)
     ff_services.spu_key_on_attributes = on;
     while (fread(j, sizeof(j), 1, jobs) == 1)
     {
-        memcpy(ff_ram, fixture, sizeof(fixture));
+        memcpy(DRAM, fixture, sizeof(fixture));
         memset(trace, 0, sizeof(trace));
         ff_w32(0x80093550, j[4]);
         ff_w32(0x80093554, j[5]);

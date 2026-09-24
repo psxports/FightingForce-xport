@@ -14,8 +14,8 @@ static __inline int ff_state_block(FILE *f, void *data, size_t size, int load)
 }
 
 #define FF_STATE(f, v, load) ff_state_block((f), &(v), sizeof(v), (load))
-int ff_gpu_state_io(FILE *f, int load);
+int gpu_state_io(FILE *f, int load);
 int ff_audio_state_io(FILE *f, int load);
 int psx_state_io(FILE *f, int load);
-int spu_core_state_io(FILE *f, int load);
+int spu_state_io(FILE *f, int load);
 #endif

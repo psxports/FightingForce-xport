@@ -1,4 +1,5 @@
 #include "ff.h"
+#include "psx_pad.h"
 #include <string.h>
 
 /* 5F558: raw gameplay buttons; the first mapping wins if both IDs match. */
@@ -81,46 +82,24 @@ uint32 ff_host_pad_state[6] = {0x80094748, 34, 0x80094770, 34, 1, 0};
  * polling supplies actual digital input before any game input decoder runs. */
 void ff_host_pad_init(uint32 first, uint32 first_size, uint32 second, uint32 second_size)
 {
-    uint32 p[2] = {first, second}, n[2] = {first_size, second_size}, i;
     PadInit(0);
+    PadInitDirect(first_size >= 8 ? ff_ptr(first, 8) : 0, second_size >= 8 ? ff_ptr(second, 8) : 0);
     ff_host_pad_state[0] = first;
     ff_host_pad_state[1] = first_size;
     ff_host_pad_state[2] = second;
     ff_host_pad_state[3] = second_size;
     ff_host_pad_state[4] = 1;
     ff_host_pad_state[5] = 0;
-    for (i = 0; i < 2; i++)
-    {
-        if (n[i])
-            memset(ff_ptr(p[i], n[i]), 128, n[i]);
-        if (n[i] > 0)
-            ff_w8(p[i], 255);
-        if (n[i] > 1)
-            ff_w8(p[i] + 1, 0x40);
-        if (n[i] > 3)
-            ff_w16(p[i] + 2, 65535);
-    }
 }
 
 void ff_host_pad_publish(uint32 connected, uint32 first, uint32 second)
 {
-    uint32 i, p, n, buttons[2] = {first, second}, packed = 0xffffffffu;
+    uint32 i, buttons[2] = {first, second}, packed = 0xffffffffu;
     if (!ff_host_pad_state[4])
         return;
     for (i = 0; i < 2; ++i)
     {
-        p = ff_host_pad_state[2 * i];
-        n = ff_host_pad_state[2 * i + 1];
-        if (n)
-        {
-            memset(ff_ptr(p, n), 128, n);
-            ff_w8(p, connected > i ? 0 : 255);
-        }
-        /* Digital reply ID includes the one-word payload length */
-        if (n > 1)
-            ff_w8(p + 1, connected > i ? 0x41 : 0x40);
-        if (n > 3)
-            ff_w16(p + 2, (uint16) ~(connected > i ? buttons[i] : 0));
+        pad_publish((sint32)i, connected > i, (uint16)~buttons[i]);
         if (connected > i)
         {
             uint32 bits = (~(((buttons[i] & 255) << 8) | ((buttons[i] >> 8) & 255))) & 65535;

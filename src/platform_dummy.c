@@ -1,5 +1,6 @@
 #include "platform_dummy.h"
 #include "cd_toc.h"
+#include "psx.h"
 #include <string.h>
 #include <stdlib.h>
 /* WIP BIOS card events: opaque handles, no asynchronous card completion. */
@@ -82,35 +83,47 @@ sint32 ff_dummy_cd_search(void *file_info, const char *disc_name)
 
 uint8 ff_dummy_cd_mix_state[4], ff_dummy_cd_track_state[4];
 
-/* WIP CD commands: retain requested location; synthesize ready status only.
- * No track playback, seek or media access is performed. */
+/* Host Red Book transport maps the original TOC location to bin/MUSIC */
 sint32 ff_dummy_cd_control(uint32 command, const uint8 *parameter, uint8 *result)
 {
     uint32 i;
     ++ff_dummy_calls[1];
     if (command == 3 && parameter)
+    {
+        sint32 track = 0;
         for (i = 0; i < 4; i++)
             ff_dummy_cd_track_state[i] = parameter[i];
+        for (i = 2; i < sizeof(ff_cd_toc) / sizeof(ff_cd_toc[0]); i++)
+            if (!memcmp(parameter, ff_cd_toc[i], 3))
+            {
+                track = (sint32)i;
+                break;
+            }
+        if (!track || !CdPlay(1, &track, 0))
+            return 0;
+    }
+    else if (command == 14)
+        return CdControl(CdlSetmode, (uint8 *)parameter, result);
     if (command == 1 && result)
         result[0] = 0x80;
-    return command == 1 || command == 3 || command == 14;
+    return command == 1 || command == 3;
 }
 
-/* WIP CdControl(9, NULL, NULL): no physical drive to pause. */
 sint32 ff_dummy_cd_pause(void)
 {
     ++ff_dummy_calls[1];
-    return 1;
+    return CdControl(CdlPause, NULL, NULL);
 }
 
-/* WIP CdMix: native CD audio is absent. Match the SDK's successful command
- * return without claiming that any media was read or any PCM was produced. */
 sint32 ff_dummy_cd_mix(uint8 volume)
 {
+    CdlATV mix;
     ff_dummy_cd_mix_state[0] = ff_dummy_cd_mix_state[2] = volume;
     ff_dummy_cd_mix_state[1] = ff_dummy_cd_mix_state[3] = 0;
     ++ff_dummy_calls[1];
-    return 1;
+    mix.val0 = mix.val3 = volume;
+    mix.val1 = mix.val2 = 0;
+    return CdMix(&mix);
 }
 
 sint32 ff_dummy_memory_card_read(sint32 slot, void *data, uint32 bytes)
@@ -137,118 +150,15 @@ sint32 ff_dummy_str_decode(const void *data, uint32 bytes)
 /* WIP67554 boundary: exact extracted assets replace physical CD transfers. */
 sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 capacity)
 {
-    const char *path = NULL;
     char extracted[260];
-    uint32 size = 0;
+    char path[sizeof(extracted) + 6];
+    uint32 size;
     FILE *f;
     size_t got;
     int extra;
     ++ff_dummy_calls[1];
-    if (!strcmp(disc_name, "\\MODFILES\\MODELSFE.WAD;1"))
     {
-        path = "assets/MODELSFE.WAD";
-        size = 59180;
-    }
-    if (!strcmp(disc_name, "\\STGFILES\\STAGEFE.WAD;1"))
-    {
-        path = "assets/STAGEFE.WAD";
-        size = 511180;
-    }
-    if (!strcmp(disc_name, "\\FRONT\\LOADING.WAD;1"))
-    {
-        path = "assets/LOADING.WAD";
-        size = 175104;
-    }
-    if (!strcmp(disc_name, "\\FRONT\\TITLE.WAD;1"))
-    {
-        path = "assets/TITLE.WAD";
-        size = 175104;
-    }
-    if (!strcmp(disc_name, "\\FRONT\\ENGLISH.WAD;1"))
-    {
-        path = "assets/ENGLISH.WAD";
-        size = 3001;
-    }
-    if (!strcmp(disc_name, "\\FRONT\\FRENCH.WAD;1"))
-    {
-        path = "assets/FRENCH.WAD";
-        size = 3374;
-    }
-    if (!strcmp(disc_name, "\\FRONT\\GERMAN.WAD;1"))
-    {
-        path = "assets/GERMAN.WAD";
-        size = 3469;
-    }
-    if (!strcmp(disc_name, "\\SOUND\\SAMPSFE.WAD;1"))
-    {
-        path = "assets/SAMPSFE.WAD";
-        size = 143712;
-    }
-    /* Sequence 0 / level 0: exact original assets, verified by
-  * tools/extract_gameplay_archives.py and status/gameplay/archives.json. */
-    if (!strcmp(disc_name, "\\CUTFILES\\STAGEC1.WAD;1"))
-    {
-        path = "assets/STAGEC1.WAD";
-        size = 720156;
-    }
-    if (!strcmp(disc_name, "\\CUTFILES\\MODELSC1.WAD;1"))
-    {
-        path = "assets/MODELSC1.WAD";
-        size = 86964;
-    }
-    if (!strcmp(disc_name, "\\STGFILES\\STAGE11.WAD;1"))
-    {
-        path = "assets/STAGE11.WAD";
-        size = 753060;
-    }
-    if (!strcmp(disc_name, "\\MODFILES\\MODELS11.WAD;1"))
-    {
-        path = "assets/MODELS11.WAD";
-        size = 69788;
-    }
-    if (!strcmp(disc_name, "\\CHAR\\CHARS11.WAD;1"))
-    {
-        path = "assets/CHARS11.WAD";
-        size = 434464;
-    }
-    if (!strcmp(disc_name, "\\CHAR\\HAWK.WAD;1"))
-    {
-        path = "assets/HAWK.WAD";
-        size = 226700;
-    }
-    if (!strcmp(disc_name, "\\CHAR\\MACE.WAD;1"))
-    {
-        path = "assets/MACE.WAD";
-        size = 252796;
-    }
-    if (!strcmp(disc_name, "\\CHAR\\SMASHER.WAD;1"))
-    {
-        path = "assets/SMASHER.WAD";
-        size = 234540;
-    }
-    if (!strcmp(disc_name, "\\CHAR\\ALANA.WAD;1"))
-    {
-        path = "assets/ALANA.WAD";
-        size = 255596;
-    }
-    if (!strcmp(disc_name, "\\AID\\LEV11.MVS;1"))
-    {
-        path = "assets/LEV11.MVS";
-        size = 1868;
-    }
-    if (!strcmp(disc_name, "\\AII\\LEV11.INT;1"))
-    {
-        path = "assets/LEV11.INT";
-        size = 1840;
-    }
-    if (!strcmp(disc_name, "\\SOUND\\SAMPS11.WAD;1"))
-    {
-        path = "assets/SAMPS11.WAD";
-        size = 451912;
-    }
-    if (!path)
-    {
-        /* WIP physical CD: read only an extracted, root-relative ISO file. */
+        /* Read only an extracted ISO file below DATA */
         const char *name = disc_name;
         size_t n = 0, j;
         long length;
@@ -271,7 +181,11 @@ sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 ca
                 return 0;
         if (strncmp(extracted, "MODFILES/", 9) && strncmp(extracted, "STGFILES/", 9) && strncmp(extracted, "CUTFILES/", 9) && strncmp(extracted, "CHAR/", 5) && strncmp(extracted, "SOUND/", 6) && strncmp(extracted, "FRONT/", 6) && strncmp(extracted, "AID/", 4) && strncmp(extracted, "AII/", 4) && strncmp(extracted, "DEMOS/", 6))
             return 0;
-        f = fopen(extracted, "rb");
+        if (n + sizeof("DATA/") > sizeof(path))
+            return 0;
+        memcpy(path, "DATA/", sizeof("DATA/") - 1);
+        memcpy(path + sizeof("DATA/") - 1, extracted, n + 1);
+        f = fopen(path, "rb");
         if (!f)
             return 0;
         if (fseek(f, 0, SEEK_END) || (length = ftell(f)) < 0 || (unsigned long)length > capacity)
@@ -290,16 +204,4 @@ sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 ca
         fclose(f);
         return got == size && extra == EOF ? (sint32)size : 0;
     }
-    if (size > capacity)
-    {
-        fprintf(stderr, "WIP: unsupported CD archive\n");
-        return 0;
-    }
-    f = fopen(path, "rb");
-    if (!f)
-        return 0;
-    got = fread(destination, 1, size, f);
-    extra = fgetc(f);
-    fclose(f);
-    return got == size && extra == EOF ? (sint32)size : 0;
 }

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <process.h>
-#include "platform/win/windows_compat.h"
+#include <windows.h>
 #include <wincrypt.h>
 #pragma comment(lib, "advapi32.lib")
 static FILE *journal;

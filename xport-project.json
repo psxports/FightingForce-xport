@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "name": "FightingForce",
+  "toolset": "../xport/tools",
+  "paths": {
+    "status": "status",
+    "project_tools": "tools",
+    "analysis_database": "status/analysis.sqlite",
+    "native_executable": "bin/FF.exe",
+    "native_working_directory": "bin",
+    "native_solution": "src/platform/win/FF.sln",
+    "native_build": "_build",
+    "callgraph": "status/callgraph.json",
+    "similarity_directory": "status/similarity",
+    "disc_image": "iso/Fighting Force (USA) (v1.0).cue",
+    "native_game_collector": "tools/capture_hawk_grapple_native_sound.py",
+    "ida_exports": "orig/images",
+    "ida_configs": "tools/ida",
+    "sdk_classification": "orig/ghidra/classification.json",
+    "original_executable": "orig/GAME.EXE"
+  },
+  "duckstation": {
+    "host": "127.0.0.1",
+    "gdb_port": 2400,
+    "reserved_gdb_ports": {
+      "audit": 2348,
+      "trace": 2349,
+      "user": 2350,
+      "migration": 2400
+    },
+    "trace_profile": "tools/duckstation/xport-trace-profile.ini",
+    "default_role": "migration",
+    "data_directory": "tools/duckstation/migration-runtime",
+    "data_directories": {
+      "audit": "tools/duckstation/api-runtime",
+      "trace": "tools/duckstation/trace-runtime",
+      "user": "tools/duckstation/user-runtime",
+      "migration": "tools/duckstation/migration-runtime"
+    }
+  },
+  "analysis": {
+    "default_image": "GAME.EXE",
+    "images": [
+      "SLUS_004.33",
+      "GAME.EXE"
+    ],
+    "wrapper_references": [
+      "../AgentArmstrong-xport/src/psx.h",
+      "../AgentArmstrong-xport/src/psx.c",
+      "../AgentArmstrong-xport/src/audio/psyq_sound.h",
+      "../AgentArmstrong-xport/src/audio/psyq_sound.c"
+    ]
+  },
+  "trace_layout": {
+    "actor_stride": 244,
+    "actor_fields": [
+      [
+        12,
+        4,
+        "state",
+        "<I"
+      ],
+      [
+        52,
+        2,
+        "type",
+        "<h"
+      ],
+      [
+        66,
+        2,
+        "hp",
+        "<h"
+      ],
+      [
+        122,
+        1,
+        "partner",
+        "<B"
+      ]
+    ],
+    "gpu": {
+      "ignore_ft4_padding": true,
+      "evidence": "status/todo-completion/raw-sprite-rgb-audit.md",
+      "ignore_raw_sprite_rgb": true
+    },
+    "world_fields": [
+      [
+        0,
+        4,
+        "kind"
+      ],
+      [
+        4,
+        4,
+        "x"
+      ],
+      [
+        8,
+        4,
+        "y"
+      ],
+      [
+        12,
+        4,
+        "z"
+      ],
+      [
+        16,
+        2,
+        "angle_x"
+      ],
+      [
+        18,
+        2,
+        "angle_y"
+      ],
+      [
+        20,
+        2,
+        "angle_z"
+      ]
+    ]
+  },
+  "native_trace": {
+    "wip_log_argument": "--wip-log",
+    "environment_prefix": "FF_",
+    "phase_arguments": [
+      "--debug",
+      "--menu-cold-script",
+      "{jobs}",
+      "--headless"
+    ],
+    "gameplay_arguments": [
+      "--label",
+      "{label}",
+      "--player-type",
+      "{player_type}",
+      "--button",
+      "face-combo",
+      "--checkpoint",
+      "{checkpoint}",
+      "--pad",
+      "{pad}",
+      "--end-tick",
+      "{end_tick}",
+      "--direct",
+      "--world",
+      "--capture-only",
+      "--checkpoint-directory",
+      "{checkpoint_directory}",
+      "--checkpoint-interval",
+      "{checkpoint_interval}"
+    ]
+  },
+  "stage_pipeline": {
+    "repair_supervisor": {
+      "enabled": true,
+      "contracts_directory": "tools/repair-contracts",
+      "max_repairs": 8,
+      "validate_on_match": false,
+      "validate_before_replay": true,
+      "solver": {"mode": "codex", "max_calls": 2, "timeout_seconds": 300, "runtime_revision": 1}
+    },
+    "acceptance_manifests": [
+      "status/toolset-validation/minimization-v2-acceptance.json",
+      "status/toolset-validation/repair-v1-acceptance.json",
+      "status/toolset-validation/workflow-entry-acceptance.json",
+      "status/toolset-validation/trace-page-dedup-acceptance.json",
+      "status/toolset-validation/converge-cost-v3-acceptance.json"
+    ],
+    "validation_inputs": [
+      "tools/repair-fixtures/callback.json",
+      "tools/repair-fixtures/state.json",
+      "tools/repair-fixtures/immediate.json"
+    ],
+    "validation_suites": [
+      {"directory": "tools/pipeline-upgrade", "pattern": "test_stage_*.py"},
+      {"directory": "tools", "pattern": "test_*.py"}
+    ],
+    "diagnostic_cross_build_checkpoint": true,
+    "entry_tick": 0,
+    "native_abi": "FightingForce native checkpoint ABI 1",
+    "compatible_adapters": [
+      "legacy-stage4-sound-alignment-v1",
+      "ff-stage-semantic-v1",
+      "ff-stage-semantic-v2",
+      "ff-stage-semantic-v3"
+    ],
+    "adapter": "tools/ff_stage_adapter.py",
+    "anchor_attempt_limit": 2,
+    "anchor_seconds_limit": 60,
+    "prune_successful_runs": true,
+    "optimization_targets": {
+      "responses": 50,
+      "wall_seconds": 900,
+      "uncached_plus_output": 150000,
+      "after_match_seconds": 180,
+      "compactions": 0,
+      "finalization_seconds": 30,
+      "baseline": {
+        "responses": 139,
+        "wall_seconds": 2508.756,
+        "uncached_plus_output": 522101,
+        "compactions": 2
+      }
+    }
+  },
+  "code_refresh": {
+    "report": "status/code-refresh-latest.json",
+    "log": "status/code-refresh-latest.log",
+    "build": {
+      "solution": "src/platform/win/FF.sln",
+      "configuration": "Debug",
+      "platform": "x86",
+      "process_name": "FF.exe"
+    },
+    "tests": [
+      {
+        "name": "source-context",
+        "argv": ["{python}", "-B", "-m", "unittest", "discover", "-s", "tools", "-p", "test_source_context.py"]
+      }
+    ],
+    "artifacts": [
+      {"kind": "source_context", "image": "GAME.EXE", "address": "0x80053FC4", "budget": 12000, "output": "status/source-context-53fc4.json"},
+      {"kind": "source_context", "image": "GAME.EXE", "address": "0x80053FC4", "budget": 65536, "full_source": true, "output": "status/source-context-53fc4-full.json"},
+      {"kind": "source_context", "image": "GAME.EXE", "address": "0x8003D370", "budget": 12000, "output": "status/source-context-large-bounded.json"},
+      {"kind": "source_context", "image": "GAME.EXE", "address": "0x8003D370", "budget": 65536, "full_source": true, "output": "status/source-context-large-full.json"},
+      {"kind": "trace_audit_packet", "image": "GAME.EXE", "site": "0x80054110", "output": "status/source-audit-54110.json"}
+    ]
+  },
+  "user_trace": {
+    "slot_pattern": "tools/duckstation/user-runtime/savestates/SLUS-00433_{slot}.sav",
+    "default_seconds": 600
+  }
+}
