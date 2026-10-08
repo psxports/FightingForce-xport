@@ -102,8 +102,8 @@ sint32 ff_dummy_cd_control(uint32 command, const uint8 *parameter, uint8 *result
         if (!track || !CdPlay(1, &track, 0))
             return 0;
     }
-    else if (command == 14)
-        return CdControl(CdlSetmode, (uint8 *)parameter, result);
+    else if (command == CdlPlay || command == CdlStop || command == CdlPause || command == CdlSetmode)
+        return CdControl((uint8)command, (uint8 *)parameter, result);
     if (command == 1 && result)
         result[0] = 0x80;
     return command == 1 || command == 3;
@@ -111,8 +111,7 @@ sint32 ff_dummy_cd_control(uint32 command, const uint8 *parameter, uint8 *result
 
 sint32 ff_dummy_cd_pause(void)
 {
-    ++ff_dummy_calls[1];
-    return CdControl(CdlPause, NULL, NULL);
+    return ff_dummy_cd_control(CdlPause, NULL, NULL);
 }
 
 sint32 ff_dummy_cd_mix(uint8 volume)
@@ -121,8 +120,8 @@ sint32 ff_dummy_cd_mix(uint8 volume)
     ff_dummy_cd_mix_state[0] = ff_dummy_cd_mix_state[2] = volume;
     ff_dummy_cd_mix_state[1] = ff_dummy_cd_mix_state[3] = 0;
     ++ff_dummy_calls[1];
-    mix.val0 = mix.val3 = volume;
-    mix.val1 = mix.val2 = 0;
+    mix.val0 = mix.val2 = volume;
+    mix.val1 = mix.val3 = 0;
     return CdMix(&mix);
 }
 
@@ -185,7 +184,7 @@ sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 ca
             return 0;
         memcpy(path, "DATA/", sizeof("DATA/") - 1);
         memcpy(path + sizeof("DATA/") - 1, extracted, n + 1);
-        f = fopen(path, "rb");
+        f = xport_fopen(path, "rb");
         if (!f)
             return 0;
         if (fseek(f, 0, SEEK_END) || (length = ftell(f)) < 0 || (unsigned long)length > capacity)

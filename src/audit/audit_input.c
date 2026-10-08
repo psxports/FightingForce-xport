@@ -30,8 +30,8 @@ int ff_audit_input(void)
     const uint32 start = 0x80093a18, size = 0x1380;
     if (!ff_load_ram("FF-menu.ram"))
         return 2;
-    jobs = fopen("../status/menu/input-jobs.bin", "rb");
-    out = fopen("../status/menu/input-native.bin", "wb");
+    jobs = xport_fopen("../status/menu/input-jobs.bin", "rb");
+    out = xport_fopen("../status/menu/input-native.bin", "wb");
     if (!jobs || !out)
         return 4;
     ff_services.spu_key = record_key;

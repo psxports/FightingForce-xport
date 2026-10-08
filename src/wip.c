@@ -4,10 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <process.h>
-#include <windows.h>
-#include <wincrypt.h>
-#pragma comment(lib, "advapi32.lib")
+#if defined(_WIN32)
+    #include <process.h>
+#else
+    #include <unistd.h>
+    #define _getpid getpid
+#endif
 static FILE *journal;
 static FILE *function_journal;
 
@@ -24,7 +26,7 @@ void ff_function_first_use(unsigned int pc, const char *image, const char *funct
 {
     if (!function_journal)
     {
-        function_journal = fopen("functions-used.jsonl", "ab");
+        function_journal = xport_fopen("functions-used.jsonl", "ab");
         if (!function_journal)
         {
             fprintf(stderr, "Cannot open functions-used.jsonl\n");
@@ -44,41 +46,6 @@ void ff_function_first_use(unsigned int pc, const char *image, const char *funct
 
 static int continue_wip = 1;
 static unsigned long sequence, tainted;
-
-static int executable_hash(char out[65])
-{
-    char path[MAX_PATH];
-    unsigned char data[16384], digest[32];
-    DWORD size = 32, n;
-    size_t count;
-    FILE *f;
-    HCRYPTPROV provider = 0;
-    HCRYPTHASH hash = 0;
-    int ok = 0, i;
-    n = GetModuleFileNameA(NULL, path, sizeof(path));
-    if (!n || n >= sizeof(path))
-        return 0;
-    f = fopen(path, "rb");
-    if (!f)
-        return 0;
-    if (!CryptAcquireContextA(&provider, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT) || !CryptCreateHash(provider, CALG_SHA_256, 0, 0, &hash))
-        goto done;
-    while ((count = fread(data, 1, sizeof(data), f)) != 0)
-        if (!CryptHashData(hash, data, (DWORD)count, 0))
-            goto done;
-    if (ferror(f) || !CryptGetHashParam(hash, HP_HASHVAL, digest, &size, 0) || size != 32)
-        goto done;
-    for (i = 0; i < 32; i++)
-        sprintf(out + 2 * i, "%02x", digest[i]);
-    ok = 1;
-done:
-    if (hash)
-        CryptDestroyHash(hash);
-    if (provider)
-        CryptReleaseContext(provider, 0);
-    fclose(f);
-    return ok;
-}
 
 static void close_journal(void)
 {
@@ -115,7 +82,6 @@ __declspec(noreturn) void ff_wip_stop(const char *function, const char *file, in
 int ff_wip_options(int *argc, char **argv)
 {
     const char *path = NULL;
-    char hash[65];
     int i, out = 1, debug = 0;
     for (i = 1; i < *argc; i++)
     {
@@ -146,14 +112,13 @@ int ff_wip_options(int *argc, char **argv)
     }
     if (!path && !continue_wip)
         return 1;
-    if (!executable_hash(hash))
-    {
-        fprintf(stderr, "Cannot fingerprint FF.exe for WIP journal\n");
-        return 0;
-    }
+#if defined(__EMSCRIPTEN__)
+    if (!path)
+        return 1;
+#endif
     if (!path)
         path = "wip-branches.jsonl";
-    journal = fopen(path, "ab");
+    journal = xport_fopen(path, "ab");
     if (!journal)
     {
         fprintf(stderr, "Cannot open WIP journal: %s\n", path);
@@ -162,9 +127,7 @@ int ff_wip_options(int *argc, char **argv)
     atexit(close_journal);
     fprintf(journal, "{\"event\":\"session\",\"pid\":%d,\"time\":%lld,\"continue\":%s,\"build\":", _getpid(), (long long)time(NULL), continue_wip ? "true" : "false");
     quoted(__DATE__ " " __TIME__);
-    fputs(",\"exe_sha256\":", journal);
-    quoted(hash);
-    fputs("}\n", journal);
+    fputs(",\"exe_sha256\":null}\n", journal);
     if (fflush(journal) || ferror(journal))
     {
         fprintf(stderr, "Cannot write WIP journal\n");

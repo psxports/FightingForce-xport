@@ -979,7 +979,7 @@ sint32 ff_pc_create(uint32 name)
             return -1;
         registered = 1;
     }
-    sdk_pc_files[i] = fopen(path, "wb");
+    sdk_pc_files[i] = xport_fopen(path, "wb");
     return sdk_pc_files[i] ? (sint32)i + 1 : -1;
 }
 

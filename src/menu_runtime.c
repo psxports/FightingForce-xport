@@ -9,8 +9,6 @@
 #include <string.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 static jmp_buf menu_exit;
 #include "diagnostic_state.h"
 static uint32 diag_segments[36000][3], diag_decode_segments[36000][3], diag_count, diag_decode_count, diag_active, diag_title, diag_enabled, diag_end_tick = 900;
@@ -195,7 +193,7 @@ static void diagnostic_sound(uint32 address, uint32 a, uint32 b, uint32 c)
     }
 }
 
-static LONGLONG diag_gpu_ticks;
+static uint64 diag_gpu_ticks;
 
 static void diagnostic_input(uint32 event)
 {
@@ -259,7 +257,7 @@ static int diagnostic_load_pad_schedule(const char *path, uint32 segments[36000]
         *count = 0;
         return 1;
     }
-    file = fopen(path, "rb");
+    file = xport_fopen(path, "rb");
     if (!file)
         return 0;
     *count = (uint32)fread(segments, 1, sizeof(diag_segments), file);
@@ -312,7 +310,7 @@ static int diagnostic_checkpoint(const char *path, int load)
     char actual[64];
     /* Stop the output worker before snapshotting RAM and SPU together. */
     xport_audio_shutdown();
-    f = fopen(path, load ? "rb" : "wb");
+    f = xport_fopen(path, load ? "rb" : "wb");
     if (!f)
         return 0;
     if (load)
@@ -347,13 +345,13 @@ static int diagnostic_phase_checkpoint(uint32 pc)
     if (length < 0 || (size_t)length >= sizeof(path))
         return 0;
     snprintf(context_path, sizeof(context_path), "%s.ctx", path);
-    file = fopen(path, "rb");
+    file = xport_fopen(path, "rb");
     if (file)
     {
         fclose(file);
         return 0;
     }
-    file = fopen(context_path, "rb");
+    file = xport_fopen(context_path, "rb");
     if (file)
     {
         fclose(file);
@@ -361,7 +359,7 @@ static int diagnostic_phase_checkpoint(uint32 pc)
     }
     if (!diagnostic_checkpoint(path, 0))
         return 0;
-    file = fopen(context_path, "wbx");
+    file = xport_fopen(context_path, "wbx");
     if (!file)
         return 0;
     length = fwrite(context, sizeof(context), 1, file) == 1;
@@ -379,7 +377,7 @@ static int diagnostic_phase_restore(const char *path, FILE *menu_input)
     length = snprintf(context_path, sizeof(context_path), "%s.ctx", path);
     if (length < 0 || (size_t)length >= sizeof(context_path))
         return 0;
-    file = fopen(context_path, "rb");
+    file = xport_fopen(context_path, "rb");
     if (!file)
         return 0;
     length = fread(context, sizeof(context), 1, file) == 1 && fgetc(file) == EOF && !ferror(file);
@@ -443,7 +441,7 @@ GDB_CALL void ff_pause_refresh_pad(void)
 
 static void title_host_frame(void)
 {
-    uint32 i, pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
+    uint32 pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
     if (xport_isquit())
         longjmp(menu_exit, 1);
     ff_host_pad_publish(diag_enabled ? diag_connected : 1, buttons, 0);
@@ -452,8 +450,8 @@ static void title_host_frame(void)
 
 static uint32 prepare_host_frame(int gameplay)
 {
-    LARGE_INTEGER gpu_start, gpu_end;
-    uint32 i, pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255), parity, display;
+    uint64 gpu_start, gpu_end;
+    uint32 pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255), parity, display;
     if (xport_isquit())
         longjmp(menu_exit, 1);
     ff_host_pad_publish(diag_enabled ? diag_connected : 1, buttons, 0);
@@ -470,15 +468,15 @@ static uint32 prepare_host_frame(int gameplay)
     gpu_begin();
     gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
     if (diag_enabled)
-        QueryPerformanceCounter(&gpu_start);
+        gpu_start = xport_timer_get();
     DrawOTag((uint32 *)ff_ptr(ff_u32(0x8008d4b8), sizeof(uint32)));
     gpu_display_offset(ff_s16(display + 8), ff_s16(display + 10));
     gpu_present();
     FUN_80011D50(ff_u32(0x8008d4b4));
     if (diag_enabled)
     {
-        QueryPerformanceCounter(&gpu_end);
-        diag_gpu_ticks += gpu_end.QuadPart - gpu_start.QuadPart;
+        gpu_end = xport_timer_get();
+        diag_gpu_ticks += gpu_end - gpu_start;
     }
     if (gameplay == 1)
         return ff_prepare_scene_800587A8_stage0();
@@ -519,7 +517,7 @@ int ff_game_prefix_preview(void)
     int result = 9;
     if (!ff_load_ram("../status/gameplay/sequence-level-entry.ram"))
         return 2;
-    f = fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
+    f = xport_fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
     if (!f)
         return 3;
     if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -598,7 +596,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     char actor_path[260];
     int result = 9;
     uint32 frame, vblank_start, audio_start, nonzero_start, detail_from = 0, detail_to = 0;
-    LARGE_INTEGER started, finished, frequency;
+    uint64 started, finished;
     int phase_aligned = diag_enabled && getenv("FF_AUDIT_PHASE_ALIGNED") && strcmp(getenv("FF_AUDIT_PHASE_ALIGNED"), "1") == 0;
     const char *resume = diag_enabled ? getenv("FF_CHECKPOINT_LOAD") : NULL, *checkpoint = diag_enabled ? getenv("FF_CHECKPOINT_SAVE") : NULL;
     const char *checkpoint_tick_text = diag_enabled ? getenv("FF_CHECKPOINT_TICK") : NULL;
@@ -616,8 +614,8 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         checkpoint_interval = (uint32)interval;
     }
     int restored_game = diag_resume_pc == 0x80014df8;
-    LONGLONG prefix_ticks = 0, tail_ticks = 0, record_ticks = 0;
-    LARGE_INTEGER p0, p1, p2, p3;
+    uint64 prefix_ticks = 0, tail_ticks = 0, record_ticks = 0;
+    uint64 p0, p1, p2, p3;
     if (diag_resume_pc == 0x8001559c)
     {
         diag_resume_pc = 0;
@@ -669,7 +667,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     if (limit)
     {
         snprintf(actor_path, sizeof(actor_path), "%s.actors", output);
-        actors = fopen(actor_path, "wb");
+        actors = xport_fopen(actor_path, "wb");
         if (!actors)
             return 7;
         if (!phase_aligned && !save_actor_boundary(actors))
@@ -681,7 +679,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     if (limit && getenv("FF_TRACE_WORLD"))
     {
         snprintf(actor_path, sizeof(actor_path), "%s.world", output);
-        world = fopen(actor_path, "wb");
+        world = xport_fopen(actor_path, "wb");
         if (!world || (!phase_aligned && !save_world_boundary(world)))
             return 8;
     }
@@ -692,22 +690,21 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         if (detail_to < detail_from || detail_to - detail_from > 120)
             return 8;
         snprintf(actor_path, sizeof(actor_path), "%s.detail", output);
-        detail = fopen(actor_path, "wbx");
+        detail = xport_fopen(actor_path, "wbx");
         if (!detail || !save_detail_boundary(detail, detail_from, detail_to))
             return 8;
     }
     diag_gpu_ticks = 0;
-    QueryPerformanceFrequency(&frequency);
-    QueryPerformanceCounter(&started);
+    started = xport_timer_get();
     diag_input_failed = 0;
     if (limit && diag_enabled)
     {
         snprintf(actor_path, sizeof(actor_path), "%s.inputs", output);
-        diag_inputs = fopen(actor_path, "wb");
+        diag_inputs = xport_fopen(actor_path, "wb");
         if (!diag_inputs)
             return 7;
         snprintf(actor_path, sizeof(actor_path), "%s.sound", output);
-        diag_sound = fopen(actor_path, "wb");
+        diag_sound = xport_fopen(actor_path, "wb");
         if (!diag_sound)
         {
             fclose(diag_inputs);
@@ -726,7 +723,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             FILE *existing;
             if (snprintf(periodic_path, sizeof(periodic_path), "%s/tick-%010u.ffcp", checkpoint_directory, next_checkpoint) < 0)
                 return 15;
-            existing = fopen(periodic_path, "rb");
+            existing = xport_fopen(periodic_path, "rb");
             if (existing)
             {
                 fclose(existing);
@@ -748,7 +745,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         /* Original PAD polling has published this tick before the game boundary */
         if (diag_enabled)
             diagnostic_input(1);
-        QueryPerformanceCounter(&p0);
+        p0 = xport_timer_get();
         /* Capture the incoming stage boundary before executing its first frame */
         if (phase_aligned)
         {
@@ -772,10 +769,10 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         if (stage_soak)
             ff_w32(0x80093dd4, 0);
         result = ff_game_frame_prefix_80014DF8_stage0();
-        QueryPerformanceCounter(&p1);
+        p1 = xport_timer_get();
         if (!result)
             result = ff_game_frame_tail_80015038_stage0();
-        QueryPerformanceCounter(&p2);
+        p2 = xport_timer_get();
         if (diag_input_failed)
         {
             ff_audit_sound_event = NULL;
@@ -797,10 +794,10 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         }
         if (!save_detail_boundary(detail, detail_from, detail_to))
             return 8;
-        QueryPerformanceCounter(&p3);
-        prefix_ticks += p1.QuadPart - p0.QuadPart;
-        tail_ticks += p2.QuadPart - p1.QuadPart;
-        record_ticks += p3.QuadPart - p2.QuadPart;
+        p3 = xport_timer_get();
+        prefix_ticks += p1 - p0;
+        tail_ticks += p2 - p1;
+        record_ticks += p3 - p2;
         if (result == 2 && diag_enabled && ff_u32(0x80093d58) == 0)
         {
             /* 15EF0..1607C: fade the completed stage, advance, then enter the next stage */
@@ -823,9 +820,9 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         if (frame == 599)
             gpu_save_frame("../status/gameplay/game-frame-600.bgrx");
     }
-    QueryPerformanceCounter(&finished);
+    finished = xport_timer_get();
     if (diag_enabled)
-        printf("diagnostic_profile prefix_ms %.3f tail_ms %.3f record_ms %.3f gpu_submit_ms %.3f\n", 1000.0 * prefix_ticks / frequency.QuadPart, 1000.0 * tail_ticks / frequency.QuadPart, 1000.0 * record_ticks / frequency.QuadPart, 1000.0 * diag_gpu_ticks / frequency.QuadPart);
+        printf("diagnostic_profile prefix_ms %.3f tail_ms %.3f record_ms %.3f gpu_submit_ms %.3f\n", prefix_ticks / 1000.0, tail_ticks / 1000.0, record_ticks / 1000.0, diag_gpu_ticks / 1000.0);
     if (actors)
         fclose(actors);
     if (world)
@@ -847,9 +844,9 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         if (error)
             return 8;
     }
-    printf("gameplay_metrics frames %u vblanks %u seconds %.6f audio_buffers %u nonzero %u overruns %u\n", frame, (uint32)VSync(-1) - vblank_start, (double)(finished.QuadPart - started.QuadPart) / (double)frequency.QuadPart, g_xport_audio_submitted_buffers - audio_start, g_xport_audio_nonzero_buffers - nonzero_start, g_xport_audio_callback_overruns);
+    printf("gameplay_metrics frames %u vblanks %u seconds %.6f audio_buffers %u nonzero %u overruns %u\n", frame, (uint32)VSync(-1) - vblank_start, (double)(finished - started) / 1000000.0, g_xport_audio_submitted_buffers - audio_start, g_xport_audio_nonzero_buffers - nonzero_start, g_xport_audio_callback_overruns);
     gpu_save_frame("../status/gameplay/game-frame-900.bgrx");
-    f = fopen(output, "wb");
+    f = xport_fopen(output, "wb");
     if (!f)
     {
         return 7;
@@ -893,7 +890,7 @@ static int game_loop_preview(int sequence)
     int result = 9;
     if (!ff_load_ram(sequence ? "../status/gameplay/sequence-start.ram" : "../status/gameplay/sequence-level-entry.ram"))
         return 2;
-    f = fopen(sequence ? "../status/gameplay/sequence-start.scratch" : "../status/gameplay/sequence-level-entry.scratch", "rb");
+    f = xport_fopen(sequence ? "../status/gameplay/sequence-start.scratch" : "../status/gameplay/sequence-level-entry.scratch", "rb");
     if (!f)
         return 3;
     if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -1064,10 +1061,10 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         return 2;
     if (script)
     {
-        input = fopen(script, "rb");
+        input = xport_fopen(script, "rb");
         if (!input)
             return 4;
-        trace = fopen("../status/menu/runtime-trace.bin", "wb");
+        trace = xport_fopen("../status/menu/runtime-trace.bin", "wb");
     }
     xport_set_headless(headless);
     xport_input_override(script != NULL, 0);
@@ -1078,7 +1075,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     if (getenv("FF_TRACE_PHASE_PATH"))
     {
         uint32 header[3] = {0x31504646, 3, 2228};
-        diag_phases = fopen(getenv("FF_TRACE_PHASE_PATH"), "wbx");
+        diag_phases = xport_fopen(getenv("FF_TRACE_PHASE_PATH"), "wbx");
         diag_phase_failed = 0;
         if (!diag_phases)
             return 14;
@@ -1105,7 +1102,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     {
         uint32 magic;
         diag_input_ordinal = 0;
-        diag_input_calls = fopen(getenv("FF_TRACE_INPUT_CALLS"), "rb");
+        diag_input_calls = xport_fopen(getenv("FF_TRACE_INPUT_CALLS"), "rb");
         if (!diag_input_calls || fread(&magic, sizeof(magic), 1, diag_input_calls) != 1 || magic != 0x31494646)
         {
             result = 14;
@@ -1221,7 +1218,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         {
             if (menu_save && !menu_saved && ff_u32(0x80093dd0) == menu_tick)
             {
-                FILE *existing = fopen(menu_save, "rb");
+                FILE *existing = xport_fopen(menu_save, "rb");
                 if (existing)
                 {
                     fclose(existing);

@@ -443,6 +443,7 @@ sint32 ff_spu_common_startup(uint32 a)
 
 void ff_spu_cd_volume_host(sint16 left, sint16 right)
 {
+    SpuCommonAttr attr;
     /* SLUS1C618 mode0 -> SpuSetCommonAttr maskC0 */
     if (left >= 128)
         left = 127;
@@ -453,7 +454,11 @@ void ff_spu_cd_volume_host(sint16 left, sint16 right)
     xport_audio_lock();
     ff_spu_common_state[2] = (uint16)((sint32)left * 258);
     ff_spu_common_state[3] = (uint16)((sint32)right * 258);
-    SsSetSerialVol(SS_SERIAL_A, left, right);
+    memset(&attr, 0, sizeof(attr));
+    attr.mask = SPU_COMMON_CDVOLL | SPU_COMMON_CDVOLR;
+    attr.cd.volume.left = (sint16)ff_spu_common_state[2];
+    attr.cd.volume.right = (sint16)ff_spu_common_state[3];
+    SpuSetCommonAttr(&attr);
     xport_audio_unlock();
 }
 
@@ -469,11 +474,12 @@ sint32 ff_spu_common_startup_host(const uint32 a[10])
     ff_spu_common_state[3] = (uint16)(a[4] >> 16);
     ff_spu_common_state[4] = (ff_spu_common_state[4] & 0xfffe) | (a[6] ? 1 : 0);
     memset(&attr, 0, sizeof(attr));
-    attr.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR;
+    attr.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR | SPU_COMMON_CDVOLL | SPU_COMMON_CDVOLR;
     attr.mvol.left = (sint16)ff_spu_common_state[0];
     attr.mvol.right = (sint16)ff_spu_common_state[1];
+    attr.cd.volume.left = (sint16)ff_spu_common_state[2];
+    attr.cd.volume.right = (sint16)ff_spu_common_state[3];
     SpuSetCommonAttr(&attr);
-    SsSetSerialVol(SS_SERIAL_A, (sint16)(ff_spu_common_state[2] / 129), (sint16)(ff_spu_common_state[3] / 129));
     xport_audio_unlock();
     return 0;
 }
@@ -711,7 +717,7 @@ sint32 ff_audio_init(void)
     SpuCommonAttr common;
     FILE *f;
     int i;
-    f = fopen("FF-menu.spu", "rb");
+    f = xport_fopen("FF-menu.spu", "rb");
     if (!f)
         return 0;
     if (fread(sample_ram, 1, sizeof(sample_ram), f) != sizeof(sample_ram))
@@ -720,7 +726,7 @@ sint32 ff_audio_init(void)
         return 0;
     }
     fclose(f);
-    f = fopen("FF-menu.spu-regs", "rb");
+    f = xport_fopen("FF-menu.spu-regs", "rb");
     if (!f)
         return 0;
     if (fread(regs, 1, sizeof(regs), f) != sizeof(regs))

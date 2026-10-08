@@ -1,5 +1,5 @@
 #include "ff.h"
-#include "psx_pad.h"
+#include "psx.h"
 #include <string.h>
 
 /* 5F558: raw gameplay buttons; the first mapping wins if both IDs match. */

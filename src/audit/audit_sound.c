@@ -48,8 +48,8 @@ int ff_audit_sound(void)
     if (!ff_load_ram("FF-menu.ram"))
         return 2;
     memcpy(fixture, DRAM, sizeof(fixture));
-    jobs = fopen("../status/menu/sound-jobs.bin", "rb");
-    out = fopen("../status/menu/sound-native.bin", "wb");
+    jobs = xport_fopen("../status/menu/sound-jobs.bin", "rb");
+    out = xport_fopen("../status/menu/sound-native.bin", "wb");
     if (!jobs || !out)
         return 4;
     ff_services.spu_key = key;

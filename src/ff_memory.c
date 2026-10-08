@@ -4,7 +4,7 @@
 
 sint32 ff_load_ram(const char *path)
 {
-    FILE *f = fopen(path, "rb");
+    FILE *f = xport_fopen(path, "rb");
     size_t n;
     int extra;
     if (!f)

@@ -5,7 +5,12 @@
 #include "ff_audio.h"
 #include "psx_spu.h"
 #include "xport.h"
-#include <windows.h>
+#if defined(_WIN32)
+    #include <windows.h>
+#elif defined(__EMSCRIPTEN__)
+    #include <emscripten.h>
+    #define Sleep emscripten_sleep
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,9 +111,14 @@ static sint32 hit_spu_on(uint32 a)
     return 0x3579;
 }
 
-// XPORT REVISION: 2026-09-24T13:10:20Z
-int xport_main(int argc, char **argv)
+static int game_main(int argc, char **argv)
 {
+#if defined(__EMSCRIPTEN__)
+    /* Keep the native audit dispatcher out of the browser's Asyncify entry */
+    if (!ff_wip_options(&argc, argv))
+        return 2;
+    return ff_menu_cold_runtime(0, 0);
+#else
     uint32 frame = 0, limit = 0;
     int headless = 0, preview = 0;
     if (!ff_wip_options(&argc, argv))
@@ -121,8 +131,8 @@ int xport_main(int argc, char **argv)
         uint32 v[2];
         if (!ff_load_ram("../status/gameplay/original-loop-start.ram"))
             return 2;
-        in = fopen("../status/gameplay/player-footstep-jobs.bin", "rb");
-        out = fopen("../status/gameplay/player-footstep-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/player-footstep-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/player-footstep-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(v, sizeof(v), 1, in) == 1)
@@ -142,8 +152,8 @@ int xport_main(int argc, char **argv)
         uint32 v[11], actor, result;
         if (!ff_load_ram("../status/gameplay/original-loop-start.ram"))
             return 2;
-        in = fopen("../status/gameplay/player-separation-jobs.bin", "rb");
-        out = fopen("../status/gameplay/player-separation-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/player-separation-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/player-separation-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(v, sizeof(v), 1, in) == 1)
@@ -175,8 +185,8 @@ int xport_main(int argc, char **argv)
         uint32 v[8], flags, buttons;
         if (!ff_load_ram("../status/gameplay/original-loop-start.ram"))
             return 2;
-        in = fopen("../status/gameplay/player-direction-jobs.bin", "rb");
-        out = fopen("../status/gameplay/player-direction-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/player-direction-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/player-direction-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(v, sizeof(v), 1, in) == 1)
@@ -212,8 +222,8 @@ int xport_main(int argc, char **argv)
         char value[16];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/score-jobs.bin", "rb");
-        out = fopen("../status/gameplay/score-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/score-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/score-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(value, 16, 1, in) == 1)
@@ -242,8 +252,8 @@ int xport_main(int argc, char **argv)
         uint32 value[3], result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/wobble-jobs.bin", "rb");
-        out = fopen("../status/gameplay/wobble-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/wobble-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/wobble-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(value, 12, 1, in) == 1)
@@ -267,8 +277,8 @@ int xport_main(int argc, char **argv)
         uint32 j[9], result, i, a;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/damage-jobs.bin", "rb");
-        out = fopen("../status/gameplay/damage-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/damage-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/damage-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(j, sizeof(j), 1, in) == 1)
@@ -304,8 +314,8 @@ int xport_main(int argc, char **argv)
         sint32 p[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/pain-sound-jobs.bin", "rb");
-        out = fopen("../status/gameplay/pain-sound-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/pain-sound-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/pain-sound-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(j, 8, 1, in) == 1)
@@ -327,8 +337,8 @@ int xport_main(int argc, char **argv)
         uint32 value, result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/number-jobs.bin", "rb");
-        out = fopen("../status/gameplay/number-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/number-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/number-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(&value, 4, 1, in) == 1)
@@ -349,8 +359,8 @@ int xport_main(int argc, char **argv)
         uint32 job[6], result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/rightbar-jobs.bin", "rb");
-        out = fopen("../status/gameplay/rightbar-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/rightbar-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/rightbar-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -383,8 +393,8 @@ int xport_main(int argc, char **argv)
         uint32 job[6], result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/healthbar-jobs.bin", "rb");
-        out = fopen("../status/gameplay/healthbar-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/healthbar-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/healthbar-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -416,7 +426,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/character-visible-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/character-visible-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/character-visible-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -430,7 +440,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = ff_characters_800593FC();
-        f = fopen("../status/gameplay/character-visible-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/character-visible-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -447,7 +457,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/prepare-scene-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/prepare-scene-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -461,7 +471,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = ff_prepare_scene_800587A8_stage0();
-        f = fopen("../status/gameplay/prepare-scene-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/prepare-scene-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -478,7 +488,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/stage-tick-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/stage-tick-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -492,7 +502,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = ff_game_stage_8001E168_stage0();
-        f = fopen("../status/gameplay/stage-tick-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/stage-tick-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -509,7 +519,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/character-visible-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/drop-items-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/drop-items-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -525,7 +535,7 @@ int xport_main(int argc, char **argv)
         ff_w8(0x800b4396, 0);
         ff_w8(0x800b4395, 1);
         result = FUN_80017E30(0);
-        f = fopen("../status/gameplay/drop-items-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/drop-items-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -542,7 +552,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/traffic-hit-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/traffic-hit-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -567,13 +577,13 @@ int xport_main(int argc, char **argv)
         ff_services.spu_voice_attributes = hit_spu_attr;
         ff_services.spu_key_on_attributes = hit_spu_on;
         result = FUN_80029AFC(0x8009ef40, 0x800b9020);
-        f = fopen("../status/gameplay/traffic-hit-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/traffic-hit-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        f = fopen("../status/gameplay/traffic-hit-native-spu.bin", "wb");
+        f = xport_fopen("../status/gameplay/traffic-hit-native-spu.bin", "wb");
         if (!f)
             return 7;
         fwrite(hit_spu_trace, 256, 1, f);
@@ -594,8 +604,8 @@ int xport_main(int argc, char **argv)
         flag = ff_u32(0x8008e4ec);
         table = ff_u32(0x800b3be8 + 4u * (uint32)(sint32)ff_s16(0x800b434c));
         slot71 = ff_u32(table + 284);
-        in = fopen("../status/gameplay/held-animation-jobs.bin", "rb");
-        out = fopen("../status/gameplay/held-animation-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/held-animation-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/held-animation-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(j, 16, 1, in) == 1)
@@ -625,8 +635,8 @@ int xport_main(int argc, char **argv)
         uint32 j[7], result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/action-input-jobs.bin", "rb");
-        out = fopen("../status/gameplay/action-input-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/action-input-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/action-input-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(j, 28, 1, in) == 1)
@@ -656,8 +666,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
         memcpy(globals, ff_ptr(0x80094000, 2128), 2128);
-        in = fopen("../status/gameplay/target-selection-jobs.bin", "rb");
-        out = fopen("../status/gameplay/target-selection-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/target-selection-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/target-selection-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(j, 12, 1, in) == 1)
@@ -683,8 +693,8 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/ai-roles-jobs.bin", "rb");
-        out = fopen("../status/gameplay/ai-roles-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/ai-roles-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/ai-roles-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(ff_ptr(0x800b4318, 1952), 1952, 1, in) == 1)
@@ -707,8 +717,8 @@ int xport_main(int argc, char **argv)
         uint32 j[5], result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/item-selection-jobs.bin", "rb");
-        out = fopen("../status/gameplay/item-selection-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/item-selection-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/item-selection-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(j, 20, 1, in) == 1)
@@ -735,13 +745,13 @@ int xport_main(int argc, char **argv)
         uint32 result, i;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/ai-first-original.bin", "rb");
+        in = xport_fopen("../status/gameplay/ai-first-original.bin", "rb");
         if (!in)
             return 3;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, in) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, in) != 1)
             return 4;
         fclose(in);
-        out = fopen("../status/gameplay/script-prefix-native.bin", "wb");
+        out = xport_fopen("../status/gameplay/script-prefix-native.bin", "wb");
         if (!out)
             return 5;
         for (i = 0; i < 2; i++)
@@ -761,13 +771,13 @@ int xport_main(int argc, char **argv)
         uint32 result, i;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        in = fopen("../status/gameplay/ai-first-original.bin", "rb");
+        in = xport_fopen("../status/gameplay/ai-first-original.bin", "rb");
         if (!in)
             return 3;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, in) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, in) != 1)
             return 4;
         fclose(in);
-        out = fopen("../status/gameplay/script-create-chain-native.bin", "wb");
+        out = xport_fopen("../status/gameplay/script-create-chain-native.bin", "wb");
         if (!out)
             return 5;
         for (i = 0; i < 3; i++)
@@ -788,13 +798,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-create-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-create-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-spawn-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-spawn-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -804,7 +814,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_8004AF18(7, 0x01800000, 0xf7800000, 0, 0, 10, 0);
-        f = fopen("../status/gameplay/npc-create-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-create-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -821,13 +831,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-entrance-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-entrance-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -837,7 +847,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80053034(2);
-        f = fopen("../status/gameplay/npc-entrance-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-entrance-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -854,13 +864,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-expiry-call-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-expiry-call-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -871,7 +881,7 @@ int xport_main(int argc, char **argv)
         SetGeomScreen(setup[2]);
         ff_w16(0x800b4500 + 80, 1);
         result = FUN_80053034(2);
-        f = fopen("../status/gameplay/npc-expiry-call-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-expiry-call-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -888,13 +898,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-handler-first-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-handler-first-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -905,7 +915,7 @@ int xport_main(int argc, char **argv)
         SetGeomScreen(setup[2]);
         ff_w16(0x800b4500 + 80, 1);
         result = FUN_80052944(2);
-        f = fopen("../status/gameplay/npc-handler-first-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-handler-first-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -922,13 +932,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-handler-live-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-handler-live-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -939,7 +949,7 @@ int xport_main(int argc, char **argv)
         SetGeomScreen(setup[2]);
         ff_w16(0x800b4500 + 80, 0);
         result = FUN_80052944(2);
-        f = fopen("../status/gameplay/npc-handler-live-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-handler-live-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -955,7 +965,7 @@ int xport_main(int argc, char **argv)
         uint32 i, result;
         const char *inputs[] = {"player-first-original.bin", "script-create-original.bin", "script-create-original.bin", "script-create-original.bin"};
         char path[256];
-        out = fopen("../status/gameplay/ai-outer-native.bin", "wb");
+        out = xport_fopen("../status/gameplay/ai-outer-native.bin", "wb");
         if (!out)
             return 2;
         for (i = 0; i < 4; i++)
@@ -963,7 +973,7 @@ int xport_main(int argc, char **argv)
             if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
                 return 3;
             sprintf(path, "../status/gameplay/%s", inputs[i]);
-            f = fopen(path, "rb");
+            f = xport_fopen(path, "rb");
             if (!f)
                 return 4;
             if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -987,13 +997,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-target-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-target-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -1003,7 +1013,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_800531C4(2);
-        f = fopen("../status/gameplay/npc-target-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-target-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1020,7 +1030,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/sprint-effect871-lifetime-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/sprint-effect871-lifetime-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/sprint-effect871-lifetime-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1031,7 +1041,7 @@ int xport_main(int argc, char **argv)
         SetGeomScreen(setup[2]);
         for (i = 0; i < 27; i++)
             result = ff_object_call(0x8002ae64, 0x8009d1f4);
-        f = fopen("../status/gameplay/sprint-effect871-lifetime-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/sprint-effect871-lifetime-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1048,7 +1058,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/sprint-effect871-render-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/sprint-effect871-render-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/sprint-effect871-render-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1058,7 +1068,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_8005C808(0x8009d1f4);
-        f = fopen("../status/gameplay/sprint-effect871-render-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/sprint-effect871-render-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1075,7 +1085,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3], position[4] = {160, 128, 400, 256};
         if (!ff_load_ram("../status/gameplay/hit185-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/impact-sprite-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/impact-sprite-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1097,7 +1107,7 @@ int xport_main(int argc, char **argv)
             ff_w16(0x8009a46e, (uint16)i);
             result = FUN_8005C808(0x8009a458);
         }
-        f = fopen("../status/gameplay/impact-sprite-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/impact-sprite-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1114,7 +1124,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/hit185-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/particle-lifetime-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/particle-lifetime-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1135,7 +1145,7 @@ int xport_main(int argc, char **argv)
         FUN_800121A8(123, 77, 400, 0x7fff);
         FUN_80012240(0, 255, 1024, 0x3e0);
         result = FUN_800122E0(319, 0, 40, 0x7c1f);
-        f = fopen("../status/gameplay/particle-lifetime-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/particle-lifetime-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1152,7 +1162,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/hit185-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/hit-particles-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/hit-particles-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1165,7 +1175,7 @@ int xport_main(int argc, char **argv)
             FUN_800310B8(ff_u32(0x800b4340), 0, ff_u32(0x800b4348), (uint32)(sint32)ff_s16(0x800b4350) ^ 1024u);
         for (i = 0; i < 4; i++)
             result = FUN_8003100C(ff_u32(0x800b4340), 0, ff_u32(0x800b4348), (uint32)(sint32)ff_s16(0x800b4350) ^ 1024u);
-        f = fopen("../status/gameplay/hit-particles-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/hit-particles-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1183,7 +1193,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/stationary-items-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/stationary-items-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1193,7 +1203,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_8001ED1C();
-        f = fopen("../status/gameplay/stationary-items-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/stationary-items-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1210,13 +1220,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/camera-target-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/camera-target-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -1226,7 +1236,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80047600();
-        f = fopen("../status/gameplay/camera-target-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/camera-target-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1243,7 +1253,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/hit185-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/hit-effects-prefix-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/hit-effects-prefix-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1254,7 +1264,7 @@ int xport_main(int argc, char **argv)
         SetGeomScreen(setup[2]);
         FUN_8001697C(865, ff_u32(0x800b4340), 0, ff_u32(0x800b4348));
         result = FUN_80017C78(0);
-        f = fopen("../status/gameplay/hit-effects-prefix-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/hit-effects-prefix-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1272,13 +1282,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/camera-target-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/camera-target-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/camera-target-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/camera-target-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -1288,7 +1298,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80027DF8();
-        f = fopen("../status/gameplay/camera-chain-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/camera-chain-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1305,13 +1315,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-move-call-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-move-call-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -1321,7 +1331,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80047CE4(2, 0xf8680000, 0xf1f00000, 5);
-        f = fopen("../status/gameplay/npc-move-call-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-move-call-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1338,13 +1348,13 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-navigation-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-navigation-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
-        f = fopen("../status/gameplay/script-create-original.bin", "rb");
+        f = xport_fopen("../status/gameplay/script-create-original.bin", "rb");
         if (!f)
             return 8;
         if (fread(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1)
@@ -1358,7 +1368,7 @@ int xport_main(int argc, char **argv)
         result = FUN_80019718(0x01c1ce00, 0xf7123700);
         printf("navigation_query %08X\n", result);
         result = FUN_800483BC(2, 0xf8680000, 0xf1f00000);
-        f = fopen("../status/gameplay/npc-navigation-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-navigation-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1375,7 +1385,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-walk-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-walk-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-walk-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1385,7 +1395,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-walk-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-walk-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1402,7 +1412,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-state152-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-state152-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-state152-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1412,7 +1422,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-state152-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-state152-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1429,7 +1439,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-state152-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-state152-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-state152-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1439,7 +1449,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-state152-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-state152-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1456,7 +1466,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-cross-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-cross-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-cross-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1466,7 +1476,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80054C90(2);
-        f = fopen("../status/gameplay/npc-cross-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-cross-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1483,7 +1493,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-hit-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-hit-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-hit-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1494,7 +1504,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-hit-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-hit-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1511,7 +1521,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/pause-flow-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/pause-flow-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/pause-flow-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1519,7 +1529,7 @@ int xport_main(int argc, char **argv)
         fclose(f);
         ff_w8(0x80093dd8, (uint8)setup[0]);
         result = FUN_8005DBBC();
-        f = fopen("../status/gameplay/pause-flow-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/pause-flow-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1536,7 +1546,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/pause-audio-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/pause-audio-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/pause-audio-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1548,7 +1558,7 @@ int xport_main(int argc, char **argv)
         SetGeomScreen(setup[2]);
         FUN_8005703C();
         result = FUN_800570F0();
-        f = fopen("../status/gameplay/pause-audio-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/pause-audio-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1565,7 +1575,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1576,7 +1586,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1593,7 +1603,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-event-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-event-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-event-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1604,7 +1614,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-event-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-event-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1621,7 +1631,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1632,7 +1642,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1649,7 +1659,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-circle-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-circle-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-circle-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1660,7 +1670,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-circle-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-circle-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1677,7 +1687,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1688,7 +1698,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1705,7 +1715,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-backward-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-backward-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-backward-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1716,7 +1726,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-backward-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-backward-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1733,7 +1743,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-backward-held-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-backward-held-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-backward-held-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1744,7 +1754,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-backward-held-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-backward-held-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1761,7 +1771,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-backward-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-backward-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-backward-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1772,7 +1782,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-backward-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-backward-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1789,7 +1799,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-chain-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-chain-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1800,7 +1810,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-chain-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1819,7 +1829,7 @@ int xport_main(int argc, char **argv)
             return 1;
         if (!ff_load_ram(argv[2]))
             return 2;
-        f = fopen(argv[3], "rb");
+        f = xport_fopen(argv[3], "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1897,7 +1907,7 @@ int xport_main(int argc, char **argv)
             default:
                 return 7;
         }
-        f = fopen(argv[4], "wb");
+        f = xport_fopen(argv[4], "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1919,7 +1929,7 @@ int xport_main(int argc, char **argv)
             return 1;
         if (!ff_load_ram(argv[2]))
             return 2;
-        f = fopen(argv[3], "rb");
+        f = xport_fopen(argv[3], "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1933,7 +1943,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = !strcmp(argv[1], "--audit-transition-fixture") ? FUN_80027DF8() : !strcmp(argv[1], "--audit-script-fixture") ? FUN_8004B228() : !strcmp(argv[1], "--audit-objects-fixture") ? FUN_8001ED1C() : !strcmp(argv[1], "--audit-npc-fixture") ? FUN_80052944(atoi(argv[5])) : !strcmp(argv[1], "--audit-camera-fixture") ? FUN_800476E8() : !strcmp(argv[1], "--audit-characters-fixture") ? ff_characters_800593FC() : FUN_80024008();
-        f = fopen(argv[4], "wb");
+        f = xport_fopen(argv[4], "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1953,7 +1963,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-chain-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-chain-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1964,7 +1974,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-chain-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1981,7 +1991,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-chain-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-chain-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-chain-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -1992,7 +2002,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-chain-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-chain-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2009,7 +2019,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-chain-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-chain-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-chain-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2020,7 +2030,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-chain-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-chain-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2037,7 +2047,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-third-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-third-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-third-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2048,7 +2058,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-third-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-third-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2065,7 +2075,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-fourth-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-fourth-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-fourth-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2076,7 +2086,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-fourth-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-fourth-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2093,7 +2103,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2104,7 +2114,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2121,7 +2131,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-cross-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-cross-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2132,7 +2142,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-cross-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2149,7 +2159,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-cross-held-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-cross-held-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-held-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2160,7 +2170,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-cross-held-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-held-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2177,7 +2187,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-cross-effect-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-cross-effect-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-effect-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2188,7 +2198,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-cross-effect-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-effect-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2205,7 +2215,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-held-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-held-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-held-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2216,7 +2226,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-held-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-held-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2233,7 +2243,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-square-held-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-square-held-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-square-held-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2244,7 +2254,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-square-held-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-square-held-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2261,7 +2271,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-square-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-square-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-square-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2272,7 +2282,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-square-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-square-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2289,7 +2299,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-engage-cross-hurt-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-engage-cross-hurt-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-engage-cross-hurt-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2300,7 +2310,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-engage-cross-hurt-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-engage-cross-hurt-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2317,7 +2327,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-ground-attack-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-ground-attack-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-ground-attack-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2328,7 +2338,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-ground-attack-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-ground-attack-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2345,7 +2355,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-ground-attack-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-ground-attack-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-ground-attack-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2356,7 +2366,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-ground-attack-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-ground-attack-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2373,7 +2383,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-ground-attack-lethal-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-ground-attack-lethal-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-ground-attack-lethal-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2384,7 +2394,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-ground-attack-lethal-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-ground-attack-lethal-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2401,7 +2411,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/mace-hit-reaction-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/mace-hit-reaction-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/mace-hit-reaction-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2412,7 +2422,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/mace-hit-reaction-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/mace-hit-reaction-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2429,7 +2439,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-engage-contact-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-engage-contact-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-engage-contact-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2440,7 +2450,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-engage-contact-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-engage-contact-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2457,7 +2467,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-square-entry-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-square-entry-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-square-entry-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2468,7 +2478,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-square-entry-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-square-entry-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2485,7 +2495,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-cross-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-cross-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2496,7 +2506,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-cross-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-cross-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2513,7 +2523,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-cycle-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-cycle-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-cycle-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2524,7 +2534,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-cycle-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-cycle-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2541,7 +2551,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-sprint-release-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-sprint-release-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-sprint-release-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2552,7 +2562,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-sprint-release-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-sprint-release-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2569,7 +2579,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-death-impact-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-death-impact-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-death-impact-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2580,7 +2590,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(3);
-        f = fopen("../status/gameplay/npc-death-impact-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-death-impact-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2597,7 +2607,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-death-remove-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-death-remove-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-death-remove-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2608,7 +2618,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(3);
-        f = fopen("../status/gameplay/npc-death-remove-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-death-remove-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2625,7 +2635,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-ground-lethal-update-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-ground-lethal-update-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-ground-lethal-update-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2636,7 +2646,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(3);
-        f = fopen("../status/gameplay/npc-ground-lethal-update-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-ground-lethal-update-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2653,7 +2663,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-engage-stagger-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-engage-stagger-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-engage-stagger-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2664,7 +2674,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(3);
-        f = fopen("../status/gameplay/npc-engage-stagger-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-engage-stagger-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2681,7 +2691,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-engage-defense-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-engage-defense-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-engage-defense-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2692,7 +2702,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(2);
-        f = fopen("../status/gameplay/npc-engage-defense-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-engage-defense-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2709,7 +2719,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-sprint-recover-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-sprint-recover-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-sprint-recover-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2720,7 +2730,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(3);
-        f = fopen("../status/gameplay/npc-sprint-recover-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-sprint-recover-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2737,7 +2747,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-sprint-caller-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-sprint-caller-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-sprint-caller-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2748,7 +2758,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80052944(3);
-        f = fopen("../status/gameplay/npc-sprint-caller-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-sprint-caller-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2765,7 +2775,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-sprint-lethal-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-sprint-lethal-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-sprint-lethal-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2776,7 +2786,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80048DBC(3, 3);
-        f = fopen("../status/gameplay/npc-sprint-lethal-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-sprint-lethal-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2793,7 +2803,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-cross-third-reaction-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-cross-third-reaction-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-cross-third-reaction-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2804,7 +2814,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80054C90(2);
-        f = fopen("../status/gameplay/npc-cross-third-reaction-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-cross-third-reaction-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2821,7 +2831,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/npc-cross-third-reaction-next-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/npc-cross-third-reaction-next-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/npc-cross-third-reaction-next-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2832,7 +2842,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80054C90(2);
-        f = fopen("../status/gameplay/npc-cross-third-reaction-next-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/npc-cross-third-reaction-next-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2849,7 +2859,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-third-trail-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-third-trail-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-third-trail-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2860,7 +2870,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-third-trail-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-third-trail-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2877,7 +2887,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-third-trail-shift-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-third-trail-shift-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-third-trail-shift-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2888,7 +2898,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-third-trail-shift-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-third-trail-shift-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2905,7 +2915,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-third-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-third-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-third-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2916,7 +2926,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-third-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-third-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2933,7 +2943,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-third-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-third-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-third-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2944,7 +2954,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-third-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-third-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2961,7 +2971,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-chain-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-chain-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-chain-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2972,7 +2982,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-chain-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-chain-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -2989,7 +2999,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-chain-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-chain-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-chain-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3000,7 +3010,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-chain-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-chain-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3017,7 +3027,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-chain-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-chain-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-chain-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3028,7 +3038,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-chain-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-chain-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3045,7 +3055,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-chain-hit-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-chain-hit-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-chain-hit-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3056,7 +3066,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-chain-hit-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-chain-hit-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3073,7 +3083,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-chain-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-chain-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-chain-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3084,7 +3094,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-chain-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-chain-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3101,7 +3111,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-chain-hit-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-chain-hit-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-hit-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3112,7 +3122,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-chain-hit-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-hit-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3129,7 +3139,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-chain-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-chain-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3140,7 +3150,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-chain-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-chain-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3157,7 +3167,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3168,7 +3178,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3185,7 +3195,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-triangle-hit-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-triangle-hit-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-triangle-hit-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3196,7 +3206,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-triangle-hit-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-triangle-hit-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3213,7 +3223,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-circle-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-circle-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-circle-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3224,7 +3234,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-circle-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-circle-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3241,7 +3251,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/circle-effect-render-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/circle-effect-render-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/circle-effect-render-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3252,7 +3262,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = ff_object_call(0x8005d488, 0x8009d1f4);
-        f = fopen("../status/gameplay/circle-effect-render-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/circle-effect-render-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3269,7 +3279,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-circle-land-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-circle-land-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-circle-land-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3280,7 +3290,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-circle-land-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-circle-land-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3297,7 +3307,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-circle-motion-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-circle-motion-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-circle-motion-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3308,7 +3318,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-circle-motion-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-circle-motion-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3325,7 +3335,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-circle-motion-right-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-circle-motion-right-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-circle-motion-right-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3336,7 +3346,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-circle-motion-right-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-circle-motion-right-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3353,7 +3363,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-circle-event-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-circle-event-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-circle-event-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3364,7 +3374,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-circle-event-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-circle-event-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3381,7 +3391,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-end-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-end-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-end-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3392,7 +3402,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-end-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-end-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3409,7 +3419,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-square-hit-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-square-hit-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-square-hit-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3420,7 +3430,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-square-hit-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-square-hit-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3437,7 +3447,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-cross-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-cross-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-cross-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3447,7 +3457,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-cross-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-cross-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3464,7 +3474,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-walk-first-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-walk-first-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-walk-first-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3474,7 +3484,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-walk-first-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-walk-first-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3491,7 +3501,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/player-hit186-input.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-hit186-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-hit186-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3501,7 +3511,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-hit186-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-hit186-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3518,7 +3528,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-first-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/player-first-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3528,7 +3538,7 @@ int xport_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80024008();
-        f = fopen("../status/gameplay/player-first-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/player-first-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3545,7 +3555,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/ground-items-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/ground-items-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3559,7 +3569,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = FUN_8001EE44();
-        f = fopen("../status/gameplay/ground-items-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/ground-items-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3576,7 +3586,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/stage0-update-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/stage0-update-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3590,7 +3600,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = ff_sequence_update_8001D640();
-        f = fopen("../status/gameplay/stage0-update-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/stage0-update-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3607,7 +3617,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/traffic-update-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/traffic-update-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3621,7 +3631,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = FUN_8002F59C(0x800b9020);
-        f = fopen("../status/gameplay/traffic-update-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/traffic-update-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3638,7 +3648,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/traffic-collision-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/traffic-collision-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3652,7 +3662,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = FUN_80029AFC(0x8009ef40, 0x800b9020);
-        f = fopen("../status/gameplay/traffic-collision-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/traffic-collision-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3669,7 +3679,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/hud-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/hud-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3683,7 +3693,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = ff_hud_800620BC_stage0();
-        f = fopen("../status/gameplay/hud-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/hud-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3700,7 +3710,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/character-render-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/character-render-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/character-render-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3714,7 +3724,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = ff_characters_800593FC();
-        f = fopen("../status/gameplay/character-render-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/character-render-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3731,7 +3741,7 @@ int xport_main(int argc, char **argv)
         sint32 setup[3];
         if (!ff_load_ram("../status/gameplay/sequence-update-first.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-render-setup.bin", "rb");
+        f = xport_fopen("../status/gameplay/sequence-render-setup.bin", "rb");
         if (!f)
             return 3;
         if (fread(setup, 12, 1, f) != 1 || fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3745,7 +3755,7 @@ int xport_main(int argc, char **argv)
         memset(ff_ptr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
         result = FUN_8005C17C();
-        f = fopen("../status/gameplay/sequence-render-native.bin", "wb");
+        f = xport_fopen("../status/gameplay/sequence-render-native.bin", "wb");
         if (!f)
             return 5;
         if (fwrite(ff_ptr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3761,20 +3771,20 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/sequence-update-first.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-update-first.scratch", "rb");
+        f = xport_fopen("../status/gameplay/sequence-update-first.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 4;
         fclose(f);
         result = ff_sequence_update_8001D640();
-        f = fopen("../status/gameplay/sequence-update-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/sequence-update-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, sizeof(DRAM), 1, f) != 1)
             return 6;
         fclose(f);
-        f = fopen("../status/gameplay/sequence-update-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/sequence-update-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f) != 1)
@@ -3792,8 +3802,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("../status/gameplay/sequence-update-first.ram"))
             return 2;
         memcpy(actors, ff_ptr(0x800b4318, 1952), 1952);
-        in = fopen("../status/gameplay/region-jobs.bin", "rb");
-        out = fopen("../status/gameplay/region-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/region-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/region-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -3818,8 +3828,8 @@ int xport_main(int argc, char **argv)
         uint32 job[5], row[3];
         if (!ff_load_ram("../status/gameplay/sequence-init-after.ram"))
             return 2;
-        in = fopen("../status/gameplay/sky-jobs.bin", "rb");
-        out = fopen("../status/gameplay/sky-native.bin", "wb");
+        in = xport_fopen("../status/gameplay/sky-jobs.bin", "rb");
+        out = xport_fopen("../status/gameplay/sky-native.bin", "wb");
         if (!in || !out)
             return 3;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -3851,7 +3861,7 @@ int xport_main(int argc, char **argv)
         static const sint32 edge_frames[] = {549, 550, 551, 0x7fffffff};
         if (!ff_load_ram("../status/gameplay/sequence-init-after.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-init-after.scratch", "rb");
+        f = xport_fopen("../status/gameplay/sequence-init-after.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -3862,7 +3872,7 @@ int xport_main(int argc, char **argv)
         fclose(f);
         ff_w32(0x80093dd0, 0);
         ff_w32(0x80093d58, 27);
-        out = fopen("../status/gameplay/sequence-frames-native.bin", "wb");
+        out = xport_fopen("../status/gameplay/sequence-frames-native.bin", "wb");
         if (!out)
             return 5;
         for (i = 0; i < 554; i++)
@@ -3884,7 +3894,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/sequence-level-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
+        f = xport_fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -3894,7 +3904,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_8004C1CC();
-        f = fopen("../status/gameplay/stage-scripts-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/stage-scripts-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -3903,7 +3913,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/stage-scripts-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/stage-scripts-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -3922,7 +3932,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/player-resources-after.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-resources-after.scratch", "rb");
+        f = xport_fopen("../status/gameplay/player-resources-after.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -3932,7 +3942,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_80014808();
-        f = fopen("../status/gameplay/initial-placement-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/initial-placement-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -3941,7 +3951,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/initial-placement-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/initial-placement-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -3960,7 +3970,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/sequence-level-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
+        f = xport_fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -3973,7 +3983,7 @@ int xport_main(int argc, char **argv)
         InitGeom();
         result = ff_level_init_80014A34_stage0();
         ff_level_ready_80014B70_stage0();
-        f = fopen("../status/gameplay/level-ready-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/level-ready-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -3982,7 +3992,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/level-ready-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/level-ready-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4001,7 +4011,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/sequence-level-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
+        f = xport_fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4013,7 +4023,7 @@ int xport_main(int argc, char **argv)
         ff_audio_init_empty();
         InitGeom();
         result = ff_level_init_80014A34_stage0();
-        f = fopen("../status/gameplay/level-prefix-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/level-prefix-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4022,7 +4032,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/level-prefix-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/level-prefix-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4041,7 +4051,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/level-models-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/level-models-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/level-models-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4055,7 +4065,7 @@ int xport_main(int argc, char **argv)
             for (i = 0; i < 64; i++)
                 ff_w32(0x8009a3c8 + 36u * i, 0xffffffffu);
         }
-        f = fopen("DATA/STGFILES/STAGE11.WAD", "rb");
+        f = xport_fopen("DATA/STGFILES/STAGE11.WAD", "rb");
         if (!f)
             return 9;
         fseek(f, 66516, SEEK_SET);
@@ -4063,7 +4073,7 @@ int xport_main(int argc, char **argv)
             return 10;
         fclose(f);
         result = ff_menu_objects_800173B0(0x801d0000);
-        f = fopen("../status/gameplay/stage0-mpd-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/stage0-mpd-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4072,7 +4082,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/stage0-mpd-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/stage0-mpd-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4091,7 +4101,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/first-loop-entry.ram"))
             return 2;
-        f = fopen("../status/gameplay/first-loop-entry.scratch", "rb");
+        f = xport_fopen("../status/gameplay/first-loop-entry.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4101,7 +4111,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = ff_game_input_8005F23C();
-        f = fopen("../status/gameplay/game-input-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/game-input-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4110,7 +4120,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/game-input-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/game-input-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4129,7 +4139,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/player-resources-after.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-resources-after.scratch", "rb");
+        f = xport_fopen("../status/gameplay/player-resources-after.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4139,7 +4149,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_80017BB0();
-        f = fopen("../status/gameplay/object-regions-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/object-regions-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4148,7 +4158,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/object-regions-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/object-regions-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4167,7 +4177,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/player-resources-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/player-resources-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/player-resources-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4177,7 +4187,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_8001440C();
-        f = fopen("../status/gameplay/player-resources-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/player-resources-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4186,7 +4196,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/player-resources-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/player-resources-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4205,7 +4215,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/mace-player-resources-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/mace-player-resources-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/mace-player-resources-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4215,7 +4225,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_8001440C();
-        f = fopen("../status/gameplay/mace-player-resources-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/mace-player-resources-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4224,7 +4234,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/mace-player-resources-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/mace-player-resources-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4243,7 +4253,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/smasher-player-resources-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/smasher-player-resources-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/smasher-player-resources-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4253,7 +4263,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_8001440C();
-        f = fopen("../status/gameplay/smasher-player-resources-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/smasher-player-resources-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4262,7 +4272,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/smasher-player-resources-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/smasher-player-resources-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4281,7 +4291,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/enemy-resources-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/enemy-resources-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/enemy-resources-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4291,7 +4301,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_80034530();
-        f = fopen("../status/gameplay/enemy-resources-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/enemy-resources-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4300,7 +4310,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/enemy-resources-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/enemy-resources-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4319,7 +4329,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/level-models-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/level-models-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/level-models-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4329,7 +4339,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_80016C18();
-        f = fopen("../status/gameplay/level-models-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/level-models-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4338,7 +4348,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/level-models-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/level-models-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4357,7 +4367,7 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("../status/gameplay/sequence-init-before.ram"))
             return 2;
-        f = fopen("../status/gameplay/sequence-init-before.scratch", "rb");
+        f = xport_fopen("../status/gameplay/sequence-init-before.scratch", "rb");
         if (!f)
             return 3;
         if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4367,7 +4377,7 @@ int xport_main(int argc, char **argv)
         }
         fclose(f);
         result = FUN_80039578();
-        f = fopen("../status/gameplay/sequence-init-native.ram", "wb");
+        f = xport_fopen("../status/gameplay/sequence-init-native.ram", "wb");
         if (!f)
             return 5;
         if (fwrite(DRAM, 1, sizeof(DRAM), f) != sizeof(DRAM))
@@ -4376,7 +4386,7 @@ int xport_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        f = fopen("../status/gameplay/sequence-init-native.scratch", "wb");
+        f = xport_fopen("../status/gameplay/sequence-init-native.scratch", "wb");
         if (!f)
             return 7;
         if (fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
@@ -4406,8 +4416,8 @@ int xport_main(int argc, char **argv)
         uint8 record[12], xy[16], depth[8], uv[12];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/model-packet-jobs.bin", "rb");
-        out = fopen("../status/menu/model-packet-native.bin", "wb");
+        in = xport_fopen("../status/menu/model-packet-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/model-packet-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(h, 20, 1, in) == 1)
@@ -4442,8 +4452,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, result;
-        in = fopen("../status/menu/actor-render-setup.bin", "rb");
-        out = fopen("../status/menu/actor-render-native.bin", "wb");
+        in = xport_fopen("../status/menu/actor-render-setup.bin", "rb");
+        out = xport_fopen("../status/menu/actor-render-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4488,8 +4498,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, model, result;
-        in = fopen("../status/menu/object-compound-setup.bin", "rb");
-        out = fopen("../status/menu/object-compound-native.bin", "wb");
+        in = xport_fopen("../status/menu/object-compound-setup.bin", "rb");
+        out = xport_fopen("../status/menu/object-compound-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4539,8 +4549,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, model, result;
-        in = fopen("../status/menu/object-effects-setup.bin", "rb");
-        out = fopen("../status/menu/object-effects-native.bin", "wb");
+        in = xport_fopen("../status/menu/object-effects-setup.bin", "rb");
+        out = xport_fopen("../status/menu/object-effects-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4586,8 +4596,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, result;
-        in = fopen("../status/menu/effect-render-setup.bin", "rb");
-        out = fopen("../status/menu/effect-render-native.bin", "wb");
+        in = xport_fopen("../status/menu/effect-render-setup.bin", "rb");
+        out = xport_fopen("../status/menu/effect-render-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4636,8 +4646,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, j, result;
-        in = fopen("../status/menu/dynamic-render-setup.bin", "rb");
-        out = fopen("../status/menu/dynamic-render-native.bin", "wb");
+        in = xport_fopen("../status/menu/dynamic-render-setup.bin", "rb");
+        out = xport_fopen("../status/menu/dynamic-render-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4691,8 +4701,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, result;
-        in = fopen("../status/menu/dynamic-loop-setup.bin", "rb");
-        out = fopen("../status/menu/dynamic-loop-native.bin", "wb");
+        in = xport_fopen("../status/menu/dynamic-loop-setup.bin", "rb");
+        out = xport_fopen("../status/menu/dynamic-loop-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4740,8 +4750,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, result;
-        in = fopen("../status/menu/effect-loop-setup.bin", "rb");
-        out = fopen("../status/menu/effect-loop-native.bin", "wb");
+        in = xport_fopen("../status/menu/effect-loop-setup.bin", "rb");
+        out = xport_fopen("../status/menu/effect-loop-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4790,8 +4800,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, result;
-        in = fopen("../status/menu/scene-render-setup.bin", "rb");
-        out = fopen("../status/menu/scene-render-native.bin", "wb");
+        in = xport_fopen("../status/menu/scene-render-setup.bin", "rb");
+        out = xport_fopen("../status/menu/scene-render-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4834,8 +4844,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, model, result;
-        in = fopen("../status/menu/object-basic-setup.bin", "rb");
-        out = fopen("../status/menu/object-basic-native.bin", "wb");
+        in = xport_fopen("../status/menu/object-basic-setup.bin", "rb");
+        out = xport_fopen("../status/menu/object-basic-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4880,8 +4890,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, model, result;
-        in = fopen("../status/menu/model-static-setup.bin", "rb");
-        out = fopen("../status/menu/model-static-native.bin", "wb");
+        in = xport_fopen("../status/menu/model-static-setup.bin", "rb");
+        out = xport_fopen("../status/menu/model-static-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4920,8 +4930,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, model, result;
-        in = fopen("../status/menu/model-full-setup.bin", "rb");
-        out = fopen("../status/menu/model-full-native.bin", "wb");
+        in = xport_fopen("../status/menu/model-full-setup.bin", "rb");
+        out = xport_fopen("../status/menu/model-full-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4960,8 +4970,8 @@ int xport_main(int argc, char **argv)
         uint8 scratch[1024];
         sint32 setup[3];
         uint32 i, model;
-        in = fopen("../status/menu/model-transform-setup.bin", "rb");
-        out = fopen("../status/menu/model-transform-native.bin", "wb");
+        in = xport_fopen("../status/menu/model-transform-setup.bin", "rb");
+        out = xport_fopen("../status/menu/model-transform-native.bin", "wb");
         if (!in || !out)
             return 4;
         if (fread(setup, 12, 1, in) != 1 || fread(scratch, 1024, 1, in) != 1)
@@ -4995,8 +5005,8 @@ int xport_main(int argc, char **argv)
         MATRIX m;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/model-matrix-jobs.bin", "rb");
-        out = fopen("../status/menu/model-matrix-native.bin", "wb");
+        in = xport_fopen("../status/menu/model-matrix-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/model-matrix-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(h, 8, 1, in) == 1)
@@ -5037,7 +5047,7 @@ int xport_main(int argc, char **argv)
         uint32 frame, r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        out = fopen("../status/menu/actor-loop-native.bin", "wb");
+        out = xport_fopen("../status/menu/actor-loop-native.bin", "wb");
         if (!out)
             return 4;
         for (frame = 0; frame < 120; frame++)
@@ -5062,8 +5072,8 @@ int xport_main(int argc, char **argv)
         uint8 actors[1952], pose[2016];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/actor-update-jobs.bin", "rb");
-        out = fopen("../status/menu/actor-update-native.bin", "wb");
+        in = xport_fopen("../status/menu/actor-update-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/actor-update-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(h, 16, 1, in) == 1)
@@ -5101,8 +5111,8 @@ int xport_main(int argc, char **argv)
             return 2;
         memcpy(radii, ff_ptr(0x80094120, 128), 128);
         memcpy(tables, ff_ptr(0x800b3be8, 256), 256);
-        in = fopen("../status/menu/collision-actors-jobs.bin", "rb");
-        out = fopen("../status/menu/collision-actors-native.bin", "wb");
+        in = xport_fopen("../status/menu/collision-actors-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/collision-actors-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(h, 16, 1, in) == 1)
@@ -5145,8 +5155,8 @@ int xport_main(int argc, char **argv)
         uint32 a[2], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/collision-root-jobs.bin", "rb");
-        out = fopen("../status/menu/collision-root-native.bin", "wb");
+        in = xport_fopen("../status/menu/collision-root-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/collision-root-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 8, 1, in) == 1)
@@ -5168,8 +5178,8 @@ int xport_main(int argc, char **argv)
         uint8 actor[244], obstacles[144], object[32];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/collision-world-jobs.bin", "rb");
-        out = fopen("../status/menu/collision-world-native.bin", "wb");
+        in = xport_fopen("../status/menu/collision-world-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/collision-world-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(h, 16, 1, in) == 1)
@@ -5206,8 +5216,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         ff_services.collision_event = collision_audit_callback;
-        in = fopen("../status/menu/collision-gate-jobs.bin", "rb");
-        out = fopen("../status/menu/collision-gate-native.bin", "wb");
+        in = xport_fopen("../status/menu/collision-gate-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/collision-gate-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 24, 1, in) == 1)
@@ -5236,8 +5246,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/collision-distance-jobs.bin", "rb");
-        out = fopen("../status/menu/collision-distance-native.bin", "wb");
+        in = xport_fopen("../status/menu/collision-distance-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/collision-distance-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -5257,8 +5267,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/spatial-audio-jobs.bin", "rb");
-        out = fopen("../status/menu/spatial-audio-native.bin", "wb");
+        in = xport_fopen("../status/menu/spatial-audio-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/spatial-audio-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -5284,8 +5294,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/texture-uv-fix-jobs.bin", "rb");
-        out = fopen("../status/menu/texture-uv-fix-native.bin", "wb");
+        in = xport_fopen("../status/menu/texture-uv-fix-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/texture-uv-fix-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -5309,8 +5319,8 @@ int xport_main(int argc, char **argv)
         uint32 a[10];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/texture-descriptor-jobs.bin", "rb");
-        out = fopen("../status/menu/texture-descriptor-native.bin", "wb");
+        in = xport_fopen("../status/menu/texture-descriptor-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/texture-descriptor-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 40, 1, in) == 1)
@@ -5338,8 +5348,8 @@ int xport_main(int argc, char **argv)
         uint32 stage;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/effect-palette-jobs.bin", "rb");
-        out = fopen("../status/menu/effect-palette-native.bin", "wb");
+        in = xport_fopen("../status/menu/effect-palette-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/effect-palette-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&stage, 4, 1, in) == 1)
@@ -5367,8 +5377,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/texture-pack-jobs.bin", "rb");
-        out = fopen("../status/menu/texture-pack-native.bin", "wb");
+        in = xport_fopen("../status/menu/texture-pack-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/texture-pack-native.bin", "wb");
         if (!in || !out)
             return 4;
         FUN_80066EF4();
@@ -5393,7 +5403,7 @@ int xport_main(int argc, char **argv)
         uint32 i, r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        out = fopen("../status/menu/texture-map-reset-native.bin", "wb");
+        out = xport_fopen("../status/menu/texture-map-reset-native.bin", "wb");
         if (!out)
             return 4;
         for (i = 0; i < 3; i++)
@@ -5418,8 +5428,8 @@ int xport_main(int argc, char **argv)
         uint32 count, r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/resource-exists-jobs.bin", "rb");
-        out = fopen("../status/menu/resource-exists-native.bin", "wb");
+        in = xport_fopen("../status/menu/resource-exists-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/resource-exists-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(name, 16, 1, in) == 1)
@@ -5442,8 +5452,8 @@ int xport_main(int argc, char **argv)
     {
         FILE *in, *out;
         uint32 base, p;
-        in = fopen("../status/menu/terrain-descriptors-jobs.bin", "rb");
-        out = fopen("../status/menu/terrain-descriptors-native.bin", "wb");
+        in = xport_fopen("../status/menu/terrain-descriptors-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/terrain-descriptors-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&base, 4, 1, in) == 1)
@@ -5469,8 +5479,8 @@ int xport_main(int argc, char **argv)
         FILE *in, *out;
         uint8 data[8303];
         uint32 r;
-        in = fopen("../status/menu/mpd-objects-jobs.bin", "rb");
-        out = fopen("../status/menu/mpd-objects-native.bin", "wb");
+        in = xport_fopen("../status/menu/mpd-objects-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/mpd-objects-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(data, 8303, 1, in) == 1)
@@ -5495,8 +5505,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/scene-adjust-jobs.bin", "rb");
-        out = fopen("../status/menu/scene-adjust-native.bin", "wb");
+        in = xport_fopen("../status/menu/scene-adjust-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/scene-adjust-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -5522,8 +5532,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/scene-expand-primary-jobs.bin", "rb");
-        out = fopen("../status/menu/scene-expand-primary-native.bin", "wb");
+        in = xport_fopen("../status/menu/scene-expand-primary-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/scene-expand-primary-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -5547,8 +5557,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/scene-expand-jobs.bin", "rb");
-        out = fopen("../status/menu/scene-expand-native.bin", "wb");
+        in = xport_fopen("../status/menu/scene-expand-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/scene-expand-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -5572,8 +5582,8 @@ int xport_main(int argc, char **argv)
         uint8 data[8192];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/terrain-relocate-jobs.bin", "rb");
-        out = fopen("../status/menu/terrain-relocate-native.bin", "wb");
+        in = xport_fopen("../status/menu/terrain-relocate-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/terrain-relocate-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&offset, 4, 1, in) == 1)
@@ -5598,14 +5608,14 @@ int xport_main(int argc, char **argv)
         uint8 data[8192];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/terrain-map-pixels.bin", "rb");
+        in = xport_fopen("../status/menu/terrain-map-pixels.bin", "rb");
         if (!in)
             return 4;
         if (fread(ff_ptr(0x80100000, 65536), 65536, 1, in) != 1)
             return 4;
         fclose(in);
-        in = fopen("../status/menu/terrain-map-jobs.bin", "rb");
-        out = fopen("../status/menu/terrain-map-native.bin", "wb");
+        in = xport_fopen("../status/menu/terrain-map-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/terrain-map-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(data, 8192, 1, in) == 1)
@@ -5630,7 +5640,7 @@ int xport_main(int argc, char **argv)
         uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        out = fopen("../status/menu/sound-init-native.bin", "wb");
+        out = xport_fopen("../status/menu/sound-init-native.bin", "wb");
         if (!out)
             return 4;
         for (stage = 0; stage < 2; stage++)
@@ -5675,8 +5685,8 @@ int xport_main(int argc, char **argv)
         uint32 job[4], result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/stage-reverb-jobs.bin", "rb");
-        out = fopen("../status/menu/stage-reverb-native.bin", "wb");
+        in = xport_fopen("../status/menu/stage-reverb-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/stage-reverb-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -5716,8 +5726,8 @@ int xport_main(int argc, char **argv)
         uint32 job[10], result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/reverb-presets-jobs.bin", "rb");
-        out = fopen("../status/menu/reverb-presets-native.bin", "wb");
+        in = xport_fopen("../status/menu/reverb-presets-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/reverb-presets-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -5753,8 +5763,8 @@ int xport_main(int argc, char **argv)
         uint32 result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/reverb-registers-jobs.bin", "rb");
-        out = fopen("../status/menu/reverb-registers-native.bin", "wb");
+        in = xport_fopen("../status/menu/reverb-registers-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/reverb-registers-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -5776,8 +5786,8 @@ int xport_main(int argc, char **argv)
         uint32 job[16], result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/reverb-control-jobs.bin", "rb");
-        out = fopen("../status/menu/reverb-control-native.bin", "wb");
+        in = xport_fopen("../status/menu/reverb-control-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/reverb-control-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -5807,7 +5817,7 @@ int xport_main(int argc, char **argv)
         uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        out = fopen("../status/menu/spu-reset-native.bin", "wb");
+        out = xport_fopen("../status/menu/spu-reset-native.bin", "wb");
         if (!out)
             return 4;
         for (seed = 0; seed < 3; seed++)
@@ -5849,7 +5859,7 @@ int xport_main(int argc, char **argv)
         uint16 voice_registers[7];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        out = fopen("../status/menu/voice-defaults-native.bin", "wb");
+        out = xport_fopen("../status/menu/voice-defaults-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 3; test++)
@@ -5881,8 +5891,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         ff_audio_init_empty();
-        in = fopen("../status/menu/spu-common-jobs.bin", "rb");
-        out = fopen("../status/menu/spu-common-native.bin", "wb");
+        in = xport_fopen("../status/menu/spu-common-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/spu-common-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, 42, 1, in) == 1)
@@ -5910,8 +5920,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         ff_audio_init_empty();
-        in = fopen("../status/menu/spu-startup-voices-jobs.bin", "rb");
-        out = fopen("../status/menu/spu-startup-voices-native.bin", "wb");
+        in = xport_fopen("../status/menu/spu-startup-voices-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/spu-startup-voices-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, 64, 1, in) == 1)
@@ -5949,8 +5959,8 @@ int xport_main(int argc, char **argv)
         uint32 job[3], result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/score-format-jobs.bin", "rb");
-        out = fopen("../status/menu/score-format-native.bin", "wb");
+        in = xport_fopen("../status/menu/score-format-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/score-format-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -5973,8 +5983,8 @@ int xport_main(int argc, char **argv)
         uint32 job[3], result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/menu-prep-jobs.bin", "rb");
-        out = fopen("../status/menu/menu-prep-native.bin", "wb");
+        in = xport_fopen("../status/menu/menu-prep-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/menu-prep-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -6007,7 +6017,7 @@ int xport_main(int argc, char **argv)
         ff_w32(0x8008d4d8, 0x801d0000);
         memset(ff_ptr(0x801cfff0, 16416), 0xa5, 16416);
         result = FUN_8006A50C();
-        out = fopen("../status/menu/startup-table-native.bin", "wb");
+        out = xport_fopen("../status/menu/startup-table-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&result, 4, 1, out);
@@ -6029,7 +6039,7 @@ int xport_main(int argc, char **argv)
         ff_w32(0x8008cf90, 0x801e0000);
         ff_w32(0x8008cfa0, 0x801e1000);
         r = (uint32)FUN_80056CCC(197);
-        out = fopen("../status/menu/sound-load-native.bin", "wb");
+        out = xport_fopen("../status/menu/sound-load-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6065,7 +6075,7 @@ int xport_main(int argc, char **argv)
         ff_spu_allocation_init(2, 0x80094820);
         FUN_80061448(197, 0x116000);
         r = (uint32)ff_sound_resources_80056D2C();
-        out = fopen("../status/menu/sound-resources-native.bin", "wb");
+        out = xport_fopen("../status/menu/sound-resources-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6084,8 +6094,8 @@ int xport_main(int argc, char **argv)
         uint32 job[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/spu-allocation-jobs.bin", "rb");
-        out = fopen("../status/menu/spu-allocation-native.bin", "wb");
+        in = xport_fopen("../status/menu/spu-allocation-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/spu-allocation-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -6115,8 +6125,8 @@ int xport_main(int argc, char **argv)
         xport_set_headless(1);
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/resource-progress-jobs.bin", "rb");
-        out = fopen("../status/menu/resource-progress-native.bin", "wb");
+        in = xport_fopen("../status/menu/resource-progress-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/resource-progress-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(job, sizeof(job), 1, in) == 1)
@@ -6156,7 +6166,7 @@ int xport_main(int argc, char **argv)
             if (ff_u32(0x80093e0c) != 63 || ff_u32(0x8008d4c4) != 129 || ff_u32(0x80094570) != 163296)
                 return 5;
         }
-        out = fopen(progress ? "../status/menu/resource-progress-preview-native.bin" : "../status/menu/loading-init-native.bin", "wb");
+        out = xport_fopen(progress ? "../status/menu/resource-progress-preview-native.bin" : "../status/menu/loading-init-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6173,7 +6183,7 @@ int xport_main(int argc, char **argv)
         FILE *out;
         uint32 test, r, frame;
         xport_set_headless(1);
-        out = fopen("../status/menu/menu-transition-native.bin", "wb");
+        out = xport_fopen("../status/menu/menu-transition-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 30; test++)
@@ -6212,7 +6222,7 @@ int xport_main(int argc, char **argv)
         FILE *out;
         uint32 test, i, r, frame;
         xport_set_headless(1);
-        out = fopen("../status/menu/title-packets-native.bin", "wb");
+        out = xport_fopen("../status/menu/title-packets-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 7; test++)
@@ -6260,7 +6270,7 @@ int xport_main(int argc, char **argv)
         FILE *out;
         uint32 test, i, r, frame;
         xport_set_headless(1);
-        out = fopen("../status/menu/loading-screen-native.bin", "wb");
+        out = xport_fopen("../status/menu/loading-screen-native.bin", "wb");
         if (!out)
             return 4;
         for (test = 0; test < 7; test++)
@@ -6301,7 +6311,7 @@ int xport_main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1], "--audit-language-init"))
     {
         uint32 i, r;
-        FILE *out = fopen("../status/menu/language-init-native.bin", "wb");
+        FILE *out = xport_fopen("../status/menu/language-init-native.bin", "wb");
         if (!out)
             return 4;
         for (i = 0; i < 3; i++)
@@ -6323,7 +6333,7 @@ int xport_main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1], "--audit-device-init"))
     {
         uint32 i, j, r;
-        FILE *out = fopen("../status/menu/device-init-native.bin", "wb");
+        FILE *out = xport_fopen("../status/menu/device-init-native.bin", "wb");
         static const uint32 spans[][2] = {{0x800872ec, 128}, {0x80093cb0, 32}, {0x80094748, 80}, {0x8008b6d4, 4}};
         if (!out)
             return 4;
@@ -6347,7 +6357,7 @@ int xport_main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1], "--audit-cd-toc"))
     {
         uint32 i, r;
-        FILE *out = fopen("../status/menu/cd-toc-native.bin", "wb");
+        FILE *out = xport_fopen("../status/menu/cd-toc-native.bin", "wb");
         if (!out)
             return 4;
         for (i = 0; i < 2; i++)
@@ -6370,7 +6380,7 @@ int xport_main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1], "--audit-display-setup"))
     {
         uint32 i, j;
-        FILE *out = fopen("../status/menu/display-setup-native.bin", "wb");
+        FILE *out = xport_fopen("../status/menu/display-setup-native.bin", "wb");
         static const uint32 spans[][2] = {{0x800b8938, 184}, {0x800947a0, 40}, {0x800e5140, 16384}, {0x8008d494, 4}, {0x8008d4c4, 4}, {0x1f800000, 1024}};
         if (!out)
             return 4;
@@ -6405,7 +6415,7 @@ int xport_main(int argc, char **argv)
         FILE *out;
         if (!ff_load_game_image())
             return 2;
-        out = fopen("../status/menu/cold-tables-native.bin", "wb");
+        out = xport_fopen("../status/menu/cold-tables-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(ff_ptr(0x80000000, 0x200000), 0x200000, 1, out);
@@ -6422,7 +6432,7 @@ int xport_main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1], "--audit-early-tables"))
     {
         uint32 i, r;
-        FILE *out = fopen("../status/menu/early-tables-native.bin", "wb");
+        FILE *out = xport_fopen("../status/menu/early-tables-native.bin", "wb");
         if (!out)
             return 4;
         for (i = 0; i < 4; i++)
@@ -6441,7 +6451,7 @@ int xport_main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1], "--audit-constant-init"))
     {
         uint32 i, r;
-        FILE *out = fopen("../status/menu/constant-init-native.bin", "wb");
+        FILE *out = xport_fopen("../status/menu/constant-init-native.bin", "wb");
         if (!out)
             return 4;
         for (i = 0; i < 14; i++)
@@ -6469,7 +6479,7 @@ int xport_main(int argc, char **argv)
         ff_w32(0x80093c14, 0xffffffff);
         ff_w32(0x8008d4c4, 0);
         r = ff_menu_startup_8004FBCC();
-        out = fopen("../status/menu/menu-startup-native.bin", "wb");
+        out = xport_fopen("../status/menu/menu-startup-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6502,7 +6512,7 @@ int xport_main(int argc, char **argv)
             }
         }
         r = FUN_80069F78();
-        out = fopen("../status/menu/title-loop-native.bin", "wb");
+        out = xport_fopen("../status/menu/title-loop-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6519,7 +6529,7 @@ int xport_main(int argc, char **argv)
         static const uint32 indices[] = {0, 31, 66, 197, 170};
         FILE *out;
         uint32 i, r;
-        out = fopen("../status/menu/startup-archives-native.bin", "wb");
+        out = xport_fopen("../status/menu/startup-archives-native.bin", "wb");
         if (!out)
             return 4;
         for (i = 0; i < 5; i++)
@@ -6546,7 +6556,7 @@ int xport_main(int argc, char **argv)
     {
         FILE *out;
         uint32 parity, r;
-        out = fopen("../status/menu/graphics-reset-native.bin", "wb");
+        out = xport_fopen("../status/menu/graphics-reset-native.bin", "wb");
         if (!out)
             return 4;
         for (parity = 0; parity < 2; parity++)
@@ -6581,7 +6591,7 @@ int xport_main(int argc, char **argv)
         ff_w16(0x80093566, 0);
         memset(ff_ptr(0x800c1734, 100000), 0xa5, 100000);
         r = FUN_80040AA0();
-        out = fopen("../status/menu/menu-models-native.bin", "wb");
+        out = xport_fopen("../status/menu/menu-models-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6601,8 +6611,8 @@ int xport_main(int argc, char **argv)
         FILE *in, *out, *asset;
         uint8 name[16];
         uint32 a[4], r, table;
-        in = fopen("../status/menu/actor-assets-jobs.bin", "rb");
-        out = fopen("../status/menu/actor-assets-native.bin", "wb");
+        in = xport_fopen("../status/menu/actor-assets-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/actor-assets-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(name, 16, 1, in) == 1)
@@ -6611,7 +6621,7 @@ int xport_main(int argc, char **argv)
                 return 4;
             if (!ff_load_ram("FF-menu.ram"))
                 return 2;
-            asset = fopen("DATA/MODFILES/MODELSFE.WAD", "rb");
+            asset = xport_fopen("DATA/MODFILES/MODELSFE.WAD", "rb");
             if (!asset)
                 return 2;
             if (fread(ff_ptr(0x800c1734, 59180), 59180, 1, asset) != 1)
@@ -6654,8 +6664,8 @@ int xport_main(int argc, char **argv)
         FILE *in, *out, *asset;
         uint8 name[16];
         uint32 a[3], r;
-        in = fopen("../status/menu/model-load-jobs.bin", "rb");
-        out = fopen("../status/menu/model-load-native.bin", "wb");
+        in = xport_fopen("../status/menu/model-load-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/model-load-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(name, 16, 1, in) == 1)
@@ -6664,7 +6674,7 @@ int xport_main(int argc, char **argv)
                 return 4;
             if (!ff_load_ram("FF-menu.ram"))
                 return 2;
-            asset = fopen("DATA/MODFILES/MODELSFE.WAD", "rb");
+            asset = xport_fopen("DATA/MODFILES/MODELSFE.WAD", "rb");
             if (!asset)
                 return 2;
             if (fread(ff_ptr(0x800c1734, 59180), 59180, 1, asset) != 1)
@@ -6689,7 +6699,7 @@ int xport_main(int argc, char **argv)
     {
         FILE *out;
         uint32 stage, j, r;
-        out = fopen("../status/menu/stage-reset-native.bin", "wb");
+        out = xport_fopen("../status/menu/stage-reset-native.bin", "wb");
         if (!out)
             return 4;
         for (stage = 0; stage < 27; stage++)
@@ -6720,8 +6730,8 @@ int xport_main(int argc, char **argv)
     {
         FILE *in, *out;
         uint32 a[4], r, j;
-        in = fopen("../status/menu/startup-reset-jobs.bin", "rb");
-        out = fopen("../status/menu/startup-reset-native.bin", "wb");
+        in = xport_fopen("../status/menu/startup-reset-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/startup-reset-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -6757,7 +6767,7 @@ int xport_main(int argc, char **argv)
         size_t n;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
+        asset = xport_fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6770,7 +6780,7 @@ int xport_main(int argc, char **argv)
         ff_w32(0x800947f0, 0x80116000);
         FUN_8005E7C0();
         r = FUN_80060394(1);
-        out = fopen("../status/menu/scene-resources-native.bin", "wb");
+        out = xport_fopen("../status/menu/scene-resources-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6798,7 +6808,7 @@ int xport_main(int argc, char **argv)
         size_t n;
         if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
+        asset = xport_fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6810,7 +6820,7 @@ int xport_main(int argc, char **argv)
         ff_w16(0x80093566, 0);
         memcpy(ff_ptr(0x8009f870, 8192), ff_ptr(0x80116000 + 66556, 8192), 8192);
         r = FUN_80060394(1);
-        out = fopen("../status/menu/texture-loader-native.bin", "wb");
+        out = xport_fopen("../status/menu/texture-loader-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6835,7 +6845,7 @@ int xport_main(int argc, char **argv)
         size_t n;
         if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
+        asset = xport_fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6849,7 +6859,7 @@ int xport_main(int argc, char **argv)
         memcpy(ff_ptr(0x801d0020, 10), "STGFE.MPD", 10);
         ff_w32(0x800947f0, 0x80116000);
         r = FUN_80063900(0x801d0000, 0x801d0020);
-        out = fopen("../status/menu/terrain-loader-native.bin", "wb");
+        out = xport_fopen("../status/menu/terrain-loader-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6874,7 +6884,7 @@ int xport_main(int argc, char **argv)
         size_t n;
         if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
+        asset = xport_fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6888,7 +6898,7 @@ int xport_main(int argc, char **argv)
         memcpy(ff_ptr(0x801d0020, 10), "STGFE.PPL", 10);
         ff_w32(0x800947f0, 0x80116000);
         r = ff_terrain_textures_80063900(0x801d0000);
-        out = fopen("../status/menu/terrain-textures-native.bin", "wb");
+        out = xport_fopen("../status/menu/terrain-textures-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6908,7 +6918,7 @@ int xport_main(int argc, char **argv)
         size_t n;
         if (!ff_load_ram("FF-menu.ram") || !gpu_load_vram("FF-menu.vram"))
             return 2;
-        asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
+        asset = xport_fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
         if (!asset)
             return 2;
         n = fread(ff_ptr(0x80116000, 511180), 1, 511180, asset);
@@ -6921,7 +6931,7 @@ int xport_main(int argc, char **argv)
         memcpy(ff_ptr(0x801d0000, 10), "STGFE.PDT", 10);
         memcpy(ff_ptr(0x801d0020, 10), "STGFE.PPL", 10);
         r = FUN_80067108(0x801d0000, 0x801d0020);
-        out = fopen("../status/menu/background-native.bin", "wb");
+        out = xport_fopen("../status/menu/background-native.bin", "wb");
         if (!out)
             return 4;
         fwrite(&r, 4, 1, out);
@@ -6943,7 +6953,7 @@ int xport_main(int argc, char **argv)
             return 2;
         if (!strcmp(argv[1], "--audit-stage-resource-find"))
         {
-            FILE *asset = fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
+            FILE *asset = xport_fopen("DATA/STGFILES/STAGEFE.WAD", "rb");
             size_t n;
             if (!asset)
                 return 2;
@@ -6954,8 +6964,8 @@ int xport_main(int argc, char **argv)
             ff_w32(0x80094038, 0x80116000);
             ff_w32(0x80094818, 0x80116000);
         }
-        in = fopen("../status/menu/resource-find-jobs.bin", "rb");
-        out = fopen("../status/menu/resource-find-native.bin", "wb");
+        in = xport_fopen("../status/menu/resource-find-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/resource-find-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(name, 16, 1, in) == 1)
@@ -6977,8 +6987,8 @@ int xport_main(int argc, char **argv)
         uint32 a[8], r, i;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/actor-init-jobs.bin", "rb");
-        out = fopen("../status/menu/actor-init-native.bin", "wb");
+        in = xport_fopen("../status/menu/actor-init-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/actor-init-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 32, 1, in) == 1)
@@ -7003,8 +7013,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/overlay-jobs.bin", "rb");
-        out = fopen("../status/menu/overlay-native.bin", "wb");
+        in = xport_fopen("../status/menu/overlay-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/overlay-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -7034,8 +7044,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/display-offsets-jobs.bin", "rb");
-        out = fopen("../status/menu/display-offsets-native.bin", "wb");
+        in = xport_fopen("../status/menu/display-offsets-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/display-offsets-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -7059,8 +7069,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/frame-buffers-jobs.bin", "rb");
-        out = fopen("../status/menu/frame-buffers-native.bin", "wb");
+        in = xport_fopen("../status/menu/frame-buffers-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/frame-buffers-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -7081,8 +7091,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/menu-stage-jobs.bin", "rb");
-        out = fopen("../status/menu/menu-stage-native.bin", "wb");
+        in = xport_fopen("../status/menu/menu-stage-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/menu-stage-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -7103,8 +7113,8 @@ int xport_main(int argc, char **argv)
         uint32 a[4], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/actor-direction-jobs.bin", "rb");
-        out = fopen("../status/menu/actor-direction-native.bin", "wb");
+        in = xport_fopen("../status/menu/actor-direction-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/actor-direction-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 16, 1, in) == 1)
@@ -7124,8 +7134,8 @@ int xport_main(int argc, char **argv)
         uint32 a[5], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/actor-math-jobs.bin", "rb");
-        out = fopen("../status/menu/actor-math-native.bin", "wb");
+        in = xport_fopen("../status/menu/actor-math-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/actor-math-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 20, 1, in) == 1)
@@ -7147,8 +7157,8 @@ int xport_main(int argc, char **argv)
         uint8 actor[244], stream[1024], pose[504];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/animation-decode-jobs.bin", "rb");
-        out = fopen("../status/menu/animation-decode-native.bin", "wb");
+        in = xport_fopen("../status/menu/animation-decode-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/animation-decode-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&bones, 4, 1, in) == 1)
@@ -7176,8 +7186,8 @@ int xport_main(int argc, char **argv)
         int i;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/animation-start-jobs.bin", "rb");
-        out = fopen("../status/menu/animation-start-native.bin", "wb");
+        in = xport_fopen("../status/menu/animation-start-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/animation-start-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 24, 1, in) == 1)
@@ -7217,8 +7227,8 @@ int xport_main(int argc, char **argv)
         uint8 actor[244], stream[128];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/animation-base-jobs.bin", "rb");
-        out = fopen("../status/menu/animation-base-native.bin", "wb");
+        in = xport_fopen("../status/menu/animation-base-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/animation-base-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 12, 1, in) == 1)
@@ -7252,8 +7262,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         InitGeom();
-        in = fopen("../status/menu/terrain-scene-jobs.bin", "rb");
-        out = fopen("../status/menu/terrain-scene-native.bin", "wb");
+        in = xport_fopen("../status/menu/terrain-scene-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/terrain-scene-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 32, 1, in) == 1)
@@ -7286,8 +7296,8 @@ int xport_main(int argc, char **argv)
         uint32 a[5], r;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/distant-texture-jobs.bin", "rb");
-        out = fopen("../status/menu/distant-texture-native.bin", "wb");
+        in = xport_fopen("../status/menu/distant-texture-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/distant-texture-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 20, 1, in) == 1)
@@ -7313,8 +7323,8 @@ int xport_main(int argc, char **argv)
         uint32 a[11], r, desc, bucket;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/distant-quad-jobs.bin", "rb");
-        out = fopen("../status/menu/distant-quad-native.bin", "wb");
+        in = xport_fopen("../status/menu/distant-quad-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/distant-quad-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(a, 44, 1, in) == 1)
@@ -7352,8 +7362,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         InitGeom();
-        in = fopen("../status/menu/terrain-grid-jobs.bin", "rb");
-        out = fopen("../status/menu/terrain-grid-native.bin", "wb");
+        in = xport_fopen("../status/menu/terrain-grid-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/terrain-grid-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(args, 12, 1, in) == 1)
@@ -7385,8 +7395,8 @@ int xport_main(int argc, char **argv)
         uint8 state[52];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/camera-matrix-jobs.bin", "rb");
-        out = fopen("../status/menu/camera-matrix-native.bin", "wb");
+        in = xport_fopen("../status/menu/camera-matrix-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/camera-matrix-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(args, 12, 1, in) == 1)
@@ -7419,8 +7429,8 @@ int xport_main(int argc, char **argv)
         MATRIX m;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/matrix-stack-jobs.bin", "rb");
-        out = fopen("../status/menu/matrix-stack-native.bin", "wb");
+        in = xport_fopen("../status/menu/matrix-stack-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/matrix-stack-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(args, 20, 1, in) == 1)
@@ -7450,8 +7460,8 @@ int xport_main(int argc, char **argv)
         uint8 state[8192];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/ordering-jobs.bin", "rb");
-        out = fopen("../status/menu/ordering-native.bin", "wb");
+        in = xport_fopen("../status/menu/ordering-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/ordering-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(args, 8, 1, in) == 1)
@@ -7478,8 +7488,8 @@ int xport_main(int argc, char **argv)
             return 2;
         InitGeom();
         memset(state, 0xa5, 52);
-        in = fopen("../status/menu/horizon-jobs.bin", "rb");
-        out = fopen("../status/menu/horizon-native.bin", "wb");
+        in = xport_fopen("../status/menu/horizon-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/horizon-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&pitch, 4, 1, in) == 1)
@@ -7503,8 +7513,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         InitGeom();
-        in = fopen("../status/menu/projection-jobs.bin", "rb");
-        out = fopen("../status/menu/projection-native.bin", "wb");
+        in = xport_fopen("../status/menu/projection-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/projection-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(args, 24, 1, in) == 1)
@@ -7530,8 +7540,8 @@ int xport_main(int argc, char **argv)
         uint8 state[52];
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/rotation-jobs.bin", "rb");
-        out = fopen("../status/menu/rotation-native.bin", "wb");
+        in = xport_fopen("../status/menu/rotation-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/rotation-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&angle, 4, 1, in) == 1)
@@ -7560,8 +7570,8 @@ int xport_main(int argc, char **argv)
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
         memcpy(fixture, DRAM, sizeof(fixture));
-        in = fopen("../status/menu/tail-jobs.bin", "rb");
-        out = fopen("../status/menu/tail-native.bin", "wb");
+        in = xport_fopen("../status/menu/tail-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/tail-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(&skip, 4, 1, in) == 1)
@@ -7591,8 +7601,8 @@ int xport_main(int argc, char **argv)
         sint32 result;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/camera-jobs.bin", "rb");
-        out = fopen("../status/menu/camera-native.bin", "wb");
+        in = xport_fopen("../status/menu/camera-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/camera-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(state, sizeof(state), 1, in) == 1)
@@ -7637,7 +7647,7 @@ int xport_main(int argc, char **argv)
         FUN_8004F490();
         Sleep(1000);
         xport_audio_shutdown();
-        f = fopen("../status/menu/sound-output-counters.txt", "w");
+        f = xport_fopen("../status/menu/sound-output-counters.txt", "w");
         if (!f)
             return 4;
         fprintf(f, "buffers %u nonzero %u peak %u overruns %u\n", g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak, g_xport_audio_callback_overruns);
@@ -7652,8 +7662,8 @@ int xport_main(int argc, char **argv)
         uint16 value;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        in = fopen("../status/menu/pitch-jobs.bin", "rb");
-        out = fopen("../status/menu/pitch-native.bin", "wb");
+        in = xport_fopen("../status/menu/pitch-jobs.bin", "rb");
+        out = xport_fopen("../status/menu/pitch-native.bin", "wb");
         if (!in || !out)
             return 4;
         while (fread(args, sizeof(args), 1, in) == 1)
@@ -7675,8 +7685,8 @@ int xport_main(int argc, char **argv)
         const uint32 arena = 0x801d0000;
         if (!ff_load_ram("FF-menu.ram"))
             return 2;
-        jobs = fopen("../status/menu/packet-jobs.txt", "r");
-        out = fopen("../status/menu/packets-native.bin", "wb");
+        jobs = xport_fopen("../status/menu/packet-jobs.txt", "r");
+        out = xport_fopen("../status/menu/packets-native.bin", "wb");
         if (!jobs || !out)
             return 4;
         while (fscanf(jobs, "%x %x %d %d %d", &function, &arg, &x, &y, &z) == 5)
@@ -7796,4 +7806,11 @@ int xport_main(int argc, char **argv)
     if (headless && !gpu_save_frame(preview ? "../status/menu/text-frame.bgrx" : "../status/menu/platform-frame.bgrx"))
         return 8;
     return 0;
+#endif
+}
+
+// XPORT REVISION: 2026-09-29T20:00:00Z
+void xport_main(void)
+{
+    xport_set_exit_code(game_main(xport_arg_count(), xport_arg_values()));
 }

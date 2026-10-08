@@ -1238,7 +1238,7 @@ GDB_CALL uint32 FUN_80011CCC(sint32 r, sint32 g, sint32 b)
     int i;
     for (i = 0; i < 3; i++)
     {
-        __int64 n = -(__int64)values[i];
+        sint64 n = -(sint64)values[i];
         if (n > 2147483647 || n - 255 < -2147483647 - 1)
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         values[i] = (sint32)((n >= 255 ? 255 : (uint32)n) & 255);

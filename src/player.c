@@ -78,13 +78,13 @@ static void player_wip_abort(uint32 pc)
 {
     if (getenv("FF_CAPTURE_WIP"))
     {
-        FILE *f = fopen("../status/gameplay/player-abort.ram", "wb");
+        FILE *f = xport_fopen("../status/gameplay/player-abort.ram", "wb");
         if (f)
         {
             fwrite(ff_ptr(0x80000000, 0x200000), 0x200000, 1, f);
             fclose(f);
         }
-        f = fopen("../status/gameplay/player-abort.scratch", "wb");
+        f = xport_fopen("../status/gameplay/player-abort.scratch", "wb");
         if (f)
         {
             fwrite(ff_ptr(0x1f800000, 1024), 1024, 1, f);

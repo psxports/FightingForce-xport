@@ -50,8 +50,8 @@ int ff_audit_menu_mode(int character)
     if (!ff_load_ram("FF-menu.ram"))
         return 2;
     memcpy(fixture, DRAM, sizeof(fixture));
-    jobs = fopen(character == 6 ? "../status/menu/preframe-jobs.bin" : character == 5 ? "../status/menu/scores-jobs.bin" : character == 4 ? "../status/menu/controller-jobs.bin" : character == 3 ? "../status/menu/screen-jobs.bin" : character == 2 ? "../status/menu/options-jobs.bin" : character ? "../status/menu/character-jobs.bin" : "../status/menu/menu-jobs.bin", "rb");
-    out = fopen(character == 6 ? "../status/menu/preframe-native.bin" : character == 5 ? "../status/menu/scores-native.bin" : character == 4 ? "../status/menu/controller-native.bin" : character == 3 ? "../status/menu/screen-native.bin" : character == 2 ? "../status/menu/options-native.bin" : character ? "../status/menu/character-native.bin" : "../status/menu/menu-native.bin", "wb");
+    jobs = xport_fopen(character == 6 ? "../status/menu/preframe-jobs.bin" : character == 5 ? "../status/menu/scores-jobs.bin" : character == 4 ? "../status/menu/controller-jobs.bin" : character == 3 ? "../status/menu/screen-jobs.bin" : character == 2 ? "../status/menu/options-jobs.bin" : character ? "../status/menu/character-jobs.bin" : "../status/menu/menu-jobs.bin", "rb");
+    out = xport_fopen(character == 6 ? "../status/menu/preframe-native.bin" : character == 5 ? "../status/menu/scores-native.bin" : character == 4 ? "../status/menu/controller-native.bin" : character == 3 ? "../status/menu/screen-native.bin" : character == 2 ? "../status/menu/options-native.bin" : character ? "../status/menu/character-native.bin" : "../status/menu/menu-native.bin", "wb");
     if (!jobs || !out)
         return 4;
     ff_services.menu_aux = record_aux;

@@ -1682,13 +1682,13 @@ static void npc_wip_abort(uint32 pc)
     fprintf(stderr, "WIP NPC branch %08X\n", pc);
     if (getenv("FF_CAPTURE_WIP"))
     {
-        FILE *f = fopen("../status/gameplay/game-loop-abort.ram", "wb");
+        FILE *f = xport_fopen("../status/gameplay/game-loop-abort.ram", "wb");
         if (f)
         {
             fwrite(DRAM, 1, sizeof(DRAM), f);
             fclose(f);
         }
-        f = fopen("../status/gameplay/game-loop-abort.scratch", "wb");
+        f = xport_fopen("../status/gameplay/game-loop-abort.scratch", "wb");
         if (f)
         {
             fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f);
