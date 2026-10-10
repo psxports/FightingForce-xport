@@ -6,32 +6,32 @@ GDB_CALL sint32 FUN_80061800(uint32 text, uint32 buffer)
     uint32 p = buffer, word = buffer, line_width = 0, word_width = 0, i;
     uint8 ch;
     for (i = 0; i < 40; i++)
-        ff_w8(0x800940d8 + i, 0);
+        w_u8(0x800940d8 + i, 0);
     /* strcpy boundary: preserve the original forward byte copy, including NUL. */
     i = 0;
     do
     {
-        ch = *(uint8 *)ff_ptr(text + i, 1);
-        ff_w8(buffer + i, ch);
+        ch = r_u8(text + i);
+        w_u8(buffer + i, ch);
         ++i;
     } while (ch);
-    ff_w32(0x80094330, 0);
-    ff_w32(0x800940d8, buffer);
+    w_u32(0x80094330, 0);
+    w_u32(0x800940d8, buffer);
     for (;;)
     {
-        sint32 letter = *(sint8 *)ff_ptr(p, 1);
+        sint32 letter = r_s8(p);
         if (letter == 32 || !letter)
         {
             if ((sint32)(line_width + word_width) >= 273)
             {
                 line_width = word_width;
                 word_width = 0;
-                i = ff_u32(0x80094330) + 1;
-                ff_w32(0x80094330, i);
-                if (ff_u32(0x800940d4 + 4 * i) != word)
-                    ff_w32(0x800940d8 + 4 * i, word);
-                ff_w8(word - 1, 0);
-                if (!*(sint8 *)ff_ptr(p, 1))
+                i = r_u32(0x80094330) + 1;
+                w_u32(0x80094330, i);
+                if (r_u32(0x800940d4 + 4 * i) != word)
+                    w_u32(0x800940d8 + 4 * i, word);
+                w_u8(word - 1, 0);
+                if (!r_s8(p))
                     break;
                 /* The overflowing separator goes through the glyph path as in 618E8. */
             }
@@ -39,22 +39,22 @@ GDB_CALL sint32 FUN_80061800(uint32 text, uint32 buffer)
             {
                 line_width += 10 + word_width;
                 word_width = 0;
-                if (!*(sint8 *)ff_ptr(p, 1))
+                if (!r_s8(p))
                     break;
                 word = ++p;
                 continue;
             }
         }
-        letter = *(sint8 *)ff_ptr(p++, 1);
-        word_width += (uint32)(sint32) * (sint8 *)ff_ptr(0x800800d0 + (uint32)FUN_80018670(letter), 1);
+        letter = r_s8(p++);
+        word_width += (uint32)(sint32) r_s8(0x800800d0 + (uint32)FUN_80018670(letter));
     }
-    ff_w32(0x80094330, 0);
+    w_u32(0x80094330, 0);
     for (;;)
     {
-        i = ff_u32(0x80094330);
-        if (!ff_u32(0x800940d8 + 4 * i))
+        i = r_u32(0x80094330);
+        if (!r_u32(0x800940d8 + 4 * i))
             return (sint32)(i + 1);
-        ff_w32(0x80094330, ++i);
+        w_u32(0x80094330, ++i);
         if ((sint32)i >= 10)
             return 0;
     }
@@ -66,27 +66,27 @@ GDB_CALL sint32 FUN_8006159C(uint32 text, sint32 x, sint32 y, sint32 phase)
     sint32 position[4], letter, sprite, offset, step, width;
     position[1] = y;
     position[2] = 128;
-    while (*(uint8 *)ff_ptr(text, 1))
+    while (r_u8(text))
     {
-        letter = *(sint8 *)ff_ptr(text++, 1);
+        letter = r_s8(text++);
         if (letter == 32)
             x = (sint32)((uint32)x + 6u);
         else
         {
             letter -= 65;
-            sprite = letter + ff_s16(0x8009acc8 + 2u * (uint32)(sint32)ff_s16(0x800af4a8));
+            sprite = letter + r_s16(0x8009acc8 + 2u * (uint32)(sint32)r_s16(0x800af4a8));
             if (phase < 0)
                 offset = 400;
             else
             {
                 step = phase > 16 ? 16 : phase;
-                offset = (32767 - ff_s16(0x800802d0 + ((uint32)step << 6))) >> 5;
+                offset = (32767 - r_s16(0x800802d0 + ((uint32)step << 6))) >> 5;
             }
             position[0] = (sint32)((uint32)x + (uint32)offset);
             position[3] = 3 * offset + 64;
             if (offset != 400)
                 FUN_80012594(position, sprite);
-            width = *(sint8 *)ff_ptr(0x800800d0 + (uint32)letter, 1);
+            width = r_s8(0x800800d0 + (uint32)letter);
             x = (sint32)((uint32)x + (uint32)(width + (width >> 3)));
         }
         phase = (sint32)((uint32)phase - 3u);
@@ -100,22 +100,22 @@ GDB_CALL sint32 FUN_800616DC(uint32 text, sint32 x, sint32 y, sint32 phase)
     sint32 position[4], letter, sprite, offset, step;
     position[1] = y;
     position[2] = 128;
-    while (*(uint8 *)ff_ptr(text, 1))
+    while (r_u8(text))
     {
-        letter = (sint32) * (sint8 *)ff_ptr(text++, 1) - 65;
-        sprite = letter + ff_s16(0x8009ad40 + 2u * (uint32)(sint32)ff_s16(0x800af4a8));
+        letter = (sint32) r_s8(text++) - 65;
+        sprite = letter + r_s16(0x8009ad40 + 2u * (uint32)(sint32)r_s16(0x800af4a8));
         if (phase < 0)
             offset = 400;
         else
         {
             step = phase > 16 ? 16 : phase;
-            offset = (32767 - ff_s16(0x800802d0 + ((uint32)step << 6))) >> 5;
+            offset = (32767 - r_s16(0x800802d0 + ((uint32)step << 6))) >> 5;
         }
         position[0] = (sint32)((uint32)x + (uint32)offset);
         position[3] = 3 * offset + 64;
         if (offset != 400)
             FUN_80012594(position, sprite);
-        x = (sint32)((uint32)x + (uint32)(sint32)ff_s16(0x8008013c + 2u * (uint32)letter));
+        x = (sint32)((uint32)x + (uint32)(sint32)r_s16(0x8008013c + 2u * (uint32)letter));
         phase = (sint32)((uint32)phase - 4u);
     }
     return 0;
@@ -124,7 +124,7 @@ GDB_CALL sint32 FUN_800616DC(uint32 text, sint32 x, sint32 y, sint32 phase)
 GDB_CALL sint32 FUN_800619E8(sint32 y)
 {
     FF_FUNCTION_MARKER(0x800619e8u, "GAME.EXE");
-    sint32 count = (sint32)ff_u32(0x80094330);
+    sint32 count = (sint32)r_u32(0x80094330);
     uint32 i = 0;
     if (count <= 0)
         return count;
@@ -132,17 +132,17 @@ GDB_CALL sint32 FUN_800619E8(sint32 y)
     {
         do
         {
-            FUN_80061ADC(ff_u32(0x800940d8 + 4u * i), (sint32)(16u * i + 120u - 8u * (uint32)count));
+            FUN_80061ADC(r_u32(0x800940d8 + 4u * i), (sint32)(16u * i + 120u - 8u * (uint32)count));
             ++i;
-            count = (sint32)ff_u32(0x80094330);
+            count = (sint32)r_u32(0x80094330);
         } while ((sint32)i < count);
         return (sint32)(4u * i);
     }
     do
     {
-        FUN_80061ADC(ff_u32(0x800940d8 + 4u * i), (sint32)((uint32)y + 10u * i));
+        FUN_80061ADC(r_u32(0x800940d8 + 4u * i), (sint32)((uint32)y + 10u * i));
         ++i;
-    } while ((sint32)i < (sint32)ff_u32(0x80094330));
+    } while ((sint32)i < (sint32)r_u32(0x80094330));
     return 0;
 }
 
@@ -157,9 +157,9 @@ GDB_CALL uint32 FUN_8005EEDC(void)
 {
     FF_FUNCTION_MARKER(0x8005eedcu, "GAME.EXE");
     sint32 level;
-    ff_w16(0x80093e14, 0);
-    ff_w16(0x80093e12, 0);
-    ff_w16(0x80093e10, 0);
+    w_u16(0x80093e14, 0);
+    w_u16(0x80093e12, 0);
+    w_u16(0x80093e10, 0);
     for (level = 0; level <= 256; level += 32)
         FUN_8005EE58(level);
     return 0;
@@ -172,9 +172,9 @@ GDB_CALL uint32 FUN_8005EF30(void)
     uint32 result;
     for (level = 256; level > 0; level -= 32)
         result = FUN_8005EE58(level);
-    ff_w16(0x80093e14, 0);
-    ff_w16(0x80093e12, 0);
-    ff_w16(0x80093e10, 0);
+    w_u16(0x80093e14, 0);
+    w_u16(0x80093e12, 0);
+    w_u16(0x80093e10, 0);
     return result;
 }
 
@@ -191,54 +191,54 @@ GDB_CALL uint32 FUN_8005EF80(sint32 x, sint32 y, uint32 texture)
  * coordinates in 32 bits until SH; the stage-4 horizon offset is +132. */
 GDB_CALL uint32 FUN_8006494C(void)
 {
-    uint32 horizon = ff_u32(0x8008d4d0), bottom, a, color, x, v, i;
+    uint32 horizon = r_u32(0x8008d4d0), bottom, a, color, x, v, i;
     uint8 *p;
-    if (ff_u32(0x80093d58) == 4)
+    if (r_u32(0x80093d58) == 4)
         horizon += 132u;
     bottom = horizon - 128u;
     if ((sint32)bottom > 0)
     {
-        color = ff_u32(0x8008d4c8);
-        a = ff_u32(0x8008d4b0);
-        ff_w32(0x8008d4b0, a + 36);
-        p = ff_ptr(a, 36);
+        color = r_u32(0x8008d4c8);
+        a = r_u32(0x8008d4b0);
+        w_u32(0x8008d4b0, a + 36);
+        p = psx_addr(a, 36);
         setPolyG4(p);
         for (i = 0; i < 4; i++)
         {
             p[4 + 8 * i] = i < 2 ? 0 : (uint8)(color << 3);
             p[5 + 8 * i] = i < 2 ? 0 : (uint8)(((sint32)color >> 2) & ~7);
             p[6 + 8 * i] = i < 2 ? 0 : (uint8)(((sint32)color >> 7) & ~7);
-            ff_w16(a + 8 + 8 * i, (uint16)((i & 1) ? 320 : 0));
-            ff_w16(a + 10 + 8 * i, (uint16)(i < 2 ? horizon - 288u : bottom));
+            w_u16(a + 8 + 8 * i, (uint16)((i & 1) ? 320 : 0));
+            w_u16(a + 10 + 8 * i, (uint16)(i < 2 ? horizon - 288u : bottom));
         }
-        FUN_80011E40(ff_u32(0x8008d4b4), a);
+        FUN_80011E40(r_u32(0x8008d4b4), a);
     }
-    x = (uint32)((sint32)ff_s16(0x8008d490) >> 5) + 160u;
+    x = (uint32)((sint32)r_s16(0x8008d490) >> 5) + 160u;
     v = (x & 256u) >> 1;
     x &= 255u;
     for (i = 0; i < 3; i++)
     {
-        a = ff_u32(0x8008d4b0);
-        ff_w32(0x8008d4b0, a + 20);
-        p = ff_ptr(a, 20);
+        a = r_u32(0x8008d4b0);
+        w_u32(0x8008d4b0, a + 20);
+        p = psx_addr(a, 20);
         setSprt(p);
-        ff_w16(a + 14, 0x7c00);
+        w_u16(a + 14, 0x7c00);
         setShadeTex(p, 1);
-        ff_w16(a + 8, (uint16)(x + 256u * i - 256u));
-        ff_w16(a + 10, (uint16)bottom);
+        w_u16(a + 8, (uint16)(x + 256u * i - 256u));
+        w_u16(a + 10, (uint16)bottom);
         p[12] = 0;
         p[13] = (uint8)(i == 1 ? 128u - v : v);
-        ff_w16(a + 16, 256);
-        ff_w16(a + 18, 128);
-        FUN_80011E40(ff_u32(0x8008d4b4), a);
+        w_u16(a + 16, 256);
+        w_u16(a + 18, 128);
+        FUN_80011E40(r_u32(0x8008d4b4), a);
     }
-    a = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, a + 12);
-    p = ff_ptr(a, 12);
+    a = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, a + 12);
+    p = psx_addr(a, 12);
     setDrawMode(p, 1, 0, 142, NULL);
-    if ((uint32)(*(uint8 *)ff_ptr(0x800872ec, 1) - 1) < 2)
-        ff_w32(a + 4, 0xe100108e);
-    return FUN_80011E40(ff_u32(0x8008d4b4), a);
+    if ((uint32)(r_u8(0x800872ec) - 1) < 2)
+        w_u32(a + 4, 0xe100108e);
+    return FUN_80011E40(r_u32(0x8008d4b4), a);
 }
 
 /* 5E9E8: five signed decimal quotients, blank leading zeros, literal units0. */
@@ -251,7 +251,7 @@ sint32 FUN_8005E9E8(sint32 player)
     if ((uint32)player >= 2)
         return 0;
     address = 0x80094738 + 8u * (uint32)player;
-    value = (sint32)ff_u32(0x80094030 + 4u * (uint32)player);
+    value = (sint32)r_u32(0x80094030 + 4u * (uint32)player);
     for (i = 0; i < 5; i++)
     {
         q = value / divisors[i];
@@ -260,11 +260,11 @@ sint32 FUN_8005E9E8(sint32 player)
             digit = 32;
         else
             started = 1;
-        *(uint8 *)ff_ptr(address + i, 1) = digit;
+        w_u8(address + i, digit);
         value = (sint32)((uint32)value - (uint32)q * (uint32)divisors[i]);
     }
-    *(uint8 *)ff_ptr(address + 5, 1) = 48;
-    *(uint8 *)ff_ptr(address + 6, 1) = 0;
+    w_u8(address + 5, 48);
+    w_u8(address + 6, 0);
     return 48;
 }
 
@@ -272,49 +272,49 @@ sint32 FUN_8005E9E8(sint32 player)
  * coordinate stores; AA PsyQ initializers reuse existing normalized twins. */
 GDB_CALL uint32 FUN_8006686C(void)
 {
-    sint32 x = (sint32)((uint32)((sint32)ff_u32(0x8008d4a4) >> 8) - (((uint32)(sint32)ff_s16(0x8008d490) << 10) + 0x200000u)) >> 16;
-    uint32 horizon = ff_u32(0x8008d4d0) - 256u, a, color;
+    sint32 x = (sint32)((uint32)((sint32)r_u32(0x8008d4a4) >> 8) - (((uint32)(sint32)r_s16(0x8008d490) << 10) + 0x200000u)) >> 16;
+    uint32 horizon = r_u32(0x8008d4d0) - 256u, a, color;
     uint8 *p;
     if ((sint32)horizon > 0)
     {
-        color = ff_u32(0x8008d4c8);
-        a = ff_u32(0x8008d4b0);
-        ff_w32(0x8008d4b0, a + 24);
-        p = ff_ptr(a, 24);
+        color = r_u32(0x8008d4c8);
+        a = r_u32(0x8008d4b0);
+        w_u32(0x8008d4b0, a + 24);
+        p = psx_addr(a, 24);
         setPolyF4(p);
         p[4] = (uint8)(color << 3);
         p[5] = (uint8)(((sint32)color >> 2) & ~7);
         p[6] = (uint8)(((sint32)color >> 7) & ~7);
-        ff_w16(a + 8, 0);
-        ff_w16(a + 10, 0);
-        ff_w16(a + 12, 320);
-        ff_w16(a + 14, 0);
-        ff_w16(a + 16, 0);
-        ff_w16(a + 18, (uint16)horizon);
-        ff_w16(a + 20, 320);
-        ff_w16(a + 22, (uint16)horizon);
-        FUN_80011E40(ff_u32(0x8008d4b4), a);
+        w_u16(a + 8, 0);
+        w_u16(a + 10, 0);
+        w_u16(a + 12, 320);
+        w_u16(a + 14, 0);
+        w_u16(a + 16, 0);
+        w_u16(a + 18, (uint16)horizon);
+        w_u16(a + 20, 320);
+        w_u16(a + 22, (uint16)horizon);
+        FUN_80011E40(r_u32(0x8008d4b4), a);
     }
-    a = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, a + 20);
-    p = ff_ptr(a, 20);
+    a = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, a + 20);
+    p = psx_addr(a, 20);
     setSprt(p);
-    ff_w16(a + 14, 0x7c00);
+    w_u16(a + 14, 0x7c00);
     setShadeTex(p, 1);
-    ff_w16(a + 8, (uint16)(0u - (uint32)x));
-    ff_w16(a + 10, (uint16)horizon);
+    w_u16(a + 8, (uint16)(0u - (uint32)x));
+    w_u16(a + 10, (uint16)horizon);
     p[12] = p[13] = 0;
-    ff_w16(a + 16, 256);
-    ff_w16(a + 18, 256);
-    FUN_80011E40(ff_u32(0x8008d4b4), a);
-    a = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, a + 12);
-    p = ff_ptr(a, 12);
+    w_u16(a + 16, 256);
+    w_u16(a + 18, 256);
+    FUN_80011E40(r_u32(0x8008d4b4), a);
+    a = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, a + 12);
+    p = psx_addr(a, 12);
     setDrawMode(p, 1, 0, 142, NULL);
     /* Original SDK supports alternate GPU revisions with the DFE bit at 12. */
-    if ((uint32)(*(uint8 *)ff_ptr(0x800872ec, 1) - 1) < 2)
-        ff_w32(a + 4, 0xe100108e);
-    return FUN_80011E40(ff_u32(0x8008d4b4), a);
+    if ((uint32)(r_u8(0x800872ec) - 1) < 2)
+        w_u32(a + 4, 0xe100108e);
+    return FUN_80011E40(r_u32(0x8008d4b4), a);
 }
 
 /* 80062AB4: volume bar. SDK normalized twins reuse AA polygon initializers.
@@ -327,30 +327,30 @@ GDB_CALL uint32 FUN_80062AB4(sint32 x, sint32 y, sint32 value)
     int i;
     if (width > 0)
     {
-        a = ff_u32(0x8008d4b0);
-        ff_w32(0x8008d4b0, a + 36);
-        p = ff_ptr(a, 36);
+        a = r_u32(0x8008d4b0);
+        w_u32(0x8008d4b0, a + 36);
+        p = psx_addr(a, 36);
         setPolyG4(p);
         for (i = 0; i < 4; i++)
         {
             p[4 + 8 * i] = p[5 + 8 * i] = i < 2 ? 0 : 255;
             p[6 + 8 * i] = i < 2 ? 255 : 0;
-            ff_w16(a + 8 + 8u * i, (uint16)(ux + 1 + (i < 2 ? 0 : (uint32)width)));
-            ff_w16(a + 10 + 8u * i, (uint16)(uy + (i & 1 ? 5 : 1)));
+            w_u16(a + 8 + 8u * i, (uint16)(ux + 1 + (i < 2 ? 0 : (uint32)width)));
+            w_u16(a + 10 + 8u * i, (uint16)(uy + (i & 1 ? 5 : 1)));
         }
-        FUN_80011E40(ff_u32(0x8008d4b4) + 8188, a);
+        FUN_80011E40(r_u32(0x8008d4b4) + 8188, a);
     }
-    a = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, a + 24);
-    p = ff_ptr(a, 24);
+    a = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, a + 24);
+    p = psx_addr(a, 24);
     setPolyF4(p);
     p[4] = p[5] = p[6] = 0;
     for (i = 0; i < 4; i++)
     {
-        ff_w16(a + 8 + 4u * i, (uint16)(ux + (i < 2 ? 66 : 0)));
-        ff_w16(a + 10 + 4u * i, (uint16)(uy + (i & 1 ? 6 : 0)));
+        w_u16(a + 8 + 4u * i, (uint16)(ux + (i < 2 ? 66 : 0)));
+        w_u16(a + 10 + 4u * i, (uint16)(uy + (i & 1 ? 6 : 0)));
     }
-    return FUN_80011E40(ff_u32(0x8008d4b4) + 8188, a);
+    return FUN_80011E40(r_u32(0x8008d4b4) + 8188, a);
 }
 
 #include <stdlib.h>
@@ -419,15 +419,15 @@ GDB_CALL sint32 FUN_80018670(sint32 value)
 GDB_CALL sint32 FUN_8005EFB8(uint32 text)
 {
     uint32 width = 0;
-    while (*(uint8 *)ff_ptr(text, 1))
+    while (r_u8(text))
     {
-        sint32 ch = *(sint8 *)ff_ptr(text++, 1);
+        sint32 ch = r_s8(text++);
         if (ch == 32)
             width += 6;
         else
         {
             sint32 index = FUN_80018670(ch);
-            width += (sint32) * (sint8 *)ff_ptr(0x800800d0u + (uint32)index, 1);
+            width += (sint32) r_s8(0x800800d0u + (uint32)index);
         }
     }
     return (sint32)(width + 10u);
@@ -437,26 +437,26 @@ GDB_CALL sint32 FUN_8005EFB8(uint32 text)
  * draw-mode packet first in the final chain, then the textured sprite. */
 GDB_CALL uint32 FUN_80012390(const sint32 *position, sint32 sprite)
 {
-    uint32 packet = ff_u32(0x8008d4b0), descriptor = 0x800a8768u + (uint32)sprite * 12u;
-    uint32 uv_clut = ff_u32(descriptor), mode = ff_u32(descriptor + 4), end = ff_u32(descriptor + 8);
+    uint32 packet = r_u32(0x8008d4b0), descriptor = 0x800a8768u + (uint32)sprite * 12u;
+    uint32 uv_clut = r_u32(descriptor), mode = r_u32(descriptor + 4), end = r_u32(descriptor + 8);
     uint32 semitrans = uv_clut & 1u, uv = uv_clut - semitrans;
     uint32 delta = ((end >> 16) - uv) & 65535u;
-    uint32 table = ff_u32(0x8008d4d8), ot = ff_u32(0x8008d4b4);
-    uint32 bucket = ot + (sint32)ff_s16(table + (uint32)(position[2] >> 2) * 2u);
-    ff_w32(packet + 12, uv);
-    ff_w32(packet + 4, (semitrans << 25) | 0x65000000u);
-    ff_w16(packet + 8, (uint16)position[0]);
-    ff_w16(packet + 10, (uint16)position[1]);
-    ff_w16(packet + 16, (uint16)((delta & 255u) + 1));
-    ff_w16(packet + 18, (uint16)((delta >> 8) + 1));
-    ff_w32(packet, ff_u32(bucket) | 0x04000000u);
-    ff_w32(bucket, packet & 0xffffffu);
+    uint32 table = r_u32(0x8008d4d8), ot = r_u32(0x8008d4b4);
+    uint32 bucket = ot + (sint32)r_s16(table + (uint32)(position[2] >> 2) * 2u);
+    w_u32(packet + 12, uv);
+    w_u32(packet + 4, (semitrans << 25) | 0x65000000u);
+    w_u16(packet + 8, (uint16)position[0]);
+    w_u16(packet + 10, (uint16)position[1]);
+    w_u16(packet + 16, (uint16)((delta & 255u) + 1));
+    w_u16(packet + 18, (uint16)((delta >> 8) + 1));
+    w_u32(packet, r_u32(bucket) | 0x04000000u);
+    w_u32(bucket, packet & 0xffffffu);
     packet += 20;
-    ff_w32(packet + 4, (mode >> 16) + 0xe1000000u + 1024u);
-    ff_w32(packet + 8, 0);
-    ff_w32(packet, ff_u32(bucket) | 0x02000000u);
-    ff_w32(bucket, packet & 0xffffffu);
-    ff_w32(0x8008d4b0, packet + 12);
+    w_u32(packet + 4, (mode >> 16) + 0xe1000000u + 1024u);
+    w_u32(packet + 8, 0);
+    w_u32(packet, r_u32(bucket) | 0x02000000u);
+    w_u32(bucket, packet & 0xffffffu);
+    w_u32(0x8008d4b0, packet + 12);
     return 0x8008d4b0;
 }
 
@@ -472,34 +472,34 @@ static sint32 ff_sprite_div(sint32 n, sint32 d)
 
 GDB_CALL uint32 FUN_80012594(const sint32 *position, sint32 sprite)
 {
-    uint32 p = ff_u32(0x8008d4b0), a = 0x800a8768u + 12u * (uint32)sprite;
-    uint32 uv = ff_u32(a), mode = ff_u32(a + 4), end = ff_u32(a + 8), semi = uv & 1, delta, w, h, bucket;
+    uint32 p = r_u32(0x8008d4b0), a = 0x800a8768u + 12u * (uint32)sprite;
+    uint32 uv = r_u32(a), mode = r_u32(a + 4), end = r_u32(a + 8), semi = uv & 1, delta, w, h, bucket;
     sint32 dx, dy;
     uint32 x = (uint32)(sint32)(sint16)position[0], y = (uint32)(sint32)(sint16)position[1];
     uv -= semi;
     delta = (((end >> 16) - uv) & 65535) + 257;
     w = delta & 255;
     h = delta >> 8;
-    ff_w32(p + 12, uv);
-    ff_w32(p + 20, mode);
-    ff_w16(p + 28, (uint16)end);
-    ff_w16(p + 36, (uint16)(end >> 16));
-    ff_w32(p + 4, (semi << 25) | ff_u32(0x8008d4bc));
+    w_u32(p + 12, uv);
+    w_u32(p + 20, mode);
+    w_u16(p + 28, (uint16)end);
+    w_u16(p + 36, (uint16)(end >> 16));
+    w_u32(p + 4, (semi << 25) | r_u32(0x8008d4bc));
     dx = ff_sprite_div((sint32)(w * (uint32)position[3]), position[2]);
     dy = w == h ? dx : ff_sprite_div((sint32)(h * (uint32)position[3]), position[2]);
-    ff_w16(p + 8, (uint16)(x - (uint32)dx));
-    ff_w16(p + 24, (uint16)(x - (uint32)dx));
-    ff_w16(p + 10, (uint16)(y - (uint32)dy));
-    ff_w16(p + 18, (uint16)(y - (uint32)dy));
-    ff_w16(p + 16, (uint16)(x + (uint32)dx - 1));
-    ff_w16(p + 32, (uint16)(x + (uint32)dx - 1));
-    ff_w16(p + 26, (uint16)(y + (uint32)dy - 1));
-    ff_w16(p + 34, (uint16)(y + (uint32)dy - 1));
-    bucket = ff_u32(0x8008d4b4) + (uint32)(sint32)ff_s16(ff_u32(0x8008d4d8) + 2u * (uint32)(position[2] >> 2));
-    ff_w32(p, ff_u32(bucket) | 0x09000000u);
-    ff_w32(bucket, p & 0xffffff);
-    ff_w32(0x8008d4bc, 0x2d000000);
-    ff_w32(0x8008d4b0, p + 40);
+    w_u16(p + 8, (uint16)(x - (uint32)dx));
+    w_u16(p + 24, (uint16)(x - (uint32)dx));
+    w_u16(p + 10, (uint16)(y - (uint32)dy));
+    w_u16(p + 18, (uint16)(y - (uint32)dy));
+    w_u16(p + 16, (uint16)(x + (uint32)dx - 1));
+    w_u16(p + 32, (uint16)(x + (uint32)dx - 1));
+    w_u16(p + 26, (uint16)(y + (uint32)dy - 1));
+    w_u16(p + 34, (uint16)(y + (uint32)dy - 1));
+    bucket = r_u32(0x8008d4b4) + (uint32)(sint32)r_s16(r_u32(0x8008d4d8) + 2u * (uint32)(position[2] >> 2));
+    w_u32(p, r_u32(bucket) | 0x09000000u);
+    w_u32(bucket, p & 0xffffff);
+    w_u32(0x8008d4bc, 0x2d000000);
+    w_u32(0x8008d4b0, p + 40);
     return 0x8008d4b0;
 }
 
@@ -507,16 +507,16 @@ GDB_CALL uint32 FUN_80012594(const sint32 *position, sint32 sprite)
 GDB_CALL sint32 FUN_80061B7C(uint32 text, sint32 x, sint32 y)
 {
     sint32 position[3] = {x, y, 0};
-    while (*(uint8 *)ff_ptr(text, 1))
+    while (r_u8(text))
     {
-        sint32 ch = *(sint8 *)ff_ptr(text++, 1);
+        sint32 ch = r_s8(text++);
         if (ch == 32)
             position[0] = (sint32)((uint32)position[0] + 6u);
         else
         {
-            sint32 glyph = FUN_80018670(ch), font = ff_s16(0x800af4a8);
-            FUN_80012390(position, (sint32)((uint32)glyph + (sint32)ff_s16(0x8009acc8u + (uint32)font * 2u)));
-            position[0] = (sint32)((uint32)position[0] + (sint32) * (sint8 *)ff_ptr(0x800800d0u + (uint32)glyph, 1));
+            sint32 glyph = FUN_80018670(ch), font = r_s16(0x800af4a8);
+            FUN_80012390(position, (sint32)((uint32)glyph + (sint32)r_s16(0x8009acc8u + (uint32)font * 2u)));
+            position[0] = (sint32)((uint32)position[0] + (sint32) r_s8(0x800800d0u + (uint32)glyph));
         }
     }
     return (sint32)((uint32)position[0] + 10u);
@@ -533,7 +533,7 @@ GDB_CALL sint32 FUN_80061ADC(uint32 text, sint32 y)
 GDB_CALL uint32 FUN_80061C68(sint32 x, sint32 y)
 {
     sint32 position[3] = {x, y, 16};
-    return FUN_80012390(position, ff_s16(0x8009acc8u + (uint32)ff_s16(0x800af4b4) * 2u));
+    return FUN_80012390(position, r_s16(0x8009acc8u + (uint32)r_s16(0x800af4b4) * 2u));
 }
 
 /* GAME.EXE:80012A00. Descriptor end coordinates are inclusive sprite limits;
@@ -541,30 +541,30 @@ GDB_CALL uint32 FUN_80061C68(sint32 x, sint32 y)
 GDB_CALL void FUN_80012A00(uint32 packet, sint32 sprite, sint32 x, sint32 y)
 {
     uint32 descriptor = 0x800a8768u + (uint32)sprite * 12u;
-    uint32 uv = ff_u32(descriptor), mode = ff_u32(descriptor + 4), end = ff_u32(descriptor + 8);
+    uint32 uv = r_u32(descriptor), mode = r_u32(descriptor + 4), end = r_u32(descriptor + 8);
     uint32 delta = ((end >> 16) - uv) & 65535u;
     uint16 right = (uint16)((uint32)x + (delta & 255)), bottom = (uint16)((uint32)y + (delta >> 8));
-    ff_w32(packet + 12, uv);
-    ff_w32(packet + 24, mode);
-    ff_w16(packet + 36, (uint16)end);
-    ff_w16(packet + 48, (uint16)(end >> 16));
-    ff_w16(packet + 8, (uint16)x);
-    ff_w16(packet + 10, (uint16)y);
-    ff_w16(packet + 20, right);
-    ff_w16(packet + 22, (uint16)y);
-    ff_w16(packet + 32, (uint16)x);
-    ff_w16(packet + 34, bottom);
-    ff_w16(packet + 44, right);
-    ff_w16(packet + 46, bottom);
+    w_u32(packet + 12, uv);
+    w_u32(packet + 24, mode);
+    w_u16(packet + 36, (uint16)end);
+    w_u16(packet + 48, (uint16)(end >> 16));
+    w_u16(packet + 8, (uint16)x);
+    w_u16(packet + 10, (uint16)y);
+    w_u16(packet + 20, right);
+    w_u16(packet + 22, (uint16)y);
+    w_u16(packet + 32, (uint16)x);
+    w_u16(packet + 34, bottom);
+    w_u16(packet + 44, right);
+    w_u16(packet + 46, bottom);
 }
 
 /* GAME.EXE:80011E40. Preserve the original full pointer store to the OT;
  * GPU traversal masks to 24 bits. A host pointer must never enter this chain. */
 GDB_CALL uint32 FUN_80011E40(uint32 bucket, uint32 packet)
 {
-    uint32 previous = ff_u32(bucket), tag = previous | (ff_u32(packet) & 0xff000000u);
-    ff_w32(bucket, packet);
-    ff_w32(packet, tag);
+    uint32 previous = r_u32(bucket), tag = previous | (r_u32(packet) & 0xff000000u);
+    w_u32(bucket, packet);
+    w_u32(packet, tag);
     return previous;
 }
 
@@ -575,7 +575,6 @@ GDB_CALL sint32 FUN_80062C0C(uint32 text, sint32 x, sint32 y, uint32 colors)
 {
     sint32 width = FUN_8005EFB8(text);
     uint32 advance = 0;
-    uint8 *c = (uint8 *)ff_ptr(colors, 12);
     sint8 delta[6];
     uint8 previous[6];
     int i;
@@ -584,21 +583,21 @@ GDB_CALL sint32 FUN_80062C0C(uint32 text, sint32 x, sint32 y, uint32 colors)
     for (i = 0; i < 6; i++)
     {
         int k = i < 3 ? i : i + 3;
-        delta[i] = (sint8)(c[k + 3] - c[k]);
-        previous[i] = c[k];
+        delta[i] = (sint8)(r_u8(colors + k + 3) - r_u8(colors + k));
+        previous[i] = r_u8(colors + k);
     }
-    while (*(uint8 *)ff_ptr(text, 1))
+    while (r_u8(text))
     {
-        sint32 ch = *(sint8 *)ff_ptr(text++, 1);
+        sint32 ch = r_s8(text++);
         if (ch == 32)
             advance += 6;
         else
         {
             uint8 next[6];
             sint32 glyph = FUN_80018670(ch);
-            uint32 packet = ff_u32(0x8008d4b0);
-            uint8 *p = (uint8 *)ff_ptr(packet, 52);
-            ff_w32(0x8008d4b0, packet + 52);
+            uint32 packet = r_u32(0x8008d4b0);
+            uint8 *p = (uint8 *)psx_addr(packet, 52);
+            w_u32(0x8008d4b0, packet + 52);
             setPolyGT4(p);
             for (i = 0; i < 6; i++)
             {
@@ -607,18 +606,18 @@ GDB_CALL sint32 FUN_80062C0C(uint32 text, sint32 x, sint32 y, uint32 colors)
                 /* Original BREAK 6 on signed division overflow. */
                 if (width == -1 && (uint32)product == 0x80000000u)
                     ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-                next[i] = (uint8)((uint32)c[k] + (uint32)(product / width));
+                next[i] = (uint8)((uint32)r_u8(colors + k) + (uint32)(product / width));
             }
             for (i = 0; i < 3; i++)
             {
-                p[4 + i] = (uint8)(previous[i] * 8u - 128u);
-                p[16 + i] = (uint8)(next[i] * 8u - 128u);
-                p[28 + i] = (uint8)(next[i + 3] * 8u - 128u);
-                p[40 + i] = (uint8)(previous[i + 3] * 8u - 128u);
+                w_u8(packet + 4 + i, (uint8)(previous[i] * 8u - 128u));
+                w_u8(packet + 16 + i, (uint8)(next[i] * 8u - 128u));
+                w_u8(packet + 28 + i, (uint8)(next[i + 3] * 8u - 128u));
+                w_u8(packet + 40 + i, (uint8)(previous[i + 3] * 8u - 128u));
             }
-            FUN_80012A00(packet, (sint32)((uint32)glyph + (sint32)ff_s16(0x8009acc8u + (uint32)ff_s16(0x800af4a8) * 2u)), (sint32)((uint32)x + advance), y);
-            advance += (sint32) * (sint8 *)ff_ptr(0x800800d0u + (uint32)glyph, 1);
-            FUN_80011E40(ff_u32(0x8008d4b4) + 8188, packet);
+            FUN_80012A00(packet, (sint32)((uint32)glyph + (sint32)r_s16(0x8009acc8u + (uint32)r_s16(0x800af4a8) * 2u)), (sint32)((uint32)x + advance), y);
+            advance += (sint32) r_s8(0x800800d0u + (uint32)glyph);
+            FUN_80011E40(r_u32(0x8008d4b4) + 8188, packet);
             for (i = 0; i < 6; i++)
                 previous[i] = next[i];
         }
@@ -629,58 +628,58 @@ GDB_CALL sint32 FUN_80062C0C(uint32 text, sint32 x, sint32 y, uint32 colors)
 /* 800128F4: variable-height FT4 from a 12-byte texture descriptor. */
 GDB_CALL uint32 FUN_800128F4(uint32 position, sint32 sprite)
 {
-    uint32 p = ff_u32(0x8008d4b0), d = 0x800a8768u + (uint32)sprite * 12u;
-    uint32 uv = ff_u32(d), mode = ff_u32(d + 4), end = ff_u32(d + 8), bit = uv & 1u, depth, bucket;
-    sint32 x = ff_s16(position), y = ff_s16(position + 4);
+    uint32 p = r_u32(0x8008d4b0), d = 0x800a8768u + (uint32)sprite * 12u;
+    uint32 uv = r_u32(d), mode = r_u32(d + 4), end = r_u32(d + 8), bit = uv & 1u, depth, bucket;
+    sint32 x = r_s16(position), y = r_s16(position + 4);
     sint64 diff, bottom;
     uint32 right;
     uv -= bit;
     diff = (sint64)(end >> 16) - (sint32)uv;
     if (diff < -2147483647LL - 1 || diff > 2147483647LL)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    ff_w32(p + 12, uv);
-    ff_w32(p + 20, mode);
-    ff_w16(p + 28, (uint16)end);
-    ff_w16(p + 36, (uint16)(end >> 16));
-    ff_w32(p + 4, ff_u32(0x8008d4bc) | (bit << 25));
-    depth = ff_u32(position + 8);
-    ff_w16(p + 8, (uint16)x);
-    ff_w16(p + 24, (uint16)x);
-    ff_w16(p + 10, (uint16)y);
-    ff_w16(p + 18, (uint16)y);
+    w_u32(p + 12, uv);
+    w_u32(p + 20, mode);
+    w_u16(p + 28, (uint16)end);
+    w_u16(p + 36, (uint16)(end >> 16));
+    w_u32(p + 4, r_u32(0x8008d4bc) | (bit << 25));
+    depth = r_u32(position + 8);
+    w_u16(p + 8, (uint16)x);
+    w_u16(p + 24, (uint16)x);
+    w_u16(p + 10, (uint16)y);
+    w_u16(p + 18, (uint16)y);
     right = (uint32)x + ((uint32)diff & 255) + 1;
-    bottom = (sint64)(sint32)ff_u32(position + 12) + y;
+    bottom = (sint64)(sint32)r_u32(position + 12) + y;
     if (bottom < -2147483647LL - 1 || bottom > 2147483647LL)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    ff_w16(p + 16, (uint16)right);
-    ff_w16(p + 32, (uint16)right);
-    ff_w16(p + 26, (uint16)bottom);
-    ff_w16(p + 34, (uint16)bottom);
-    bucket = ff_u32(0x8008d4b4) + (sint32)ff_s16(ff_u32(0x8008d4d8) + ((uint32)((sint32)depth >> 2) << 1));
-    ff_w32(p, ff_u32(bucket) | 0x09000000);
-    ff_w32(bucket, p & 0xffffff);
-    ff_w32(0x8008d4bc, 0x2d000000);
-    ff_w32(0x8008d4b0, p + 40);
+    w_u16(p + 16, (uint16)right);
+    w_u16(p + 32, (uint16)right);
+    w_u16(p + 26, (uint16)bottom);
+    w_u16(p + 34, (uint16)bottom);
+    bucket = r_u32(0x8008d4b4) + (sint32)r_s16(r_u32(0x8008d4d8) + ((uint32)((sint32)depth >> 2) << 1));
+    w_u32(p, r_u32(bucket) | 0x09000000);
+    w_u32(bucket, p & 0xffffff);
+    w_u32(0x8008d4bc, 0x2d000000);
+    w_u32(0x8008d4b0, p + 40);
     return 0x8008d4b0;
 }
 
 /* 18DCC scans CRLF text in place; NUL does not advance the global cursor. */
 uint32 FUN_80018DCC(void)
 {
-    uint32 p = ff_u32(0x80093cfc), next = p + 1;
-    while (*(uint8 *)ff_ptr(p, 1))
+    uint32 p = r_u32(0x80093cfc), next = p + 1;
+    while (r_u8(p))
     {
-        ff_w32(0x80093cfc, next);
-        if (*(uint8 *)ff_ptr(p, 1) == 13)
+        w_u32(0x80093cfc, next);
+        if (r_u8(p) == 13)
         {
-            ff_w8(p, 0);
-            p = ff_u32(0x80093cfc);
+            w_u8(p, 0);
+            p = r_u32(0x80093cfc);
             next = p + 1;
-            ff_w32(0x80093cfc, next);
-            ff_w8(p, 0);
+            w_u32(0x80093cfc, next);
+            w_u8(p, 0);
             return next;
         }
-        p = ff_u32(0x80093cfc);
+        p = r_u32(0x80093cfc);
         next = p + 1;
     }
     return next;
@@ -691,28 +690,28 @@ uint32 FUN_80018E50(void)
     static const uint32 head[] = {0x8009243c, 0x80092440, 0x80092424, 0x80092428, 0x8009242c, 0x80092430, 0x80092434, 0x80092438, 0x80092444, 0x80092448, 0x8009244c, 0x80092464, 0x80092468, 0x8009246c, 0x80092470, 0x80092450, 0x80092454, 0x80092458, 0x8009245c, 0x80092460, 0x80092474, 0x80092478, 0x8009247c, 0x80092480, 0x80092484, 0x80092488, 0x8009248c, 0x80092490, 0x80092494, 0x80092498, 0x8009249c, 0x800924a0, 0x800924a4, 0x800924a8, 0x800924ac, 0x800924b0, 0x800924b4, 0x800924b8, 0x800924bc, 0x800924c0, 0x800924c4, 0x800924c8, 0x800924cc, 0x800924d0, 0x800924d4, 0x800924d8, 0x800924dc, 0x800924e0, 0x800924e4, 0x800924e8, 0x800924ec, 0x800924f0, 0x800924f4, 0x800924f8, 0x800924fc};
     static const uint32 tail[] = {0x80092500, 0, 0x80092504, 0, 0x80092508, 0, 0x8009250c, 0, 0x80092510, 0, 0x80092514, 0, 0x80094600, 0x80094610, 0, 0x80094614, 0, 0x80094618, 0, 0x80094604, 0x80094618, 0, 0x80094608, 0x80094620, 0x80092528, 0, 0x80092518, 0, 0x8009251c, 0, 0x80092520, 0, 0x80092524, 0, 0x8009252c, 0, 0x80092530, 0, 0x80092534, 0, 0x80092538, 0, 0x8009253c, 0, 0x80094458, 0, 0x8009445c, 0, 0x80094460, 0, 0x80094464, 0, 0x80094468, 0, 0x8009446c, 0};
     uint32 i;
-    FUN_80061448(ff_u32(0x80093d70) + 208, ff_u32(0x80093cfc));
+    FUN_80061448(r_u32(0x80093d70) + 208, r_u32(0x80093cfc));
     for (i = 0; i < 15; i++)
     {
-        ff_w32(0x80094678 + 4 * i, ff_u32(0x80093cfc));
+        w_u32(0x80094678 + 4 * i, r_u32(0x80093cfc));
         FUN_80018DCC();
     }
     for (i = 0; i < sizeof(head) / sizeof(head[0]); i++)
     {
-        ff_w32(head[i], ff_u32(0x80093cfc));
+        w_u32(head[i], r_u32(0x80093cfc));
         FUN_80018DCC();
     }
     for (i = 0; i < 3; i++)
     {
-        ff_w32(0x800947e0 + 4 * i, ff_u32(0x80093cfc));
+        w_u32(0x800947e0 + 4 * i, r_u32(0x80093cfc));
         FUN_80018DCC();
     }
     for (i = 0; i < sizeof(tail) / sizeof(tail[0]); i++)
         if (tail[i])
-            ff_w32(tail[i], ff_u32(0x80093cfc));
+            w_u32(tail[i], r_u32(0x80093cfc));
         else
             FUN_80018DCC();
-    ff_w32(0x80093cfc, (ff_u32(0x80093cfc) + 3) & 0xfffffffcu);
+    w_u32(0x80093cfc, (r_u32(0x80093cfc) + 3) & 0xfffffffcu);
     return 0xfffffffcu;
 }
 
@@ -720,9 +719,9 @@ uint32 FUN_80018E50(void)
  * untouched packet padding. 6E7C0/6E798 reuse PsyQ G4/F4 constructors. */
 GDB_CALL uint32 FUN_80063100(uint32 xy, uint32 actor)
 {
-    sint32 maximum = ff_s16(actor + 72) >> 2, old = ff_s16(actor + 70) >> 2;
-    sint32 shown = ff_s16(actor + 68) >> 2, hp = ff_s16(actor + 66) >> 2;
-    uint32 d = 0x800a8768u + 12u * (uint32)(sint32)ff_s16(0x8009ad3eu + 2u * (uint32)(sint32)ff_s16(0x800af4a8));
+    sint32 maximum = r_s16(actor + 72) >> 2, old = r_s16(actor + 70) >> 2;
+    sint32 shown = r_s16(actor + 68) >> 2, hp = r_s16(actor + 66) >> 2;
+    uint32 d = 0x800a8768u + 12u * (uint32)(sint32)r_s16(0x8009ad3eu + 2u * (uint32)(sint32)r_s16(0x800af4a8));
     uint32 x = xy & 65535, y = (uint32)((sint32)xy >> 16), p, bucket, previous, i;
     int wide = maximum > 128, special;
     uint8 *bytes;
@@ -734,20 +733,20 @@ GDB_CALL uint32 FUN_80063100(uint32 xy, uint32 actor)
         shown >>= 1;
         hp >>= 1;
     }
-    p = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, p + 36);
-    bytes = ff_ptr(p, 36);
+    p = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, p + 36);
+    bytes = psx_addr(p, 36);
     setPolyG4(bytes);
-    special = ff_s16(actor + 52) == 53;
+    special = r_s16(actor + 52) == 53;
     for (i = 0; i < 4; i++)
     {
         bytes[4 + 8 * i] = i < 2 ? (wide ? 0 : 128) : 255;
         bytes[5 + 8 * i] = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
         bytes[6 + 8 * i] = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
-        ff_w16(p + 8 + 8 * i, (uint16)(x + (i < 2 ? 0 : (uint32)shown)));
-        ff_w16(p + 10 + 8 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
+        w_u16(p + 8 + 8 * i, (uint16)(x + (i < 2 ? 0 : (uint32)shown)));
+        w_u16(p + 10 + 8 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
     }
-    FUN_80011E40(ff_u32(0x8008d4b4) + 8188, p);
+    FUN_80011E40(r_u32(0x8008d4b4) + 8188, p);
     delta = old - hp;
     if (delta < 0)
         delta = -delta;
@@ -757,36 +756,36 @@ GDB_CALL uint32 FUN_80063100(uint32 xy, uint32 actor)
         if (fade < 0)
             fade = -fade;
         fade /= delta;
-        p = ff_u32(0x8008d4b0);
-        ff_w32(0x8008d4b0, p + 24);
-        bytes = ff_ptr(p, 24);
+        p = r_u32(0x8008d4b0);
+        w_u32(0x8008d4b0, p + 24);
+        bytes = psx_addr(p, 24);
         setPolyF4(bytes);
         bytes[4] = (uint8)fade;
         bytes[5] = bytes[6] = 0;
         for (i = 0; i < 4; i++)
         {
-            ff_w16(p + 8 + 4 * i, (uint16)(x + (uint32)(i < 2 ? shown : old)));
-            ff_w16(p + 10 + 4 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
+            w_u16(p + 8 + 4 * i, (uint16)(x + (uint32)(i < 2 ? shown : old)));
+            w_u16(p + 10 + 4 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
         }
-        FUN_80011E40(ff_u32(0x8008d4b4) + 8188, p);
+        FUN_80011E40(r_u32(0x8008d4b4) + 8188, p);
     }
-    p = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, p + 40);
-    ff_w32(p + 4, 0x2d808080);
-    ff_w32(p + 12, ff_u32(d) & ~1u);
-    ff_w32(p + 20, ff_u32(d + 4));
-    ff_w16(p + 28, ff_s16(d + 8));
-    ff_w16(p + 36, ff_s16(d + 10));
+    p = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, p + 40);
+    w_u32(p + 4, 0x2d808080);
+    w_u32(p + 12, r_u32(d) & ~1u);
+    w_u32(p + 20, r_u32(d + 4));
+    w_u16(p + 28, r_s16(d + 8));
+    w_u16(p + 36, r_s16(d + 10));
     for (i = 0; i < 4; i++)
     {
-        ff_w16(p + 8 + 8 * i, (uint16)(x + ((i & 1) ? (uint32)maximum : 0)));
-        ff_w16(p + 10 + 8 * i, (uint16)(y + (i < 2 ? 0 : 11)));
+        w_u16(p + 8 + 8 * i, (uint16)(x + ((i & 1) ? (uint32)maximum : 0)));
+        w_u16(p + 10 + 8 * i, (uint16)(y + (i < 2 ? 0 : 11)));
     }
     /* 11E28: full PSX pointer in bucket, OR preceding link with DMA length. */
-    bucket = ff_u32(0x8008d4b4) + 8188;
-    previous = ff_u32(bucket);
-    ff_w32(bucket, p);
-    ff_w32(p, previous | 0x09000000);
+    bucket = r_u32(0x8008d4b4) + 8188;
+    previous = r_u32(bucket);
+    w_u32(bucket, p);
+    w_u32(p, previous | 0x09000000);
     return previous;
 }
 
@@ -795,16 +794,16 @@ GDB_CALL uint32 FUN_80063100(uint32 xy, uint32 actor)
 GDB_CALL uint32 FUN_80061D0C(uint32 text, sint32 x, sint32 y)
 {
     sint32 position[3] = {x, y, 0};
-    while (*(uint8 *)ff_ptr(text, 1))
+    while (r_u8(text))
     {
-        sint32 digit = *(sint8 *)ff_ptr(text++, 1);
+        sint32 digit = r_s8(text++);
         if (digit == 32)
             position[0] = (sint32)((uint32)position[0] + 6u);
         else
         {
             digit -= 48;
-            FUN_80012390(position, digit + ff_s16(0x8009ad14u + 2u * (uint32)(sint32)ff_s16(0x800af4a8)));
-            position[0] = (sint32)((uint32)position[0] + (sint32) * (sint8 *)ff_ptr(0x80080140u + 10u * (uint32)digit + (*(uint8 *)ff_ptr(text, 1) & 15), 1));
+            FUN_80012390(position, digit + r_s16(0x8009ad14u + 2u * (uint32)(sint32)r_s16(0x800af4a8)));
+            position[0] = (sint32)((uint32)position[0] + (sint32) r_s8(0x80080140u + 10u * (uint32)digit + (r_u8(text) & 15)));
         }
     }
     return 0;
@@ -817,15 +816,15 @@ GDB_CALL uint32 FUN_80061E0C(sint32 value, uint32 output)
     uint32 result = (uint32)value + 48u;
     if (value < 10)
     {
-        ff_w8(output, (uint8)result);
-        ff_w8(output + 1, 0);
+        w_u8(output, (uint8)result);
+        w_u8(output + 1, 0);
     }
     else
     {
-        ff_w8(output, (uint8)(value / 10 + 48));
+        w_u8(output, (uint8)(value / 10 + 48));
         result = (uint32)(value % 10) + 48;
-        ff_w8(output + 1, (uint8)result);
-        ff_w8(output + 2, 0);
+        w_u8(output + 1, (uint8)result);
+        w_u8(output + 2, 0);
     }
     return result;
 }
@@ -834,8 +833,8 @@ GDB_CALL uint32 FUN_80061E0C(sint32 value, uint32 output)
  * is a run of sprites, not the left bar FT4; preserve last-call return. */
 GDB_CALL uint32 FUN_8006351C(uint32 xy, uint32 actor)
 {
-    sint32 maximum = ff_s16(actor + 72) >> 2, old = ff_s16(actor + 70) >> 2;
-    sint32 shown = ff_s16(actor + 68) >> 2, hp = ff_s16(actor + 66) >> 2;
+    sint32 maximum = r_s16(actor + 72) >> 2, old = r_s16(actor + 70) >> 2;
+    sint32 shown = r_s16(actor + 68) >> 2, hp = r_s16(actor + 66) >> 2;
     uint32 x = xy & 65535, y = (uint32)((sint32)xy >> 16), p, result, i;
     sint32 position[3] = {(sint32)x, (sint32)y, 0};
     int wide = maximum > 128, special;
@@ -848,20 +847,20 @@ GDB_CALL uint32 FUN_8006351C(uint32 xy, uint32 actor)
         shown >>= 1;
         hp >>= 1;
     }
-    p = ff_u32(0x8008d4b0);
-    ff_w32(0x8008d4b0, p + 36);
-    bytes = ff_ptr(p, 36);
+    p = r_u32(0x8008d4b0);
+    w_u32(0x8008d4b0, p + 36);
+    bytes = psx_addr(p, 36);
     setPolyG4(bytes);
-    special = ff_s16(actor + 52) == 53;
+    special = r_s16(actor + 52) == 53;
     for (i = 0; i < 4; i++)
     {
         bytes[4 + 8 * i] = i < 2 ? (wide ? 0 : 128) : 255;
         bytes[5 + 8 * i] = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
         bytes[6 + 8 * i] = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
-        ff_w16(p + 8 + 8 * i, (uint16)(x - (i < 2 ? 0 : (uint32)shown)));
-        ff_w16(p + 10 + 8 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
+        w_u16(p + 8 + 8 * i, (uint16)(x - (i < 2 ? 0 : (uint32)shown)));
+        w_u16(p + 10 + 8 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
     }
-    result = FUN_80011E40(ff_u32(0x8008d4b4) + 8188, p);
+    result = FUN_80011E40(r_u32(0x8008d4b4) + 8188, p);
     delta = old - hp;
     if (delta < 0)
         delta = -delta;
@@ -871,23 +870,23 @@ GDB_CALL uint32 FUN_8006351C(uint32 xy, uint32 actor)
         if (fade < 0)
             fade = -fade;
         fade /= delta;
-        p = ff_u32(0x8008d4b0);
-        ff_w32(0x8008d4b0, p + 24);
-        bytes = ff_ptr(p, 24);
+        p = r_u32(0x8008d4b0);
+        w_u32(0x8008d4b0, p + 24);
+        bytes = psx_addr(p, 24);
         setPolyF4(bytes);
         bytes[4] = (uint8)fade;
         bytes[5] = bytes[6] = 0;
         for (i = 0; i < 4; i++)
         {
-            ff_w16(p + 8 + 4 * i, (uint16)(x - (uint32)(i < 2 ? shown : old)));
-            ff_w16(p + 10 + 4 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
+            w_u16(p + 8 + 4 * i, (uint16)(x - (uint32)(i < 2 ? shown : old)));
+            w_u16(p + 10 + 4 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
         }
-        result = FUN_80011E40(ff_u32(0x8008d4b4) + 8188, p);
+        result = FUN_80011E40(r_u32(0x8008d4b4) + 8188, p);
     }
     for (i = (uint32)(maximum >> 3); (sint32)i > 0; i--)
     {
         position[0] = (sint32)((uint32)position[0] - 8u);
-        result = FUN_80012390(position, ff_s16(0x8009ad3eu + 2u * (uint32)(sint32)ff_s16(0x800af4a8)));
+        result = FUN_80012390(position, r_s16(0x8009ad3eu + 2u * (uint32)(sint32)r_s16(0x800af4a8)));
     }
     return result;
 }

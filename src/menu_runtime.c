@@ -3,6 +3,7 @@
 #include "ff.h"
 #include "psx_gpu.h"
 #include "ff_audio.h"
+#include "ff_video.h"
 #include "xport.h"
 #include "platform_dummy.h"
 #include <stdio.h>
@@ -38,7 +39,7 @@ static int diagnostic_phase_checkpoint(uint32 pc);
 
 static int diagnostic_prime_input_packets(void)
 {
-    uint32 expected[2], tick = ff_u32(0x80093dd0);
+    uint32 expected[2], tick = r_u32(0x80093dd0);
     uint8 packet[34];
     long position;
     if (!diag_input_calls)
@@ -52,7 +53,7 @@ static int diagnostic_prime_input_packets(void)
             return 0;
         if (expected[0] != tick)
             break;
-        memcpy(ff_ptr(expected[1] ? 0x80094770 : 0x80094748, 34), packet, 34);
+        memcpy(psx_addr(expected[1] ? 0x80094770 : 0x80094748, 34), packet, 34);
     }
     clearerr(diag_input_calls);
     return fseek(diag_input_calls, position, SEEK_SET) == 0;
@@ -70,7 +71,7 @@ void ff_audit_highscore_context(const uint8 *saved)
 
 static int diagnostic_phase_gpu(uint32 pc)
 {
-    uint32 *payload = (uint32 *)malloc(0x200000), used = 1, p = ff_u32(0x8008d4b4) & 0x1fffff, guard = 0, tag, words, header[3];
+    uint32 *payload = (uint32 *)malloc(0x200000), used = 1, p = r_u32(0x8008d4b4) & 0x1fffff, guard = 0, tag, words, header[3];
     if (!payload)
         return 0;
     payload[0] = pc;
@@ -81,7 +82,7 @@ static int diagnostic_phase_gpu(uint32 pc)
             free(payload);
             return 0;
         }
-        tag = ff_u32(p);
+        tag = r_u32(p);
         words = tag >> 24;
         if (p + 4 + words * 4 > 0x200000 || used + words + 2 > 0x80000)
         {
@@ -91,14 +92,14 @@ static int diagnostic_phase_gpu(uint32 pc)
         if (words)
         {
             payload[used++] = words;
-            memcpy(payload + used, ff_ptr(p + 4, words * 4), words * 4);
+            memcpy(payload + used, psx_addr(p + 4, words * 4), words * 4);
             used += words;
         }
         p = tag & 0xffffff;
     }
     payload[used++] = 0;
     header[0] = 17;
-    header[1] = ff_u32(0x80093dd0);
+    header[1] = r_u32(0x80093dd0);
     header[2] = used * 4;
     if (fwrite(header, sizeof(header), 1, diag_phases) != 1 || fwrite(payload, used * 4, 1, diag_phases) != 1)
     {
@@ -118,7 +119,7 @@ void ff_audit_input_packet(sint32 controller)
         return;
     entry = &diag_input_history[diag_input_history_count++ & 15u];
     entry->ordinal = diag_input_ordinal;
-    entry->tick = ff_u32(0x80093dd0);
+    entry->tick = r_u32(0x80093dd0);
     entry->controller = (uint32)controller;
     entry->expected_tick = expected[0];
     entry->expected_controller = expected[1];
@@ -138,13 +139,13 @@ void ff_audit_input_packet(sint32 controller)
     }
     entry->expected_tick = expected[0];
     entry->expected_controller = expected[1];
-    memcpy(ff_ptr(controller ? 0x80094770 : 0x80094748, 34), packet, 34);
+    memcpy(psx_addr(controller ? 0x80094770 : 0x80094748, 34), packet, 34);
     diag_input_ordinal++;
 }
 
 int ff_audit_phase_boundary(uint32 pc)
 {
-    uint32 header[3] = {15, ff_u32(0x80093dd0), 2228};
+    uint32 header[3] = {15, r_u32(0x80093dd0), 2228};
     uint32 context[8];
     if (!diag_phases)
         return 0;
@@ -157,10 +158,10 @@ int ff_audit_phase_boundary(uint32 pc)
     context[1] = (uint32)VSync(-1);
     context[2] = 0;
     context[3] = 0;
-    context[4] = ff_u32(0x80093d58);
-    context[5] = ff_u32(0x800927ec);
-    context[6] = ff_u32(0x80094748);
-    context[7] = ff_u32(0x80094770);
+    context[4] = r_u32(0x80093d58);
+    context[5] = r_u32(0x800927ec);
+    context[6] = r_u32(0x80094748);
+    context[7] = r_u32(0x80094770);
     if (diag_phase_directory && (diag_phase_count == 0 || (diag_phase_base + diag_phase_count) % diag_phase_interval == 0))
     {
         if (!diagnostic_phase_checkpoint(pc))
@@ -169,7 +170,7 @@ int ff_audit_phase_boundary(uint32 pc)
             longjmp(menu_exit, 1);
         }
     }
-    if (fwrite(header, sizeof(header), 1, diag_phases) != 1 || fwrite(context, sizeof(context), 1, diag_phases) != 1 || fwrite(ff_ptr(0x8009272c, 212), 212, 1, diag_phases) != 1 || fwrite(ff_ptr(0x800b4318, 1952), 1952, 1, diag_phases) != 1 || fwrite(ff_ptr(0x8008d490, 32), 32, 1, diag_phases) != 1)
+    if (fwrite(header, sizeof(header), 1, diag_phases) != 1 || fwrite(context, sizeof(context), 1, diag_phases) != 1 || fwrite(psx_addr(0x8009272c, 212), 212, 1, diag_phases) != 1 || fwrite(psx_addr(0x800b4318, 1952), 1952, 1, diag_phases) != 1 || fwrite(psx_addr(0x8008d490, 32), 32, 1, diag_phases) != 1)
         diag_phase_failed = 1;
     if (!diagnostic_phase_gpu(pc))
         diag_phase_failed = 1;
@@ -181,7 +182,7 @@ static int diag_input_failed;
 
 static void diagnostic_sound(uint32 address, uint32 a, uint32 b, uint32 c)
 {
-    uint32 record[5] = {address, ff_u32(0x80093dd0), a, b, c};
+    uint32 record[5] = {address, r_u32(0x80093dd0), a, b, c};
     if (diag_sound && fwrite(record, sizeof(record), 1, diag_sound) != 1)
         diag_input_failed = 1;
     if (diag_phases && diag_phase_count)
@@ -197,21 +198,21 @@ static uint64 diag_gpu_ticks;
 
 static void diagnostic_input(uint32 event)
 {
-    uint32 i, lo, hi, tick = ff_u32(0x80093dd0);
+    uint32 i, lo, hi, tick = r_u32(0x80093dd0);
     if (event == 1)
         diag_input_scope = 1;
     if (event == 4)
         diag_input_scope = 0;
     if (event == 4 && diag_inputs)
     {
-        uint32 record[3] = {tick, (uint32)(diag_decode_pad ^ 65535u), ff_u32(0x80093a10) & 65535u};
+        uint32 record[3] = {tick, (uint32)(diag_decode_pad ^ 65535u), r_u32(0x80093a10) & 65535u};
         if (fwrite(record, sizeof(record), 1, diag_inputs) != 1)
             diag_input_failed = 1;
     }
     if (event == 3)
         diag_title = 0;
     if (event == 2 && diag_title)
-        ff_w16(0x8009474a, tick == 2 ? 0xfff7 : 0xffff);
+        w_u16(0x8009474a, tick == 2 ? 0xfff7 : 0xffff);
     if (event == 1)
     {
         diag_active = 1;
@@ -244,7 +245,7 @@ static void diagnostic_input(uint32 event)
     }
     if (diag_active && (event == 0 || event == 1))
     {
-        ff_w16(0x8009474a, event == 0 ? diag_decode_pad : diag_pad);
+        w_u16(0x8009474a, event == 0 ? diag_decode_pad : diag_pad);
     }
 }
 
@@ -319,7 +320,7 @@ static int diagnostic_checkpoint(const char *path, int load)
     }
     else
         ok = fwrite(&magic, 4, 1, f) == 1 && fwrite(checkpoint_abi, 1, 64, f) == 64;
-    ok = ok && ff_state_block(f, DRAM, sizeof(DRAM), load) && ff_state_block(f, ff_ptr(0x1f800000, 1024), 1024, load) && psx_state_io(f, load) && gpu_state_io(f, load) && ff_audio_state_io(f, load) && FF_STATE(f, ff_dummy_calls, load) && FF_STATE(f, ff_dummy_card_pending, load) && FF_STATE(f, ff_sdk_interrupts_enabled, load) && FF_STATE(f, ff_host_pad_state, load) && FF_STATE(f, ff_sdk_counter_state, load);
+    ok = ok && ff_state_block(f, DRAM, sizeof(DRAM), load) && ff_state_block(f, psx_addr(0x1f800000, 1024), 1024, load) && psx_state_io(f, load) && gpu_state_io(f, load) && ff_audio_state_io(f, load) && FF_STATE(f, ff_dummy_calls, load) && FF_STATE(f, ff_dummy_card_pending, load) && FF_STATE(f, ff_sdk_interrupts_enabled, load) && FF_STATE(f, ff_host_pad_state, load) && FF_STATE(f, ff_sdk_counter_state, load);
     if (load && fgetc(f) != EOF)
         ok = 0;
     if (fclose(f))
@@ -389,7 +390,7 @@ static int diagnostic_phase_restore(const char *path, FILE *menu_input)
         return 0;
     if (!diagnostic_checkpoint(path, 1))
         return 0;
-    if ((context[1] == 0x8004fef4 && ff_u32(0x80093d58) != 26) || (context[1] == 0x8001559c && ff_u32(0x80093d58) != 27))
+    if ((context[1] == 0x8004fef4 && r_u32(0x80093d58) != 26) || (context[1] == 0x8001559c && r_u32(0x80093d58) != 27))
         return 0;
     diag_resume_pc = context[1];
     diag_phase_base = context[2];
@@ -460,19 +461,19 @@ static uint32 prepare_host_frame(int gameplay)
     FUN_80067820();
     FUN_80011D9C();
     VSync(2);
-    parity = ff_u32(0x8008d4c4) & 1;
+    parity = r_u32(0x8008d4c4) & 1;
     display = 0x800947a0 + 20 * parity;
-    PutDispEnv((DISPENV *)ff_ptr(display, sizeof(DISPENV)));
+    PutDispEnv((DISPENV *)psx_addr(display, sizeof(DISPENV)));
     FUN_80064684();
     ff_display_offsets_800586D0();
     gpu_begin();
     gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
     if (diag_enabled)
         gpu_start = xport_timer_get();
-    DrawOTag((uint32 *)ff_ptr(ff_u32(0x8008d4b8), sizeof(uint32)));
-    gpu_display_offset(ff_s16(display + 8), ff_s16(display + 10));
+    DrawOTag((uint32 *)psx_addr(r_u32(0x8008d4b8), sizeof(uint32)));
+    gpu_display_offset(r_s16(display + 8), r_s16(display + 10));
     gpu_present();
-    FUN_80011D50(ff_u32(0x8008d4b4));
+    FUN_80011D50(r_u32(0x8008d4b4));
     if (diag_enabled)
     {
         gpu_end = xport_timer_get();
@@ -480,17 +481,17 @@ static uint32 prepare_host_frame(int gameplay)
     }
     if (gameplay == 1)
         return ff_prepare_scene_800587A8_stage0();
-    if ((sint32)ff_u32(0x80093dd4) >= 192)
+    if ((sint32)r_u32(0x80093dd4) >= 192)
         FUN_80061ADC(0x80093570, 110);
-    if (ff_s16(0x8001000c) + ff_s16(0x8001000e) + ff_s16(0x80010010))
+    if (r_s16(0x8001000c) + r_s16(0x8001000e) + r_s16(0x80010010))
         FUN_8006471C();
-    if (ff_u32(0x80094190))
+    if (r_u32(0x80094190))
         FUN_80064820();
     ff_menu_horizon_80058844();
     ff_draw_stage_background();
-    if ((sint32)ff_u32(0x80093dd0) < 33)
+    if ((sint32)r_u32(0x80093dd0) < 33)
     {
-        sint32 fade = (sint32)((ff_u32(0x80093dd0) << 3) - 256u);
+        sint32 fade = (sint32)((r_u32(0x80093dd0) << 3) - 256u);
         FUN_80011CCC(fade, fade, fade);
     }
     return 0;
@@ -520,7 +521,7 @@ int ff_game_prefix_preview(void)
     f = xport_fopen("../status/gameplay/sequence-level-entry.scratch", "rb");
     if (!f)
         return 3;
-    if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
+    if (fread(psx_addr(0x1f800000, 1024), 1, 1024, f) != 1024)
     {
         fclose(f);
         return 4;
@@ -544,7 +545,7 @@ int ff_game_prefix_preview(void)
     }
     ff_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    printf("game_prefix_result %d tick %u\n", result, ff_u32(0x80093dd0));
+    printf("game_prefix_result %d tick %u\n", result, r_u32(0x80093dd0));
     ff_audit_end();
     return result;
 }
@@ -552,38 +553,38 @@ int ff_game_prefix_preview(void)
 /* Native continuation, no RAM/VRAM/SPU fixture loads or host reset. */
 static int save_actor_boundary(FILE *f)
 {
-    return fwrite(ff_ptr(0x80093dd0, 4), 1, 4, f) == 4 && fwrite(ff_ptr(0x800b4318, 1952), 1, 1952, f) == 1952 && fwrite(ff_ptr(0x8008d490, 32), 1, 32, f) == 32;
+    return fwrite(psx_addr(0x80093dd0, 4), 1, 4, f) == 4 && fwrite(psx_addr(0x800b4318, 1952), 1, 1952, f) == 1952 && fwrite(psx_addr(0x8008d490, 32), 1, 32, f) == 32;
 }
 
 /* Optional full memory evidence for a narrow diagnostic interval */
 static int save_detail_boundary(FILE *f, uint32 begin, uint32 end)
 {
-    uint32 tick = ff_u32(0x80093dd0);
+    uint32 tick = r_u32(0x80093dd0);
     if (!f || tick < begin || tick > end)
         return 1;
-    return fwrite(&tick, 4, 1, f) == 1 && fwrite(ff_ptr(0x80000000, 0x200000), 1, 0x200000, f) == 0x200000 && fwrite(ff_ptr(0x1f800000, 1024), 1, 1024, f) == 1024;
+    return fwrite(&tick, 4, 1, f) == 1 && fwrite(psx_addr(0x80000000, 0x200000), 1, 0x200000, f) == 0x200000 && fwrite(psx_addr(0x1f800000, 1024), 1, 1024, f) == 1024;
 }
 
 /* Evidence stream: tick,scene count,world pools/script/RNG, then OT payloads.
  * Skip empty links and addresses, retain every GPU command/payload word. */
 static int save_world_boundary(FILE *f)
 {
-    uint32 count = ff_u32(0x8009403c), p = ff_u32(0x8008d4b4) & 0xffffff, tag, n, guard = 0, zero = 0;
-    if (fwrite(ff_ptr(0x80093dd0, 4), 4, 1, f) != 1 || fwrite(&count, 4, 1, f) != 1)
+    uint32 count = r_u32(0x8009403c), p = r_u32(0x8008d4b4) & 0xffffff, tag, n, guard = 0, zero = 0;
+    if (fwrite(psx_addr(0x80093dd0, 4), 4, 1, f) != 1 || fwrite(&count, 4, 1, f) != 1)
         return 0;
-    if (fwrite(ff_ptr(0x8009a3c8, 2304), 1, 2304, f) != 2304 || fwrite(ff_ptr(0x8009d1d0, 4608), 1, 4608, f) != 4608)
+    if (fwrite(psx_addr(0x8009a3c8, 2304), 1, 2304, f) != 2304 || fwrite(psx_addr(0x8009d1d0, 4608), 1, 4608, f) != 4608)
         return 0;
-    if (fwrite(ff_ptr(0x800b89f0, 36 * count), 36, count, f) != count || fwrite(ff_ptr(0x800bcde0, 6144), 1, 6144, f) != 6144)
+    if (fwrite(psx_addr(0x800b89f0, 36 * count), 36, count, f) != count || fwrite(psx_addr(0x800bcde0, 6144), 1, 6144, f) != 6144)
         return 0;
-    if (fwrite(ff_ptr(0x800946b8, 4), 4, 1, f) != 1 || fwrite(ff_ptr(0x80094e88, 4), 4, 1, f) != 1)
+    if (fwrite(psx_addr(0x800946b8, 4), 4, 1, f) != 1 || fwrite(psx_addr(0x80094e88, 4), 4, 1, f) != 1)
         return 0;
     while (p != 0x10018)
     {
         if (++guard > 100000)
             return 0;
-        tag = ff_u32(p);
+        tag = r_u32(p);
         n = tag >> 24;
-        if (n && (fwrite(&n, 4, 1, f) != 1 || fwrite(ff_ptr(p + 4, 4 * n), 4, n, f) != n))
+        if (n && (fwrite(&n, 4, 1, f) != 1 || fwrite(psx_addr(p + 4, 4 * n), 4, n, f) != n))
             return 0;
         p = tag & 0xffffff;
     }
@@ -634,7 +635,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         result = ff_sequence_run_80015720_stage0(sequence_prepare_frame);
         if (diag_phase_limit && diag_phase_count == diag_phase_limit)
             return 0;
-        printf("continuous_sequence_result %d tick %u stage %u\n", result, ff_u32(0x80093dd0), ff_u32(0x80093d58));
+        printf("continuous_sequence_result %d tick %u stage %u\n", result, r_u32(0x80093dd0), r_u32(0x80093d58));
         fflush(stdout);
         /* 15EC0..15EE8 ignores15720's result, including user skip0. */
         result = 9;
@@ -645,7 +646,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             return 15;
         /* Restore diagnostic pad ownership from the loaded game buffers */
         diag_connected = (uint32)FUN_800573A8();
-        diag_pad = (uint16)ff_s16(0x8009474a);
+        diag_pad = (uint16)r_s16(0x8009474a);
         diag_title = 0;
     }
     else if (!restored_game)
@@ -653,13 +654,13 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         ff_level_init_80014A34_stage0();
         ff_level_ready_80014B70_stage0();
     }
-    next_checkpoint = ff_u32(0x80093dd0);
-    if (checkpoint && checkpoint_tick == ff_u32(0x80093dd0) && !diagnostic_checkpoint(checkpoint, 0))
+    next_checkpoint = r_u32(0x80093dd0);
+    if (checkpoint && checkpoint_tick == r_u32(0x80093dd0) && !diagnostic_checkpoint(checkpoint, 0))
         return 15;
     /* A resumed audit retains absolute game ticks and ends at the same boundary. */
     if ((resume || restored_game) && limit)
     {
-        uint32 tick = ff_u32(0x80093dd0);
+        uint32 tick = r_u32(0x80093dd0);
         if (tick >= limit)
             return 15;
         limit -= tick;
@@ -718,7 +719,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     nonzero_start = g_xport_audio_nonzero_buffers;
     for (frame = 0; !limit || frame < limit; frame++)
     {
-        if (checkpoint_directory && ff_u32(0x80093dd0) == next_checkpoint)
+        if (checkpoint_directory && r_u32(0x80093dd0) == next_checkpoint)
         {
             FILE *existing;
             if (snprintf(periodic_path, sizeof(periodic_path), "%s/tick-%010u.ffcp", checkpoint_directory, next_checkpoint) < 0)
@@ -734,7 +735,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             printf("periodic_checkpoint_saved tick %u path %s\n", next_checkpoint, periodic_path);
             next_checkpoint += checkpoint_interval;
         }
-        if (checkpoint && checkpoint_tick != 0 && checkpoint_tick == ff_u32(0x80093dd0))
+        if (checkpoint && checkpoint_tick != 0 && checkpoint_tick == r_u32(0x80093dd0))
         {
             if (!diagnostic_checkpoint(checkpoint, 0))
                 return 15;
@@ -767,7 +768,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         }
         /* Keep idle stage-loading diagnostics out of the game-over frontend */
         if (stage_soak)
-            ff_w32(0x80093dd4, 0);
+            w_u32(0x80093dd4, 0);
         result = ff_game_frame_prefix_80014DF8_stage0();
         p1 = xport_timer_get();
         if (!result)
@@ -798,12 +799,12 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         prefix_ticks += p1 - p0;
         tail_ticks += p2 - p1;
         record_ticks += p3 - p2;
-        if (result == 2 && diag_enabled && ff_u32(0x80093d58) == 0)
+        if (result == 2 && diag_enabled && r_u32(0x80093d58) == 0)
         {
             /* 15EF0..1607C: fade the completed stage, advance, then enter the next stage */
-            ff_w32(0x800941a8, 0);
+            w_u32(0x800941a8, 0);
             FUN_8005ED78();
-            ff_w32(0x80093d58, 1);
+            w_u32(0x80093d58, 1);
             ff_level_init_80014A34_stage0();
             ff_level_ready_80014B70_stage0();
             result = 0;
@@ -851,7 +852,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     {
         return 7;
     }
-    if (fwrite(ff_ptr(0x80000000, 0x200000), 1, 0x200000, f) != 0x200000)
+    if (fwrite(psx_addr(0x80000000, 0x200000), 1, 0x200000, f) != 0x200000)
     {
         fclose(f);
         return 8;
@@ -863,21 +864,21 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
 static int finish_game_to_menu(int result)
 {
     /* 15EF0..15F00 preserves the game return across the fade call */
-    ff_w32(0x800941a8, 0);
+    w_u32(0x800941a8, 0);
     FUN_8005ED78();
     if (result == 4)
     {
-        if (ff_u32(0x80093d4c) != 329)
+        if (r_u32(0x80093d4c) != 329)
         {
             fprintf(stderr, "WIP: game-over retry continuation\n");
             return 11;
         }
-        FUN_8006AB80(ff_u32(0x80094030), ff_u32(0x80094034));
+        FUN_8006AB80(r_u32(0x80094030), r_u32(0x80094034));
         if (diag_phase_limit && diag_phase_count == diag_phase_limit)
             return 0;
     }
     FUN_80056ECC();
-    ff_w32(0x800941a8, 0);
+    w_u32(0x800941a8, 0);
     FUN_8005ED78();
     result = (int)ff_menu_startup_8004FBCC();
     ff_services.frontend_frame = NULL;
@@ -893,7 +894,7 @@ static int game_loop_preview(int sequence)
     f = xport_fopen(sequence ? "../status/gameplay/sequence-start.scratch" : "../status/gameplay/sequence-level-entry.scratch", "rb");
     if (!f)
         return 3;
-    if (fread(ff_ptr(0x1f800000, 1024), 1, 1024, f) != 1024)
+    if (fread(psx_addr(0x1f800000, 1024), 1, 1024, f) != 1024)
     {
         fclose(f);
         return 4;
@@ -921,7 +922,7 @@ static int game_loop_preview(int sequence)
     }
     ff_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    printf("game_loop_result %d tick %u\n", result, ff_u32(0x80093dd0));
+    printf("game_loop_result %d tick %u\n", result, r_u32(0x80093dd0));
     ff_audit_end();
     return result;
 }
@@ -957,7 +958,7 @@ int ff_sequence_preview(int headless)
         result = ff_sequence_run_80015720_stage0(sequence_prepare_frame);
     ff_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    printf("sequence_result %d tick %u stage %u\n", result, ff_u32(0x80093dd0), ff_u32(0x80093d58));
+    printf("sequence_result %d tick %u stage %u\n", result, r_u32(0x80093dd0), r_u32(0x80093d58));
     ff_audit_end();
     return result == 1 ? 0 : result;
 }
@@ -971,9 +972,9 @@ int ff_title_runtime(void)
     xport_set_headless(0);
     ResetGraph(0);
     InitGeom();
-    ff_w32(0x800940b0, 1);
-    ff_w16(0x80093566, 0);
-    ff_w32(0x80093c14, 0xffffffff);
+    w_u32(0x800940b0, 1);
+    w_u16(0x80093566, 0);
+    w_u32(0x80093c14, 0xffffffff);
     ff_services.game_longjmp = exit_menu;
     ff_services.frontend_frame = title_host_frame;
     if (!setjmp(menu_exit))
@@ -982,7 +983,7 @@ int ff_title_runtime(void)
         result = FUN_80069F78();
     }
     ff_services.frontend_frame = NULL;
-    printf("title_result %u timer %u\n", result, ff_u32(0x80093dd0));
+    printf("title_result %u timer %u\n", result, r_u32(0x80093dd0));
     ff_audit_end();
     return 0;
 }
@@ -1087,12 +1088,27 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         }
         ff_audit_sound_event = diagnostic_sound;
     }
+    if (startup == 2 && !script && !limit && !headless && !diag_enabled)
+    {
+        ff_movie_intro();
+        /* Original SLUS hands off to GAME; restore reviewed GAME data after movie RAM */
+        if (!ff_load_game_image())
+        {
+            result = 2;
+            goto done;
+        }
+        gpu_init_empty();
+        ff_audio_init_empty();
+        ResetCallbackPSX();
+        ResetGraph(0);
+        InitGeom();
+    }
     ff_services.game_longjmp = exit_menu;
     ff_services.menu_aux = menu_aux;
     /* Resume at the reference callback entry; host pads supply original active-low bytes. */
-    ff_w32(0x800927ec, 0x80050270);
-    ff_w32(0x8009355c, 0x80094748);
-    ff_w32(0x80093560, 0x80094770);
+    w_u32(0x800927ec, 0x80050270);
+    w_u32(0x8009355c, 0x80094748);
+    w_u32(0x80093560, 0x80094770);
     if (setjmp(menu_exit))
     {
         result = 9;
@@ -1111,7 +1127,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     }
     if (menu_load)
     {
-        if (!diagnostic_checkpoint(menu_load, 1) || ff_u32(0x80093d58) != 26)
+        if (!diagnostic_checkpoint(menu_load, 1) || r_u32(0x80093d58) != 26)
         {
             result = 15;
             goto done;
@@ -1139,7 +1155,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
                 if (diag_phase_limit && diag_phase_count == diag_phase_limit)
                     goto done;
                 FUN_80056ECC();
-                ff_w32(0x800941a8, 0);
+                w_u32(0x800941a8, 0);
                 FUN_8005ED78();
                 result = (int)ff_menu_startup_8004FBCC();
                 ff_services.frontend_frame = NULL;
@@ -1160,7 +1176,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     {
         ff_services.frontend_frame = title_host_frame;
         result = run_loaded_game(0, diag_end_tick, diagnostic_output());
-        printf("frontend_game_result %d tick %u\n", result, ff_u32(0x80093dd0));
+        printf("frontend_game_result %d tick %u\n", result, r_u32(0x80093dd0));
         goto done;
     }
     if (startup)
@@ -1168,7 +1184,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         if (startup == 2)
         {
             FUN_8006A50C();
-            memset(ff_ptr(0x8009e858, 1044), 0, 1044);
+            memset(psx_addr(0x8009e858, 1044), 0, 1044);
             FUN_8003EE4C();
             FUN_8003EF78();
             FUN_80046854();
@@ -1186,7 +1202,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             ff_dummy_memory_card_read(0, NULL, 0);
             FUN_8005EC90();
             FUN_80056ECC();
-            ff_w32(0x800941a8, 0);
+            w_u32(0x800941a8, 0);
             FUN_8005ED78();
         }
         result = (int)ff_menu_startup_8004FBCC();
@@ -1216,7 +1232,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         /* Fixture PC is already at the first callback, after this prefix. */
         if (frame || startup)
         {
-            if (menu_save && !menu_saved && ff_u32(0x80093dd0) == menu_tick)
+            if (menu_save && !menu_saved && r_u32(0x80093dd0) == menu_tick)
             {
                 FILE *existing = xport_fopen(menu_save, "rb");
                 if (existing)
@@ -1236,11 +1252,11 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
                 break;
             FUN_80058C14();
             FUN_8004F520();
-            ff_w16(0x80093d34, (uint16)ff_s16(0x8008d490));
-            ff_w16(0x80093d36, (uint16)ff_s16(0x8008d492));
+            w_u16(0x80093d34, (uint16)r_s16(0x8008d490));
+            w_u16(0x80093d36, (uint16)r_s16(0x8008d492));
             for (i = 0; i < 3; i++)
-                ff_w32(0x80093d28 + 4u * i, ff_u32(0x8008d4a4 + 4u * i));
-            ff_w32(0x80093dd0, ff_u32(0x80093dd0) + 1);
+                w_u32(0x80093d28 + 4u * i, r_u32(0x8008d4a4 + 4u * i));
+            w_u32(0x80093dd0, r_u32(0x80093dd0) + 1);
             /* 80058650..80058660 uploads the current 256-color palette first. */
             if (!gpu_load_clut(0x800b50b8, 0, 499) || !ff_load_image(0x80093568, 0x800a1990))
             {
@@ -1249,10 +1265,10 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             }
             FUN_80011D9C();
         }
-        display = 0x800947a0 + 20 * (ff_u32(0x8008d4c4) & 1);
-        display_x = ff_s16(display + 8);
-        display_y = ff_s16(display + 10);
-        PutDispEnv((DISPENV *)ff_ptr(display, sizeof(DISPENV)));
+        display = 0x800947a0 + 20 * (r_u32(0x8008d4c4) & 1);
+        display_x = r_s16(display + 8);
+        display_y = r_s16(display + 10);
+        PutDispEnv((DISPENV *)psx_addr(display, sizeof(DISPENV)));
         FUN_80064684();
         ff_display_offsets_800586D0();
         /* Original5868C..587A4: compress prior OT before swapping, submit it,
@@ -1260,16 +1276,16 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         gpu_begin();
         /* 8005876C..80058794: DrawOTagEnv(previous OT, DrawEnv[parity]).
    * Save State 1 uses horizontal VRAM draw surfaces at x=0 and x=320. */
-        gpu_draw_env(0x800b8938 + 92 * (ff_u32(0x8008d4c4) & 1), 320 * (ff_u32(0x8008d4c4) & 1), 0);
-        DrawOTag((uint32 *)ff_ptr(ff_u32(0x8008d4b8), sizeof(uint32)));
+        gpu_draw_env(0x800b8938 + 92 * (r_u32(0x8008d4c4) & 1), 320 * (r_u32(0x8008d4c4) & 1), 0);
+        DrawOTag((uint32 *)psx_addr(r_u32(0x8008d4b8), sizeof(uint32)));
         gpu_display_offset(display_x, display_y);
         gpu_present();
-        FUN_80011D50(ff_u32(0x8008d4b4));
+        FUN_80011D50(r_u32(0x8008d4b4));
         if (frame || startup)
         {
-            if (ff_s16(0x8001000c) + ff_s16(0x8001000e) + ff_s16(0x80010010))
+            if (r_s16(0x8001000c) + r_s16(0x8001000e) + r_s16(0x80010010))
                 FUN_8006471C();
-            if (ff_u32(0x80094190))
+            if (r_u32(0x80094190))
                 FUN_80064820();
             ff_menu_horizon_80058844();
         }
@@ -1277,13 +1293,13 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         FUN_8006686C();
         FUN_80063EEC();
         /* 58BD0..58BF4 runs after packet construction; affects the next frame. */
-        if ((frame || startup) && (sint32)ff_u32(0x80093dd0) < 33)
+        if ((frame || startup) && (sint32)r_u32(0x80093dd0) < 33)
         {
-            sint32 fade = (sint32)((ff_u32(0x80093dd0) << 3) - 256u);
+            sint32 fade = (sint32)((r_u32(0x80093dd0) << 3) - 256u);
             FUN_80011CCC(fade, fade, fade);
         }
-        callback = ff_u32(0x800927ec);
-        if (!ff_u32(0x80092788))
+        callback = r_u32(0x800927ec);
+        if (!r_u32(0x80092788))
         {
             if (callback == 0x80050270)
                 FUN_80050270();
@@ -1309,15 +1325,15 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             }
         }
         /* 8004FFB4..8004FFCC: update then draw actors with original selections/count. */
-        if (!ff_u32(0x80092734))
+        if (!r_u32(0x80092734))
         {
             ff_menu_stage_8001E168();
             FUN_80050CC8();
-            FUN_80058E24(0x8009277c, (sint32)ff_u32(0x80092784));
+            FUN_80058E24(0x8009277c, (sint32)r_u32(0x80092784));
             /* 8004FFD0..80050034: scene update callbacks, followed by object rendering. */
-            for (i = 0; i < (sint32)ff_u32(0x8009403c); i++)
+            for (i = 0; i < (sint32)r_u32(0x8009403c); i++)
             {
-                uint32 object = 0x800b89f0 + 36u * i, target = ff_u32(0x800bbf78 + 4 * ff_u32(object));
+                uint32 object = 0x800b89f0 + 36u * i, target = r_u32(0x800bbf78 + 4 * r_u32(object));
                 if (target)
                     ff_object_call(target, object);
             }
@@ -1326,16 +1342,16 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             /* 80050040..8005007C: camera matrix, effect rendering, then effect update.
     * Dynamic object rendering has run immediately before this matrix setup. */
             FUN_80011D20();
-            FUN_800101CC(ff_s16(0x8008d492));
-            FUN_8001033C(ff_s16(0x8008d490));
+            FUN_800101CC(r_s16(0x8008d492));
+            FUN_8001033C(r_s16(0x8008d490));
             FUN_8001EF68();
             FUN_8001EDB8();
             FUN_8001ED1C();
         }
-        cleanup = ff_menu_tail_80050090(ff_u32(0x80092734) != 0);
+        cleanup = ff_menu_tail_80050090(r_u32(0x80092734) != 0);
         if (trace)
         {
-            uint32 row[8] = {frame, callback, ff_u32(0x800927ec), ff_u32(0x80092730), ff_u32(0x8009277c), ff_u32(0x80092780), ff_u32(0x8009272c), ff_u32(0x80092788)};
+            uint32 row[8] = {frame, callback, r_u32(0x800927ec), r_u32(0x80092730), r_u32(0x8009277c), r_u32(0x80092780), r_u32(0x8009272c), r_u32(0x80092788)};
             fwrite(row, sizeof(row), 1, trace);
         }
         ++frame;
@@ -1343,7 +1359,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         {
             FUN_8005F214();
             FUN_80056ECC();
-            if (ff_u32(0x80093d1c) != 0xffffffffu)
+            if (r_u32(0x80093d1c) != 0xffffffffu)
             {
                 fprintf(stderr, "WIP: unsupported menu continuation\n");
                 result = 11;
@@ -1351,14 +1367,14 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             }
             ff_services.frontend_frame = title_host_frame;
             /* 80015E90..80015EBC runs the opening sequence only for a normal stage-zero start */
-            result = run_loaded_game(ff_u32(0x80093d58) == 0 && ff_u32(0x80093d1c) == 0xffffffffu, script ? (diag_enabled ? diag_end_tick : 900) : 0, diagnostic_output());
-            printf("frontend_game_result %d tick %u\n", result, ff_u32(0x80093dd0));
+            result = run_loaded_game(r_u32(0x80093d58) == 0 && r_u32(0x80093d1c) == 0xffffffffu, script ? (diag_enabled ? diag_end_tick : 900) : 0, diagnostic_output());
+            printf("frontend_game_result %d tick %u\n", result, r_u32(0x80093dd0));
             if (result == 1 || result == 4)
             {
                 result = finish_game_to_menu(result);
                 if (diag_phase_limit && diag_phase_count == diag_phase_limit)
                     break;
-                printf("frontend_menu_return %d stage %u\n", result, ff_u32(0x80093d58));
+                printf("frontend_menu_return %d stage %u\n", result, r_u32(0x80093d58));
                 fflush(stdout);
                 if (result)
                     break;
@@ -1398,7 +1414,7 @@ done:
     }
     if (diag_phases)
     {
-        uint32 footer[4] = {5, ff_u32(0x80093dd0), 4, (uint32)(!diag_phase_failed && result == 0)};
+        uint32 footer[4] = {5, r_u32(0x80093dd0), 4, (uint32)(!diag_phase_failed && result == 0)};
         if (fwrite(footer, sizeof(footer), 1, diag_phases) != 1)
             diag_phase_failed = 1;
         if (fclose(diag_phases))

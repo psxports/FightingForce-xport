@@ -26,7 +26,7 @@ static sint32 attr(uint32 a)
 {
     uint32 *e = event(2);
     e[1] = a;
-    memcpy(e + 3, ff_ptr(a, 64), 64);
+    memcpy(e + 3, psx_addr(a, 64), 64);
     return 0x2468;
 }
 
@@ -34,7 +34,7 @@ static sint32 on(uint32 a)
 {
     uint32 *e = event(3);
     e[1] = a;
-    memcpy(e + 3, ff_ptr(a, 64), 64);
+    memcpy(e + 3, psx_addr(a, 64), 64);
     return 0x3579;
 }
 
@@ -59,12 +59,12 @@ int ff_audit_sound(void)
     {
         memcpy(DRAM, fixture, sizeof(fixture));
         memset(trace, 0, sizeof(trace));
-        ff_w32(0x80093550, j[4]);
-        ff_w32(0x80093554, j[5]);
+        w_u32(0x80093550, j[4]);
+        w_u32(0x80093554, j[5]);
         for (i = 0; i < 24; i++)
-            *(uint8 *)ff_ptr(0x80094708 + i, 1) = (j[6] & (1u << i)) ? 2 : 0;
+            w_u8(0x80094708 + i, (j[6] & (1u << i)) ? 2 : 0);
         if (j[7])
-            ff_w32(0x800b6ab8 + 4 * j[1], 0xffffffffu);
+            w_u32(0x800b6ab8 + 4 * j[1], 0xffffffffu);
         if (j[0] == 0x80056640)
             trace[0] = FUN_80056640();
         else if (j[0] == 0x80056670)
@@ -79,17 +79,17 @@ int ff_audit_sound(void)
             trace[0] = (uint32)FUN_800568C8(j[1], j[2], j[3]);
         else if (j[0] == 0x80043520)
         {
-            ff_w16(j[1] + 18, (uint16)j[2]);
+            w_u16(j[1] + 18, (uint16)j[2]);
             trace[0] = (uint32)FUN_80043520(j[1]);
         }
         else
             return 5;
         fwrite(trace, sizeof(trace), 1, out);
-        fwrite(ff_ptr(0x8009354c, 12), 1, 12, out);
-        fwrite(ff_ptr(0x800946c0, 120), 1, 120, out);
-        fwrite(ff_ptr(0x800a79c8, 1024), 1, 1024, out);
-        fwrite(ff_ptr(0x800b8b10, 36), 1, 36, out);
-        fwrite(ff_ptr(0x800941a0, 4), 1, 4, out);
+        fwrite(psx_addr(0x8009354c, 12), 1, 12, out);
+        fwrite(psx_addr(0x800946c0, 120), 1, 120, out);
+        fwrite(psx_addr(0x800a79c8, 1024), 1, 1024, out);
+        fwrite(psx_addr(0x800b8b10, 36), 1, 36, out);
+        fwrite(psx_addr(0x800941a0, 4), 1, 4, out);
     }
     fclose(jobs);
     fclose(out);

@@ -75,12 +75,6 @@ sint32 ff_dummy_cd_get_toc(uint8 *destination)
  * do not report successful reads or consume uninitialized destination buffers. */
 uint32 ff_dummy_calls[3];
 
-sint32 ff_dummy_cd_search(void *file_info, const char *disc_name)
-{
-    ++ff_dummy_calls[1];
-    return 0; /* WIP physical CD directory: no fabricated sector metadata. */
-}
-
 uint8 ff_dummy_cd_mix_state[4], ff_dummy_cd_track_state[4];
 
 /* Host Red Book transport maps the original TOC location to bin/MUSIC */
@@ -135,12 +129,6 @@ sint32 ff_dummy_cd_read(uint32 sector, void *data, uint32 bytes)
 {
     ++ff_dummy_calls[1];
     return -1;
-}
-
-sint32 ff_dummy_str_decode(const void *data, uint32 bytes)
-{
-    ++ff_dummy_calls[2];
-    return 0; /* No decoded frames. */
 }
 
 #include <stdio.h>

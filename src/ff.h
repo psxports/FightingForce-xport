@@ -814,7 +814,6 @@ GDB_CALL sint32 FUN_80056BA0(void);
 GDB_CALL sint32 FUN_800569DC(void);
 GDB_CALL sint32 FUN_80056BC8(void);
 GDB_CALL sint32 FUN_80056CCC(sint32 archive);
-    #define ff_ptr psx_addr
 
 /* Adapt original guest addresses to the native PsyQ image API */
 static __inline sint32 ff_load_image(uint32 rectangle_address, uint32 pixels_address)
@@ -1000,30 +999,6 @@ typedef struct FF_SERVICES
 
 extern FF_SERVICES ff_services;
 
-static __inline uint32 ff_u32(uint32 a)
-{
-    return dword_(a);
-}
-
-static __inline sint16 ff_s16(uint32 a)
-{
-    return (sint16)word_(a);
-}
-
-static __inline void ff_w32(uint32 a, uint32 v)
-{
-    dword_(a) = v;
-}
-
-static __inline void ff_w8(uint32 a, uint8 v)
-{
-    byte_(a) = v;
-}
-
-static __inline void ff_w16(uint32 a, uint16 v)
-{
-    word_(a) = v;
-}
 #endif
 
 GDB_CALL sint32 FUN_80058E24(uint32 selected, sint32 players);

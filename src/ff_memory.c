@@ -50,7 +50,7 @@ sint32 ff_load_game_image(void)
     {
         memcpy(&address, data + 8u + 8u * i, 4);
         memcpy(&chunk_size, data + 12u + 8u * i, 4);
-        memcpy(DRAM + address - 0x80000000u, data + cursor, chunk_size);
+        memcpy(psx_addr(address, chunk_size), data + cursor, chunk_size);
         cursor += chunk_size;
     }
     return 1;

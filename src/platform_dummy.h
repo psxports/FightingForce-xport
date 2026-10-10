@@ -1,7 +1,6 @@
 #ifndef FF_PLATFORM_DUMMY_H
 #define FF_PLATFORM_DUMMY_H
 #include "psx.h"
-sint32 ff_dummy_cd_search(void *file_info, const char *disc_name);
 /* WIP host boundaries. No physical media or memory-card persistence. */
 sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 capacity);
 extern uint32 ff_dummy_calls[3];
@@ -19,5 +18,4 @@ sint32 ff_dummy_cd_mix(uint8 volume);
 extern uint8 ff_dummy_cd_mix_state[4], ff_dummy_cd_track_state[4];
 sint32 ff_dummy_cd_control(uint32 command, const uint8 *parameter, uint8 *result);
 sint32 ff_dummy_cd_pause(void);
-sint32 ff_dummy_str_decode(const void *data, uint32 bytes);
 #endif

@@ -36,7 +36,7 @@ void ff_function_first_use(unsigned int pc, const char *image, const char *funct
         fprintf(function_journal, "{\"event\":\"session\",\"pid\":%d,\"time\":%lld}\n", _getpid(), (long long)time(NULL));
     }
     /* image and function are compile-time identifiers, never external strings. */
-    fprintf(function_journal, "{\"event\":\"function_first_use\",\"pid\":%d,\"image\":\"%s\",\"pc\":\"%08X\",\"function\":\"%s\",\"stage\":%u,\"tick\":%u}\n", _getpid(), image, pc, function, ff_u32(0x80093d58), ff_u32(0x80093dd0));
+    fprintf(function_journal, "{\"event\":\"function_first_use\",\"pid\":%d,\"image\":\"%s\",\"pc\":\"%08X\",\"function\":\"%s\",\"stage\":%u,\"tick\":%u}\n", _getpid(), image, pc, function, r_u32(0x80093d58), r_u32(0x80093dd0));
     if (fflush(function_journal) || ferror(function_journal))
     {
         fprintf(stderr, "Function journal write failed\n");
@@ -150,13 +150,13 @@ int ff_wip_visit(unsigned int pc, const char *subsystem, const char *function, c
         quoted(function);
         fputs(",\"file\":", journal);
         quoted(file);
-        fprintf(journal, ",\"line\":%d,\"tick\":%u,\"stage\":%u,\"input\":[%u,%u],\"continued\":%s,\"prior_skips\":%lu,\"fallback\":", line, ff_u32(0x80093dd0), ff_u32(0x80093d58), ff_u32(0x80093a10), ff_u32(0x80093a14), resume ? "true" : "false", tainted);
+        fprintf(journal, ",\"line\":%d,\"tick\":%u,\"stage\":%u,\"input\":[%u,%u],\"continued\":%s,\"prior_skips\":%lu,\"fallback\":", line, r_u32(0x80093dd0), r_u32(0x80093d58), r_u32(0x80093a10), r_u32(0x80093a14), resume ? "true" : "false", tainted);
         quoted(resume ? fallback : "abort");
         fputs(",\"actors\":[", journal);
         for (i = 0; i < 8; i++)
         {
             actor = 0x800b4318 + 244u * i;
-            fprintf(journal, "%s{\"slot\":%u,\"type\":%d,\"state\":%u,\"animation_frame\":%d,\"hp\":%d,\"xyz\":[%d,%d,%d]}", i ? "," : "", i, ff_s16(actor + 52), ff_u32(actor + 12), (sint32)ff_u32(actor + 4), ff_s16(actor + 66), (sint32)ff_u32(actor + 40), (sint32)ff_u32(actor + 44), (sint32)ff_u32(actor + 48));
+            fprintf(journal, "%s{\"slot\":%u,\"type\":%d,\"state\":%u,\"animation_frame\":%d,\"hp\":%d,\"xyz\":[%d,%d,%d]}", i ? "," : "", i, r_s16(actor + 52), r_u32(actor + 12), (sint32)r_u32(actor + 4), r_s16(actor + 66), (sint32)r_u32(actor + 40), (sint32)r_u32(actor + 44), (sint32)r_u32(actor + 48));
         }
         fputs("]}\n", journal);
         if (fflush(journal) || ferror(journal))
