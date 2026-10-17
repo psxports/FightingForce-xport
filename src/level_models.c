@@ -3,12 +3,12 @@
 /* 80034C20: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80034C20(void)
 {
-    FF_FUNCTION_MARKER(0x80034c20u, "GAME.EXE");
+    FUNCTION_MARKER(0x80034c20u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5;
-    v0 = r_u32(0x800947f0u);                    /* 80034C2C */
+    v0 = r_u32(0x800947f0u);                     /* 80034C2C */
     v1 = FUN_80061448(0x00000056u, v0);          /* 80034C30 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80034C40 */
-    w_u32(0x800947f0u, v2);                     /* 80034C4C */
+    w_u32(0x800947f0u, v2);                      /* 80034C4C */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80034C58 */
     v4 = FUN_80013C8C();                         /* 80034C60 */
     v5 = FUN_80013D40();                         /* 80034C68 */
@@ -18,13 +18,13 @@ GDB_CALL uint32 FUN_80034C20(void)
 /* 80034C80: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80034C80(void)
 {
-    FF_FUNCTION_MARKER(0x80034c80u, "GAME.EXE");
+    FUNCTION_MARKER(0x80034c80u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40;
-    v0 = r_u32(0x80094844u);                                  /* 80034C8C */
+    v0 = r_u32(0x80094844u);                                   /* 80034C8C */
     v1 = FUN_80061448(0x0000002au, v0);                        /* 80034C90 */
-    v2 = r_u32(0x80094844u);                                  /* 80034C9C */
-    v3 = r_u32(0x800947d0u);                                  /* 80034CA4 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80034CB4 */
+    v2 = r_u32(0x80094844u);                                   /* 80034C9C */
+    v3 = r_u32(0x800947d0u);                                   /* 80034CA4 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80034CB4 */
     v4 = FUN_8005FF2C(0x8008e954u, 0x00000077u, 0x00000008u);  /* 80034CC4 */
     v5 = FUN_8005FF2C(0x8008e960u, 0x000001d1u, 0x00000008u);  /* 80034CD8 */
     v6 = FUN_8005FF2C(0x8008e96cu, 0x00000299u, 0x00000008u);  /* 80034CEC */
@@ -68,12 +68,12 @@ GDB_CALL uint32 FUN_80034C80(void)
 /* 80034FAC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80034FAC(void)
 {
-    FF_FUNCTION_MARKER(0x80034facu, "GAME.EXE");
+    FUNCTION_MARKER(0x80034facu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7;
-    v0 = r_u32(0x800947f0u);                    /* 80034FB8 */
+    v0 = r_u32(0x800947f0u);                     /* 80034FB8 */
     v1 = FUN_80061448(0x00000057u, v0);          /* 80034FBC */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80034FCC */
-    w_u32(0x800947f0u, v2);                     /* 80034FD8 */
+    w_u32(0x800947f0u, v2);                      /* 80034FD8 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80034FE4 */
     v4 = FUN_8001721C(0x8008e554u, 0xfffffffdu); /* 80034FF4 */
     v5 = FUN_80013C8C();                         /* 80034FFC */
@@ -85,13 +85,13 @@ GDB_CALL uint32 FUN_80034FAC(void)
 /* 80035024: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80035024(void)
 {
-    FF_FUNCTION_MARKER(0x80035024u, "GAME.EXE");
+    FUNCTION_MARKER(0x80035024u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17;
-    v0 = r_u32(0x80094844u);                                  /* 80035030 */
+    v0 = r_u32(0x80094844u);                                   /* 80035030 */
     v1 = FUN_80061448(0x0000002bu, v0);                        /* 80035034 */
-    v2 = r_u32(0x80094844u);                                  /* 80035040 */
-    v3 = r_u32(0x800947d0u);                                  /* 80035048 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80035058 */
+    v2 = r_u32(0x80094844u);                                   /* 80035040 */
+    v3 = r_u32(0x800947d0u);                                   /* 80035048 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80035058 */
     v4 = FUN_8005FF2C(0x8008eb54u, 0x00000085u, 0x0000000au);  /* 80035068 */
     v5 = FUN_8005FF2C(0x8008eb64u, 0x00000086u, 0x0000000au);  /* 8003507C */
     v6 = FUN_8005FF2C(0x8008e990u, 0x00000087u, 0x00000009u);  /* 80035090 */
@@ -112,12 +112,12 @@ GDB_CALL uint32 FUN_80035024(void)
 /* 80035184: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80035184(void)
 {
-    FF_FUNCTION_MARKER(0x80035184u, "GAME.EXE");
+    FUNCTION_MARKER(0x80035184u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6;
-    v0 = r_u32(0x800947f0u);                    /* 80035190 */
+    v0 = r_u32(0x800947f0u);                     /* 80035190 */
     v1 = FUN_80061448(0x00000058u, v0);          /* 80035194 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 800351A4 */
-    w_u32(0x800947f0u, v2);                     /* 800351B0 */
+    w_u32(0x800947f0u, v2);                      /* 800351B0 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 800351BC */
     v4 = FUN_8001721C(0x8008e554u, 0xfffffffdu); /* 800351CC */
     v5 = FUN_800140C8();                         /* 800351D4 */
@@ -128,13 +128,13 @@ GDB_CALL uint32 FUN_80035184(void)
 /* 800351F4: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800351F4(void)
 {
-    FF_FUNCTION_MARKER(0x800351f4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800351f4u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15;
-    v0 = r_u32(0x80094844u);                                  /* 80035200 */
+    v0 = r_u32(0x80094844u);                                   /* 80035200 */
     v1 = FUN_80061448(0x0000002cu, v0);                        /* 80035204 */
-    v2 = r_u32(0x80094844u);                                  /* 80035210 */
-    v3 = r_u32(0x800947d0u);                                  /* 80035218 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80035228 */
+    v2 = r_u32(0x80094844u);                                   /* 80035210 */
+    v3 = r_u32(0x800947d0u);                                   /* 80035218 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80035228 */
     v4 = FUN_8005FF2C(0x8008ebfcu, 0x00000088u, 0x0000000bu);  /* 80035238 */
     v5 = FUN_8005FF2C(0x8008e960u, 0x000001d1u, 0x0000000bu);  /* 8003524C */
     v6 = FUN_8005FF2C(0x8008ec08u, 0x0000029fu, 0x00000046u);  /* 80035260 */
@@ -153,12 +153,12 @@ GDB_CALL uint32 FUN_800351F4(void)
 /* 8003532C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003532C(void)
 {
-    FF_FUNCTION_MARKER(0x8003532cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003532cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5;
-    v0 = r_u32(0x800947f0u);                    /* 80035338 */
+    v0 = r_u32(0x800947f0u);                     /* 80035338 */
     v1 = FUN_80061448(0x00000059u, v0);          /* 8003533C */
     v2 = FUN_800611F8(0x8008e53cu);              /* 8003534C */
-    w_u32(0x800947f0u, v2);                     /* 80035358 */
+    w_u32(0x800947f0u, v2);                      /* 80035358 */
     v3 = FUN_8001721C(0x8008ec7cu, 0xfffffffeu); /* 80035364 */
     v4 = FUN_80013F74();                         /* 8003536C */
     v5 = FUN_80013F0C();                         /* 80035374 */
@@ -168,13 +168,13 @@ GDB_CALL uint32 FUN_8003532C(void)
 /* 8003538C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003538C(void)
 {
-    FF_FUNCTION_MARKER(0x8003538cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003538cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
-    v0 = r_u32(0x80094844u);                                  /* 80035398 */
+    v0 = r_u32(0x80094844u);                                   /* 80035398 */
     v1 = FUN_80061448(0x0000002du, v0);                        /* 8003539C */
-    v2 = r_u32(0x80094844u);                                  /* 800353A8 */
-    v3 = r_u32(0x800947d0u);                                  /* 800353B0 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800353C0 */
+    v2 = r_u32(0x80094844u);                                   /* 800353A8 */
+    v3 = r_u32(0x800947d0u);                                   /* 800353B0 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800353C0 */
     v4 = FUN_8005FF2C(0x8008ec8cu, 0x0000008du, 0x0000000cu);  /* 800353D0 */
     v5 = FUN_8005FF2C(0x8008ec98u, 0x0000008eu, 0x0000000cu);  /* 800353E4 */
     v6 = FUN_8005FF2C(0x8008eca4u, 0x000002a7u, 0x0000000cu);  /* 800353F8 */
@@ -198,12 +198,12 @@ GDB_CALL uint32 FUN_8003538C(void)
 /* 80035528: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80035528(void)
 {
-    FF_FUNCTION_MARKER(0x80035528u, "GAME.EXE");
+    FUNCTION_MARKER(0x80035528u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10;
-    v0 = r_u32(0x800947f0u);                    /* 80035534 */
+    v0 = r_u32(0x800947f0u);                     /* 80035534 */
     v1 = FUN_80061448(0x0000005au, v0);          /* 80035538 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80035548 */
-    w_u32(0x800947f0u, v2);                     /* 80035554 */
+    w_u32(0x800947f0u, v2);                      /* 80035554 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80035560 */
     v4 = FUN_8001721C(0x8008ed5cu, 0xffffffffu); /* 80035570 */
     v5 = FUN_8001721C(0x8008ed6cu, 0xffffffffu); /* 80035580 */
@@ -218,13 +218,13 @@ GDB_CALL uint32 FUN_80035528(void)
 /* 800355C0: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800355C0(void)
 {
-    FF_FUNCTION_MARKER(0x800355c0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800355c0u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42, v43, v44;
-    v0 = r_u32(0x80094844u);                                  /* 800355CC */
+    v0 = r_u32(0x80094844u);                                   /* 800355CC */
     v1 = FUN_80061448(0x0000002eu, v0);                        /* 800355D0 */
-    v2 = r_u32(0x80094844u);                                  /* 800355DC */
-    v3 = r_u32(0x800947d0u);                                  /* 800355E4 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800355F4 */
+    v2 = r_u32(0x80094844u);                                   /* 800355DC */
+    v3 = r_u32(0x800947d0u);                                   /* 800355E4 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800355F4 */
     v4 = FUN_8005FF2C(0x8008ed78u, 0x00000095u, 0x0000000du);  /* 80035604 */
     v5 = FUN_8005FF2C(0x8008ed84u, 0x00000096u, 0x0000000du);  /* 80035618 */
     v6 = FUN_8005FF2C(0x8008ed90u, 0x00000099u, 0x0000000du);  /* 8003562C */
@@ -272,12 +272,12 @@ GDB_CALL uint32 FUN_800355C0(void)
 /* 8003593C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003593C(void)
 {
-    FF_FUNCTION_MARKER(0x8003593cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003593cu, "GAME.EXE");
     uint32 v0, v1, v2, v3;
-    v0 = r_u32(0x800947f0u);           /* 80035948 */
+    v0 = r_u32(0x800947f0u);            /* 80035948 */
     v1 = FUN_80061448(0x0000005bu, v0); /* 8003594C */
     v2 = FUN_800611F8(0x8008e53cu);     /* 8003595C */
-    w_u32(0x800947f0u, v2);            /* 80035968 */
+    w_u32(0x800947f0u, v2);             /* 80035968 */
     v3 = FUN_800140F4();                /* 8003596C */
     return v3;
 }
@@ -285,13 +285,13 @@ GDB_CALL uint32 FUN_8003593C(void)
 /* 80035984: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80035984(void)
 {
-    FF_FUNCTION_MARKER(0x80035984u, "GAME.EXE");
+    FUNCTION_MARKER(0x80035984u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42;
-    v0 = r_u32(0x80094844u);                                  /* 80035990 */
+    v0 = r_u32(0x80094844u);                                   /* 80035990 */
     v1 = FUN_80061448(0x0000002fu, v0);                        /* 80035994 */
-    v2 = r_u32(0x80094844u);                                  /* 800359A0 */
-    v3 = r_u32(0x800947d0u);                                  /* 800359A8 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800359B8 */
+    v2 = r_u32(0x80094844u);                                   /* 800359A0 */
+    v3 = r_u32(0x800947d0u);                                   /* 800359A8 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800359B8 */
     v4 = FUN_8005FF2C(0x8008edb4u, 0x000000b7u, 0x0000000eu);  /* 800359C8 */
     v5 = FUN_8005FF2C(0x8008edc4u, 0x000000b8u, 0x0000000eu);  /* 800359DC */
     v6 = FUN_8005FF2C(0x8008ed9cu, 0x000000b9u, 0x0000000eu);  /* 800359F0 */
@@ -337,12 +337,12 @@ GDB_CALL uint32 FUN_80035984(void)
 /* 80035CD8: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80035CD8(void)
 {
-    FF_FUNCTION_MARKER(0x80035cd8u, "GAME.EXE");
+    FUNCTION_MARKER(0x80035cd8u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8;
-    v0 = r_u32(0x800947f0u);                    /* 80035CE4 */
+    v0 = r_u32(0x800947f0u);                     /* 80035CE4 */
     v1 = FUN_80061448(0x0000005cu, v0);          /* 80035CE8 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80035CF8 */
-    w_u32(0x800947f0u, v2);                     /* 80035D04 */
+    w_u32(0x800947f0u, v2);                      /* 80035D04 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80035D10 */
     v4 = FUN_80013C8C();                         /* 80035D18 */
     v5 = FUN_80013DC4();                         /* 80035D20 */
@@ -355,13 +355,13 @@ GDB_CALL uint32 FUN_80035CD8(void)
 /* 80035D50: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80035D50(void)
 {
-    FF_FUNCTION_MARKER(0x80035d50u, "GAME.EXE");
+    FUNCTION_MARKER(0x80035d50u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42, v43, v44, v45, v46, v47, v48, v49, v50, v51, v52, v53, v54, v55, v56, v57, v58, v59, v60, v61, v62, v63, v64, v65, v66, v67, v68, v69, v70, v71, v72, v73, v74, v75, v76, v77, v78, v79, v80, v81, v82, v83, v84, v85, v86, v87, v88, v89, v90, v91, v92, v93, v94, v95, v96;
-    v0 = r_u32(0x80094844u);                                  /* 80035D60 */
+    v0 = r_u32(0x80094844u);                                   /* 80035D60 */
     v1 = FUN_80061448(0x00000030u, v0);                        /* 80035D64 */
-    v2 = r_u32(0x80094844u);                                  /* 80035D70 */
-    v3 = r_u32(0x800947d0u);                                  /* 80035D78 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80035D88 */
+    v2 = r_u32(0x80094844u);                                   /* 80035D70 */
+    v3 = r_u32(0x800947d0u);                                   /* 80035D78 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80035D88 */
     v4 = FUN_8005FF2C(0x8008f0a0u, 0x000000cfu, 0x0000000fu);  /* 80035D98 */
     v5 = FUN_8005FF2C(0x8008f0acu, 0x000000d0u, 0x0000000fu);  /* 80035DAC */
     v6 = FUN_8005FF2C(0x8008f0b8u, 0x000000d1u, 0x0000000fu);  /* 80035DC0 */
@@ -427,12 +427,12 @@ GDB_CALL uint32 FUN_80035D50(void)
     v66 = FUN_8005FF2C(0x8008f3d0u, 0x000002cbu, 0x00000046u); /* 80036270 */
     v67 = FUN_8005FF2C(0x8008f3e0u, 0x000002d0u, 0x00000046u); /* 80036284 */
     v68 = FUN_8005FF2C(0x8008f3f0u, 0x000002d1u, 0x00000046u); /* 80036298 */
-    v69 = r_u32(0x80082264u);                                 /* 800362A8 */
-    w_u32(0x80082268u, v69);                                  /* 800362B0 */
+    v69 = r_u32(0x80082264u);                                  /* 800362A8 */
+    w_u32(0x80082268u, v69);                                   /* 800362B0 */
     v70 = FUN_8005FF2C(0x8008f400u, 0x000002d3u, 0x00000046u); /* 800362C0 */
     v71 = FUN_8005FF2C(0x8008f410u, 0x00000212u, 0x00000046u); /* 800362D4 */
-    v72 = r_u32(0x80081f68u);                                 /* 800362DC */
-    w_u32(0x80082270u, v72);                                  /* 800362E4 */
+    v72 = r_u32(0x80081f68u);                                  /* 800362DC */
+    w_u32(0x80082270u, v72);                                   /* 800362E4 */
     v73 = FUN_8005FF2C(0x8008e6bcu, 0x0000005eu, 0x00000046u); /* 800362F4 */
     v74 = FUN_8005FF2C(0x8008e6ccu, 0x0000005fu, 0x00000046u); /* 80036308 */
     v75 = FUN_8005FF2C(0x8008e6dcu, 0x00000060u, 0x00000046u); /* 8003631C */
@@ -447,34 +447,34 @@ GDB_CALL uint32 FUN_80035D50(void)
     v84 = FUN_8005FF2C(0x8008e798u, 0x00000216u, 0x00000047u); /* 800363D0 */
     v85 = FUN_8005FF2C(0x8008e7a8u, 0x00000067u, 0x00000047u); /* 800363E4 */
     v86 = FUN_8005FF2C(0x8008e7b4u, 0x00000068u, 0x00000047u); /* 800363F8 */
-    v87 = r_u32(0x800818acu);                                 /* 80036400 */
-    w_u32(0x800818b0u, v87);                                  /* 80036408 */
-    v88 = r_u32(0x80081f60u);                                 /* 8003640C */
-    w_u32(0x800818c4u, v88);                                  /* 80036414 */
+    v87 = r_u32(0x800818acu);                                  /* 80036400 */
+    w_u32(0x800818b0u, v87);                                   /* 80036408 */
+    v88 = r_u32(0x80081f60u);                                  /* 8003640C */
+    w_u32(0x800818c4u, v88);                                   /* 80036414 */
     v89 = FUN_8005FF2C(0x8008f41cu, 0x000001d3u, 0x00000046u); /* 80036424 */
     v90 = FUN_8005FF2C(0x8008f428u, 0x000001d4u, 0x00000046u); /* 80036438 */
-    v91 = r_u32(0x80081e6cu);                                 /* 80036440 */
-    w_u32(0x80081af4u, v91);                                  /* 80036448 */
-    v92 = r_u32(0x80081e70u);                                 /* 8003644C */
-    w_u32(0x80081af8u, v92);                                  /* 80036454 */
+    v91 = r_u32(0x80081e6cu);                                  /* 80036440 */
+    w_u32(0x80081af4u, v91);                                   /* 80036448 */
+    v92 = r_u32(0x80081e70u);                                  /* 8003644C */
+    w_u32(0x80081af8u, v92);                                   /* 80036454 */
     v93 = FUN_8005FF2C(0x8008f434u, 0x000001d5u, 0x00000046u); /* 80036464 */
     v94 = FUN_8005FF2C(0x8008f440u, 0x000001d6u, 0x00000046u); /* 80036478 */
-    v95 = r_u32(0x80081e74u);                                 /* 80036480 */
-    w_u32(0x80081afcu, v95);                                  /* 80036488 */
-    v96 = r_u32(0x80081e78u);                                 /* 8003648C */
-    w_u32(0x80081b00u, v96);                                  /* 80036494 */
+    v95 = r_u32(0x80081e74u);                                  /* 80036480 */
+    w_u32(0x80081afcu, v95);                                   /* 80036488 */
+    v96 = r_u32(0x80081e78u);                                  /* 8003648C */
+    w_u32(0x80081b00u, v96);                                   /* 80036494 */
     return v96;
 }
 
 /* 800364AC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800364AC(void)
 {
-    FF_FUNCTION_MARKER(0x800364acu, "GAME.EXE");
+    FUNCTION_MARKER(0x800364acu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12;
-    v0 = r_u32(0x800947f0u);                    /* 800364B8 */
+    v0 = r_u32(0x800947f0u);                     /* 800364B8 */
     v1 = FUN_80061448(0x0000005du, v0);          /* 800364BC */
     v2 = FUN_800611F8(0x8008e53cu);              /* 800364CC */
-    w_u32(0x800947f0u, v2);                     /* 800364D8 */
+    w_u32(0x800947f0u, v2);                      /* 800364D8 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 800364E4 */
     v4 = FUN_8001721C(0x8008f44cu, 0xffffffffu); /* 800364F4 */
     v5 = FUN_8001721C(0x8008ed5cu, 0xffffffffu); /* 80036504 */
@@ -491,13 +491,13 @@ GDB_CALL uint32 FUN_800364AC(void)
 /* 80036564: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80036564(void)
 {
-    FF_FUNCTION_MARKER(0x80036564u, "GAME.EXE");
+    FUNCTION_MARKER(0x80036564u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33;
-    v0 = r_u32(0x80094844u);                                  /* 80036574 */
+    v0 = r_u32(0x80094844u);                                   /* 80036574 */
     v1 = FUN_80061448(0x00000031u, v0);                        /* 80036578 */
-    v2 = r_u32(0x80094844u);                                  /* 80036584 */
-    v3 = r_u32(0x800947d0u);                                  /* 8003658C */
-    w_u32(0x80094844u, (v2 + v3));                            /* 8003659C */
+    v2 = r_u32(0x80094844u);                                   /* 80036584 */
+    v3 = r_u32(0x800947d0u);                                   /* 8003658C */
+    w_u32(0x80094844u, (v2 + v3));                             /* 8003659C */
     v4 = FUN_8005FF2C(0x8008f464u, 0x000000f9u, 0x00000010u);  /* 800365AC */
     v5 = FUN_8005FF2C(0x8008f474u, 0x000000fau, 0x00000010u);  /* 800365C0 */
     v6 = FUN_8005FF2C(0x8008f484u, 0x000000fbu, 0x00000010u);  /* 800365D4 */
@@ -514,16 +514,16 @@ GDB_CALL uint32 FUN_80036564(void)
     v17 = FUN_8005FF2C(0x8008f508u, 0x00000106u, 0x00000010u); /* 800366B0 */
     v18 = FUN_8005FF2C(0x8008f514u, 0x00000107u, 0x00000010u); /* 800366C4 */
     v19 = FUN_8005FF2C(0x8008ec14u, 0x000002d6u, 0x00000046u); /* 800366D8 */
-    v20 = r_u32(0x80082278u);                                 /* 800366E8 */
-    w_u32(0x800820a0u, v20);                                  /* 800366F0 */
+    v20 = r_u32(0x80082278u);                                  /* 800366E8 */
+    w_u32(0x800820a0u, v20);                                   /* 800366F0 */
     v21 = FUN_8005FF2C(0x8008f524u, 0x000002d5u, 0x00000046u); /* 80036700 */
     v22 = FUN_8005FF2C(0x8008f534u, 0x0000021au, 0x00000046u); /* 80036714 */
     v23 = FUN_8005FF2C(0x8008f540u, 0x0000021bu, 0x00000046u); /* 80036728 */
     v24 = FUN_8005FF2C(0x8008f54cu, 0x000001feu, 0x00000046u); /* 8003673C */
     v25 = FUN_8005FF2C(0x8008f558u, 0x000002d7u, 0x00000046u); /* 80036750 */
     v26 = FUN_8005FF2C(0x8008ee5cu, 0x000002d8u, 0x00000046u); /* 80036764 */
-    v27 = r_u32(0x80082280u);                                 /* 8003676C */
-    w_u32(0x8008228cu, v27);                                  /* 80036774 */
+    v27 = r_u32(0x80082280u);                                  /* 8003676C */
+    w_u32(0x8008228cu, v27);                                   /* 80036774 */
     v28 = FUN_8005FF2C(0x8008f568u, 0x000002d9u, 0x00000046u); /* 80036784 */
     v29 = FUN_8005FF2C(0x8008f578u, 0x000002dau, 0x00000046u); /* 80036798 */
     v30 = FUN_8005FF2C(0x8008ef40u, 0x00000213u, 0x00000047u); /* 800367AC */
@@ -536,12 +536,12 @@ GDB_CALL uint32 FUN_80036564(void)
 /* 80036804: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80036804(void)
 {
-    FF_FUNCTION_MARKER(0x80036804u, "GAME.EXE");
+    FUNCTION_MARKER(0x80036804u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12;
-    v0 = r_u32(0x800947f0u);                    /* 80036810 */
+    v0 = r_u32(0x800947f0u);                     /* 80036810 */
     v1 = FUN_80061448(0x0000005eu, v0);          /* 80036814 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80036824 */
-    w_u32(0x800947f0u, v2);                     /* 80036830 */
+    w_u32(0x800947f0u, v2);                      /* 80036830 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 8003683C */
     v4 = FUN_8001721C(0x8008f44cu, 0xffffffffu); /* 8003684C */
     v5 = FUN_8001721C(0x8008ed5cu, 0xffffffffu); /* 8003685C */
@@ -558,13 +558,13 @@ GDB_CALL uint32 FUN_80036804(void)
 /* 800368BC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800368BC(void)
 {
-    FF_FUNCTION_MARKER(0x800368bcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800368bcu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33;
-    v0 = r_u32(0x80094844u);                                  /* 800368CC */
+    v0 = r_u32(0x80094844u);                                   /* 800368CC */
     v1 = FUN_80061448(0x00000031u, v0);                        /* 800368D0 */
-    v2 = r_u32(0x80094844u);                                  /* 800368DC */
-    v3 = r_u32(0x800947d0u);                                  /* 800368E4 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800368F4 */
+    v2 = r_u32(0x80094844u);                                   /* 800368DC */
+    v3 = r_u32(0x800947d0u);                                   /* 800368E4 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800368F4 */
     v4 = FUN_8005FF2C(0x8008f464u, 0x000000f9u, 0x00000010u);  /* 80036904 */
     v5 = FUN_8005FF2C(0x8008f474u, 0x000000fau, 0x00000010u);  /* 80036918 */
     v6 = FUN_8005FF2C(0x8008f484u, 0x000000fbu, 0x00000010u);  /* 8003692C */
@@ -581,16 +581,16 @@ GDB_CALL uint32 FUN_800368BC(void)
     v17 = FUN_8005FF2C(0x8008f508u, 0x00000106u, 0x00000010u); /* 80036A08 */
     v18 = FUN_8005FF2C(0x8008f514u, 0x00000107u, 0x00000010u); /* 80036A1C */
     v19 = FUN_8005FF2C(0x8008ec14u, 0x000002d6u, 0x00000046u); /* 80036A30 */
-    v20 = r_u32(0x80082278u);                                 /* 80036A40 */
-    w_u32(0x800820a0u, v20);                                  /* 80036A48 */
+    v20 = r_u32(0x80082278u);                                  /* 80036A40 */
+    w_u32(0x800820a0u, v20);                                   /* 80036A48 */
     v21 = FUN_8005FF2C(0x8008f524u, 0x000002d5u, 0x00000046u); /* 80036A58 */
     v22 = FUN_8005FF2C(0x8008f534u, 0x0000021au, 0x00000046u); /* 80036A6C */
     v23 = FUN_8005FF2C(0x8008f540u, 0x0000021bu, 0x00000046u); /* 80036A80 */
     v24 = FUN_8005FF2C(0x8008f54cu, 0x000001feu, 0x00000046u); /* 80036A94 */
     v25 = FUN_8005FF2C(0x8008f558u, 0x000002d7u, 0x00000046u); /* 80036AA8 */
     v26 = FUN_8005FF2C(0x8008ee5cu, 0x000002d8u, 0x00000046u); /* 80036ABC */
-    v27 = r_u32(0x80082280u);                                 /* 80036AC4 */
-    w_u32(0x8008228cu, v27);                                  /* 80036ACC */
+    v27 = r_u32(0x80082280u);                                  /* 80036AC4 */
+    w_u32(0x8008228cu, v27);                                   /* 80036ACC */
     v28 = FUN_8005FF2C(0x8008f568u, 0x000002d9u, 0x00000046u); /* 80036ADC */
     v29 = FUN_8005FF2C(0x8008f578u, 0x000002dau, 0x00000046u); /* 80036AF0 */
     v30 = FUN_8005FF2C(0x8008ef40u, 0x00000213u, 0x00000047u); /* 80036B04 */
@@ -603,12 +603,12 @@ GDB_CALL uint32 FUN_800368BC(void)
 /* 80036B5C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80036B5C(void)
 {
-    FF_FUNCTION_MARKER(0x80036b5cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80036b5cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6;
-    v0 = r_u32(0x800947f0u);                    /* 80036B68 */
+    v0 = r_u32(0x800947f0u);                     /* 80036B68 */
     v1 = FUN_80061448(0x0000005fu, v0);          /* 80036B6C */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80036B7C */
-    w_u32(0x800947f0u, v2);                     /* 80036B88 */
+    w_u32(0x800947f0u, v2);                      /* 80036B88 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80036B94 */
     v4 = FUN_8001721C(0x8008ec7cu, 0xfffffffeu); /* 80036BA4 */
     v5 = FUN_80014070();                         /* 80036BAC */
@@ -619,13 +619,13 @@ GDB_CALL uint32 FUN_80036B5C(void)
 /* 80036BCC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80036BCC(void)
 {
-    FF_FUNCTION_MARKER(0x80036bccu, "GAME.EXE");
+    FUNCTION_MARKER(0x80036bccu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39;
-    v0 = r_u32(0x80094844u);                                  /* 80036BDC */
+    v0 = r_u32(0x80094844u);                                   /* 80036BDC */
     v1 = FUN_80061448(0x00000032u, v0);                        /* 80036BE0 */
-    v2 = r_u32(0x80094844u);                                  /* 80036BEC */
-    v3 = r_u32(0x800947d0u);                                  /* 80036BF4 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80036C04 */
+    v2 = r_u32(0x80094844u);                                   /* 80036BEC */
+    v3 = r_u32(0x800947d0u);                                   /* 80036BF4 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80036C04 */
     v4 = FUN_8005FF2C(0x8008f588u, 0x00000108u, 0x00000011u);  /* 80036C14 */
     v5 = FUN_8005FF2C(0x8008f594u, 0x00000109u, 0x00000011u);  /* 80036C28 */
     v6 = FUN_8005FF2C(0x8008f5a0u, 0x0000010au, 0x00000011u);  /* 80036C3C */
@@ -640,8 +640,8 @@ GDB_CALL uint32 FUN_80036BCC(void)
     v15 = FUN_8005FF2C(0x8008f608u, 0x00000230u, 0x00000046u); /* 80036CF0 */
     v16 = FUN_8005FF2C(0x8008ee9cu, 0x000002dfu, 0x00000046u); /* 80036D04 */
     v17 = FUN_8005FF2C(0x8008f614u, 0x000002e0u, 0x00000046u); /* 80036D18 */
-    v18 = r_u32(0x8008229cu);                                 /* 80036D28 */
-    w_u32(0x800820a0u, v18);                                  /* 80036D30 */
+    v18 = r_u32(0x8008229cu);                                  /* 80036D28 */
+    w_u32(0x800820a0u, v18);                                   /* 80036D30 */
     v19 = FUN_8005FF2C(0x8008f620u, 0x0000010du, 0x00000046u); /* 80036D40 */
     v20 = FUN_8005FF2C(0x8008f630u, 0x0000010eu, 0x00000047u); /* 80036D54 */
     v21 = FUN_8005FF2C(0x8008f578u, 0x000002e1u, 0x00000046u); /* 80036D68 */
@@ -661,22 +661,22 @@ GDB_CALL uint32 FUN_80036BCC(void)
     v35 = FUN_8005FF2C(0x8008e798u, 0x00000216u, 0x00000047u); /* 80036E80 */
     v36 = FUN_8005FF2C(0x8008e7a8u, 0x00000067u, 0x00000047u); /* 80036E94 */
     v37 = FUN_8005FF2C(0x8008e7b4u, 0x00000068u, 0x00000047u); /* 80036EA8 */
-    v38 = r_u32(0x800818acu);                                 /* 80036EB0 */
-    w_u32(0x800818b0u, v38);                                  /* 80036EB8 */
-    v39 = r_u32(0x80081f60u);                                 /* 80036EBC */
-    w_u32(0x800818c4u, v39);                                  /* 80036EC4 */
+    v38 = r_u32(0x800818acu);                                  /* 80036EB0 */
+    w_u32(0x800818b0u, v38);                                   /* 80036EB8 */
+    v39 = r_u32(0x80081f60u);                                  /* 80036EBC */
+    w_u32(0x800818c4u, v39);                                   /* 80036EC4 */
     return v39;
 }
 
 /* 80036EDC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80036EDC(void)
 {
-    FF_FUNCTION_MARKER(0x80036edcu, "GAME.EXE");
+    FUNCTION_MARKER(0x80036edcu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6;
-    v0 = r_u32(0x800947f0u);                    /* 80036EE8 */
+    v0 = r_u32(0x800947f0u);                     /* 80036EE8 */
     v1 = FUN_80061448(0x00000060u, v0);          /* 80036EEC */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80036EFC */
-    w_u32(0x800947f0u, v2);                     /* 80036F08 */
+    w_u32(0x800947f0u, v2);                      /* 80036F08 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80036F14 */
     v4 = FUN_80013ECC();                         /* 80036F1C */
     v5 = FUN_80013D6C();                         /* 80036F24 */
@@ -687,13 +687,13 @@ GDB_CALL uint32 FUN_80036EDC(void)
 /* 80036F44: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80036F44(void)
 {
-    FF_FUNCTION_MARKER(0x80036f44u, "GAME.EXE");
+    FUNCTION_MARKER(0x80036f44u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42, v43, v44, v45, v46, v47, v48, v49, v50, v51, v52, v53, v54, v55, v56, v57, v58, v59, v60, v61, v62, v63, v64, v65;
-    v0 = r_u32(0x80094844u);                                  /* 80036F54 */
+    v0 = r_u32(0x80094844u);                                   /* 80036F54 */
     v1 = FUN_80061448(0x00000033u, v0);                        /* 80036F58 */
-    v2 = r_u32(0x80094844u);                                  /* 80036F64 */
-    v3 = r_u32(0x800947d0u);                                  /* 80036F6C */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80036F7C */
+    v2 = r_u32(0x80094844u);                                   /* 80036F64 */
+    v3 = r_u32(0x800947d0u);                                   /* 80036F6C */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80036F7C */
     v4 = FUN_8005FF2C(0x8008f658u, 0x0000010fu, 0x00000012u);  /* 80036F8C */
     v5 = FUN_8005FF2C(0x8008f664u, 0x00000110u, 0x00000012u);  /* 80036FA0 */
     v6 = FUN_8005FF2C(0x8008f670u, 0x00000111u, 0x00000012u);  /* 80036FB4 */
@@ -703,9 +703,9 @@ GDB_CALL uint32 FUN_80036F44(void)
     v10 = FUN_8005FF2C(0x8008ee9cu, 0x000002ecu, 0x00000046u); /* 80037004 */
     v11 = FUN_8005FF2C(0x8008f614u, 0x0000021du, 0x00000046u); /* 80037018 */
     v12 = FUN_8005FF2C(0x8008f6a4u, 0x0000021eu, 0x00000046u); /* 8003702C */
-    v13 = r_u32(0x800822d0u);                                 /* 8003703C */
-    w_u32(0x800820a0u, v13);                                  /* 80037044 */
-    w_u32(0x800820a4u, v13);                                  /* 80037048 */
+    v13 = r_u32(0x800822d0u);                                  /* 8003703C */
+    w_u32(0x800820a0u, v13);                                   /* 80037044 */
+    w_u32(0x800820a4u, v13);                                   /* 80037048 */
     v14 = FUN_8005FF2C(0x8008f6b0u, 0x000002e4u, 0x00000046u); /* 80037058 */
     v15 = FUN_8005FF2C(0x8008f5f0u, 0x0000022du, 0x00000046u); /* 8003706C */
     v16 = FUN_8005FF2C(0x8008f6c0u, 0x0000022eu, 0x00000046u); /* 80037080 */
@@ -756,22 +756,22 @@ GDB_CALL uint32 FUN_80036F44(void)
     v61 = FUN_8005FF2C(0x8008f7fcu, 0x000002ffu, 0x00000012u); /* 80037404 */
     v62 = FUN_8005FF2C(0x8008f80cu, 0x00000300u, 0x00000012u); /* 80037418 */
     v63 = FUN_8005FF2C(0x8008f81cu, 0x00000301u, 0x00000012u); /* 8003742C */
-    v64 = r_u32(0x800818acu);                                 /* 80037434 */
-    w_u32(0x800818b0u, v64);                                  /* 8003743C */
-    v65 = r_u32(0x80081f60u);                                 /* 80037440 */
-    w_u32(0x800818c4u, v65);                                  /* 80037448 */
+    v64 = r_u32(0x800818acu);                                  /* 80037434 */
+    w_u32(0x800818b0u, v64);                                   /* 8003743C */
+    v65 = r_u32(0x80081f60u);                                  /* 80037440 */
+    w_u32(0x800818c4u, v65);                                   /* 80037448 */
     return v65;
 }
 
 /* 80037460: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80037460(void)
 {
-    FF_FUNCTION_MARKER(0x80037460u, "GAME.EXE");
+    FUNCTION_MARKER(0x80037460u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7;
-    v0 = r_u32(0x800947f0u);                    /* 8003746C */
+    v0 = r_u32(0x800947f0u);                     /* 8003746C */
     v1 = FUN_80061448(0x00000061u, v0);          /* 80037470 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80037480 */
-    w_u32(0x800947f0u, v2);                     /* 8003748C */
+    w_u32(0x800947f0u, v2);                      /* 8003748C */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80037498 */
     v4 = FUN_80013C8C();                         /* 800374A0 */
     v5 = FUN_80013DC4();                         /* 800374A8 */
@@ -783,13 +783,13 @@ GDB_CALL uint32 FUN_80037460(void)
 /* 800374D0: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800374D0(void)
 {
-    FF_FUNCTION_MARKER(0x800374d0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800374d0u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42, v43, v44, v45, v46, v47, v48, v49, v50;
-    v0 = r_u32(0x80094844u);                                  /* 800374DC */
+    v0 = r_u32(0x80094844u);                                   /* 800374DC */
     v1 = FUN_80061448(0x00000034u, v0);                        /* 800374E0 */
-    v2 = r_u32(0x80094844u);                                  /* 800374EC */
-    v3 = r_u32(0x800947d0u);                                  /* 800374F4 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80037504 */
+    v2 = r_u32(0x80094844u);                                   /* 800374EC */
+    v3 = r_u32(0x800947d0u);                                   /* 800374F4 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80037504 */
     v4 = FUN_8005FF2C(0x8008f82cu, 0x00000116u, 0x00000013u);  /* 80037514 */
     v5 = FUN_8005FF2C(0x8008f83cu, 0x00000117u, 0x00000013u);  /* 80037528 */
     v6 = FUN_8005FF2C(0x8008f84cu, 0x00000118u, 0x00000013u);  /* 8003753C */
@@ -843,12 +843,12 @@ GDB_CALL uint32 FUN_800374D0(void)
 /* 800378C4: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800378C4(void)
 {
-    FF_FUNCTION_MARKER(0x800378c4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800378c4u, "GAME.EXE");
     uint32 v0, v1, v2, v3;
-    v0 = r_u32(0x800947f0u);           /* 800378D0 */
+    v0 = r_u32(0x800947f0u);            /* 800378D0 */
     v1 = FUN_80061448(0x00000062u, v0); /* 800378D4 */
     v2 = FUN_800611F8(0x8008e53cu);     /* 800378E4 */
-    w_u32(0x800947f0u, v2);            /* 800378F0 */
+    w_u32(0x800947f0u, v2);             /* 800378F0 */
     v3 = FUN_8001433C();                /* 800378F4 */
     return v3;
 }
@@ -856,12 +856,12 @@ GDB_CALL uint32 FUN_800378C4(void)
 /* 8003790C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003790C(void)
 {
-    FF_FUNCTION_MARKER(0x8003790cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003790cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9;
-    v0 = r_u32(0x800947f0u);                    /* 80037918 */
+    v0 = r_u32(0x800947f0u);                     /* 80037918 */
     v1 = FUN_80061448(0x00000063u, v0);          /* 8003791C */
     v2 = FUN_800611F8(0x8008e53cu);              /* 8003792C */
-    w_u32(0x800947f0u, v2);                     /* 80037938 */
+    w_u32(0x800947f0u, v2);                      /* 80037938 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80037944 */
     v4 = FUN_8001721C(0x8008ec7cu, 0xfffffffeu); /* 80037954 */
     v5 = FUN_8001721C(0x8008f458u, 0xffffffffu); /* 80037964 */
@@ -875,13 +875,13 @@ GDB_CALL uint32 FUN_8003790C(void)
 /* 8003799C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003799C(void)
 {
-    FF_FUNCTION_MARKER(0x8003799cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003799cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19;
-    v0 = r_u32(0x80094844u);                                  /* 800379A8 */
+    v0 = r_u32(0x80094844u);                                   /* 800379A8 */
     v1 = FUN_80061448(0x00000036u, v0);                        /* 800379AC */
-    v2 = r_u32(0x80094844u);                                  /* 800379B8 */
-    v3 = r_u32(0x800947d0u);                                  /* 800379C0 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800379D0 */
+    v2 = r_u32(0x80094844u);                                   /* 800379B8 */
+    v3 = r_u32(0x800947d0u);                                   /* 800379C0 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800379D0 */
     v4 = FUN_8005FF2C(0x8008fa0cu, 0x00000133u, 0x00000014u);  /* 800379E0 */
     v5 = FUN_8005FF2C(0x8008fa1cu, 0x00000135u, 0x00000014u);  /* 800379F4 */
     v6 = FUN_8005FF2C(0x8008fa2cu, 0x00000137u, 0x00000014u);  /* 80037A08 */
@@ -897,22 +897,22 @@ GDB_CALL uint32 FUN_8003799C(void)
     v16 = FUN_8005FF2C(0x8008f8d4u, 0x00000225u, 0x00000046u); /* 80037AD0 */
     v17 = FUN_8005FF2C(0x8008f8e0u, 0x00000226u, 0x00000046u); /* 80037AE4 */
     v18 = FUN_8005FF2C(0x8008ee9cu, 0x00000146u, 0x00000046u); /* 80037AF8 */
-    v19 = r_u32(0x80081c38u);                                 /* 80037B08 */
-    w_u32(0x800820a0u, v19);                                  /* 80037B10 */
-    w_u32(0x800820b0u, v19);                                  /* 80037B14 */
-    w_u32(0x800820a8u, v19);                                  /* 80037B1C */
+    v19 = r_u32(0x80081c38u);                                  /* 80037B08 */
+    w_u32(0x800820a0u, v19);                                   /* 80037B10 */
+    w_u32(0x800820b0u, v19);                                   /* 80037B14 */
+    w_u32(0x800820a8u, v19);                                   /* 80037B1C */
     return v19;
 }
 
 /* 80037B28: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80037B28(void)
 {
-    FF_FUNCTION_MARKER(0x80037b28u, "GAME.EXE");
+    FUNCTION_MARKER(0x80037b28u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7;
-    v0 = r_u32(0x800947f0u);                    /* 80037B34 */
+    v0 = r_u32(0x800947f0u);                     /* 80037B34 */
     v1 = FUN_80061448(0x00000064u, v0);          /* 80037B38 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80037B48 */
-    w_u32(0x800947f0u, v2);                     /* 80037B54 */
+    w_u32(0x800947f0u, v2);                      /* 80037B54 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80037B60 */
     v4 = FUN_8001721C(0x8008ec7cu, 0xfffffffeu); /* 80037B70 */
     v5 = FUN_8001409C();                         /* 80037B78 */
@@ -924,7 +924,7 @@ GDB_CALL uint32 FUN_80037B28(void)
 /* 80037BA0: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80037BA0(void)
 {
-    FF_FUNCTION_MARKER(0x80037ba0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80037ba0u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42, v43, v44, v45, v46, v47, v48, v49, v50, v51, v52, v53, v54, v55, v56, v57, v58, v59;
     v0 = FUN_8005FF2C(0x8008faa4u, 0x00000147u, 0x00000015u);  /* 80037BB8 */
     v1 = FUN_8005FF2C(0x8008fab0u, 0x00000148u, 0x00000015u);  /* 80037BCC */
@@ -951,8 +951,8 @@ GDB_CALL uint32 FUN_80037BA0(void)
     v22 = FUN_8005FF2C(0x8008fb90u, 0x00000309u, 0x00000046u); /* 80037D70 */
     v23 = FUN_8005FF2C(0x8008fba0u, 0x0000030au, 0x00000046u); /* 80037D84 */
     v24 = FUN_8005FF2C(0x8008fbacu, 0x0000030bu, 0x00000047u); /* 80037D98 */
-    v25 = r_u32(0x80082338u);                                 /* 80037DA8 */
-    w_u32(0x800820a0u, v25);                                  /* 80037DB0 */
+    v25 = r_u32(0x80082338u);                                  /* 80037DA8 */
+    w_u32(0x800820a0u, v25);                                   /* 80037DB0 */
     v26 = FUN_8005FF2C(0x8008fbb8u, 0x0000030du, 0x00000046u); /* 80037DC0 */
     v27 = FUN_8005FF2C(0x8008fbc8u, 0x0000030eu, 0x00000047u); /* 80037DD4 */
     v28 = FUN_8005FF2C(0x8008fbd8u, 0x00000310u, 0x00000046u); /* 80037DE8 */
@@ -978,8 +978,8 @@ GDB_CALL uint32 FUN_80037BA0(void)
     v48 = FUN_8005FF2C(0x8008fcc8u, 0x0000004au, 0x00000015u); /* 80037F78 */
     v49 = FUN_8005FF2C(0x8008fcd4u, 0x0000004bu, 0x00000015u); /* 80037F8C */
     v50 = FUN_8005FF2C(0x8008fce0u, 0x0000004cu, 0x00000015u); /* 80037FA0 */
-    v51 = r_u32(0x8008184cu);                                 /* 80037FA8 */
-    w_u32(0x80081854u, v51);                                  /* 80037FB0 */
+    v51 = r_u32(0x8008184cu);                                  /* 80037FA8 */
+    w_u32(0x80081854u, v51);                                   /* 80037FB0 */
     v52 = FUN_8005FF2C(0x8008fcecu, 0x00000156u, 0x00000015u); /* 80037FC0 */
     v53 = FUN_8005FF2C(0x8008fcfcu, 0x00000157u, 0x00000015u); /* 80037FD4 */
     v54 = FUN_8005FF2C(0x8008fd08u, 0x00000158u, 0x00000015u); /* 80037FE8 */
@@ -994,13 +994,13 @@ GDB_CALL uint32 FUN_80037BA0(void)
 /* 80038068: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038068(void)
 {
-    FF_FUNCTION_MARKER(0x80038068u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038068u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4;
-    v0 = r_u32(0x80094844u);           /* 80038074 */
+    v0 = r_u32(0x80094844u);            /* 80038074 */
     v1 = FUN_80061448(0x00000037u, v0); /* 80038078 */
-    v2 = r_u32(0x80094844u);           /* 80038084 */
-    v3 = r_u32(0x800947d0u);           /* 8003808C */
-    w_u32(0x80094844u, (v2 + v3));     /* 8003809C */
+    v2 = r_u32(0x80094844u);            /* 80038084 */
+    v3 = r_u32(0x800947d0u);            /* 8003808C */
+    w_u32(0x80094844u, (v2 + v3));      /* 8003809C */
     v4 = FUN_80037BA0();                /* 800380A0 */
     return v4;
 }
@@ -1008,12 +1008,12 @@ GDB_CALL uint32 FUN_80038068(void)
 /* 800380B8: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800380B8(void)
 {
-    FF_FUNCTION_MARKER(0x800380b8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800380b8u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6;
-    v0 = r_u32(0x800947f0u);                    /* 800380C4 */
+    v0 = r_u32(0x800947f0u);                     /* 800380C4 */
     v1 = FUN_80061448(0x00000065u, v0);          /* 800380C8 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 800380D8 */
-    w_u32(0x800947f0u, v2);                     /* 800380E4 */
+    w_u32(0x800947f0u, v2);                      /* 800380E4 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 800380F0 */
     v4 = FUN_80014130();                         /* 800380F8 */
     v5 = FUN_80014008();                         /* 80038100 */
@@ -1024,13 +1024,13 @@ GDB_CALL uint32 FUN_800380B8(void)
 /* 80038120: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038120(void)
 {
-    FF_FUNCTION_MARKER(0x80038120u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038120u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36;
-    v0 = r_u32(0x80094844u);                                  /* 8003812C */
+    v0 = r_u32(0x80094844u);                                   /* 8003812C */
     v1 = FUN_80061448(0x00000038u, v0);                        /* 80038130 */
-    v2 = r_u32(0x80094844u);                                  /* 8003813C */
-    v3 = r_u32(0x800947d0u);                                  /* 80038144 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80038154 */
+    v2 = r_u32(0x80094844u);                                   /* 8003813C */
+    v3 = r_u32(0x800947d0u);                                   /* 80038144 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80038154 */
     v4 = FUN_8005FF2C(0x8008fd5cu, 0x00000169u, 0x00000016u);  /* 80038164 */
     v5 = FUN_8005FF2C(0x8008fd6cu, 0x0000016au, 0x00000016u);  /* 80038178 */
     v6 = FUN_8005FF2C(0x8008fd7cu, 0x0000016bu, 0x00000016u);  /* 8003818C */
@@ -1041,8 +1041,8 @@ GDB_CALL uint32 FUN_80038120(void)
     v11 = FUN_8005FF2C(0x8008fd94u, 0x00000170u, 0x00000046u); /* 800381F0 */
     v12 = FUN_8005FF2C(0x8008fda0u, 0x00000171u, 0x00000046u); /* 80038204 */
     v13 = FUN_8005FF2C(0x8008fdacu, 0x00000172u, 0x00000046u); /* 80038218 */
-    v14 = r_u32(0x80081cdcu);                                 /* 80038228 */
-    w_u32(0x800820a0u, v14);                                  /* 80038230 */
+    v14 = r_u32(0x80081cdcu);                                  /* 80038228 */
+    w_u32(0x800820a0u, v14);                                   /* 80038230 */
     v15 = FUN_8005FF2C(0x8008fdb8u, 0x00000173u, 0x00000046u); /* 80038240 */
     v16 = FUN_8005FF2C(0x8008fdc8u, 0x00000174u, 0x00000047u); /* 80038254 */
     v17 = FUN_8005FF2C(0x8008fdd8u, 0x00000175u, 0x00000046u); /* 80038268 */
@@ -1071,12 +1071,12 @@ GDB_CALL uint32 FUN_80038120(void)
 /* 800383FC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800383FC(void)
 {
-    FF_FUNCTION_MARKER(0x800383fcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800383fcu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8;
-    v0 = r_u32(0x800947f0u);                    /* 80038408 */
+    v0 = r_u32(0x800947f0u);                     /* 80038408 */
     v1 = FUN_80061448(0x00000066u, v0);          /* 8003840C */
     v2 = FUN_800611F8(0x8008e53cu);              /* 8003841C */
-    w_u32(0x800947f0u, v2);                     /* 80038428 */
+    w_u32(0x800947f0u, v2);                      /* 80038428 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80038434 */
     v4 = FUN_8001721C(0x8008ec7cu, 0xfffffffeu); /* 80038444 */
     v5 = FUN_80014130();                         /* 8003844C */
@@ -1089,13 +1089,13 @@ GDB_CALL uint32 FUN_800383FC(void)
 /* 8003847C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003847C(void)
 {
-    FF_FUNCTION_MARKER(0x8003847cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003847cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41, v42;
-    v0 = r_u32(0x80094844u);                                  /* 80038488 */
+    v0 = r_u32(0x80094844u);                                   /* 80038488 */
     v1 = FUN_80061448(0x00000039u, v0);                        /* 8003848C */
-    v2 = r_u32(0x80094844u);                                  /* 80038498 */
-    v3 = r_u32(0x800947d0u);                                  /* 800384A0 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800384B0 */
+    v2 = r_u32(0x80094844u);                                   /* 80038498 */
+    v3 = r_u32(0x800947d0u);                                   /* 800384A0 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800384B0 */
     v4 = FUN_8005FF2C(0x8008fef8u, 0x0000018bu, 0x00000017u);  /* 800384C0 */
     v5 = FUN_8005FF2C(0x8008ff04u, 0x0000018cu, 0x00000017u);  /* 800384D4 */
     v6 = FUN_8005FF2C(0x8008ff10u, 0x0000018du, 0x00000017u);  /* 800384E8 */
@@ -1134,20 +1134,20 @@ GDB_CALL uint32 FUN_8003847C(void)
     v39 = FUN_8005FF2C(0x800900d4u, 0x000001ceu, 0x00000046u); /* 8003877C */
     v40 = FUN_8005FF2C(0x800900e4u, 0x000001cfu, 0x00000046u); /* 80038790 */
     v41 = FUN_8005FF2C(0x8008ee9cu, 0x00000260u, 0x00000046u); /* 800387A4 */
-    v42 = r_u32(0x800823b8u);                                 /* 800387B4 */
-    w_u32(0x80081e7cu, v42);                                  /* 800387BC */
+    v42 = r_u32(0x800823b8u);                                  /* 800387B4 */
+    w_u32(0x80081e7cu, v42);                                   /* 800387BC */
     return v42;
 }
 
 /* 800387C8: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800387C8(void)
 {
-    FF_FUNCTION_MARKER(0x800387c8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800387c8u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9;
-    v0 = r_u32(0x800947f0u);                    /* 800387D4 */
+    v0 = r_u32(0x800947f0u);                     /* 800387D4 */
     v1 = FUN_80061448(0x00000067u, v0);          /* 800387D8 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 800387E8 */
-    w_u32(0x800947f0u, v2);                     /* 800387F4 */
+    w_u32(0x800947f0u, v2);                      /* 800387F4 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80038800 */
     v4 = FUN_8001721C(0x8008ec7cu, 0xfffffffeu); /* 80038810 */
     v5 = FUN_8001419C();                         /* 80038818 */
@@ -1161,13 +1161,13 @@ GDB_CALL uint32 FUN_800387C8(void)
 /* 80038850: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038850(void)
 {
-    FF_FUNCTION_MARKER(0x80038850u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038850u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;
-    v0 = r_u32(0x80094844u);                                  /* 8003885C */
+    v0 = r_u32(0x80094844u);                                   /* 8003885C */
     v1 = FUN_80061448(0x0000003au, v0);                        /* 80038860 */
-    v2 = r_u32(0x80094844u);                                  /* 8003886C */
-    v3 = r_u32(0x800947d0u);                                  /* 80038874 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80038884 */
+    v2 = r_u32(0x80094844u);                                   /* 8003886C */
+    v3 = r_u32(0x800947d0u);                                   /* 80038874 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80038884 */
     v4 = FUN_8005FF2C(0x800900f4u, 0x0000018eu, 0x00000018u);  /* 80038894 */
     v5 = FUN_8005FF2C(0x80090104u, 0x0000018fu, 0x00000018u);  /* 800388A8 */
     v6 = FUN_8005FF2C(0x80090114u, 0x00000190u, 0x00000047u);  /* 800388BC */
@@ -1180,10 +1180,10 @@ GDB_CALL uint32 FUN_80038850(void)
     v13 = FUN_8005FF2C(0x8009014cu, 0x00000333u, 0x00000046u); /* 80038948 */
     v14 = FUN_8005FF2C(0x8009015cu, 0x00000334u, 0x00000046u); /* 8003895C */
     v15 = FUN_8005FF2C(0x8009016cu, 0x00000335u, 0x00000046u); /* 80038970 */
-    v16 = r_u32(0x800823f4u);                                 /* 80038980 */
-    w_u32(0x800820a0u, v16);                                  /* 80038988 */
-    v17 = r_u32(0x800823e0u);                                 /* 8003898C */
-    w_u32(0x800820a8u, v17);                                  /* 80038994 */
+    v16 = r_u32(0x800823f4u);                                  /* 80038980 */
+    w_u32(0x800820a0u, v16);                                   /* 80038988 */
+    v17 = r_u32(0x800823e0u);                                  /* 8003898C */
+    w_u32(0x800820a8u, v17);                                   /* 80038994 */
     v18 = FUN_8005FF2C(0x80090178u, 0x00000336u, 0x00000046u); /* 800389A4 */
     v19 = FUN_8005FF2C(0x80090188u, 0x00000337u, 0x00000046u); /* 800389B8 */
     v20 = FUN_8005FF2C(0x80090198u, 0x00000338u, 0x00000046u); /* 800389CC */
@@ -1203,12 +1203,12 @@ GDB_CALL uint32 FUN_80038850(void)
 /* 80038AAC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038AAC(void)
 {
-    FF_FUNCTION_MARKER(0x80038aacu, "GAME.EXE");
+    FUNCTION_MARKER(0x80038aacu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5;
-    v0 = r_u32(0x800947f0u);                    /* 80038AB8 */
+    v0 = r_u32(0x800947f0u);                     /* 80038AB8 */
     v1 = FUN_80061448(0x00000068u, v0);          /* 80038ABC */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80038ACC */
-    w_u32(0x800947f0u, v2);                     /* 80038AD8 */
+    w_u32(0x800947f0u, v2);                      /* 80038AD8 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80038AE4 */
     v4 = FUN_80014008();                         /* 80038AEC */
     v5 = FUN_80013D40();                         /* 80038AF4 */
@@ -1218,13 +1218,13 @@ GDB_CALL uint32 FUN_80038AAC(void)
 /* 80038B0C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038B0C(void)
 {
-    FF_FUNCTION_MARKER(0x80038b0cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80038b0cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14;
-    v0 = r_u32(0x80094844u);                                  /* 80038B18 */
+    v0 = r_u32(0x80094844u);                                   /* 80038B18 */
     v1 = FUN_80061448(0x0000003bu, v0);                        /* 80038B1C */
-    v2 = r_u32(0x80094844u);                                  /* 80038B28 */
-    v3 = r_u32(0x800947d0u);                                  /* 80038B30 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80038B40 */
+    v2 = r_u32(0x80094844u);                                   /* 80038B28 */
+    v3 = r_u32(0x800947d0u);                                   /* 80038B30 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80038B40 */
     v4 = FUN_8005FF2C(0x80090214u, 0x0000016du, 0x00000016u);  /* 80038B50 */
     v5 = FUN_8005FF2C(0x8008ee9cu, 0x0000016fu, 0x00000046u);  /* 80038B64 */
     v6 = FUN_8005FF2C(0x8008efdcu, 0x00000229u, 0x00000046u);  /* 80038B78 */
@@ -1235,20 +1235,20 @@ GDB_CALL uint32 FUN_80038B0C(void)
     v11 = FUN_8005FF2C(0x80090240u, 0x0000018au, 0x00000046u); /* 80038BDC */
     v12 = FUN_8005FF2C(0x8008fe58u, 0x0000017du, 0x00000046u); /* 80038BF0 */
     v13 = FUN_8005FF2C(0x8008fe68u, 0x0000017eu, 0x00000047u); /* 80038C04 */
-    v14 = r_u32(0x80081cdcu);                                 /* 80038C14 */
-    w_u32(0x800820a0u, v14);                                  /* 80038C1C */
+    v14 = r_u32(0x80081cdcu);                                  /* 80038C14 */
+    w_u32(0x800820a0u, v14);                                   /* 80038C1C */
     return v14;
 }
 
 /* 80038C28: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038C28(void)
 {
-    FF_FUNCTION_MARKER(0x80038c28u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038c28u, "GAME.EXE");
     uint32 v0, v1, v2, v3;
-    v0 = r_u32(0x800947f0u);           /* 80038C34 */
+    v0 = r_u32(0x800947f0u);            /* 80038C34 */
     v1 = FUN_80061448(0x00000069u, v0); /* 80038C38 */
     v2 = FUN_800611F8(0x8008e53cu);     /* 80038C48 */
-    w_u32(0x800947f0u, v2);            /* 80038C54 */
+    w_u32(0x800947f0u, v2);             /* 80038C54 */
     v3 = FUN_800142F0();                /* 80038C58 */
     return v3;
 }
@@ -1256,13 +1256,13 @@ GDB_CALL uint32 FUN_80038C28(void)
 /* 80038C70: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038C70(void)
 {
-    FF_FUNCTION_MARKER(0x80038c70u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038c70u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4;
-    v0 = r_u32(0x80094844u);           /* 80038C7C */
+    v0 = r_u32(0x80094844u);            /* 80038C7C */
     v1 = FUN_80061448(0x0000003cu, v0); /* 80038C80 */
-    v2 = r_u32(0x80094844u);           /* 80038C8C */
-    v3 = r_u32(0x800947d0u);           /* 80038C94 */
-    w_u32(0x80094844u, (v2 + v3));     /* 80038CA4 */
+    v2 = r_u32(0x80094844u);            /* 80038C8C */
+    v3 = r_u32(0x800947d0u);            /* 80038C94 */
+    w_u32(0x80094844u, (v2 + v3));      /* 80038CA4 */
     v4 = FUN_80037BA0();                /* 80038CA8 */
     return v4;
 }
@@ -1270,12 +1270,12 @@ GDB_CALL uint32 FUN_80038C70(void)
 /* 80038CC0: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038CC0(void)
 {
-    FF_FUNCTION_MARKER(0x80038cc0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038cc0u, "GAME.EXE");
     uint32 v0, v1, v2, v3;
-    v0 = r_u32(0x800947f0u);           /* 80038CCC */
+    v0 = r_u32(0x800947f0u);            /* 80038CCC */
     v1 = FUN_80061448(0x0000006au, v0); /* 80038CD0 */
     v2 = FUN_800611F8(0x8008e53cu);     /* 80038CE0 */
-    w_u32(0x800947f0u, v2);            /* 80038CEC */
+    w_u32(0x800947f0u, v2);             /* 80038CEC */
     v3 = FUN_80014378();                /* 80038CF0 */
     return v3;
 }
@@ -1283,13 +1283,13 @@ GDB_CALL uint32 FUN_80038CC0(void)
 /* 80038D08: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038D08(void)
 {
-    FF_FUNCTION_MARKER(0x80038d08u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038d08u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;
-    v0 = r_u32(0x80094844u);                                  /* 80038D14 */
+    v0 = r_u32(0x80094844u);                                   /* 80038D14 */
     v1 = FUN_80061448(0x0000003du, v0);                        /* 80038D18 */
-    v2 = r_u32(0x80094844u);                                  /* 80038D24 */
-    v3 = r_u32(0x800947d0u);                                  /* 80038D2C */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80038D3C */
+    v2 = r_u32(0x80094844u);                                   /* 80038D24 */
+    v3 = r_u32(0x800947d0u);                                   /* 80038D2C */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80038D3C */
     v4 = FUN_8005FF2C(0x8008fd5cu, 0x00000169u, 0x00000016u);  /* 80038D4C */
     v5 = FUN_8005FF2C(0x8008fd6cu, 0x0000016au, 0x00000016u);  /* 80038D60 */
     v6 = FUN_8005FF2C(0x8008fd7cu, 0x0000016bu, 0x00000016u);  /* 80038D74 */
@@ -1323,12 +1323,12 @@ GDB_CALL uint32 FUN_80038D08(void)
 /* 80038F6C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038F6C(void)
 {
-    FF_FUNCTION_MARKER(0x80038f6cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80038f6cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7;
-    v0 = r_u32(0x800947f0u);                    /* 80038F78 */
+    v0 = r_u32(0x800947f0u);                     /* 80038F78 */
     v1 = FUN_80061448(0x0000006bu, v0);          /* 80038F7C */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80038F8C */
-    w_u32(0x800947f0u, v2);                     /* 80038F98 */
+    w_u32(0x800947f0u, v2);                      /* 80038F98 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 80038FA4 */
     v4 = FUN_8001721C(0x8009025cu, 0xffffffffu); /* 80038FB4 */
     v5 = FUN_800141C8();                         /* 80038FBC */
@@ -1340,13 +1340,13 @@ GDB_CALL uint32 FUN_80038F6C(void)
 /* 80038FE4: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80038FE4(void)
 {
-    FF_FUNCTION_MARKER(0x80038fe4u, "GAME.EXE");
+    FUNCTION_MARKER(0x80038fe4u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40;
-    v0 = r_u32(0x80094844u);                                  /* 80038FF0 */
+    v0 = r_u32(0x80094844u);                                   /* 80038FF0 */
     v1 = FUN_80061448(0x0000003eu, v0);                        /* 80038FF4 */
-    v2 = r_u32(0x80094844u);                                  /* 80039000 */
-    v3 = r_u32(0x800947d0u);                                  /* 80039008 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80039018 */
+    v2 = r_u32(0x80094844u);                                   /* 80039000 */
+    v3 = r_u32(0x800947d0u);                                   /* 80039008 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80039018 */
     v4 = FUN_8005FF2C(0x80090268u, 0x00000191u, 0x0000001au);  /* 80039028 */
     v5 = FUN_8005FF2C(0x80090274u, 0x00000192u, 0x0000001au);  /* 8003903C */
     v6 = FUN_8005FF2C(0x80090280u, 0x00000193u, 0x0000001au);  /* 80039050 */
@@ -1383,22 +1383,22 @@ GDB_CALL uint32 FUN_80038FE4(void)
     v37 = FUN_8005FF2C(0x80090438u, 0x000001b1u, 0x00000046u); /* 800392BC */
     v38 = FUN_8005FF2C(0x80090448u, 0x000001b2u, 0x00000046u); /* 800392D0 */
     v39 = FUN_8005FF2C(0x80090458u, 0x000001b3u, 0x00000044u); /* 800392E4 */
-    v40 = r_u32(0x80081d7cu);                                 /* 800392F4 */
-    w_u32(0x800820a0u, v40);                                  /* 800392FC */
-    w_u32(0x800820b0u, v40);                                  /* 80039300 */
-    w_u32(0x800820acu, v40);                                  /* 80039308 */
+    v40 = r_u32(0x80081d7cu);                                  /* 800392F4 */
+    w_u32(0x800820a0u, v40);                                   /* 800392FC */
+    w_u32(0x800820b0u, v40);                                   /* 80039300 */
+    w_u32(0x800820acu, v40);                                   /* 80039308 */
     return v40;
 }
 
 /* 80039314: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80039314(void)
 {
-    FF_FUNCTION_MARKER(0x80039314u, "GAME.EXE");
+    FUNCTION_MARKER(0x80039314u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6;
-    v0 = r_u32(0x800947f0u);                    /* 80039320 */
+    v0 = r_u32(0x800947f0u);                     /* 80039320 */
     v1 = FUN_80061448(0x0000006cu, v0);          /* 80039324 */
     v2 = FUN_800611F8(0x8008e53cu);              /* 80039334 */
-    w_u32(0x800947f0u, v2);                     /* 80039340 */
+    w_u32(0x800947f0u, v2);                      /* 80039340 */
     v3 = FUN_8001721C(0x8008e548u, 0xffffffffu); /* 8003934C */
     v4 = FUN_80014130();                         /* 80039354 */
     v5 = FUN_80014170();                         /* 8003935C */
@@ -1409,13 +1409,13 @@ GDB_CALL uint32 FUN_80039314(void)
 /* 8003937C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003937C(void)
 {
-    FF_FUNCTION_MARKER(0x8003937cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003937cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14;
-    v0 = r_u32(0x80094844u);                                  /* 80039388 */
+    v0 = r_u32(0x80094844u);                                   /* 80039388 */
     v1 = FUN_80061448(0x0000003fu, v0);                        /* 8003938C */
-    v2 = r_u32(0x80094844u);                                  /* 80039398 */
-    v3 = r_u32(0x800947d0u);                                  /* 800393A0 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 800393B0 */
+    v2 = r_u32(0x80094844u);                                   /* 80039398 */
+    v3 = r_u32(0x800947d0u);                                   /* 800393A0 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 800393B0 */
     v4 = FUN_8005FF2C(0x80090464u, 0x000001b4u, 0x00000007u);  /* 800393C0 */
     v5 = FUN_8005FF2C(0x80090474u, 0x000001b5u, 0x0000001bu);  /* 800393D4 */
     v6 = FUN_8005FF2C(0x80090480u, 0x000001b6u, 0x0000001bu);  /* 800393E8 */
@@ -1433,12 +1433,12 @@ GDB_CALL uint32 FUN_8003937C(void)
 /* 800394A0: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800394A0(void)
 {
-    FF_FUNCTION_MARKER(0x800394a0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800394a0u, "GAME.EXE");
     uint32 v0, v1, v2, v3;
-    v0 = r_u32(0x800947f0u);           /* 800394AC */
+    v0 = r_u32(0x800947f0u);            /* 800394AC */
     v1 = FUN_80061448(0x0000006du, v0); /* 800394B0 */
     v2 = FUN_800611F8(0x8008e53cu);     /* 800394C0 */
-    w_u32(0x800947f0u, v2);            /* 800394CC */
+    w_u32(0x800947f0u, v2);             /* 800394CC */
     v3 = FUN_80013F0C();                /* 800394D0 */
     return v3;
 }
@@ -1446,34 +1446,34 @@ GDB_CALL uint32 FUN_800394A0(void)
 /* 800394E8: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_800394E8(void)
 {
-    FF_FUNCTION_MARKER(0x800394e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800394e8u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6;
-    v0 = r_u32(0x80094844u);                                 /* 800394F4 */
+    v0 = r_u32(0x80094844u);                                  /* 800394F4 */
     v1 = FUN_80061448(0x00000040u, v0);                       /* 800394F8 */
-    v2 = r_u32(0x80094844u);                                 /* 80039504 */
-    v3 = r_u32(0x800947d0u);                                 /* 8003950C */
-    w_u32(0x80094844u, (v2 + v3));                           /* 8003951C */
+    v2 = r_u32(0x80094844u);                                  /* 80039504 */
+    v3 = r_u32(0x800947d0u);                                  /* 8003950C */
+    w_u32(0x80094844u, (v2 + v3));                            /* 8003951C */
     v4 = FUN_8005FF2C(0x800904c4u, 0x000001bbu, 0x0000001cu); /* 8003952C */
     v5 = FUN_8005FF2C(0x8008ee9cu, 0x00000197u, 0x0000001cu); /* 80039540 */
-    v6 = r_u32(0x80081d7cu);                                 /* 80039550 */
-    w_u32(0x800820a0u, v6);                                  /* 80039558 */
-    w_u32(0x800820a8u, v6);                                  /* 8003955C */
-    w_u32(0x800820b4u, v6);                                  /* 80039560 */
-    w_u32(0x800820a4u, v6);                                  /* 80039564 */
-    w_u32(0x800820acu, v6);                                  /* 8003956C */
+    v6 = r_u32(0x80081d7cu);                                  /* 80039550 */
+    w_u32(0x800820a0u, v6);                                   /* 80039558 */
+    w_u32(0x800820a8u, v6);                                   /* 8003955C */
+    w_u32(0x800820b4u, v6);                                   /* 80039560 */
+    w_u32(0x800820a4u, v6);                                   /* 80039564 */
+    w_u32(0x800820acu, v6);                                   /* 8003956C */
     return v6;
 }
 
 /* 80039A10: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80039A10(void)
 {
-    FF_FUNCTION_MARKER(0x80039a10u, "GAME.EXE");
+    FUNCTION_MARKER(0x80039a10u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;
-    v0 = r_u32(0x80094844u);                                  /* 80039A20 */
+    v0 = r_u32(0x80094844u);                                   /* 80039A20 */
     v1 = FUN_80061448(0x00000044u, v0);                        /* 80039A24 */
-    v2 = r_u32(0x80094844u);                                  /* 80039A30 */
-    v3 = r_u32(0x800947d0u);                                  /* 80039A38 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80039A48 */
+    v2 = r_u32(0x80094844u);                                   /* 80039A30 */
+    v3 = r_u32(0x800947d0u);                                   /* 80039A38 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80039A48 */
     v4 = FUN_8005FF2C(0x80090564u, 0x0000025bu, 0x00000000u);  /* 80039A58 */
     v5 = FUN_8005FF2C(0x8008edb4u, 0x0000009cu, 0x0000000du);  /* 80039A6C */
     v6 = FUN_8005FF2C(0x8008edc4u, 0x0000009du, 0x0000000du);  /* 80039A80 */
@@ -1493,37 +1493,37 @@ GDB_CALL uint32 FUN_80039A10(void)
     v20 = FUN_8005FF2C(0x8008e7c0u, 0x00000350u, 0x00000046u); /* 80039B98 */
     v21 = FUN_8005FF2C(0x8008f040u, 0x00000351u, 0x00000046u); /* 80039BAC */
     v22 = FUN_8005FF2C(0x80090590u, 0x00000352u, 0x00000046u); /* 80039BC0 */
-    w_u32(0x800942ccu, 0x000001f4u);                          /* 80039BD0 */
-    w_u32(0x800941c0u, 0x00000190u);                          /* 80039BDC */
+    w_u32(0x800942ccu, 0x000001f4u);                           /* 80039BD0 */
+    w_u32(0x800941c0u, 0x00000190u);                           /* 80039BDC */
     v23 = FUN_800611F8(0x8009059cu);                           /* 80039BE8 */
-    w_u32(0x80094348u, v23);                                  /* 80039C04 */
+    w_u32(0x80094348u, v23);                                   /* 80039C04 */
     v24 = FUN_800611F8(0x800905a8u);                           /* 80039C00 */
-    w_u32(0x8009434cu, v24);                                  /* 80039C14 */
+    w_u32(0x8009434cu, v24);                                   /* 80039C14 */
     v25 = FUN_800611F8(0x800905b4u);                           /* 80039C10 */
-    w_u32(0x80094350u, v25);                                  /* 80039C24 */
+    w_u32(0x80094350u, v25);                                   /* 80039C24 */
     v26 = FUN_800611F8(0x800905c0u);                           /* 80039C20 */
-    w_u32(0x80094354u, v26);                                  /* 80039C34 */
+    w_u32(0x80094354u, v26);                                   /* 80039C34 */
     v27 = FUN_800611F8(0x800905ccu);                           /* 80039C30 */
-    w_u32(0x80094358u, v27);                                  /* 80039C44 */
+    w_u32(0x80094358u, v27);                                   /* 80039C44 */
     v28 = FUN_800611F8(0x800905d8u);                           /* 80039C40 */
-    w_u32(0x8009435cu, v28);                                  /* 80039C54 */
+    w_u32(0x8009435cu, v28);                                   /* 80039C54 */
     v29 = FUN_800611F8(0x800905e4u);                           /* 80039C50 */
-    w_u32(0x80094360u, v29);                                  /* 80039C64 */
+    w_u32(0x80094360u, v29);                                   /* 80039C64 */
     v30 = FUN_800611F8(0x800905f0u);                           /* 80039C60 */
-    w_u32(0x80094364u, v30);                                  /* 80039C68 */
+    w_u32(0x80094364u, v30);                                   /* 80039C68 */
     return v30;
 }
 
 /* 80039C88: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80039C88(void)
 {
-    FF_FUNCTION_MARKER(0x80039c88u, "GAME.EXE");
+    FUNCTION_MARKER(0x80039c88u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18;
-    v0 = r_u32(0x80094844u);                                  /* 80039C98 */
+    v0 = r_u32(0x80094844u);                                   /* 80039C98 */
     v1 = FUN_80061448(0x00000045u, v0);                        /* 80039C9C */
-    v2 = r_u32(0x80094844u);                                  /* 80039CA8 */
-    v3 = r_u32(0x800947d0u);                                  /* 80039CB0 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80039CC0 */
+    v2 = r_u32(0x80094844u);                                   /* 80039CA8 */
+    v3 = r_u32(0x800947d0u);                                   /* 80039CB0 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80039CC0 */
     v4 = FUN_8005FF2C(0x8008fd5cu, 0x00000169u, 0x00000016u);  /* 80039CD0 */
     v5 = FUN_8005FF2C(0x8008fd6cu, 0x0000016au, 0x00000016u);  /* 80039CE4 */
     v6 = FUN_8005FF2C(0x8008fd7cu, 0x0000016bu, 0x00000016u);  /* 80039CF8 */
@@ -1534,31 +1534,31 @@ GDB_CALL uint32 FUN_80039C88(void)
     v11 = FUN_8005FF2C(0x80090208u, 0x00000356u, 0x00000046u); /* 80039D5C */
     v12 = FUN_8005FF2C(0x8008fc88u, 0x00000342u, 0x00000046u); /* 80039D70 */
     v13 = FUN_8005FF2C(0x8008eed4u, 0x00000234u, 0x00000047u); /* 80039D84 */
-    w_u32(0x800941c0u, 0x00000190u);                          /* 80039D94 */
-    w_u32(0x800942ccu, 0x00000190u);                          /* 80039D9C */
+    w_u32(0x800941c0u, 0x00000190u);                           /* 80039D94 */
+    w_u32(0x800942ccu, 0x00000190u);                           /* 80039D9C */
     v14 = FUN_800611F8(0x80090608u);                           /* 80039DA8 */
-    w_u32(0x80094348u, v14);                                  /* 80039DC4 */
+    w_u32(0x80094348u, v14);                                   /* 80039DC4 */
     v15 = FUN_800611F8(0x80090614u);                           /* 80039DC0 */
-    w_u32(0x8009434cu, v15);                                  /* 80039DD4 */
+    w_u32(0x8009434cu, v15);                                   /* 80039DD4 */
     v16 = FUN_800611F8(0x80090620u);                           /* 80039DD0 */
-    w_u32(0x80094350u, v16);                                  /* 80039DE4 */
+    w_u32(0x80094350u, v16);                                   /* 80039DE4 */
     v17 = FUN_800611F8(0x8009062cu);                           /* 80039DE0 */
-    w_u32(0x80094354u, v17);                                  /* 80039DF4 */
+    w_u32(0x80094354u, v17);                                   /* 80039DF4 */
     v18 = FUN_800611F8(0x80090638u);                           /* 80039DF0 */
-    w_u32(0x80094358u, v18);                                  /* 80039DF8 */
+    w_u32(0x80094358u, v18);                                   /* 80039DF8 */
     return v18;
 }
 
 /* 80039E18: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80039E18(void)
 {
-    FF_FUNCTION_MARKER(0x80039e18u, "GAME.EXE");
+    FUNCTION_MARKER(0x80039e18u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
-    v0 = r_u32(0x80094844u);                                  /* 80039E28 */
+    v0 = r_u32(0x80094844u);                                   /* 80039E28 */
     v1 = FUN_80061448(0x00000046u, v0);                        /* 80039E2C */
-    v2 = r_u32(0x80094844u);                                  /* 80039E38 */
-    v3 = r_u32(0x800947d0u);                                  /* 80039E40 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 80039E50 */
+    v2 = r_u32(0x80094844u);                                   /* 80039E38 */
+    v3 = r_u32(0x800947d0u);                                   /* 80039E40 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 80039E50 */
     v4 = FUN_8005FF2C(0x8008faa4u, 0x00000147u, 0x00000015u);  /* 80039E60 */
     v5 = FUN_8005FF2C(0x8008fab0u, 0x00000148u, 0x00000015u);  /* 80039E74 */
     v6 = FUN_8005FF2C(0x8008fabcu, 0x00000149u, 0x00000015u);  /* 80039E88 */
@@ -1574,100 +1574,100 @@ GDB_CALL uint32 FUN_80039E18(void)
     v16 = FUN_8005FF2C(0x8008fad4u, 0x0000014bu, 0x00000015u); /* 80039F50 */
     v17 = FUN_8005FF2C(0x8008fb58u, 0x00000154u, 0x00000015u); /* 80039F64 */
     v18 = FUN_8005FF2C(0x80090650u, 0x00000358u, 0x00000046u); /* 80039F78 */
-    w_u32(0x800941c0u, 0x000001f4u);                          /* 80039F88 */
-    w_u32(0x800942ccu, 0x000001f4u);                          /* 80039F90 */
+    w_u32(0x800941c0u, 0x000001f4u);                           /* 80039F88 */
+    w_u32(0x800942ccu, 0x000001f4u);                           /* 80039F90 */
     v19 = FUN_800611F8(0x8009065cu);                           /* 80039F9C */
-    w_u32(0x80094348u, v19);                                  /* 80039FB8 */
+    w_u32(0x80094348u, v19);                                   /* 80039FB8 */
     v20 = FUN_800611F8(0x80090668u);                           /* 80039FB4 */
-    w_u32(0x8009434cu, v20);                                  /* 80039FBC */
+    w_u32(0x8009434cu, v20);                                   /* 80039FBC */
     return v20;
 }
 
 /* 80039FDC: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_80039FDC(void)
 {
-    FF_FUNCTION_MARKER(0x80039fdcu, "GAME.EXE");
+    FUNCTION_MARKER(0x80039fdcu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15;
-    v0 = r_u32(0x80094844u);                                 /* 80039FEC */
+    v0 = r_u32(0x80094844u);                                  /* 80039FEC */
     v1 = FUN_80061448(0x00000047u, v0);                       /* 80039FF0 */
-    v2 = r_u32(0x80094844u);                                 /* 80039FFC */
-    v3 = r_u32(0x800947d0u);                                 /* 8003A004 */
-    w_u32(0x80094844u, (v2 + v3));                           /* 8003A014 */
+    v2 = r_u32(0x80094844u);                                  /* 80039FFC */
+    v3 = r_u32(0x800947d0u);                                  /* 8003A004 */
+    w_u32(0x80094844u, (v2 + v3));                            /* 8003A014 */
     v4 = FUN_8005FF2C(0x80090674u, 0x000001bdu, 0x0000001fu); /* 8003A024 */
     v5 = FUN_8005FF2C(0x80090684u, 0x00000354u, 0x0000001fu); /* 8003A038 */
     v6 = FUN_8005FF2C(0x8008feb8u, 0x00000355u, 0x00000046u); /* 8003A04C */
     v7 = FUN_8005FF2C(0x80090208u, 0x00000356u, 0x00000046u); /* 8003A060 */
     v8 = FUN_8005FF2C(0x8008fc88u, 0x00000342u, 0x00000046u); /* 8003A074 */
     v9 = FUN_8005FF2C(0x8008eed4u, 0x00000234u, 0x00000047u); /* 8003A088 */
-    w_u32(0x800941c0u, 0x000001f4u);                         /* 8003A098 */
-    w_u32(0x800942ccu, 0x000001f4u);                         /* 8003A0A0 */
+    w_u32(0x800941c0u, 0x000001f4u);                          /* 8003A098 */
+    w_u32(0x800942ccu, 0x000001f4u);                          /* 8003A0A0 */
     v10 = FUN_800611F8(0x80090690u);                          /* 8003A0AC */
-    w_u32(0x80094348u, v10);                                 /* 8003A0C8 */
+    w_u32(0x80094348u, v10);                                  /* 8003A0C8 */
     v11 = FUN_800611F8(0x8009069cu);                          /* 8003A0C4 */
-    w_u32(0x8009434cu, v11);                                 /* 8003A0D8 */
+    w_u32(0x8009434cu, v11);                                  /* 8003A0D8 */
     v12 = FUN_800611F8(0x800906a8u);                          /* 8003A0D4 */
-    w_u32(0x80094350u, v12);                                 /* 8003A0E8 */
+    w_u32(0x80094350u, v12);                                  /* 8003A0E8 */
     v13 = FUN_800611F8(0x800906b4u);                          /* 8003A0E4 */
-    w_u32(0x80094354u, v13);                                 /* 8003A0F8 */
+    w_u32(0x80094354u, v13);                                  /* 8003A0F8 */
     v14 = FUN_800611F8(0x800906c0u);                          /* 8003A0F4 */
-    w_u32(0x80094358u, v14);                                 /* 8003A108 */
+    w_u32(0x80094358u, v14);                                  /* 8003A108 */
     v15 = FUN_800611F8(0x800906ccu);                          /* 8003A104 */
-    w_u32(0x8009435cu, v15);                                 /* 8003A10C */
+    w_u32(0x8009435cu, v15);                                  /* 8003A10C */
     return v15;
 }
 
 /* 8003A12C: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003A12C(void)
 {
-    FF_FUNCTION_MARKER(0x8003a12cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003a12cu, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18;
-    v0 = r_u32(0x80094844u);                                  /* 8003A13C */
+    v0 = r_u32(0x80094844u);                                   /* 8003A13C */
     v1 = FUN_80061448(0x00000048u, v0);                        /* 8003A140 */
-    v2 = r_u32(0x80094844u);                                  /* 8003A14C */
-    v3 = r_u32(0x800947d0u);                                  /* 8003A154 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 8003A164 */
+    v2 = r_u32(0x80094844u);                                   /* 8003A14C */
+    v3 = r_u32(0x800947d0u);                                   /* 8003A154 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 8003A164 */
     v4 = FUN_8005FF2C(0x800906d8u, 0x00000382u, 0x00000047u);  /* 8003A174 */
     v5 = FUN_8005FF2C(0x8008f64cu, 0x00000383u, 0x00000047u);  /* 8003A188 */
     v6 = FUN_8005FF2C(0x800906e4u, 0x00000384u, 0x00000047u);  /* 8003A19C */
     v7 = FUN_8005FF2C(0x800906f0u, 0x00000385u, 0x00000047u);  /* 8003A1B0 */
     v8 = FUN_8005FF2C(0x80090564u, 0x0000025bu, 0x00000000u);  /* 8003A1C4 */
-    v9 = r_u32(0x8008208cu);                                  /* 8003A1D4 */
-    w_u32(0x80082088u, v9);                                   /* 8003A1DC */
+    v9 = r_u32(0x8008208cu);                                   /* 8003A1D4 */
+    w_u32(0x80082088u, v9);                                    /* 8003A1DC */
     v10 = FUN_8005FF2C(0x80090674u, 0x000001bdu, 0x0000001fu); /* 8003A1EC */
     v11 = FUN_8005FF2C(0x800906fcu, 0x00000358u, 0x0000001fu); /* 8003A200 */
     v12 = FUN_8005FF2C(0x80090708u, 0x00000359u, 0x0000001fu); /* 8003A214 */
     v13 = FUN_8005FF2C(0x80090718u, 0x0000035au, 0x00000046u); /* 8003A228 */
     v14 = FUN_8005FF2C(0x80090728u, 0x0000035bu, 0x00000046u); /* 8003A23C */
-    w_u32(0x800941c0u, 0x000001c2u);                          /* 8003A24C */
-    w_u32(0x800942ccu, 0x000001c2u);                          /* 8003A254 */
+    w_u32(0x800941c0u, 0x000001c2u);                           /* 8003A24C */
+    w_u32(0x800942ccu, 0x000001c2u);                           /* 8003A254 */
     v15 = FUN_800611F8(0x80090738u);                           /* 8003A260 */
-    w_u32(0x80094348u, v15);                                  /* 8003A27C */
+    w_u32(0x80094348u, v15);                                   /* 8003A27C */
     v16 = FUN_800611F8(0x80090744u);                           /* 8003A278 */
-    w_u32(0x8009434cu, v16);                                  /* 8003A28C */
+    w_u32(0x8009434cu, v16);                                   /* 8003A28C */
     v17 = FUN_800611F8(0x80090750u);                           /* 8003A288 */
-    w_u32(0x80094350u, v17);                                  /* 8003A29C */
+    w_u32(0x80094350u, v17);                                   /* 8003A29C */
     v18 = FUN_800611F8(0x8009075cu);                           /* 8003A298 */
-    w_u32(0x80094354u, v18);                                  /* 8003A2A0 */
+    w_u32(0x80094354u, v18);                                   /* 8003A2A0 */
     return v18;
 }
 
 /* 8003A2C0: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003A2C0(void)
 {
-    FF_FUNCTION_MARKER(0x8003a2c0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8003a2c0u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25;
-    v0 = r_u32(0x80094844u);                                  /* 8003A2D0 */
+    v0 = r_u32(0x80094844u);                                   /* 8003A2D0 */
     v1 = FUN_80061448(0x00000049u, v0);                        /* 8003A2D4 */
-    v2 = r_u32(0x80094844u);                                  /* 8003A2E0 */
-    v3 = r_u32(0x800947d0u);                                  /* 8003A2E8 */
-    w_u32(0x80094844u, (v2 + v3));                            /* 8003A2F8 */
+    v2 = r_u32(0x80094844u);                                   /* 8003A2E0 */
+    v3 = r_u32(0x800947d0u);                                   /* 8003A2E8 */
+    w_u32(0x80094844u, (v2 + v3));                             /* 8003A2F8 */
     v4 = FUN_8005FF2C(0x800906d8u, 0x00000382u, 0x00000047u);  /* 8003A308 */
     v5 = FUN_8005FF2C(0x8008f64cu, 0x00000383u, 0x00000047u);  /* 8003A31C */
     v6 = FUN_8005FF2C(0x800906e4u, 0x00000384u, 0x00000047u);  /* 8003A330 */
     v7 = FUN_8005FF2C(0x800906f0u, 0x00000385u, 0x00000047u);  /* 8003A344 */
     v8 = FUN_8005FF2C(0x80090564u, 0x0000025bu, 0x00000000u);  /* 8003A358 */
-    v9 = r_u32(0x8008208cu);                                  /* 8003A368 */
-    w_u32(0x80082088u, v9);                                   /* 8003A370 */
+    v9 = r_u32(0x8008208cu);                                   /* 8003A368 */
+    w_u32(0x80082088u, v9);                                    /* 8003A370 */
     v10 = FUN_8005FF2C(0x80090768u, 0x000001bcu, 0x0000001fu); /* 8003A380 */
     v11 = FUN_8005FF2C(0x80090778u, 0x000001beu, 0x0000001fu); /* 8003A394 */
     v12 = FUN_8005FF2C(0x80090788u, 0x000001bfu, 0x0000001fu); /* 8003A3A8 */
@@ -1678,33 +1678,33 @@ GDB_CALL uint32 FUN_8003A2C0(void)
     v17 = FUN_8005FF2C(0x800907a4u, 0x00000357u, 0x00000046u); /* 8003A40C */
     v18 = FUN_8005FF2C(0x8008fc88u, 0x00000342u, 0x00000046u); /* 8003A420 */
     v19 = FUN_8005FF2C(0x8008eed4u, 0x00000234u, 0x00000047u); /* 8003A434 */
-    w_u32(0x800942ccu, 0x00000320u);                          /* 8003A444 */
-    w_u32(0x800941c0u, 0x00000258u);                          /* 8003A450 */
+    w_u32(0x800942ccu, 0x00000320u);                           /* 8003A444 */
+    w_u32(0x800941c0u, 0x00000258u);                           /* 8003A450 */
     v20 = FUN_800611F8(0x800907b4u);                           /* 8003A45C */
-    w_u32(0x80094348u, v20);                                  /* 8003A478 */
+    w_u32(0x80094348u, v20);                                   /* 8003A478 */
     v21 = FUN_800611F8(0x800907c0u);                           /* 8003A474 */
-    w_u32(0x8009434cu, v21);                                  /* 8003A488 */
+    w_u32(0x8009434cu, v21);                                   /* 8003A488 */
     v22 = FUN_800611F8(0x800907ccu);                           /* 8003A484 */
-    w_u32(0x80094350u, v22);                                  /* 8003A498 */
+    w_u32(0x80094350u, v22);                                   /* 8003A498 */
     v23 = FUN_800611F8(0x800907d8u);                           /* 8003A494 */
-    w_u32(0x80094354u, v23);                                  /* 8003A4A8 */
+    w_u32(0x80094354u, v23);                                   /* 8003A4A8 */
     v24 = FUN_800611F8(0x800907e4u);                           /* 8003A4A4 */
-    w_u32(0x80094358u, v24);                                  /* 8003A4B8 */
+    w_u32(0x80094358u, v24);                                   /* 8003A4B8 */
     v25 = FUN_800611F8(0x800907f0u);                           /* 8003A4B4 */
-    w_u32(0x8009435cu, v25);                                  /* 8003A4BC */
+    w_u32(0x8009435cu, v25);                                   /* 8003A4BC */
     return v25;
 }
 
 /* 8003A4D4: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003A4D4(void)
 {
-    FF_FUNCTION_MARKER(0x8003a4d4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8003a4d4u, "GAME.EXE");
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19;
-    v0 = r_u32(0x80094844u);                                  /* 8003A4E4 */
+    v0 = r_u32(0x80094844u);                                   /* 8003A4E4 */
     v1 = FUN_80061448(0x0000004au, v0);                        /* 8003A4E8 */
-    v2 = r_u32(0x80094844u);                                  /* 8003A4F4 */
-    v3 = r_u32(0x800947d0u);                                  /* 8003A4FC */
-    w_u32(0x80094844u, (v2 + v3));                            /* 8003A50C */
+    v2 = r_u32(0x80094844u);                                   /* 8003A4F4 */
+    v3 = r_u32(0x800947d0u);                                   /* 8003A4FC */
+    w_u32(0x80094844u, (v2 + v3));                             /* 8003A50C */
     v4 = FUN_8005FF2C(0x800907fcu, 0x000001c2u, 0x00000046u);  /* 8003A51C */
     v5 = FUN_8005FF2C(0x8009080cu, 0x000001c1u, 0x00000007u);  /* 8003A530 */
     v6 = FUN_8005FF2C(0x80090818u, 0x000001c3u, 0x00000007u);  /* 8003A544 */
@@ -1713,37 +1713,37 @@ GDB_CALL uint32 FUN_8003A4D4(void)
     v9 = FUN_8005FF2C(0x8008fc88u, 0x00000342u, 0x00000046u);  /* 8003A580 */
     v10 = FUN_8005FF2C(0x8008eed4u, 0x00000234u, 0x00000047u); /* 8003A594 */
     v11 = FUN_8005FF2C(0x80090838u, 0x000001c5u, 0x0000002eu); /* 8003A5A8 */
-    w_u32(0x800941c0u, 0x00000258u);                          /* 8003A5B8 */
-    w_u32(0x800942ccu, 0x00000258u);                          /* 8003A5C0 */
+    w_u32(0x800941c0u, 0x00000258u);                           /* 8003A5B8 */
+    w_u32(0x800942ccu, 0x00000258u);                           /* 8003A5C0 */
     v12 = FUN_800611F8(0x80090844u);                           /* 8003A5CC */
-    w_u32(0x80094348u, v12);                                  /* 8003A5E8 */
+    w_u32(0x80094348u, v12);                                   /* 8003A5E8 */
     v13 = FUN_800611F8(0x80090850u);                           /* 8003A5E4 */
-    w_u32(0x8009434cu, v13);                                  /* 8003A5F8 */
+    w_u32(0x8009434cu, v13);                                   /* 8003A5F8 */
     v14 = FUN_800611F8(0x8009085cu);                           /* 8003A5F4 */
-    w_u32(0x80094350u, v14);                                  /* 8003A608 */
+    w_u32(0x80094350u, v14);                                   /* 8003A608 */
     v15 = FUN_800611F8(0x80090868u);                           /* 8003A604 */
-    w_u32(0x80094354u, v15);                                  /* 8003A618 */
+    w_u32(0x80094354u, v15);                                   /* 8003A618 */
     v16 = FUN_800611F8(0x80090874u);                           /* 8003A614 */
-    w_u32(0x80094358u, v16);                                  /* 8003A628 */
+    w_u32(0x80094358u, v16);                                   /* 8003A628 */
     v17 = FUN_800611F8(0x80090880u);                           /* 8003A624 */
-    w_u32(0x8009435cu, v17);                                  /* 8003A638 */
+    w_u32(0x8009435cu, v17);                                   /* 8003A638 */
     v18 = FUN_800611F8(0x8009088cu);                           /* 8003A634 */
-    w_u32(0x80094360u, v18);                                  /* 8003A648 */
+    w_u32(0x80094360u, v18);                                   /* 8003A648 */
     v19 = FUN_800611F8(0x80090898u);                           /* 8003A644 */
-    w_u32(0x80094364u, v19);                                  /* 8003A64C */
+    w_u32(0x80094364u, v19);                                   /* 8003A64C */
     return v19;
 }
 
 /* 8003A664: IDA call order, decoded MIPS arguments/stores/delay slots. */
 GDB_CALL uint32 FUN_8003A664(void)
 {
-    FF_FUNCTION_MARKER(0x8003a664u, "GAME.EXE");
+    FUNCTION_MARKER(0x8003a664u, "GAME.EXE");
     uint32 v0, v1, v2, v3;
-    v0 = r_u32(0x80094844u);           /* 8003A670 */
+    v0 = r_u32(0x80094844u);            /* 8003A670 */
     v1 = FUN_80061448(0x0000004bu, v0); /* 8003A674 */
-    v2 = r_u32(0x80094844u);           /* 8003A680 */
-    v3 = r_u32(0x800947d0u);           /* 8003A688 */
-    w_u32(0x80094844u, (v2 + v3));     /* 8003A698 */
+    v2 = r_u32(0x80094844u);            /* 8003A680 */
+    v3 = r_u32(0x800947d0u);            /* 8003A688 */
+    w_u32(0x80094844u, (v2 + v3));      /* 8003A698 */
     return (v2 + v3);
 }
 
@@ -1867,6 +1867,8 @@ static uint32 stage_resource_callback(uint32 target)
             return FUN_8003A4D4();
         case 0x8003a664u:
             return FUN_8003A664();
+        case 0x80040aa0:
+            return FUN_80040AA0();
         default:
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
             return 0;
@@ -1876,7 +1878,7 @@ static uint32 stage_resource_callback(uint32 target)
 /* 13B60 twin: archive 80, HAWK2 strings and type/group 4/40. */
 GDB_CALL uint32 FUN_80013AFC(void)
 {
-    FF_FUNCTION_MARKER(0x80013afcu, "GAME.EXE");
+    FUNCTION_MARKER(0x80013afcu, "GAME.EXE");
     FUN_80061448(80, r_u32(0x800947f0));
     w_u32(0x800947f0, FUN_800611F8(0x8008d508));
     FUN_80060110(0x8008d52c, 4, 40);
@@ -1886,7 +1888,7 @@ GDB_CALL uint32 FUN_80013AFC(void)
 /* 13F0C twin: VULKAN strings, type 50 and group 66. */
 GDB_CALL uint32 FUN_80014378(void)
 {
-    FF_FUNCTION_MARKER(0x80014378u, "GAME.EXE");
+    FUNCTION_MARKER(0x80014378u, "GAME.EXE");
     FUN_80060110(0x8008d7d8, 50, 66);
     return FUN_8001721C(0x8008d7e4, 50);
 }
@@ -1894,7 +1896,7 @@ GDB_CALL uint32 FUN_80014378(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_80013ECC(void)
 {
-    FF_FUNCTION_MARKER(0x80013eccu, "GAME.EXE");
+    FUNCTION_MARKER(0x80013eccu, "GAME.EXE");
     FUN_80060110(0x8008d624u, 0x21u, 0x38u);
     return FUN_80060110(0x8008d630u, 0x22u, 0x38u);
 }
@@ -1902,7 +1904,7 @@ GDB_CALL uint32 FUN_80013ECC(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_80013F0C(void)
 {
-    FF_FUNCTION_MARKER(0x80013f0cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80013f0cu, "GAME.EXE");
     FUN_80060110(0x8008d63cu, 0xeu, 0x2eu);
     return FUN_8001721C(0x8008d648u, 0xeu);
 }
@@ -1910,14 +1912,14 @@ GDB_CALL uint32 FUN_80013F0C(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_80013F48(void)
 {
-    FF_FUNCTION_MARKER(0x80013f48u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013f48u, "GAME.EXE");
     return FUN_8005FF2C(0x8008d654u, 0xfu, 0x2fu);
 }
 
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_80013FA0(void)
 {
-    FF_FUNCTION_MARKER(0x80013fa0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013fa0u, "GAME.EXE");
     FUN_80060110(0x8008d66cu, 0xdu, 0x2du);
     return FUN_8001721C(0x8008d678u, 0xdu);
 }
@@ -1925,7 +1927,7 @@ GDB_CALL uint32 FUN_80013FA0(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_80014034(void)
 {
-    FF_FUNCTION_MARKER(0x80014034u, "GAME.EXE");
+    FUNCTION_MARKER(0x80014034u, "GAME.EXE");
     FUN_80060110(0x8008d6a0u, 0x1cu, 0x33u);
     return FUN_8001721C(0x8008d6a8u, 0x1cu);
 }
@@ -1933,7 +1935,7 @@ GDB_CALL uint32 FUN_80014034(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_800140F4(void)
 {
-    FF_FUNCTION_MARKER(0x800140f4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800140f4u, "GAME.EXE");
     FUN_80060110(0x8008d6d8u, 0x20u, 0x37u);
     return FUN_8001721C(0x8008d6e4u, 0x20u);
 }
@@ -1941,7 +1943,7 @@ GDB_CALL uint32 FUN_800140F4(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_80014130(void)
 {
-    FF_FUNCTION_MARKER(0x80014130u, "GAME.EXE");
+    FUNCTION_MARKER(0x80014130u, "GAME.EXE");
     FUN_80060110(0x8008d6f0u, 0x23u, 0x39u);
     return FUN_80060110(0x8008d6fcu, 0x24u, 0x39u);
 }
@@ -1949,7 +1951,7 @@ GDB_CALL uint32 FUN_80014130(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_800141F4(void)
 {
-    FF_FUNCTION_MARKER(0x800141f4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800141f4u, "GAME.EXE");
     FUN_80060110(0x8008d72cu, 0x28u, 0x3du);
     FUN_80060110(0x8008d738u, 0x29u, 0x3du);
     FUN_80060110(0x8008d744u, 0x2au, 0x3du);
@@ -1959,7 +1961,7 @@ GDB_CALL uint32 FUN_800141F4(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_8001425C(void)
 {
-    FF_FUNCTION_MARKER(0x8001425cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8001425cu, "GAME.EXE");
     FUN_80060110(0x8008d75cu, 0x2cu, 0x3eu);
     FUN_80060110(0x8008d76cu, 0x2du, 0x3eu);
     FUN_80060110(0x8008d77cu, 0x2eu, 0x3eu);
@@ -1969,7 +1971,7 @@ GDB_CALL uint32 FUN_8001425C(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_800142F0(void)
 {
-    FF_FUNCTION_MARKER(0x800142f0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800142f0u, "GAME.EXE");
     FUN_8001721C(0x8008d7a8u, 0x30u);
     FUN_8001721C(0x8008d7b8u, 0x30u);
     return FUN_80060110(0x8008d7c0u, 0x30u, 0x40u);
@@ -1978,7 +1980,7 @@ GDB_CALL uint32 FUN_800142F0(void)
 /* IDA call order; all MIPS words and call delay slots verified. */
 GDB_CALL uint32 FUN_8001433C(void)
 {
-    FF_FUNCTION_MARKER(0x8001433cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8001433cu, "GAME.EXE");
     FUN_80060110(0x8008d7c8u, 0x31u, 0x41u);
     return FUN_8001721C(0x8008d7d0u, 0x31u);
 }
@@ -1986,140 +1988,140 @@ GDB_CALL uint32 FUN_8001433C(void)
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80014170(void)
 {
-    FF_FUNCTION_MARKER(0x80014170u, "GAME.EXE");
+    FUNCTION_MARKER(0x80014170u, "GAME.EXE");
     return FUN_80060110(0x8008d70cu, 37, 58);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_8001419C(void)
 {
-    FF_FUNCTION_MARKER(0x8001419cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8001419cu, "GAME.EXE");
     return FUN_80060110(0x8008d714u, 38, 59);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_800141C8(void)
 {
-    FF_FUNCTION_MARKER(0x800141c8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800141c8u, "GAME.EXE");
     return FUN_80060110(0x8008d720u, 39, 60);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_800142C4(void)
 {
-    FF_FUNCTION_MARKER(0x800142c4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800142c4u, "GAME.EXE");
     return FUN_80060110(0x8008d798u, 47, 63);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_800143B4(void)
 {
-    FF_FUNCTION_MARKER(0x800143b4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800143b4u, "GAME.EXE");
     return FUN_80060110(0x8008d7f0u, 52, 67);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_800143E0(void)
 {
-    FF_FUNCTION_MARKER(0x800143e0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800143e0u, "GAME.EXE");
     return FUN_80060110(0x8008d7fcu, 53, 68);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013D40(void)
 {
-    FF_FUNCTION_MARKER(0x80013d40u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013d40u, "GAME.EXE");
     return FUN_80060110(0x8008d5b8u, 11, 42);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013D6C(void)
 {
-    FF_FUNCTION_MARKER(0x80013d6cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80013d6cu, "GAME.EXE");
     return FUN_80060110(0x8008d5c4u, 18, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013D98(void)
 {
-    FF_FUNCTION_MARKER(0x80013d98u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013d98u, "GAME.EXE");
     return FUN_80060110(0x8008d5d0u, 19, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013DC4(void)
 {
-    FF_FUNCTION_MARKER(0x80013dc4u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013dc4u, "GAME.EXE");
     return FUN_80060110(0x8008d5dcu, 20, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013DF0(void)
 {
-    FF_FUNCTION_MARKER(0x80013df0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013df0u, "GAME.EXE");
     return FUN_80060110(0x8008d5e8u, 21, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013E1C(void)
 {
-    FF_FUNCTION_MARKER(0x80013e1cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80013e1cu, "GAME.EXE");
     return FUN_80060110(0x8008d5f4u, 22, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013E48(void)
 {
-    FF_FUNCTION_MARKER(0x80013e48u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013e48u, "GAME.EXE");
     return FUN_80060110(0x8008d600u, 23, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013E74(void)
 {
-    FF_FUNCTION_MARKER(0x80013e74u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013e74u, "GAME.EXE");
     return FUN_80060110(0x8008d60cu, 24, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013EA0(void)
 {
-    FF_FUNCTION_MARKER(0x80013ea0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013ea0u, "GAME.EXE");
     return FUN_80060110(0x8008d618u, 25, 43);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013F74(void)
 {
-    FF_FUNCTION_MARKER(0x80013f74u, "GAME.EXE");
+    FUNCTION_MARKER(0x80013f74u, "GAME.EXE");
     return FUN_80060110(0x8008d660u, 12, 44);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80013FDC(void)
 {
-    FF_FUNCTION_MARKER(0x80013fdcu, "GAME.EXE");
+    FUNCTION_MARKER(0x80013fdcu, "GAME.EXE");
     return FUN_80060110(0x8008d684u, 26, 49);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80014008(void)
 {
-    FF_FUNCTION_MARKER(0x80014008u, "GAME.EXE");
+    FUNCTION_MARKER(0x80014008u, "GAME.EXE");
     return FUN_80060110(0x8008d690u, 27, 50);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_80014070(void)
 {
-    FF_FUNCTION_MARKER(0x80014070u, "GAME.EXE");
+    FUNCTION_MARKER(0x80014070u, "GAME.EXE");
     return FUN_80060110(0x8008d6b0u, 29, 52);
 }
 
 /* IDA + exact MIPS template: reuse FUN_800140C8; arguments and JAL delay slot verified. */
 GDB_CALL uint32 FUN_8001409C(void)
 {
-    FF_FUNCTION_MARKER(0x8001409cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8001409cu, "GAME.EXE");
     return FUN_80060110(0x8008d6bcu, 30, 53);
 }
 
@@ -2138,7 +2140,7 @@ GDB_CALL sint32 FUN_8005C2A0(void)
 
 static void pause_frame(void)
 {
-    ff_game_prepare_80058634_stage0();
+    frame_prepare();
     FUN_8005C2A0();
     FUN_80058C14();
 }
@@ -2201,7 +2203,7 @@ static sint32 pause_select(uint32 player, uint32 controller)
         choice = pause_choice(buttons, choice);
         FUN_80067D3C();
         FUN_80061120();
-        ff_game_prepare_80058634_stage0();
+        frame_prepare();
         FUN_8005C2A0();
         right = FUN_8005EFB8(r_u32(0x800924f0));
         left = FUN_8005EFB8(r_u32(0x800924ec));
@@ -2230,7 +2232,7 @@ static sint32 pause_select(uint32 player, uint32 controller)
         choice = pause_choice(buttons, choice);
         FUN_80067D3C();
         FUN_80061120();
-        ff_game_prepare_80058634_stage0();
+        frame_prepare();
         FUN_8005C2A0();
         FUN_80061ADC(r_u32(0x800924f4), 150);
         FUN_80062C0C(r_u32(0x800924d8), 110, 160, choice ? 0x80093bf0 : 0x80093be4);
@@ -2387,64 +2389,88 @@ GDB_CALL sint32 ff_level_exit_8001886C_stage0(void)
     return result;
 }
 
-/* Normal stage0 script/completion/pause tail. Transition and pause services
- * remain explicit WIP boundaries when reached. */
+/* Original input-mode reset */
 GDB_CALL sint32 FUN_8005F0C8(void)
 {
     w_u32(0x80093d08, 0);
     return 0;
 }
 
+/* Original 15038..1556C, returning zero at the next frame boundary */
 GDB_CALL sint32 ff_game_frame_tail_80015038_stage0(void)
 {
-    sint32 i, type, result;
-    uint32 pad, flags, transition = r_u32(0x800941b8);
+    uint32 i, pad, transition = r_u32(0x800941b8);
+    sint32 type, result, fade;
     if (transition)
     {
-        sint32 fade = (sint32)(transition << 3);
-        if (fade > 32)
-            fade = 32;
+        fade = (sint32)(transition << 3);
         if (transition == 1)
         {
+            uint32 players, stage;
             for (i = 0; i < 2; i++)
-                w_u16(0x800b43a4 + 244u * (uint32)i, (uint16)r_s16(0x800b43a2 + 244u * (uint32)i));
-            for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
+                w_u16(0x800b43a4 + 244 * i, (uint16)r_s16(0x800b43a2 + 244 * i));
+            players = r_u32(0x800940b0);
+            if ((sint32)players > 0)
             {
-                uint32 actor = 0x800b4318 + 244u * (uint32)i;
-                sint32 hp = r_s16(actor + 66), maximum = r_s16(actor + 72), next;
-                if (hp <= 0)
-                    continue;
-                next = (r_u32(0x80093d58) == 6 || r_u32(0x80093d58) == 13 || r_u32(0x80093d58) - 20u < 2u) ? maximum : hp + (maximum >> 2);
-                if (next > maximum - 4)
-                    next = maximum - 4;
-                w_u16(actor + 66, (uint16)next);
+                stage = r_u32(0x80093d58);
+                for (i = 0; (sint32)i < (sint32)players; i++)
+                {
+                    uint32 actor = 0x800b4318 + 244 * i;
+                    sint32 hp = r_s16(actor + 66), maximum, next;
+                    if (hp <= 0)
+                        continue;
+                    maximum = r_s16(actor + 72);
+                    next = hp + (maximum >> 2);
+                    if (stage == 6 || stage == 13 || stage - 20 < 2)
+                        next = maximum;
+                    if (next > maximum - 4)
+                        next = maximum - 4;
+                    w_u16(actor + 66, (uint16)next);
+                }
             }
+            fade = (sint32)(r_u32(0x800941b8) << 3);
         }
-        FUN_8005EE58(255 - fade);
-        if (transition >= 91 && !(transition & 3u))
+        if (fade > 32)
+            fade = 32;
+        FUN_8005EE58((sint32)(255 - (uint32)fade));
+        transition = r_u32(0x800941b8);
+        if ((sint32)transition >= 91 && !(transition & 3))
         {
             sint32 changed = 0;
-            for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
+            i = 0;
+            if ((sint32)r_u32(0x800940b0) > 0)
             {
-                uint32 actor = 0x800b4318 + 244u * (uint32)i, score = 0x80094030 + 4u * (uint32)i, threshold = 0x800941b0 + 4u * (uint32)i;
-                sint32 count = r_s16(actor + 138);
-                if (r_s16(actor + 66) > 0 && count > 0)
+                do
                 {
-                    w_u16(actor + 138, (uint16)(count - 1));
-                    w_u32(score, r_u32(score) + 250u);
-                    FUN_8005E9E8(i);
-                    changed = 1;
-                }
-                if ((sint32)r_u32(threshold) < (sint32)r_u32(score))
-                {
-                    w_u32(0x80093d50, r_u32(0x80093d50) + 1u);
-                    w_u32(threshold, r_u32(threshold) + 50000u);
-                    FUN_800149EC();
-                    w_u32(0x80094190, 4);
-                }
+                    uint32 actor = 0x800b4318 + 244 * i;
+                    uint32 score_address = 0x80094030 + 4 * i;
+                    uint32 threshold = 0x800941b0 + 4 * i;
+                    if (r_s16(actor + 66) > 0)
+                    {
+                        sint32 count = r_s16(actor + 138);
+                        uint32 score;
+                        if (count > 0)
+                        {
+                            w_u16(actor + 138, (uint16)(count - 1));
+                            w_u32(score_address, r_u32(score_address) + 250);
+                            changed = 1;
+                            FUN_8005E9E8((sint32)i);
+                        }
+                        score = r_u32(score_address);
+                        if ((sint32)r_u32(threshold) < (sint32)score)
+                        {
+                            w_u32(0x80093d50, r_u32(0x80093d50) + 1);
+                            w_u32(threshold, score + 50000);
+                            FUN_800149EC();
+                            w_u32(0x80094190, 4);
+                        }
+                    }
+                    if (changed)
+                        FUN_80056670(46, 255, 7168);
+                    ++i;
+                } while ((sint32)i < (sint32)r_u32(0x800940b0));
+                transition = r_u32(0x800941b8);
             }
-            if (changed)
-                FUN_80056670(46, 255, 7168);
         }
         ++transition;
         w_u32(0x800941b8, transition);
@@ -2463,62 +2489,67 @@ GDB_CALL sint32 ff_game_frame_tail_80015038_stage0(void)
             FUN_8005F0C8();
             return 2;
         }
-        goto pause_check;
     }
-    result = FUN_8004B228();
-    if (result == -1)
+    else
     {
-        for (i = 2; i < 8; i++)
+        result = FUN_8004B228();
+        if (r_u32(0x80093d58) == 23 && r_u32(0x80093d60) && !r_u32(0x800941b8))
+            w_u32(0x800941b8, 1);
+        if (result == -1)
         {
-            type = r_s16(0x800b434c + 244u * (uint32)i);
-            if (type != -1 && type != 17)
-                break;
+            for (i = 2; i < 8; i++)
+            {
+                type = r_s16(0x800b434c + 244 * i);
+                if (type != -1 && type != 17)
+                    break;
+            }
+            if (i == 8 && !r_u32(0x800941b8))
+                w_u32(0x800941b8, 1);
         }
-        if (i == 8 && !r_u32(0x800941b8))
+        if (ff_level_exit_8001886C_stage0() && !r_u32(0x800941b8))
             w_u32(0x800941b8, 1);
     }
-    if (ff_level_exit_8001886C_stage0() && !r_u32(0x800941b8))
-        w_u32(0x800941b8, 1);
-pause_check:
-    if ((sint32)r_u32(0x80093dd0) >= 33 && !r_u32(0x80093dd4) && r_u32(0x80093d1c) == 0xffffffffu && !r_u32(0x800941b8))
+    if ((sint32)r_u32(0x80093dd0) >= 33 && !r_u32(0x80093dd4) && r_u32(0x80093d1c) == 0xffffffff && !r_u32(0x800941b8))
     {
-        for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
+        i = 0;
+        if ((sint32)r_u32(0x800940b0) > 0)
         {
-            if (!r_s16(0x800b435a + 244u * (uint32)i))
-                continue;
-            pad = (uint32)FUN_8005F5AC(r_u32(0x80094288 + 4u * (uint32)i));
-            flags = r_u8(0x80093dd8);
-            if (r_s8(0x80094114) == -1)
-                flags |= 5u << ((uint32)i & 31u);
-            if (pad & 8)
-                flags |= 1u << ((uint32)i & 31u);
-            w_u8(0x80093dd8, (uint8)flags);
-            if ((uint8)flags)
-                break;
+            do
+            {
+                if (r_s16(0x800b435a + 244 * i))
+                {
+                    pad = (uint32)FUN_8005F5AC(r_u32(0x80094288 + 4 * i));
+                    if (r_s8(0x80094114) == -1)
+                        w_u8(0x80093dd8, (uint8)(r_u8(0x80093dd8) | ((uint32)5 << (i & 31))));
+                    if (pad & 8)
+                        w_u8(0x80093dd8, (uint8)(r_u8(0x80093dd8) | ((uint32)1 << (i & 31))));
+                    if (r_s8(0x80093dd8))
+                        goto pause_run;
+                }
+                ++i;
+            } while ((sint32)i < (sint32)r_u32(0x800940b0));
         }
     }
-    if (r_s8(0x80093dd8))
+    if (!r_s8(0x80093dd8))
+        return 0;
+pause_run:
+    if (FUN_8005DBBC())
     {
-        if (FUN_8005DBBC())
-        {
-            /* 15550 nullsub_46 is empty; 15558 stops voices before input reset. */
-            FUN_80056ECC();
-            FUN_8005F0C8();
-            return 1;
-        }
-        w_u8(0x80093dd8, 0); /* 15540: also clears disconnect bits left by final release. */
+        FUN_8005E138();
+        FUN_80056ECC();
+        FUN_8005F0C8();
+        return 1;
     }
+    w_u8(0x80093dd8, 0);
     return 0;
 }
 
-/* Actual14DF8..15038, normal gameplay mode. Stops before level-script/tail;
- * this prefix is not a completed gameplay iteration. */
+/* Actual14DF8..15038, including playback and recording overlays. Stops before level-script/tail;
+ * This prefix is not a completed gameplay iteration */
 GDB_CALL sint32 ff_game_frame_prefix_80014DF8_stage0(void)
 {
     uint32 tick, i;
     sint32 second;
-    if (r_u32(0x80093d08))
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     ff_game_input_8005F23C();
     if (ff_services.audit_input_event)
         ff_services.audit_input_event(4);
@@ -2526,17 +2557,17 @@ GDB_CALL sint32 ff_game_frame_prefix_80014DF8_stage0(void)
     w_u16(0x80093d36, (uint16)r_s16(0x8008d492));
     for (i = 0; i < 3; i++)
         w_u32(0x80093d28 + 4u * i, r_u32(0x8008d4a4 + 4u * i));
-    tick = r_u32(0x80093dd0) + 1u;
-    if ((sint32)tick > 0x40000)
-        tick = 0x10000;
+    tick = r_u32(0x80093dd0) + 1;
     w_u32(0x80093dd0, tick);
-    ff_game_prepare_80058634_stage0();
+    if ((sint32)tick > 0x40000)
+        w_u32(0x80093dd0, 0x10000);
+    frame_prepare();
     FUN_8005C17C();
     ff_characters_800593FC();
     FUN_8001EE44();
     FUN_80024008();
     FUN_8004A704();
-    ff_game_stage_8001E168_stage0();
+    stage_update();
     ff_sequence_update_8001D640();
     FUN_80011D20();
     FUN_800101CC(r_s16(0x8008d492));
@@ -2547,38 +2578,99 @@ GDB_CALL sint32 ff_game_frame_prefix_80014DF8_stage0(void)
     /* 14F14..14F30: nullsub46, stop voices, reset input, return4 */
     if ((sint32)r_u32(0x80093dd4) >= 385)
     {
+        FUN_8005E138();
         FUN_80056ECC();
         FUN_8005F0C8();
         return 4;
     }
     second = FUN_800196A4(1);
-    if (2 - second != FUN_800196A4(0))
+    if ((sint32)(2 - (uint32)second) != FUN_800196A4(0))
     {
         FUN_80047600();
         ff_camera_callback(r_u32(0x800adbe0 + 4u * r_u32(0x80093d58)));
+    }
+    if (r_u32(0x80093d08) == 1)
+    {
+        if (r_u32(0x80093d70) == 1)
+        {
+            FUN_80061ADC(0x8008d808, 170);
+            FUN_80061ADC(0x8008d818, 190);
+        }
+        else
+            FUN_80061ADC(r_u32(0x8009244c), 180);
+    }
+    if (r_u32(0x80093dd0) & 16)
+    {
+        if (r_u32(0x80093d08) == 1)
+            FUN_80061ADC(r_u32(0x80092448), 120);
+        else if (r_u32(0x80093d08) == 2)
+            FUN_80061ADC(0x8008d82c, 190);
     }
     FUN_80058C14();
     return 0;
 }
 
-/* 5F23C normal gameplay path; recording/playback remain separate WIP paths. */
+/* Original normal, recording and playback input paths */
 GDB_CALL uint32 ff_game_input_8005F23C(void)
 {
     if (ff_services.audit_input_event)
         ff_services.audit_input_event(1);
-    uint32 value;
-    if (r_u32(0x80093d08) != 0)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    uint32 value, cursor;
+    if (r_u32(0x80093d08) == 2)
+    {
+        value = (uint16)FUN_8005F5AC(r_u32(0x80094288));
+        w_u32(0x80093a10, value);
+        w_u32(0x80093a10, value | ((uint32)(sint32)r_s8(0x80094114) << 16));
+        value = (uint16)FUN_8005F5AC(r_u32(0x8009428c));
+        w_u32(0x80093a14, value);
+        w_u32(0x80093a14, value | ((uint32)(sint32)r_s8(0x80094114) << 16));
+        w_u32(r_u32(0x80093d0c) + 8 * r_u32(0x80093d10), r_u32(0x80093a10));
+        w_u32(r_u32(0x80093d0c) + 8 * r_u32(0x80093d10) + 4, r_u32(0x80093a14));
+        value = r_u32(0x80093d10) + 1;
+        w_u32(0x80093d10, value);
+        return value;
+    }
+    if (r_u32(0x80093d08) == 1)
+    {
+        if ((sint32)r_u32(0x80093d14) >= (sint32)(r_u32(0x80093d10) - 1))
+        {
+            w_u32(0x80093a10, 0);
+            w_u32(0x80093a14, 0);
+            goto playback_exit;
+        }
+        cursor = r_u32(0x80093d0c) + 8 * r_u32(0x80093d14);
+        value = FUN_8005F050(r_u32(cursor));
+        w_u32(0x80093a10, FUN_8005F234(value));
+        cursor = r_u32(0x80093d0c) + 8 * r_u32(0x80093d14);
+        value = FUN_8005F050(r_u32(cursor + 4));
+        w_u32(0x80093a14, FUN_8005F234(value));
+        w_u32(0x80093d14, r_u32(0x80093d14) + 1);
+        if ((uint16)FUN_8005F5AC(r_u32(0x80094288)))
+            goto playback_exit;
+        value = (uint16)FUN_8005F5AC(r_u32(0x8009428c));
+        if (value)
+            goto playback_exit;
+        return value;
+    }
     w_u8(0x80093cf8, (uint8)(r_s16(0x800b434c) == -1 || r_s16(0x800b435a) <= 0));
     value = (uint16)FUN_8005F5AC(r_u32(0x80094288));
     w_u32(0x80093a10, value);
-    w_u32(0x80093a10, value | ((uint32)(sint32) r_s8(0x80094114) << 16));
+    w_u32(0x80093a10, value | ((uint32)(sint32)r_s8(0x80094114) << 16));
     w_u8(0x80093cf8, (uint8)((sint32)r_u32(0x800940b0) < 2 || r_s16(0x800b4440) == -1 || r_s16(0x800b444e) <= 0));
     value = (uint16)FUN_8005F5AC(r_u32(0x8009428c));
     w_u32(0x80093a14, value);
-    w_u32(0x80093a14, value | ((uint32)(sint32) r_s8(0x80094114) << 16));
+    w_u32(0x80093a14, value | ((uint32)(sint32)r_s8(0x80094114) << 16));
     w_u8(0x80093cf8, 0);
     return value;
+playback_exit:
+    FUN_80056ECC();
+    w_u32(0x80093c14, 0xffffffff);
+    w_u8(0x80093cf8, 1);
+    if (!ff_services.game_longjmp)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    ff_services.game_longjmp(0x80094298, 0);
+    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    return 0;
 }
 
 GDB_CALL sint32 ff_level_ambient_80014584_stage0(void)
@@ -2662,16 +2754,72 @@ GDB_CALL sint32 ff_level_ambient_80014584_stage0(void)
     return 23;
 }
 
-/* 14B70..14DF8 stage0 path, stopping immediately before first frame. */
+/* Original 14B70..14DF8, stopping immediately before the first frame */
 GDB_CALL void ff_level_ready_80014B70_stage0(void)
 {
-    sint32 i, type, slot;
+    sint32 i, type, slot, track;
     uint32 actor, stage = r_u32(0x80093d58);
-    FUN_80063870(stage ? 13 : 22);
+    switch (stage)
+    {
+        case 0:
+            track = 22;
+            break;
+        case 1:
+        case 4:
+            track = 13;
+            break;
+        case 2:
+        case 3:
+        case 23:
+            track = 15;
+            break;
+        case 5:
+            track = 16;
+            break;
+        case 6:
+        case 13:
+            track = 25;
+            break;
+        case 7:
+        case 8:
+        case 9:
+            track = 18;
+            break;
+        case 10:
+        case 11:
+            track = 17;
+            break;
+        case 12:
+        case 14:
+            track = 23;
+            break;
+        case 15:
+        case 16:
+        case 19:
+            track = 19;
+            break;
+        case 17:
+        case 18:
+            track = 21;
+            break;
+        case 22:
+            track = 14;
+            break;
+        case 24:
+            track = 26;
+            break;
+        default:
+            track = 20;
+            break;
+    }
+    FUN_80063870(track);
     FUN_80057630();
     ff_level_ambient_80014584_stage0();
-    if (r_u32(0x80093d1c) != 0xffffffffu)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* WIP demo-resource branch */
+    if (r_u32(0x80093d1c) != 0xffffffff)
+    {
+        FUN_80061448(r_u32(0x800816e0 + 20 * r_u32(0x80093d1c)), r_u32(0x800947f0) + 256);
+        FUN_8005F058(r_u32(0x800947f0) + 256);
+    }
     if (r_u32(0x80093d64) == 1)
     {
         w_u32(0x80093d64, 0);
@@ -2693,20 +2841,24 @@ GDB_CALL void ff_level_ready_80014B70_stage0(void)
 }
 
 /* 14A34..14B70 stage0 initialization, before music and frame-loop setup. */
-GDB_CALL uint32 ff_level_init_80014A34_stage0(void)
+GDB_CALL uint32 level_initialize(void)
 {
-    uint32 stage = r_u32(0x80093d58);
+    uint32 stage = r_u32(0x80093d58), model, texture;
     FUN_8005ECCC((uint32)(sint32)r_s16(0x8007a0e0 + 2u * stage));
     FUN_8004C1CC();
     FUN_80018318();
     FUN_80013A30();
-    FUN_80061448(stage + 5u, 0x116000);
-    w_u32(0x800946bc, r_u32(0x800b3e00 + 4u * stage));
-    ff_stage_textures_call(r_u32(0x800a86d8 + 4u * stage));
+    stage = r_u32(0x80093d58);
+    FUN_80061448(stage + 5, 0x116000);
+    stage = r_u32(0x80093d58);
+    model = r_u32(0x800b3e00 + 4 * stage);
+    texture = r_u32(0x800a86d8 + 4 * stage);
+    w_u32(0x800946bc, model);
+    ff_stage_textures_call(texture);
     FUN_80060394(0);
-    FUN_80056CCC(stage + 171u);
+    FUN_80056CCC(r_u32(0x80093d58) + 171);
     FUN_80016C18();
-    stage_resource_callback(r_u32(0x800ba180 + 4u * stage));
+    stage_resource_callback(r_u32(0x800ba180 + 4 * r_u32(0x80093d58)));
     FUN_8001440C();
     FUN_80017BB0();
     FUN_80013848();
@@ -2714,6 +2866,23 @@ GDB_CALL uint32 ff_level_init_80014A34_stage0(void)
         w_u16(0x800b444e, 0);
     FUN_8005EC90();
     return FUN_80014808();
+}
+
+GDB_CALL sint32 level_run(void)
+{
+    sint32 result;
+    FUNCTION_MARKER(0x80014a34, "GAME.EXE");
+    level_initialize();
+    ff_level_ready_80014B70_stage0();
+    for (;;)
+    {
+        result = ff_game_frame_prefix_80014DF8_stage0();
+        if (result)
+            return result;
+        result = ff_game_frame_tail_80015038_stage0();
+        if (result)
+            return result;
+    }
 }
 
 /* 167C4 has five arguments; caller SP+10 becomes SP+48 after prologue. */
@@ -2731,7 +2900,7 @@ GDB_CALL sint32 FUN_800167C4(sint32 type, uint32 x, uint32 y, uint32 z, uint32 a
         w_u32(p + 8, y);
         w_u32(p + 12, z);
         w_u16(p + 16, (uint16)angle);
-        w_u16(p + 22, (uint16) r_s8(0x8009439c + (uint32)type));
+        w_u16(p + 22, (uint16)r_s8(0x8009439c + (uint32)type));
         if ((uint32)type - 587u < 10)
             w_u16(p + 22, 300);
         return i;
@@ -2839,7 +3008,7 @@ GDB_CALL uint32 FUN_8004C1CC(void)
 GDB_CALL uint32 FUN_80016A28(uint32 region, sint32 type, sint32 action, sint32 kind, sint32 padding)
 {
     sint32 minx = 32767, minz = 32767, maxx = -32768, maxz = -32768, i, n, x, z;
-    uint32 model, vertices;
+    uint32 model, vertices, result;
     int oriented;
     w_u16(region + 16, (uint16)(action - 1));
     w_u16(region + 14, (uint16)type);
@@ -2852,13 +3021,19 @@ GDB_CALL uint32 FUN_80016A28(uint32 region, sint32 type, sint32 action, sint32 k
     for (i = 0; i < n; i++, vertices += 8)
     {
         x = r_s16(vertices);
-        z = r_s16(vertices + 4);
         if (x > maxx)
-            maxx = x;
+        {
+            maxx = r_s16(vertices);
+            x = maxx;
+        }
         if (x < minx)
             minx = x;
+        z = r_s16(vertices + 4);
         if (z > maxz)
-            maxz = z;
+        {
+            maxz = r_s16(vertices + 4);
+            z = maxz;
+        }
         if (z < minz)
             minz = z;
     }
@@ -2883,30 +3058,37 @@ GDB_CALL uint32 FUN_80016A28(uint32 region, sint32 type, sint32 action, sint32 k
     }
     else
     {
-        w_u16(region, (uint16)((uint32)r_s16(region) + (uint32)minx));
-        w_u16(region + 4, (uint16)((uint32)r_s16(region + 4) + (uint32)maxx));
-        w_u16(region + 2, (uint16)((uint32)r_s16(region + 2) + (uint32)minz));
-        w_u16(region + 6, (uint16)((uint32)r_s16(region + 6) + (uint32)maxz));
+        w_u16(region, (uint16)((uint32)r_u16(region) + (uint32)minx));
+        w_u16(region + 4, (uint16)((uint32)r_u16(region + 4) + (uint32)maxx));
+        w_u16(region + 2, (uint16)((uint32)r_u16(region + 2) + (uint32)minz));
+        w_u16(region + 6, (uint16)((uint32)r_u16(region + 6) + (uint32)maxz));
     }
-    w_u32(0x8009479c, r_u32(0x8009479c) + 1);
-    return r_u32(0x8009479c);
+    result = r_u32(0x8009479c) + 1;
+    w_u32(0x8009479c, result);
+    return result;
 }
 
 GDB_CALL uint32 FUN_8003B77C(uint32 region, sint32 type)
 {
-    uint32 entry = 0x80086f84;
-    if (r_s16(entry) == -1)
+    uint32 entry = 0x80086f84, value = r_u16(entry);
+    sint32 action, kind, padding;
+    if ((sint16)value == -1)
         return 0xffffffffu;
-    do
+    for (;;)
     {
-        if (r_s16(entry) == type)
+        if ((sint16)value == type)
         {
-            FUN_80016A28(region, type, r_s8(entry + 2), r_s8(entry + 3), r_s8(entry + 4));
-            w_u16(region + 18, (uint16) r_s8(entry + 5));
+            action = r_s8(entry + 2);
+            kind = r_s8(entry + 3);
+            padding = r_s8(entry + 4);
+            FUN_80016A28(region, type, action, kind, padding);
+            w_u16(region + 18, (uint16)r_s8(entry + 5));
         }
         entry += 6;
-    } while (r_s16(entry) != -1);
-    return 0xffff0000u; /* terminal LHU shifted in BNE delay slot */
+        value = r_u16(entry);
+        if (r_s16(entry) == -1)
+            return value << 16;
+    }
 }
 
 GDB_CALL uint32 FUN_80017BB0(void)
@@ -3045,11 +3227,11 @@ GDB_CALL uint32 FUN_800345A0(void)
 {
     uint32 result;
     uint32 v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10;
-    v0 = r_u32(0x80094844u);                                     /* 800345B0 */
+    v0 = r_u32(0x80094844u);                                      /* 800345B0 */
     result = FUN_80061448(0x00000029u, v0);                       /* 800345B4 */
-    v1 = r_u32(0x80094844u);                                     /* 800345C0 */
-    v2 = r_u32(0x800947d0u);                                     /* 800345C8 */
-    w_u32(0x80094844u, (v1 + v2));                               /* 800345D8 */
+    v1 = r_u32(0x80094844u);                                      /* 800345C0 */
+    v2 = r_u32(0x800947d0u);                                      /* 800345C8 */
+    w_u32(0x80094844u, (v1 + v2));                                /* 800345D8 */
     result = FUN_8005FF2C(0x8008e564u, 0x00000038u, 0x00000007u); /* 800345E8 */
     result = FUN_8005FF2C(0x8008e56cu, 0x00000039u, 0x00000007u); /* 800345FC */
     result = FUN_8005FF2C(0x8008e574u, 0x0000003au, 0x00000007u); /* 80034610 */
@@ -3061,8 +3243,8 @@ GDB_CALL uint32 FUN_800345A0(void)
     result = FUN_8005FF2C(0x8008e5ccu, 0x0000004au, 0x00000007u); /* 80034688 */
     result = FUN_8005FF2C(0x8008e5dcu, 0x0000004bu, 0x00000007u); /* 8003469C */
     result = FUN_8005FF2C(0x8008e5ecu, 0x0000004cu, 0x00000007u); /* 800346B0 */
-    v3 = r_u32(0x8008184cu);                                     /* 800346C0 */
-    w_u32(0x80081854u, v3);                                      /* 800346C8 */
+    v3 = r_u32(0x8008184cu);                                      /* 800346C0 */
+    w_u32(0x80081854u, v3);                                       /* 800346C8 */
     result = FUN_8005FF2C(0x8008e5fcu, 0x0000003cu, 0x00000007u); /* 800346D8 */
     result = FUN_8005FF2C(0x8008e60cu, 0x00000266u, 0x00000007u); /* 800346EC */
     result = FUN_8005FF2C(0x8008e618u, 0x00000267u, 0x00000007u); /* 80034700 */
@@ -3097,10 +3279,10 @@ GDB_CALL uint32 FUN_800345A0(void)
     result = FUN_8005FF2C(0x8008e798u, 0x00000216u, 0x00000047u); /* 80034944 */
     result = FUN_8005FF2C(0x8008e7a8u, 0x00000067u, 0x00000047u); /* 80034958 */
     result = FUN_8005FF2C(0x8008e7b4u, 0x00000068u, 0x00000047u); /* 8003496C */
-    v4 = r_u32(0x800818acu);                                     /* 80034974 */
-    w_u32(0x800818b0u, v4);                                      /* 8003497C */
-    v5 = r_u32(0x80081f60u);                                     /* 80034980 */
-    w_u32(0x800818c4u, v5);                                      /* 80034988 */
+    v4 = r_u32(0x800818acu);                                      /* 80034974 */
+    w_u32(0x800818b0u, v4);                                       /* 8003497C */
+    v5 = r_u32(0x80081f60u);                                      /* 80034980 */
+    w_u32(0x800818c4u, v5);                                       /* 80034988 */
     result = FUN_8005FF2C(0x8008e7c0u, 0x00000054u, 0x00000046u); /* 80034998 */
     result = FUN_8005FF2C(0x8008e7ccu, 0x0000004eu, 0x00000046u); /* 800349AC */
     result = FUN_8005FF2C(0x8008e7d8u, 0x0000004fu, 0x00000046u); /* 800349C0 */
@@ -3111,18 +3293,18 @@ GDB_CALL uint32 FUN_800345A0(void)
     result = FUN_8005FF2C(0x8008e814u, 0x00000055u, 0x00000047u); /* 80034A24 */
     result = FUN_8005FF2C(0x8008e824u, 0x00000056u, 0x00000047u); /* 80034A38 */
     result = FUN_8005FF2C(0x8008e834u, 0x00000057u, 0x00000047u); /* 80034A4C */
-    v6 = r_u32(0x800818acu);                                     /* 80034A54 */
-    w_u32(0x80081880u, v6);                                      /* 80034A5C */
+    v6 = r_u32(0x800818acu);                                      /* 80034A54 */
+    w_u32(0x80081880u, v6);                                       /* 80034A5C */
     result = FUN_8005FF2C(0x8008e840u, 0x0000003fu, 0x00000046u); /* 80034A6C */
-    v7 = r_u32(0x8008181cu);                                     /* 80034A74 */
-    w_u32(0x80081820u, v7);                                      /* 80034A7C */
+    v7 = r_u32(0x8008181cu);                                      /* 80034A74 */
+    w_u32(0x80081820u, v7);                                       /* 80034A7C */
     result = FUN_8005FF2C(0x8008e850u, 0x00000041u, 0x00000046u); /* 80034A8C */
     result = FUN_8005FF2C(0x8008e860u, 0x00000011u, 0x00000046u); /* 80034AA0 */
-    v8 = r_u32(0x80081764u);                                     /* 80034AA8 */
-    w_u32(0x80081828u, v8);                                      /* 80034AB0 */
+    v8 = r_u32(0x80081764u);                                      /* 80034AA8 */
+    w_u32(0x80081828u, v8);                                       /* 80034AB0 */
     result = FUN_8005FF2C(0x8008e86cu, 0x00000211u, 0x00000046u); /* 80034AC0 */
-    v9 = r_u32(0x80081f64u);                                     /* 80034AC8 */
-    w_u32(0x80081834u, v9);                                      /* 80034AD0 */
+    v9 = r_u32(0x80081f64u);                                      /* 80034AC8 */
+    w_u32(0x80081834u, v9);                                       /* 80034AD0 */
     result = FUN_8005FF2C(0x8008e878u, 0x00000043u, 0x00000047u); /* 80034AE0 */
     result = FUN_8005FF2C(0x8008e884u, 0x00000044u, 0x00000000u); /* 80034AF4 */
     result = FUN_8005FF2C(0x8008e894u, 0x00000273u, 0x00000046u); /* 80034B08 */
@@ -3130,8 +3312,8 @@ GDB_CALL uint32 FUN_800345A0(void)
     result = FUN_8005FF2C(0x8008e8b4u, 0x000001edu, 0x00000046u); /* 80034B30 */
     result = FUN_8005FF2C(0x8008e8c4u, 0x0000020eu, 0x00000046u); /* 80034B44 */
     result = FUN_8005FF2C(0x8008e8d4u, 0x00000275u, 0x00000046u); /* 80034B58 */
-    v10 = r_u32(0x800820f4u);                                    /* 80034B60 */
-    w_u32(0x800820a0u, v10);                                     /* 80034B68 */
+    v10 = r_u32(0x800820f4u);                                     /* 80034B60 */
+    w_u32(0x800820a0u, v10);                                      /* 80034B68 */
     result = FUN_8005FF2C(0x8008e8e4u, 0x00000276u, 0x00000046u); /* 80034B78 */
     result = FUN_8005FF2C(0x8008e8f4u, 0x00000279u, 0x00000046u); /* 80034B8C */
     result = FUN_8005FF2C(0x8008e904u, 0x00000281u, 0x00000046u); /* 80034BA0 */
@@ -3173,10 +3355,10 @@ GDB_CALL uint32 FUN_80016C18(void)
     result = FUN_8005FF2C(0x8008e258u, 0x00000242u, 0x00000047u); /* 80016DE8 */
     result = FUN_8005FF2C(0x8008e268u, 0x000001fau, 0x00000047u); /* 80016DFC */
     result = FUN_8005FF2C(0x8008e274u, 0x0000023cu, 0x00000047u); /* 80016E10 */
-    v2 = r_u32(0x80082010u);                                     /* 80016E20 */
-    w_u32(0x80082014u, v2);                                      /* 80016E28 */
-    v3 = r_u32(0x800999c8u);                                     /* 80016E34 */
-    w_u32(0x800999ccu, v3);                                      /* 80016E3C */
+    v2 = r_u32(0x80082010u);                                      /* 80016E20 */
+    w_u32(0x80082014u, v2);                                       /* 80016E28 */
+    v3 = r_u32(0x800999c8u);                                      /* 80016E34 */
+    w_u32(0x800999ccu, v3);                                       /* 80016E3C */
     result = FUN_8005FF2C(0x8008e284u, 0x000001f0u, 0x00000047u); /* 80016E4C */
     result = FUN_8005FF2C(0x8008e290u, 0x000001f1u, 0x00000047u); /* 80016E60 */
     result = FUN_8005FF2C(0x8008e2a0u, 0x000001f2u, 0x00000047u); /* 80016E74 */
@@ -3189,12 +3371,12 @@ GDB_CALL uint32 FUN_80016C18(void)
     result = FUN_8005FF2C(0x8008e308u, 0x000001e2u, 0x00000047u); /* 80016F00 */
     result = FUN_8005FF2C(0x8008e314u, 0x000001e3u, 0x00000047u); /* 80016F14 */
     result = FUN_8005FF2C(0x8008e324u, 0x00000259u, 0x00000047u); /* 80016F28 */
-    v4 = r_u32(0x80081e98u);                                     /* 80016F30 */
-    w_u32(0x80081e84u, v4);                                      /* 80016F38 */
-    v5 = r_u32(0x80081ea0u);                                     /* 80016F3C */
-    w_u32(0x80081e88u, v5);                                      /* 80016F44 */
-    v6 = r_u32(0x80081ea8u);                                     /* 80016F48 */
-    w_u32(0x80081e8cu, v6);                                      /* 80016F50 */
+    v4 = r_u32(0x80081e98u);                                      /* 80016F30 */
+    w_u32(0x80081e84u, v4);                                       /* 80016F38 */
+    v5 = r_u32(0x80081ea0u);                                      /* 80016F3C */
+    w_u32(0x80081e88u, v5);                                       /* 80016F44 */
+    v6 = r_u32(0x80081ea8u);                                      /* 80016F48 */
+    w_u32(0x80081e8cu, v6);                                       /* 80016F50 */
     result = FUN_8005FF2C(0x8008e334u, 0x00000381u, 0x00000047u); /* 80016F60 */
     result = FUN_8005FF2C(0x8008e344u, 0x00000386u, 0x00000047u); /* 80016F74 */
     result = FUN_8005FF2C(0x8008e350u, 0x00000387u, 0x00000047u); /* 80016F88 */
@@ -3228,8 +3410,8 @@ GDB_CALL uint32 FUN_80016C18(void)
     result = FUN_8005FF2C(0x8008e4b8u, 0x0000025bu, 0x00000000u); /* 800171B8 */
     result = FUN_8005FF2C(0x8008e4c4u, 0x0000025cu, 0x00000000u); /* 800171CC */
     result = FUN_8005FF2C(0x8008e4d0u, 0x0000025eu, 0x00000000u); /* 800171E0 */
-    v7 = r_u32(0x80082098u);                                     /* 800171E8 */
-    w_u32(0x8008209cu, v7);                                      /* 800171F0 */
+    v7 = r_u32(0x80082098u);                                      /* 800171E8 */
+    w_u32(0x8008209cu, v7);                                       /* 800171F0 */
     result = FUN_8005FF2C(0x8008e4dcu, 0x0000006au, 0x00000000u); /* 80017200 */
     return result;
 }

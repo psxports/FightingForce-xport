@@ -2,7 +2,7 @@
 
 GDB_CALL uint32 FUN_80069554(void)
 {
-    FF_FUNCTION_MARKER(0x80069554u, "GAME.EXE");
+    FUNCTION_MARKER(0x80069554u, "GAME.EXE");
     uint32 saved[65], buttons, text, result;
     int i;
     for (i = 0; i < 65; ++i)
@@ -73,7 +73,7 @@ GDB_CALL uint32 FUN_80069554(void)
 
 GDB_CALL uint32 FUN_8006ADF8(uint32 player, uint32 score, uint32 name)
 {
-    FF_FUNCTION_MARKER(0x8006adf8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006adf8u, "GAME.EXE");
     sint32 position = 0, character = 2, fade;
     uint32 buttons, tick, result;
     FUN_80011CCC(-256, -256, -256);
@@ -160,7 +160,7 @@ GDB_CALL uint32 FUN_8006ADF8(uint32 player, uint32 score, uint32 name)
 
 GDB_CALL uint32 FUN_8006AB80(uint32 first, uint32 second)
 {
-    FF_FUNCTION_MARKER(0x8006ab80u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ab80u, "GAME.EXE");
     uint8 saved[8];
     uint32 player = 0, temp;
     sint32 index;
@@ -248,7 +248,7 @@ GDB_CALL uint32 ff_highscore_resume_8006ACF4(const uint8 *saved)
 
 GDB_CALL sint32 FUN_8006A870(uint32 rank, uint32 score, uint32 name)
 {
-    FF_FUNCTION_MARKER(0x8006a870u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006a870u, "GAME.EXE");
     uint8 saved[129];
     sint32 width, result;
     uint32 text = r_u32(rank == 0 ? 0x8009252c : (rank == 1 ? 0x80092530 : 0x80092534));
@@ -269,7 +269,7 @@ GDB_CALL sint32 FUN_8006A870(uint32 rank, uint32 score, uint32 name)
 
 GDB_CALL sint32 FUN_8006AA70(uint32 score)
 {
-    FF_FUNCTION_MARKER(0x8006aa70u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006aa70u, "GAME.EXE");
     uint32 index = 0, i, a, b, c, offset;
     while (index < 10 && r_u32(0x80093e28 + 12 * index) >= score)
         ++index;
@@ -316,19 +316,19 @@ static uint32 card_copy_scores(uint32 destination, uint32 source)
 
 GDB_CALL uint32 FUN_80067BAC(void)
 {
-    FF_FUNCTION_MARKER(0x80067bacu, "GAME.EXE");
+    FUNCTION_MARKER(0x80067bacu, "GAME.EXE");
     w_u32(0x80093d6c, r_u32(0xe2f60));
     w_u8(0x80093d74, r_u8(0xe2f65));
     w_u8(0x80094480, r_u8(0xe2f66));
     w_u8(0x80094481, r_u8(0xe2f67));
-    w_u16(0x80093d38, (uint16)(sint16) r_s8(0xe2f68));
-    w_u16(0x80093d3a, (uint16)(sint16) r_s8(0xe2f69));
+    w_u16(0x80093d38, (uint16)(sint16)r_s8(0xe2f68));
+    w_u16(0x80093d3a, (uint16)(sint16)r_s8(0xe2f69));
     return card_copy_scores(0x80093e28, 0xe2f6c);
 }
 
 GDB_CALL uint32 FUN_80067C84(void)
 {
-    FF_FUNCTION_MARKER(0x80067c84u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067c84u, "GAME.EXE");
     w_u32(0xe2f60, r_u32(0x80093d6c));
     w_u8(0xe2f65, r_u8(0x80093d74));
     w_u8(0xe2f66, r_u8(0x80094480));
@@ -348,7 +348,7 @@ static uint32 card_dialog_buttons(void)
 
 GDB_CALL sint32 FUN_80068180(uint32 retained_status_address)
 {
-    FF_FUNCTION_MARKER(0x80068180u, "GAME.EXE");
+    FUNCTION_MARKER(0x80068180u, "GAME.EXE");
     uint8 saved[257];
     uint32 buttons;
     /* Entry SP-118 is read even when6BD9C leaves it untouched. It is an explicit
@@ -382,7 +382,7 @@ static sint32 card_status_changed(void)
 
 GDB_CALL sint32 FUN_800690D8(void)
 {
-    FF_FUNCTION_MARKER(0x800690d8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800690d8u, "GAME.EXE");
     uint8 saved[513], ch;
     uint32 text, buttons, i = 0, status;
     sint32 connected, result;
@@ -456,8 +456,8 @@ GDB_CALL sint32 FUN_800690D8(void)
                     {
                         w_u8(0x800947d4, r_u8(0xe2f40));
                         w_u8(0x80094816, r_u8(0xe2f41));
-                        w_u16(0x800b434c, (uint16)(sint16) r_s8(0xe2f42));
-                        w_u16(0x800b4440, (uint16)(sint16) r_s8(0xe2f43));
+                        w_u16(0x800b434c, (uint16)(sint16)r_s8(0xe2f42));
+                        w_u16(0x800b4440, (uint16)(sint16)r_s8(0xe2f43));
                         w_u16(0x800b435a, (uint16)r_s16(0xe2f44));
                         w_u16(0x800b444e, (uint16)r_s16(0xe2f46));
                         w_u32(0x80094030, r_u32(0xe2f48));
@@ -492,7 +492,7 @@ GDB_CALL sint32 FUN_800690D8(void)
 
 GDB_CALL sint32 FUN_80068850(void)
 {
-    FF_FUNCTION_MARKER(0x80068850u, "GAME.EXE");
+    FUNCTION_MARKER(0x80068850u, "GAME.EXE");
     uint8 saved[257];
     uint32 buttons, palette, name, p;
     sint32 count, selected = 0, scroll = 0, i, y, last, result = 2;
@@ -618,7 +618,7 @@ GDB_CALL sint32 FUN_80068850(void)
 
 GDB_CALL sint32 FUN_80068D68(void)
 {
-    FF_FUNCTION_MARKER(0x80068d68u, "GAME.EXE");
+    FUNCTION_MARKER(0x80068d68u, "GAME.EXE");
     uint8 saved[513];
     uint32 buttons;
     sint32 state, result;
@@ -742,7 +742,7 @@ static void card_dialog_choices(sint32 choice)
 
 GDB_CALL sint32 FUN_80068520(uint32 text, sint32 choice, sint32 monitor_card)
 {
-    FF_FUNCTION_MARKER(0x80068520u, "GAME.EXE");
+    FUNCTION_MARKER(0x80068520u, "GAME.EXE");
     uint8 saved[257];
     uint32 buttons;
     sint32 result;
@@ -795,7 +795,7 @@ GDB_CALL sint32 FUN_80068520(uint32 text, sint32 choice, sint32 monitor_card)
 
 GDB_CALL sint32 FUN_80068258(void)
 {
-    FF_FUNCTION_MARKER(0x80068258u, "GAME.EXE");
+    FUNCTION_MARKER(0x80068258u, "GAME.EXE");
     uint8 saved[257];
     uint32 buttons, prior, timer;
     sint32 choice = 1, result = -1;
@@ -878,7 +878,7 @@ finished:
 
 GDB_CALL sint32 FUN_800686A8(uint32 text)
 {
-    FF_FUNCTION_MARKER(0x800686a8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800686a8u, "GAME.EXE");
     uint32 i, buttons;
     DrawSync(0);
     FUN_80061448(3, 0x116000);
@@ -924,13 +924,13 @@ static sint32 draw_wrapped_dialog(uint32 text, int reload_text)
 
 GDB_CALL sint32 FUN_80068788(void)
 {
-    FF_FUNCTION_MARKER(0x80068788u, "GAME.EXE");
+    FUNCTION_MARKER(0x80068788u, "GAME.EXE");
     return draw_wrapped_dialog(0, 1);
 }
 
 GDB_CALL sint32 FUN_800687E8(uint32 text)
 {
-    FF_FUNCTION_MARKER(0x800687e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800687e8u, "GAME.EXE");
     return draw_wrapped_dialog(text, 0);
 }
 
@@ -996,12 +996,12 @@ GDB_CALL sint32 FUN_800519D4(void)
         FUN_8005F5AC(player);
         if (r_s8(0x80094114) != -1)
         {
-            snprintf((char *)buffer, 256, (char *)psx_addr(0x800928dc, 1), (char *)psx_addr(r_u32(0x80092508), 1), (sint32) r_s8(0x80094480 + player) + 1);
+            snprintf((char *)buffer, 256, (char *)psx_addr(0x800928dc, 1), (char *)psx_addr(r_u32(0x80092508), 1), (sint32)r_s8(0x80094480 + player) + 1);
             FUN_80061B7C(0x801fc100, x - 10, 70);
             for (k = 0, y = 90; k < 6; k++, y += 16)
             {
                 sint32 scheme = r_s8(0x80094480 + player), action = r_s8(0x80093d78 + 6u * (uint32)scheme + k);
-                snprintf((char *)buffer, 256, (char *)psx_addr(0x800928e4, 1), (sint32) r_s8(0x800928d4 + k), (char *)psx_addr(r_u32(0x80094458 + 4u * (uint32)action), 1));
+                snprintf((char *)buffer, 256, (char *)psx_addr(0x800928e4, 1), (sint32)r_s8(0x800928d4 + k), (char *)psx_addr(r_u32(0x80094458 + 4u * (uint32)action), 1));
                 FUN_80061B7C(0x801fc100, x - 16, y);
                 if (action == 3)
                 {
@@ -1167,7 +1167,7 @@ GDB_CALL sint32 FUN_80050D98(void)
             text = r_u32(0x80093d68) & 1 ? 0x800928a4 : 0x800928b8;
         else if (row == r_u32(0x8009285c))
         {
-            uint32 a = r_u32(0x800924fc), b = r_u32(0x800947e0 + 4u * (uint32)(sint32) r_s8(0x80093d74));
+            uint32 a = r_u32(0x800924fc), b = r_u32(0x800947e0 + 4u * (uint32)(sint32)r_s8(0x80093d74));
             snprintf((char *)scratch, 256, (char *)psx_addr(0x800928cc, 1), (char *)psx_addr(a, 1), (char *)psx_addr(b, 1));
             text = 0x801fc100;
         }

@@ -473,7 +473,7 @@ static int game_main(int argc, char **argv)
         w_u32(0x8008d4b4, 0x801cb000);
         memset(psx_addr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
-        result = ff_prepare_scene_800587A8_stage0();
+        result = frame_draw_scene();
         f = xport_fopen("../status/gameplay/prepare-scene-native.bin", "wb");
         if (!f)
             return 5;
@@ -504,7 +504,7 @@ static int game_main(int argc, char **argv)
         w_u32(0x8008d4b4, 0x801cb000);
         memset(psx_addr(0x801d0000, 65536), 0xa5, 65536);
         FUN_80011D50(0x801cb000);
-        result = ff_game_stage_8001E168_stage0();
+        result = stage_update();
         f = xport_fopen("../status/gameplay/stage-tick-native.bin", "wb");
         if (!f)
             return 5;
@@ -3880,7 +3880,7 @@ static int game_main(int argc, char **argv)
             return 5;
         for (i = 0; i < 554; i++)
         {
-            result = i < 550 ? ff_sequence_frame_8001559C_stage27() : (uint32)FUN_8004799C(edge_frames[i - 550]);
+            result = i < 550 ? sequence_step() : (uint32)FUN_8004799C(edge_frames[i - 550]);
             if (fwrite(&result, 4, 1, out) != 1 || fwrite(psx_addr(0x8008d490, 32), 32, 1, out) != 1 || fwrite(psx_addr(0x80093dd0, 4), 4, 1, out) != 1 || fwrite(psx_addr(0x8009403c, 4), 4, 1, out) != 1 || fwrite(psx_addr(0x800b92f0, 24), 24, 1, out) != 1)
             {
                 fclose(out);
@@ -3984,7 +3984,7 @@ static int game_main(int argc, char **argv)
         fclose(f);
         ff_audio_init_empty();
         InitGeom();
-        result = ff_level_init_80014A34_stage0();
+        result = level_initialize();
         ff_level_ready_80014B70_stage0();
         f = xport_fopen("../status/gameplay/level-ready-native.ram", "wb");
         if (!f)
@@ -4025,7 +4025,7 @@ static int game_main(int argc, char **argv)
         fclose(f);
         ff_audio_init_empty();
         InitGeom();
-        result = ff_level_init_80014A34_stage0();
+        result = level_initialize();
         f = xport_fopen("../status/gameplay/level-prefix-native.ram", "wb");
         if (!f)
             return 5;
@@ -6481,7 +6481,7 @@ static int game_main(int argc, char **argv)
         w_u16(0x80093566, 0);
         w_u32(0x80093c14, 0xffffffff);
         w_u32(0x8008d4c4, 0);
-        r = ff_menu_startup_8004FBCC();
+        r = menu_initialize();
         out = xport_fopen("../status/menu/menu-startup-native.bin", "wb");
         if (!out)
             return 4;
@@ -7101,7 +7101,7 @@ static int game_main(int argc, char **argv)
         while (fread(a, 16, 1, in) == 1)
         {
             w_u32(0x80093dfc, a[0]);
-            r = (uint32)ff_menu_stage_8001E168();
+            r = (uint32)stage_update();
             fwrite(&r, 4, 1, out);
             fwrite(psx_addr(0x80093dfc, 4), 4, 1, out);
         }
@@ -7499,7 +7499,7 @@ static int game_main(int argc, char **argv)
         {
             w_u16(0x8008d492, (uint16)pitch);
             memcpy(psx_addr(0x1f8003c0, 52), state, 52);
-            ff_menu_horizon_80058844();
+            frame_project_horizon();
             fwrite(psx_addr(0x1f8003c0, 52), 52, 1, out);
             fwrite(psx_addr(0x8008d4d0, 4), 4, 1, out);
         }
@@ -7790,15 +7790,15 @@ static int game_main(int argc, char **argv)
         {
             memset(&p, 0, sizeof(p));
             setPolyG3(&p);
-            p.r0 = 255;
-            p.g1 = 255;
-            p.b2 = 255;
-            p.x0 = 160;
-            p.y0 = 20;
-            p.x1 = 30;
-            p.y1 = 210;
-            p.x2 = 290;
-            p.y2 = 210;
+            p.p[0].rgbc.r = 255;
+            p.p[1].rgbc.g = 255;
+            p.p[2].rgbc.b = 255;
+            p.p[0].xy.x = 160;
+            p.p[0].xy.y = 20;
+            p.p[1].xy.x = 30;
+            p.p[1].xy.y = 210;
+            p.p[2].xy.x = 290;
+            p.p[2].xy.y = 210;
             gpu_packet(&p);
         }
         gpu_present();
@@ -7815,5 +7815,25 @@ static int game_main(int argc, char **argv)
 // XPORT REVISION: 2026-09-29T20:00:00Z
 void xport_main(void)
 {
-    xport_set_exit_code(game_main(xport_arg_count(), xport_arg_values()));
+    gpu_set_frame_skip(0);
+#if defined(_WIN32)
+    int index, count = 0, result;
+    char **arguments = malloc(((size_t)__argc + 1) * sizeof(*arguments));
+    if (!arguments)
+    {
+        xport_set_exit_code(2);
+        return;
+    }
+    /* The host consumes collect; retain the remaining FF diagnostic arguments */
+    for (index = 0; index < __argc; ++index)
+        if (!index || strcmp(__argv[index], "--collect"))
+            arguments[count++] = __argv[index];
+    arguments[count] = NULL;
+    result = game_main(count, arguments);
+    free(arguments);
+    xport_set_exit_code(result);
+#else
+    char *arguments[] = {"FF", NULL};
+    xport_set_exit_code(game_main(1, arguments));
+#endif
 }

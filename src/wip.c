@@ -3,171 +3,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#if defined(_WIN32)
-    #include <process.h>
-#else
-    #include <unistd.h>
-    #define _getpid getpid
-#endif
-static FILE *journal;
-static FILE *function_journal;
-
-static void close_function_journal(void)
-{
-    if (function_journal)
-    {
-        fclose(function_journal);
-        function_journal = NULL;
-    }
-}
-
-void ff_function_first_use(unsigned int pc, const char *image, const char *function)
-{
-    if (!function_journal)
-    {
-        function_journal = xport_fopen("functions-used.jsonl", "ab");
-        if (!function_journal)
-        {
-            fprintf(stderr, "Cannot open functions-used.jsonl\n");
-            abort();
-        }
-        atexit(close_function_journal);
-        fprintf(function_journal, "{\"event\":\"session\",\"pid\":%d,\"time\":%lld}\n", _getpid(), (long long)time(NULL));
-    }
-    /* image and function are compile-time identifiers, never external strings. */
-    fprintf(function_journal, "{\"event\":\"function_first_use\",\"pid\":%d,\"image\":\"%s\",\"pc\":\"%08X\",\"function\":\"%s\",\"stage\":%u,\"tick\":%u}\n", _getpid(), image, pc, function, r_u32(0x80093d58), r_u32(0x80093dd0));
-    if (fflush(function_journal) || ferror(function_journal))
-    {
-        fprintf(stderr, "Function journal write failed\n");
-        abort();
-    }
-}
 
 static int continue_wip = 1;
-static unsigned long sequence, tainted;
-
-static void close_journal(void)
-{
-    if (journal)
-    {
-        fclose(journal);
-        journal = NULL;
-    }
-}
-
-static void quoted(const char *s)
-{
-    fputc('"', journal);
-    for (; *s; s++)
-    {
-        unsigned char c = (unsigned char)*s;
-        if (c == '"' || c == '\\')
-            fputc('\\', journal);
-        if (c < 32)
-            fprintf(journal, "\\u%04x", c);
-        else
-            fputc(c, journal);
-    }
-    fputc('"', journal);
-}
 
 __declspec(noreturn) void ff_wip_stop(const char *function, const char *file, int line)
 {
-    ff_wip_visit(0, "guard_or_unclassified", function, file, line, 0, "abort");
     fprintf(stderr, "Fatal guard or unclassified WIP: %s (%s:%d)\n", function, file, line);
     abort();
 }
 
 int ff_wip_options(int *argc, char **argv)
 {
-    const char *path = NULL;
-    int i, out = 1, debug = 0;
+    int i, out = 1;
     for (i = 1; i < *argc; i++)
     {
-        if (!strcmp(argv[i], "--wip-continue"))
-            continue_wip = 1;
-        else if (!strcmp(argv[i], "--debug"))
-            debug = 1;
-        else if (!strcmp(argv[i], "--wip-log"))
+        if (!strcmp(argv[i], "--debug"))
         {
-            if (++i >= *argc || !argv[i][0])
-            {
-                fprintf(stderr, "--wip-log requires a file path\n");
-                return 0;
-            }
-            path = argv[i];
+            continue_wip = 0;
+#ifdef _WIN32
+            _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#endif
         }
         else
             argv[out++] = argv[i];
     }
     *argc = out;
     argv[out] = NULL;
-    if (debug)
-    {
-        continue_wip = 0; /* Strict mode wins regardless of option order. */
-#ifdef _WIN32
-        _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
-#endif
-    }
-    if (!path && !continue_wip)
-        return 1;
-#if defined(__EMSCRIPTEN__)
-    if (!path)
-        return 1;
-#endif
-    if (!path)
-        path = "wip-branches.jsonl";
-    journal = xport_fopen(path, "ab");
-    if (!journal)
-    {
-        fprintf(stderr, "Cannot open WIP journal: %s\n", path);
-        return 0;
-    }
-    atexit(close_journal);
-    fprintf(journal, "{\"event\":\"session\",\"pid\":%d,\"time\":%lld,\"continue\":%s,\"build\":", _getpid(), (long long)time(NULL), continue_wip ? "true" : "false");
-    quoted(__DATE__ " " __TIME__);
-    fputs(",\"exe_sha256\":null}\n", journal);
-    if (fflush(journal) || ferror(journal))
-    {
-        fprintf(stderr, "Cannot write WIP journal\n");
-        return 0;
-    }
-    if (continue_wip)
-        fprintf(stderr, "WIP discovery enabled: skipped logic may invalidate later gameplay. Journal: %s\n", path);
     return 1;
 }
 
 int ff_wip_visit(unsigned int pc, const char *subsystem, const char *function, const char *file, int line, int recoverable, const char *fallback)
 {
-    unsigned int i, actor;
     int resume = continue_wip && recoverable;
-    if (journal)
-    {
-        fprintf(journal, "{\"event\":\"wip\",\"pid\":%d,\"sequence\":%lu,\"time\":%lld,\"pc\":\"%08X\",\"subsystem\":", _getpid(), ++sequence, (long long)time(NULL), pc);
-        quoted(subsystem);
-        fputs(",\"function\":", journal);
-        quoted(function);
-        fputs(",\"file\":", journal);
-        quoted(file);
-        fprintf(journal, ",\"line\":%d,\"tick\":%u,\"stage\":%u,\"input\":[%u,%u],\"continued\":%s,\"prior_skips\":%lu,\"fallback\":", line, r_u32(0x80093dd0), r_u32(0x80093d58), r_u32(0x80093a10), r_u32(0x80093a14), resume ? "true" : "false", tainted);
-        quoted(resume ? fallback : "abort");
-        fputs(",\"actors\":[", journal);
-        for (i = 0; i < 8; i++)
-        {
-            actor = 0x800b4318 + 244u * i;
-            fprintf(journal, "%s{\"slot\":%u,\"type\":%d,\"state\":%u,\"animation_frame\":%d,\"hp\":%d,\"xyz\":[%d,%d,%d]}", i ? "," : "", i, r_s16(actor + 52), r_u32(actor + 12), (sint32)r_u32(actor + 4), r_s16(actor + 66), (sint32)r_u32(actor + 40), (sint32)r_u32(actor + 44), (sint32)r_u32(actor + 48));
-        }
-        fputs("]}\n", journal);
-        if (fflush(journal) || ferror(journal))
-        {
-            fprintf(stderr, "WIP journal write failed; stopping to avoid losing evidence\n");
-            abort();
-        }
-    }
-    if (resume)
-        ++tainted;
-    else
-        fprintf(stderr, "Fatal guard or unclassified WIP: %s pc %08X (%s:%d)\n", function, pc, file, line);
+    if (!resume)
+        fprintf(stderr, "Fatal guard or unclassified WIP: %s pc %08X (%s:%d), subsystem %s, fallback %s\n", function, pc, file, line, subsystem, fallback);
     return resume;
 }

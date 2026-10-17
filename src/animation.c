@@ -153,57 +153,96 @@ GDB_CALL sint32 FUN_80019F00(uint32 actor, uint32 table, sint32 animation)
 
 #include <stdlib.h>
 
-static uint32 ff_anim_bit(uint32 flags, uint32 *bit)
+/* Preserve the original signed ADD/ADDI exception before subsequent effects */
+static uint32 ff_anim_add(uint32 left, uint32 right)
 {
-    uint32 b = *bit;
-    *bit = b + 1;
-    return (r_u8(flags + (b >> 3)) >> (b & 7)) & 1;
+    uint32 result = left + right;
+    if (~(left ^ right) & (left ^ result) & 0x80000000)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    return result;
+}
+
+static uint32 ff_anim_bit(uint32 *flags, uint32 *bits, uint32 *remaining)
+{
+    uint32 value;
+    if (!*remaining)
+    {
+        *bits = r_u8(*flags);
+        *flags = ff_anim_add(*flags, 1);
+        *remaining = 8;
+    }
+    value = *bits & 1;
+    *bits >>= 1;
+    --*remaining;
+    return value;
 }
 
 /* 80011A50: first frame is absolute; later frames contain sparse signed deltas.
  * Null-stream return is undefined and ignored by actor update. */
 GDB_CALL void FUN_80011A50(uint32 model, uint32 actor, uint32 pose)
 {
-    uint32 stream = r_u32(actor), frame = r_u32(actor + 4), count, header, data, flags, values, bit = 0, i;
+    uint32 stream = r_u32(actor), frame = r_u32(actor + 4), count, header, base, next, data, flags, values, bits = 0, remaining = 0, i, j;
     if (!stream)
         return;
     count = r_u32(model + 20);
-    if (!count || count > 0x2aaaaaaau || frame == 0x7fffffffu)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    count *= 3;
-    w_u32(actor + 4, r_u32(stream) == frame + 1 ? 0xffffffff : frame + 1);
-    header = r_u32(stream + 4 + (frame << 2));
+    count = ff_anim_add(count << 1, count);
+    next = ff_anim_add(frame, 1);
+    header = r_u32(stream);
+    base = ff_anim_add(stream, 4);
+    w_u32(actor + 4, header == next ? 0xffffffff : next);
+    header = r_u32(ff_anim_add(frame << 2, base));
     w_u32(actor + 28, header >> 16);
-    data = stream + 4 + (header & 65535);
+    data = ff_anim_add(base, header & 65535);
     for (i = 0; i < 3; i++)
-        w_u32(actor + 16 + 4 * i, r_u32(data + 4 * i));
-    flags = data + 13;
-    values = flags + r_u8(data + 12);
-    pose += 216;
-    for (i = 0; i < count; i++, pose += 2)
     {
-        uint32 changed = ff_anim_bit(flags, &bit);
+        uint32 value = 0;
+        for (j = 0; j < 4; j++)
+        {
+            value |= (uint32)r_u8(data) << (j * 8);
+            data = ff_anim_add(data, 1);
+        }
+        w_u32(actor + 16 + 4 * i, value);
+    }
+    values = r_u8(data);
+    data = ff_anim_add(data, 1);
+    flags = data;
+    values = ff_anim_add(values, flags);
+    pose = ff_anim_add(pose, 216);
+    do
+    {
+        uint32 changed = ff_anim_bit(&flags, &bits, &remaining);
         if (!frame)
         {
             uint32 value = 0;
             if (changed)
             {
-                value = r_u8(values) | (r_u8(values + 1) << 8);
-                values += 2;
+                value = r_u8(values);
+                values = ff_anim_add(values, 1);
+                value |= (uint32)r_u8(values) << 8;
+                values = ff_anim_add(values, 1);
             }
+            count = ff_anim_add(count, 0xffffffff);
             w_u16(pose, (uint16)value);
         }
-        else if (changed)
+        else
         {
-            uint32 wide = ff_anim_bit(flags, &bit);
-            sint32 delta = (sint8)r_u8(values++);
-            if (wide)
+            if (changed)
             {
-                delta = (uint8)delta + 256 * (sint32)(sint8)r_u8(values++);
+                sint32 previous = r_s16(pose);
+                uint32 wide = ff_anim_bit(&flags, &bits, &remaining);
+                sint32 delta = (sint8)r_u8(values);
+                values = ff_anim_add(values, 1);
+                if (wide)
+                {
+                    delta = (uint8)delta + 256 * (sint32)(sint8)r_u8(values);
+                    values = ff_anim_add(values, 1);
+                }
+                w_u16(pose, (uint16)(((uint32)previous + (uint32)(delta * 2)) & 0xffe));
             }
-            w_u16(pose, (uint16)(((uint32)(sint32)r_s16(pose) + (uint32)(delta * 2)) & 0xffe));
+            count = ff_anim_add(count, 0xffffffff);
         }
-    }
+        pose = ff_anim_add(pose, 2);
+    } while (count);
 }
 
 /* 8002371C: map animation variants to the state used by actor movement. */
@@ -300,7 +339,7 @@ GDB_CALL sint32 FUN_800163F4(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 /* 8001A3F8: collision event gate; preserve actor in original A3 at dispatch. */
 GDB_CALL sint32 FUN_8001A3F8(uint32 obstacle, uint32 actor)
 {
-    uint32 flags = (uint16)r_s16(actor + 82), animation = r_u32(actor + 12), object, position[3], target;
+    uint32 flags = (uint16)r_s16(actor + 82), animation = r_u32(actor + 12), object, position[4], target;
     if (flags & 0x4000)
         return 0x4000;
     if (animation - 180u >= 10 && animation - 147u >= 2 && animation != 154)
@@ -311,6 +350,8 @@ GDB_CALL sint32 FUN_8001A3F8(uint32 obstacle, uint32 actor)
     position[0] = r_u32(object + 4);
     position[1] = 0x80010000u;
     position[2] = r_u32(object + 12);
+    /* Fix the original uninitialized impact sound selector */
+    position[3] = 0;
     w_u16(actor + 82, (uint16)(flags | 0x4000));
     target = r_u32(0x80094040 + 4u * (uint32)(sint32)r_s16(obstacle + 12));
     return ff_collision_dispatch(target, obstacle, object, position, actor);
@@ -529,7 +570,7 @@ GDB_CALL sint32 FUN_8001B2C4(sint32 index)
         if (r_s16(actor + 88) == i || i == index)
             continue;
         type = r_s16(other + 52);
-        if (type == -1 || type == 50 || (sint8) r_u8(other + 119) > 0)
+        if (type == -1 || type == 50 || (sint8)r_u8(other + 119) > 0)
             continue;
         n = r_u32(other + 12);
         if (collision_excluded_animation(n))
@@ -624,7 +665,7 @@ GDB_CALL sint32 FUN_8001AEF4(sint32 index)
     forward = r_u32(actor + 24);
     FUN_80011A50(r_u32(0x80081720 + 4u * (uint32)(sint32)r_s16(actor + 52)), actor, 0x800ba210 + 504u * (uint32)index);
     state = (uint32)FUN_8002371C(actor);
-    if ((sint8) r_u8(actor + 120) != -1 && state != 139 && state != 172 && state != 77)
+    if ((sint8)r_u8(actor + 120) != -1 && state != 139 && state != 172 && state != 77)
         return 77;
     if ((uint16)r_s16(0x800b39a0 + 2 * state) & 1)
     {
@@ -663,7 +704,7 @@ GDB_CALL sint32 FUN_8001AEF4(sint32 index)
     w_u32(actor + 40, x);
     w_u32(actor + 48, z);
 movement_done:
-    if ((sint8) r_u8(actor + 120) != -1)
+    if ((sint8)r_u8(actor + 120) != -1)
         return -1;
     w_u32(0x80093d54, 0);
     return FUN_8001B2C4(index);

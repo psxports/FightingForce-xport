@@ -121,51 +121,51 @@ static sint32 host_pad_high_init(uint32 type, uint32 buffer)
 
 GDB_CALL void FUN_8006CE70(void)
 {
-    FF_FUNCTION_MARKER(0x8006ce70u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ce70u, "GAME.EXE");
     ff_host_pad_state[4] = 0;
 }
 
 GDB_CALL sint32 FUN_8006D1A0(uint32 first, uint32 first_size, uint32 second, uint32 second_size)
 {
-    FF_FUNCTION_MARKER(0x8006d1a0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006d1a0u, "GAME.EXE");
     ff_host_pad_init(first, first_size, second, second_size);
     return 1;
 }
 
 GDB_CALL void FUN_8006D1B0(void)
 {
-    FF_FUNCTION_MARKER(0x8006d1b0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006d1b0u, "GAME.EXE");
     ff_host_pad_state[4] = 1;
 }
 
 GDB_CALL sint32 FUN_8006D1C0(uint32 type, uint32 buffer)
 {
-    FF_FUNCTION_MARKER(0x8006d1c0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006d1c0u, "GAME.EXE");
     return host_pad_high_init(type, buffer);
 }
 
 GDB_CALL sint32 FUN_SLUS_80013A6C(uint32 first, uint32 first_size, uint32 second, uint32 second_size)
 {
-    FF_FUNCTION_MARKER(0x80013a6cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013a6cu, "SLUS_004.33");
     ff_host_pad_init(first, first_size, second, second_size);
     return 1;
 }
 
 GDB_CALL void FUN_SLUS_80013A7C(void)
 {
-    FF_FUNCTION_MARKER(0x80013a7cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013a7cu, "SLUS_004.33");
     ff_host_pad_state[4] = 1;
 }
 
 GDB_CALL void FUN_SLUS_80013A8C(void)
 {
-    FF_FUNCTION_MARKER(0x80013a8cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013a8cu, "SLUS_004.33");
     ff_host_pad_state[4] = 0;
 }
 
 GDB_CALL sint32 FUN_SLUS_80013A9C(uint32 type, uint32 buffer)
 {
-    FF_FUNCTION_MARKER(0x80013a9cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013a9cu, "SLUS_004.33");
     return host_pad_high_init(type, buffer);
 }
 

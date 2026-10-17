@@ -3,7 +3,7 @@ SHORT_NAME := FF
 FULL_NAME := Fighting Force
 CONFIG ?= Release
 APP_SOURCES := $(wildcard $(PROJECT_ROOT)/src/*.c) $(wildcard $(PROJECT_ROOT)/src/audit/*.c)
-APP_DEFINES := -DWND_TITLE='"Fighting Force (xport)"' -DWND_WIDTH=960 -DWND_HEIGHT=768 -DFIELD_RATE=60
+APP_DEFINES := -DWND_TITLE='"Fighting Force (xport)"' -DWND_WIDTH=960 -DWND_HEIGHT=720 -DFIELD_RATE=60
 
 include ../../../../xport/src/platform/web/Makefile
 

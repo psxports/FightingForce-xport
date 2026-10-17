@@ -69,7 +69,7 @@ static void slus_spu_control_write(uint16 value)
 
 GDB_CALL uint32 FUN_SLUS_8001CF10(uint32 entry_v0, FF_SLUS_SERVICE service)
 {
-    FF_FUNCTION_MARKER(0x8001cf10u, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001cf10u, "SLUS_004.33");
     uint32 attempts = 0, callback;
     slus_spu_control_write(slus_spu_control() & 0xffcf);
     while ((slus_spu_control() & 0x30) && attempts < 0xf01)
@@ -118,7 +118,7 @@ static void spu_dma_word(uint32 index, uint32 address, uint32 expected, uint32 v
 
 GDB_CALL uint32 FUN_SLUS_8001D30C(uint32 source, uint32 bytes, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8001d30cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001d30cu, "SLUS_004.33");
     uint32 base = r_u32(0x80030294), units = (uint16)r_s16(0x800302ac), shift, address, value, blocks, remaining, chunk, i, position;
     if (!entry_v0)
     {
@@ -234,38 +234,99 @@ static uint32 spu_dma_read_entry(uint32 destination, uint32 address_units, uint3
 
 GDB_CALL uint32 FUN_80076E38(uint32 destination, uint32 address_units, uint32 blocks, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x80076e38u, "GAME.EXE");
+    FUNCTION_MARKER(0x80076e38u, "GAME.EXE");
     return spu_dma_read_entry(destination, address_units, blocks, entry_v0, 0x8008cf90);
 }
 
 GDB_CALL uint32 FUN_SLUS_8001CFD0(uint32 destination, uint32 address_units, uint32 blocks, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8001cfd0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001cfd0u, "SLUS_004.33");
     /* Manual semantic peer of GAME76E38: relocated globals, two rather than
   * four delay calls. Synchronous boundary shares data/register operations. */
     return spu_dma_read_entry(destination, address_units, blocks, entry_v0, 0x80030294);
 }
 
-/* 786F8/7871C immediate register path; deferred queue mode remains WIP. */
+/* 786F8/7871C: deferred mode updates the SDK queue, not live registers */
 uint32 ff_spu_reverb_channels(sint32 enabled, uint32 mask)
 {
     uint16 low = (uint16)mask, high = (uint16)((mask >> 16) & 255);
     if (r_u32(0x8008cf88) & 1)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        uint32 result = ((uint32)(uint16)r_s16(0x800adbda) & 255) << 16;
+        result |= (uint16)r_s16(0x800adbd8);
+        if (enabled == 1)
+        {
+            w_u16(0x800adbd8, (uint16)((uint16)r_s16(0x800adbd8) | low));
+            w_u16(0x800adbda, (uint16)((uint16)r_s16(0x800adbda) | high));
+            w_u32(0x8008cb54, r_u32(0x8008cb54) | 8);
+            result |= mask & 0xffffff;
+        }
+        else if (enabled == 0)
+        {
+            w_u16(0x800adbd8, (uint16)((uint16)r_s16(0x800adbd8) & (uint16)~low));
+            w_u16(0x800adbda, (uint16)((uint16)r_s16(0x800adbda) & (uint16)~high));
+            w_u32(0x8008cb54, r_u32(0x8008cb54) | 8);
+            result &= ~(mask & 0xffffff);
+        }
+        return result & 0xffffff;
+    }
     if (enabled == 1)
     {
         ff_spu_reverb_channels_state[0] |= low;
         ff_spu_reverb_channels_state[1] |= high;
+        SpuSetReverbVoice(SPU_ON, mask);
     }
     else if (enabled == 0)
     {
         ff_spu_reverb_channels_state[0] &= (uint16)~low;
         ff_spu_reverb_channels_state[1] &= (uint16)~high;
+        SpuSetReverbVoice(SPU_OFF, mask);
     }
     return ff_spu_reverb_channels_state[0] | ((uint32)(ff_spu_reverb_channels_state[1] & 255) << 16);
 }
 
-/* 77CC8 presets without echo/delay arithmetic or work-area clear flag. */
+/* Native completion consumes the BIOS event after the synchronous DMA upload */
+static sint32 ff_spu_clear_event(void *context)
+{
+    DeliverEvent(0xf0000009, 0x20);
+    return TestEvent(*(sint32 *)context);
+}
+
+/* 78924 clear uses the original source buffer and preserves normal completion */
+static sint32 ff_spu_clear_reverb_work_area(uint32 mode)
+{
+    SpuTransferBinding binding = {0};
+    sint32 event, result;
+    if (mode >= 10 || ff_spu_reverb_conflict(r_u32(0x8008cff8 + 4 * mode)))
+        return -1;
+    event = OpenEvent(0xf0000009, 0x20, 0x2000, NULL);
+    if (event < 1)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    if (!EnableEvent(event))
+    {
+        CloseEvent(event);
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    binding.normalized_mode = (uint32 *)psx_addr(0x8008cfac, 4);
+    binding.address_units = (uint16 *)psx_addr(0x8008cfa8, 2);
+    binding.completion_callback = (uint32 *)psx_addr(0x8008cfc8, 4);
+    binding.source_address = (uint32 *)psx_addr(0x8008cfe4, 4);
+    binding.dma_blocks = (uint32 *)psx_addr(0x8008cfe8, 4);
+    binding.address_shift = r_u32(0x8008cfb8) & 31;
+    binding.block_bytes = 64;
+    binding.complete_event = ff_spu_clear_event;
+    binding.guest_address = NULL;
+    binding.context = &event;
+    spu_bind_reverb_presets((const uint32 *)psx_addr(0x8008cff8, 40), (const uint8 *)psx_addr(0x8008d048, 680), binding.address_shift);
+    result = spu_clear_reverb_transfer((sint32)mode, psx_addr(0x8008cb88, 1024), &binding, (uint32 *)psx_addr(0x8008cfe0, 4));
+    if (!CloseEvent(event))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    if (result)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    return 0;
+}
+
+/* 77CC8 parameter state and synchronous native work-area transfer */
 sint32 ff_spu_reverb_attributes(uint32 a)
 {
     uint32 values[5];
@@ -275,45 +336,42 @@ sint32 ff_spu_reverb_attributes(uint32 a)
 
 sint32 ff_spu_reverb_attributes_host(const uint32 a[5])
 {
-    uint32 mask = a[0], change = !mask || (mask & 1), mode = r_u32(0x8008cb40), control;
+    uint32 mask = a[0], change = !mask || (mask & 1), mode = r_u32(0x8008cb40), control = 0, clear = 0;
+    SpuReverbAttr attr;
+    SpuReverbControl state;
     if (change)
     {
         mode = a[1];
-        if ((mode & ~0x100u) >= 10)
+        clear = mode & 0x100;
+        mode &= ~0x100;
+        if (mode >= 10)
             return -1;
-        if (mode & 0x100u)
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* WIP78924 clear-work-area path. */
         if (ff_spu_reverb_conflict(r_u32(0x8008cff8 + 4 * mode)))
             return -1;
-        if (mode == 7 || mode == 8)
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* WIP echo/delay presets. */
         w_u32(0x8008cb40, mode);
         w_u32(0x8008cb38, r_u32(0x8008cff8 + 4 * mode));
-        w_u32(0x8008cb48, 0);
-        w_u32(0x8008cb4c, 0);
+        w_u32(0x8008cb4c, mode == 7 ? 127 : 0);
+        w_u32(0x8008cb48, mode == 7 || mode == 8 ? 127 : 0);
     }
     if (!mask || (mask & 8))
     {
-        if (mode == 7 || mode == 8)
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-        w_u32(0x8008cb48, 0);
+        w_u32(0x8008cb48, mode == 7 || mode == 8 ? a[3] : 0);
     }
     if (!mask || (mask & 16))
     {
-        if (mode == 7 || mode == 8)
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-        w_u32(0x8008cb4c, 0);
+        w_u32(0x8008cb4c, mode == 7 || mode == 8 ? a[4] : 0);
     }
     if (change)
     {
-        control = ff_spu_common_state[4];
-        ff_spu_common_state[4] &= 0xff7f;
+        if (!spu_mmio_read(NULL, 0x1f801daa, 2, &control))
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+        ff_spu_common_state[4] = (uint16)(control & 0xff7f);
+        if ((control & 0x80) && !spu_mmio_write(NULL, 0x1f801daa, 2, control & 0xff7f, 3))
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         ff_spu_reverb_state[0] = ff_spu_reverb_state[1] = 0;
         w_u16(0x8008cb44, 0);
         w_u16(0x8008cb46, 0);
-        ff_spu_reverb_register_write(0x8008d048 + 68 * mode);
         ff_spu_reverb_state[2] = (uint16)r_u32(0x8008cb38);
-        ff_spu_common_state[4] = (uint16)control;
     }
     else
     {
@@ -327,6 +385,25 @@ sint32 ff_spu_reverb_attributes_host(const uint32 a[5])
             ff_spu_reverb_state[1] = (uint16)(a[2] >> 16);
             w_u16(0x8008cb46, ff_spu_reverb_state[1]);
         }
+    }
+    spu_bind_reverb_presets((const uint32 *)psx_addr(0x8008cff8, 40), (const uint8 *)psx_addr(0x8008d048, 680), r_u32(0x8008cfb8));
+    attr.mask = mask;
+    attr.mode = (sint32)(change ? mode : a[1]);
+    attr.depth.left = (sint16)a[2];
+    attr.depth.right = (sint16)(a[2] >> 16);
+    attr.delay = (sint32)a[3];
+    attr.feedback = (sint32)a[4];
+    if (SpuSetReverbModeParam(&attr))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    spu_reverb_export(&state);
+    memcpy(ff_spu_reverb_registers, state.parameters, sizeof(ff_spu_reverb_registers));
+    if (clear)
+        ff_spu_clear_reverb_work_area(mode);
+    if (change && (control & 0x80))
+    {
+        if (!spu_mmio_read(NULL, 0x1f801daa, 2, &control) || !spu_mmio_write(NULL, 0x1f801daa, 2, control | 0x80, 3))
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+        ff_spu_common_state[4] = (uint16)(control | 0x80);
     }
     return 0;
 }
@@ -374,12 +451,16 @@ sint32 ff_spu_reverb_reserve(sint32 enabled)
 
 sint32 ff_spu_reverb_enable(sint32 enabled)
 {
-    uint32 result;
+    uint32 result, control;
     if (enabled != 0 && enabled != 1)
         return (sint32)r_u32(0x8008cb30);
     result = enabled && (r_u32(0x8008cb34) == 1 || !ff_spu_reverb_conflict(r_u32(0x8008cb38)));
+    if (!spu_mmio_read(NULL, 0x1f801daa, 2, &control))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     w_u32(0x8008cb30, result);
-    ff_spu_common_state[4] = (ff_spu_common_state[4] & 0xff7f) | (result ? 0x80 : 0);
+    ff_spu_common_state[4] = (uint16)((control & 0xff7f) | (result ? 0x80 : 0));
+    if (!spu_mmio_write(NULL, 0x1f801daa, 2, ff_spu_common_state[4], 3))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     return (sint32)result;
 }
 
@@ -392,6 +473,8 @@ uint32 ff_spu_reset_startup(void)
     SpuVoiceAttr attr;
     SpuCommonAttr common;
     if (!audio_initialized)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    if (!spu_mmio_write(NULL, 0x1f801daa, 2, 0, 3))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     for (i = 0; i < sizeof(clear) / sizeof(clear[0]); i++)
         w_u32(clear[i], 0);
@@ -429,6 +512,8 @@ uint32 ff_spu_reset_startup(void)
     ff_spu_common_state[0] = ff_spu_common_state[1] = 0;
     ff_spu_common_state[2] = ff_spu_common_state[3] = 0;
     ff_spu_common_state[4] = 0xc000;
+    if (!spu_mmio_write(NULL, 0x1f801daa, 2, 0xc000, 3))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     xport_audio_unlock();
     /* 7726C returns the guest register address, not the written value. */
     return r_u32(0x8008cf90) + 0x1a2;
@@ -474,11 +559,12 @@ sint32 ff_spu_common_startup_host(const uint32 a[10])
     ff_spu_common_state[3] = (uint16)(a[4] >> 16);
     ff_spu_common_state[4] = (ff_spu_common_state[4] & 0xfffe) | (a[6] ? 1 : 0);
     memset(&attr, 0, sizeof(attr));
-    attr.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR | SPU_COMMON_CDVOLL | SPU_COMMON_CDVOLR;
+    attr.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR | SPU_COMMON_CDVOLL | SPU_COMMON_CDVOLR | SPU_COMMON_CDMIX;
     attr.mvol.left = (sint16)ff_spu_common_state[0];
     attr.mvol.right = (sint16)ff_spu_common_state[1];
     attr.cd.volume.left = (sint16)ff_spu_common_state[2];
     attr.cd.volume.right = (sint16)ff_spu_common_state[3];
+    attr.cd.mix = a[6] != 0;
     SpuSetCommonAttr(&attr);
     xport_audio_unlock();
     return 0;
@@ -505,28 +591,34 @@ sint32 ff_spu_allocation_init(sint32 entries, uint32 table)
     return entries;
 }
 
-/* First allocation after774D0, the path used by56CCC. General free-list
- * reuse/coalescing and zero/exact-exhaustion allocations remain WIP. */
+/* 77524/777EC use the shared allocator over the original caller-owned records */
 sint32 ff_spu_allocate_startup(uint32 bytes)
 {
-    uint32 table = r_u32(0x8008cff4), free_bytes = r_u32(table + 4), reserve = 0, size;
-    if (r_u32(0x8008cfb8) != 3 || r_u32(0x8008cfc0) != 7 || r_u32(0x8008cff0) || r_u32(table) != 0x40001010)
+    SpuHeapBinding binding;
+    uint32 count = r_u32(0x8008cfec), table = r_u32(0x8008cff4);
+    sint32 result, failed;
+    if (count >= PSX_DRAM_SIZE / 8)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    memset(&binding, 0, sizeof(binding));
+    binding.entries = (uint32 *)psx_addr(table, (size_t)(count + 1) * 8);
+    binding.last_index = (uint32 *)psx_addr(0x8008cff0, 4);
+    binding.capacity = count + 1;
+    binding.limit = count;
+    binding.address_shift = r_u32(0x8008cfb8) & 31;
+    binding.alignment_mask = r_u32(0x8008cfc0);
     if (r_u32(0x8008cb34))
-        reserve = (0x10000u - r_u32(0x8008cb38)) << 3;
-    /* The SDK tests bytes & ~mask before adding mask, then clears low bits. */
-    size = ((bytes & ~7u) ? bytes + 7u : bytes) & ~7u;
-    if ((sint32)r_u32(0x8008cfec) <= 0 || size > free_bytes - reserve)
-        return -1;
-    if (!size || size >= free_bytes)
+        binding.reserved_bytes = (0x10000 - r_u32(0x8008cb38)) << binding.address_shift;
+    xport_audio_lock();
+    if (!spu_bind_heap(&binding))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    w_u32(table + 8, (0x1010 + size) | 0x40000000);
-    w_u32(table + 12, free_bytes - size);
-    w_u32(0x8008cff0, 1);
-    w_u32(table + 4, size);
-    w_u32(table, 0x1010);
-    /* 777EC leaves these two nonempty records unchanged. */
-    return (sint32)r_u32(table);
+    result = SpuMalloc((sint32)bytes);
+    failed = spu_heap_failed();
+    /* No heap binding survives the call or needs checkpoint hydration */
+    spu_bind_heap(NULL);
+    xport_audio_unlock();
+    if (failed)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    return result;
 }
 
 /* SDK GAME:800798B0: integer table conversion, MIPS shift counts modulo 32. */
@@ -553,29 +645,24 @@ GDB_CALL uint16 ff_note_to_pitch(sint32 base, uint16 fine, sint32 note, uint16 n
 
 static sint32 key(sint32 enabled, uint32 channels)
 {
-    uint32 mask = channels & 0xffffffu, active = r_u32(0x8008cb28);
-    /* Deferred SDK event mode is not used in the captured menu. */
-    if (r_u32(0x8008cf88) & 1)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    xport_audio_lock();
-    if (enabled == 1)
-    {
-        SpuSetKey(SPU_ON, mask);
-        active |= mask;
-    }
-    else if (!enabled)
-    {
-        SpuSetKey(SPU_OFF, mask);
-        active &= ~mask;
-    }
-    else
-    {
-        xport_audio_unlock();
+    uint32 mask = channels & 0xffffff, result, opposite, high, deferred;
+    if (enabled != 0 && enabled != 1)
         return 1;
+    xport_audio_lock();
+    deferred = r_u32(0x8008cf88) & 1;
+    opposite = 0;
+    if (deferred)
+    {
+        opposite = r_u16(enabled ? 0x800adbce : 0x800adbca);
     }
-    w_u32(0x8008cb28, active);
+    spu_bind_key_guest(0x8008cb28, 0x8008cf88, 0x8008cb54, 0x8008cb50, 0x800adbc8);
+    SpuSetKey(enabled, mask);
+    spu_bind_key_guest(0, 0, 0, 0, 0);
+    high = mask >> 16;
+    /* 78AD0 returns the last high-word cancellation result in deferred mode */
+    result = deferred ? ((opposite & high) ? opposite & ~high : 0) : r_u32(0x8008cb28);
     xport_audio_unlock();
-    return (sint32)active;
+    return (sint32)result;
 }
 
 static sint32 attributes(uint32 a)
@@ -689,14 +776,46 @@ uint32 ff_spu_transfer_address(uint32 address)
 
 uint32 ff_spu_transfer_write(uint32 source, uint32 bytes)
 {
-    uint32 address = (uint32)(uint16)r_s16(0x8008cfa8) << (r_u32(0x8008cfb8) & 31);
+    uint32 units, address, count, chunk;
     if (bytes > 0x7eff0)
         bytes = 0x7eff0;
     if (!audio_initialized)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    if (!r_u32(0x8008cfac))
+    {
+        uint32 shift;
+        units = r_u16(0x8008cfa8);
+        shift = r_u32(0x8008cfb8) & 31;
+        units = (units << shift) >> shift;
+        w_u16(0x8008cfa8, units);
+        w_u32(0x8008cfe0, 0);
+        w_u32(0x8008cfe4, source);
+        count = (bytes + 63) >> 6;
+        w_u32(0x8008cfe8, count);
+        /* A zero DMA block count has a separate hardware contract */
+        if (!count)
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+        count <<= 6;
+    }
+    else
+    {
+        units = r_u16(0x8008cfa8);
+        count = (bytes + 1) & ~1;
+    }
+    /* Native synchronous transport retains DMA64 and PIO2 guest reads */
+    address = units << 3;
     xport_audio_lock();
-    if (!spu_upload(address, psx_addr(source, bytes), bytes))
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    while (count)
+    {
+        chunk = 0x80000 - address;
+        if (chunk > count)
+            chunk = count;
+        if (!spu_upload(address, psx_addr(source, chunk), chunk))
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+        source += chunk;
+        count -= chunk;
+        address = 0;
+    }
     xport_audio_unlock();
     if (!r_u32(0x8008cfc8))
         w_u32(0x8008cfc4, 0);

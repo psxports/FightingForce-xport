@@ -16,7 +16,7 @@ static void slus_movie_output(void)
 
 GDB_CALL sint32 FUN_SLUS_8001287C(uint32 filename, FF_SLUS_SERVICE service)
 {
-    FF_FUNCTION_MARKER(0x8001287cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001287cu, "SLUS_004.33");
     sint16 result;
     service(0x80012bbc, 0, 0, 0, 0, 0);
     service(0x8001772c, 0, 0, 0, 0, 0);
@@ -56,7 +56,7 @@ static void slus_boot_display_cleanup(FF_SLUS_SERVICE service)
 
 GDB_CALL uint32 FUN_SLUS_80010EE4(FF_SLUS_SERVICE service)
 {
-    FF_FUNCTION_MARKER(0x80010ee4u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80010ee4u, "SLUS_004.33");
     uint8 saved[28];
     uint32 a, b, result;
     service(0x80012bbc, 0, 0, 0, 0, 0);
@@ -107,7 +107,7 @@ GDB_CALL uint32 FUN_SLUS_80010EE4(FF_SLUS_SERVICE service)
 
 GDB_CALL void FUN_8006CD64(uint32 entry_ra, FF_GAME_BOOT_SERVICE service)
 {
-    FF_FUNCTION_MARKER(0x8006cd64u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cd64u, "GAME.EXE");
     FF_GAME_BOOT_STATE state;
     uint32 address, top;
     for (address = 0x80093f40; address < 0x800c0d68; address += 4)
@@ -143,11 +143,11 @@ static uint32 slus_unpack_bit(uint32 *source, uint32 *bits)
 
 GDB_CALL uint32 FUN_SLUS_80010000(uint32 source, uint32 destination)
 {
-    FF_FUNCTION_MARKER(0x80010000u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80010000u, "SLUS_004.33");
     uint32 start = destination, bits, length, high, distance, back, count, byte, first, second;
     int i;
     source += 18;
-    bits = (((uint32) r_u8(source++) << 25) | 0x1000000) << 1;
+    bits = (((uint32)r_u8(source++) << 25) | 0x1000000) << 1;
     for (;;)
     {
         if (!slus_unpack_bit(&source, &bits))
@@ -257,7 +257,7 @@ GDB_CALL uint32 FUN_SLUS_80010000(uint32 source, uint32 destination)
 
 GDB_CALL sint32 FUN_SLUS_8001152C(uint32 config)
 {
-    FF_FUNCTION_MARKER(0x8001152cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001152cu, "SLUS_004.33");
     uint8 saved[40];
     uint16 tries = 0;
     sint16 result = 0;
@@ -319,7 +319,7 @@ done:
 
 GDB_CALL uint32 FUN_SLUS_8001268C(uint32 config)
 {
-    FF_FUNCTION_MARKER(0x8001268cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001268cu, "SLUS_004.33");
     uint8 saved[24];
     uint16 tries = 0;
     uint32 frame, width;
@@ -356,7 +356,7 @@ GDB_CALL uint32 FUN_SLUS_8001268C(uint32 config)
 
 GDB_CALL uint32 FUN_SLUS_80011A00(uint32 config)
 {
-    FF_FUNCTION_MARKER(0x80011a00u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80011a00u, "SLUS_004.33");
     uint16 x, y, width, height, screen;
     uint32 p, bytes, ring, i;
     FUN_SLUS_8001133C();
@@ -421,7 +421,7 @@ GDB_CALL uint32 FUN_SLUS_80011A00(uint32 config)
 
 GDB_CALL sint32 FUN_SLUS_800113F0(void)
 {
-    FF_FUNCTION_MARKER(0x800113f0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x800113f0u, "SLUS_004.33");
     PSX_RECT rectangle;
     int i;
     DrawSync(0);
@@ -440,7 +440,7 @@ GDB_CALL sint32 FUN_SLUS_800113F0(void)
 
 GDB_CALL uint32 FUN_SLUS_80011894(void)
 {
-    FF_FUNCTION_MARKER(0x80011894u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80011894u, "SLUS_004.33");
     uint32 offset;
     if (r_s16(0x80030358) && StCdIntrFlag)
     {
@@ -463,13 +463,13 @@ GDB_CALL uint32 FUN_SLUS_80011894(void)
 
 GDB_CALL uint32 FUN_SLUS_80013AE0(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80013ae0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013ae0u, "SLUS_004.33");
     return invoke(r_u32(0x800303dc), entry_v0, arguments);
 }
 
 GDB_CALL uint32 FUN_8006DF34(uint32 entry_v1, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x8006df34u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006df34u, "GAME.EXE");
     uint32 target;
     if ((entry_v1 & 0x1fffffffu) == 0x1f800000)
     {
@@ -487,7 +487,7 @@ GDB_CALL uint32 FUN_8006DF34(uint32 entry_v1, FF_SDK_INVOKE invoke, void *argume
 
 GDB_CALL uint32 FUN_SLUS_800103F0(uint8 *development_profile_bank)
 {
-    FF_FUNCTION_MARKER(0x800103f0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x800103f0u, "SLUS_004.33");
     uint32 tcb = r_u32(0x110), pc = (r_u32(tcb + 0x88) | 0xe0000000u) ^ 0xe0000000u, address, value;
     pc += (r_u32(tcb + 0x98) >> 31) << 2;
     address = pc < 0x200000 ? pc + 0x200000 : 0x200000;
@@ -501,7 +501,7 @@ GDB_CALL uint32 FUN_SLUS_800103F0(uint8 *development_profile_bank)
 
 GDB_CALL sint32 FUN_SLUS_80034278(void)
 {
-    FF_FUNCTION_MARKER(0x80034278u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80034278u, "SLUS_004.33");
     uint8 saved[3076];
     uint32 source = 0x800b4530, destination = 0x801fda04, group, row, column, v, p;
     memcpy(saved, psx_addr(0x801fda00, 3076), 3076);
@@ -560,7 +560,7 @@ static uint32 sdk_clear_ot(uint32 table, uint32 count, uint32 terminal, int reve
 
 GDB_CALL uint32 FUN_8006F60C(uint32 table, uint32 count, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8006f60cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006f60cu, "GAME.EXE");
     if (entry_v0 >= 2)
         fprintf(stderr, "ClearOTag(%08x,%d)...\n", table, (sint32)count);
     return sdk_clear_ot(table, count, 0x800873a8, 0);
@@ -568,7 +568,7 @@ GDB_CALL uint32 FUN_8006F60C(uint32 table, uint32 count, uint32 entry_v0)
 
 GDB_CALL uint32 FUN_8006F6C4(uint32 table, uint32 count, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8006f6c4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006f6c4u, "GAME.EXE");
     if (entry_v0 >= 2)
         fprintf(stderr, "ClearOTagR(%08x,%d)...\n", table, (sint32)count);
     return sdk_clear_ot(table, count, 0x800873a8, 1);
@@ -576,7 +576,7 @@ GDB_CALL uint32 FUN_8006F6C4(uint32 table, uint32 count, uint32 entry_v0)
 
 GDB_CALL uint32 FUN_SLUS_80014F70(uint32 table, uint32 count, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x80014f70u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80014f70u, "SLUS_004.33");
     if (entry_v0 >= 2)
         fprintf(stderr, "ClearOTag(%08x,%d)...\n", table, (sint32)count);
     return sdk_clear_ot(table, count, 0x8001ec28, 0);
@@ -584,7 +584,7 @@ GDB_CALL uint32 FUN_SLUS_80014F70(uint32 table, uint32 count, uint32 entry_v0)
 
 GDB_CALL uint32 FUN_SLUS_80015028(uint32 table, uint32 count, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x80015028u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80015028u, "SLUS_004.33");
     if (entry_v0 >= 2)
         fprintf(stderr, "ClearOTagR(%08x,%d)...\n", table, (sint32)count);
     return sdk_clear_ot(table, count, 0x8001ec28, 1);
@@ -616,13 +616,13 @@ static uint32 sdk_graph_reverse(uint32 reverse, uint32 debug, int slus)
 
 GDB_CALL uint32 FUN_8006EE78(uint32 reverse, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8006ee78u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ee78u, "GAME.EXE");
     return sdk_graph_reverse(reverse, entry_v0, 0);
 }
 
 GDB_CALL uint32 FUN_SLUS_800147E4(uint32 reverse, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x800147e4u, "SLUS_004.33");
+    FUNCTION_MARKER(0x800147e4u, "SLUS_004.33");
     return sdk_graph_reverse(reverse, entry_v0, 1);
 }
 
@@ -666,19 +666,19 @@ static uint32 sdk_graph_queue(uint32 mode, uint32 debug, int slus)
 
 GDB_CALL uint32 FUN_8006EFF8(uint32 mode, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8006eff8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006eff8u, "GAME.EXE");
     return sdk_graph_queue(mode, entry_v0, 0);
 }
 
 GDB_CALL uint32 FUN_SLUS_8001495C(uint32 mode, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8001495cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001495cu, "SLUS_004.33");
     return sdk_graph_queue(mode, entry_v0, 1);
 }
 
 GDB_CALL sint32 FUN_SLUS_80015120(uint32 table, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x80015120u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80015120u, "SLUS_004.33");
     if (entry_v0 >= 2)
         fprintf(stderr, "DrawOTag(%08x)...\n", table);
     DrawOTag((uint32 *)psx_addr(table, sizeof(uint32)));
@@ -687,7 +687,7 @@ GDB_CALL sint32 FUN_SLUS_80015120(uint32 table, uint32 entry_v0)
 
 GDB_CALL uint32 FUN_SLUS_80014A28(uint32 callback, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x80014a28u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80014a28u, "SLUS_004.33");
     uint32 old;
     if (entry_v0 >= 2)
         fprintf(stderr, "DrawSyncCallback(%08x)...\n", callback);
@@ -704,55 +704,55 @@ static uint32 sdk_table_call(uint32 entry_v0, uint32 offset, FF_SDK_INVOKE invok
 
 GDB_CALL uint32 FUN_80075CE0(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80075ce0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80075ce0u, "GAME.EXE");
     return sdk_table_call(entry_v0, 20, invoke, arguments);
 }
 
 GDB_CALL uint32 FUN_80075D10(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80075d10u, "GAME.EXE");
+    FUNCTION_MARKER(0x80075d10u, "GAME.EXE");
     return sdk_table_call(entry_v0, 16, invoke, arguments);
 }
 
 GDB_CALL uint32 FUN_80075D40(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80075d40u, "GAME.EXE");
+    FUNCTION_MARKER(0x80075d40u, "GAME.EXE");
     return sdk_table_call(entry_v0, 24, invoke, arguments);
 }
 
 GDB_CALL uint32 FUN_8006FEF0(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x8006fef0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006fef0u, "GAME.EXE");
     return sdk_table_call(entry_v0, 56, invoke, arguments) >> 31;
 }
 
 GDB_CALL uint32 FUN_SLUS_80012C88(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80012c88u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80012c88u, "SLUS_004.33");
     return sdk_table_call(entry_v0, 20, invoke, arguments);
 }
 
 GDB_CALL uint32 FUN_SLUS_80012CE8(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80012ce8u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80012ce8u, "SLUS_004.33");
     return sdk_table_call(entry_v0, 24, invoke, arguments);
 }
 
 GDB_CALL uint32 FUN_SLUS_800158CC(uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x800158ccu, "SLUS_004.33");
+    FUNCTION_MARKER(0x800158ccu, "SLUS_004.33");
     return sdk_table_call(entry_v0, 56, invoke, arguments) >> 31;
 }
 
 GDB_CALL uint32 FUN_SLUS_80013B74(uint32 entry_t1, uint32 entry_v0, FF_SDK_INVOKE invoke, void *arguments)
 {
-    FF_FUNCTION_MARKER(0x80013b74u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013b74u, "SLUS_004.33");
     return invoke(entry_t1, entry_v0, arguments);
 }
 
 GDB_CALL uint32 FUN_SLUS_80017DB0(uint32 mix)
 {
-    FF_FUNCTION_MARKER(0x80017db0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80017db0u, "SLUS_004.33");
     uint32 i; /* WIP CD mixer register bank2/bank3 writes, SKIP18EC8. */
     for (i = 0; i < 4; ++i)
         ff_dummy_cd_mix_state[i] = r_u8(mix + i);
@@ -769,13 +769,13 @@ static sint32 sdk_slus_cd_sector_dummy(uint32 destination, uint32 words, int asy
 
 GDB_CALL uint32 FUN_SLUS_80017DD0(uint32 destination, uint32 words)
 {
-    FF_FUNCTION_MARKER(0x80017dd0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80017dd0u, "SLUS_004.33");
     return (uint32)sdk_slus_cd_sector_dummy(destination, words, 0) == 0;
 }
 
 GDB_CALL uint32 FUN_SLUS_80017DF0(uint32 destination, uint32 words)
 {
-    FF_FUNCTION_MARKER(0x80017df0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80017df0u, "SLUS_004.33");
     return (uint32)sdk_slus_cd_sector_dummy(destination, words, 1) == 0;
 }
 
@@ -809,7 +809,7 @@ static void sdk_counter_mask(int enable)
 
 GDB_CALL sint32 FUN_8006CAE0(void)
 {
-    FF_FUNCTION_MARKER(0x8006cae0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cae0u, "GAME.EXE");
     uint32 address = r_u32(0x80087274) + 16;
     if ((address & 0x1fffffffu) == 0x1f801110)
         ff_sdk_counter_state[0] = (uint32)VSync(-1);
@@ -821,7 +821,7 @@ GDB_CALL sint32 FUN_8006CAE0(void)
 
 GDB_CALL sint32 FUN_8006CB10(void)
 {
-    FF_FUNCTION_MARKER(0x8006cb10u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cb10u, "GAME.EXE");
     sint32 value;
     sdk_counter_mask(0);
     value = (sint32)sdk_counter_read() >> ((uint32)(sint32)r_s16(0x80093fa4) & 31);
@@ -831,7 +831,7 @@ GDB_CALL sint32 FUN_8006CB10(void)
 
 GDB_CALL sint32 FUN_8006CB60(void)
 {
-    FF_FUNCTION_MARKER(0x8006cb60u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cb60u, "GAME.EXE");
     sint32 value = (sint32)sdk_counter_read() >> ((uint32)(sint32)r_s16(0x80093fa4) & 31);
     w_u16(0x80093fa8, (uint16)value);
     return (sint16)value;
@@ -839,7 +839,7 @@ GDB_CALL sint32 FUN_8006CB60(void)
 
 GDB_CALL sint32 FUN_8006C748(void)
 {
-    FF_FUNCTION_MARKER(0x8006c748u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006c748u, "GAME.EXE");
     sint32 value = (sint32)sdk_counter_read() >> ((uint32)(sint32)r_s16(0x80093fa4) & 31);
     w_u16(0x80093fac, (uint16)value);
     return value;
@@ -847,7 +847,7 @@ GDB_CALL sint32 FUN_8006C748(void)
 
 GDB_CALL sint32 FUN_8006C784(uint32 mode)
 {
-    FF_FUNCTION_MARKER(0x8006c784u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006c784u, "GAME.EXE");
     uint32 table = 0x80087264 + (mode << 2), i = 0, p, q, x, address, j;
     sint32 spacing;
     w_u16(0x80093fa6, r_u8(table + 3));
@@ -919,7 +919,7 @@ GDB_CALL sint32 FUN_8006C784(uint32 mode)
 
 GDB_CALL sint32 FUN_8006CD04(void)
 {
-    FF_FUNCTION_MARKER(0x8006cd04u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cd04u, "GAME.EXE");
     VSync(0);
     FUN_8006C784(0);
     FUN_8006CAE0();
@@ -974,7 +974,7 @@ sint32 ff_pc_create(uint32 name)
 
 GDB_CALL sint32 FUN_80079FC4(uint32 handle)
 {
-    FF_FUNCTION_MARKER(0x80079fc4u, "GAME.EXE");
+    FUNCTION_MARKER(0x80079fc4u, "GAME.EXE");
     FILE *file;
     int result;
     if (!handle || handle > 16 || !sdk_pc_files[handle - 1])
@@ -987,7 +987,7 @@ GDB_CALL sint32 FUN_80079FC4(uint32 handle)
 
 GDB_CALL sint32 FUN_8007A0B4(uint32 unused, uint32 handle, uint32 bytes, uint32 source)
 {
-    FF_FUNCTION_MARKER(0x8007a0b4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8007a0b4u, "GAME.EXE");
     size_t written;
     FILE *file;
     if (!handle || handle > 16 || !sdk_pc_files[handle - 1])
@@ -999,7 +999,7 @@ GDB_CALL sint32 FUN_8007A0B4(uint32 unused, uint32 handle, uint32 bytes, uint32 
 
 GDB_CALL uint32 FUN_80079FF4(uint32 handle, uint32 source, uint32 bytes)
 {
-    FF_FUNCTION_MARKER(0x80079ff4u, "GAME.EXE");
+    FUNCTION_MARKER(0x80079ff4u, "GAME.EXE");
     uint32 total = 0, chunk;
     sint32 written;
     while (bytes)
@@ -1019,7 +1019,7 @@ GDB_CALL uint32 FUN_80079FF4(uint32 handle, uint32 source, uint32 bytes)
 
 GDB_CALL void FUN_SLUS_8001AACC(void)
 {
-    FF_FUNCTION_MARKER(0x8001aaccu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001aaccu, "SLUS_004.33");
     FUN_SLUS_8001370C();
     StUnSetRing();
     FUN_SLUS_8001371C();
@@ -1027,7 +1027,7 @@ GDB_CALL void FUN_SLUS_8001AACC(void)
 
 GDB_CALL void FUN_SLUS_80011EC8(void)
 {
-    FF_FUNCTION_MARKER(0x80011ec8u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80011ec8u, "SLUS_004.33");
     FUN_SLUS_8001AACC();
     CdControl(CdlPause, NULL, NULL);
     DecDCToutCallback(NULL);
@@ -1038,7 +1038,7 @@ GDB_CALL void FUN_SLUS_80011EC8(void)
 
 GDB_CALL uint32 FUN_SLUS_80011FE0(uint32 location)
 {
-    FF_FUNCTION_MARKER(0x80011fe0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80011fe0u, "SLUS_004.33");
     uint16 failed = 0, accepted = 0;
     for (;;)
     {
@@ -1068,7 +1068,7 @@ static uint32 sdk_slus_next_stream(uint32 *stream, uint32 *header)
 
 GDB_CALL uint32 FUN_SLUS_800120DC(void)
 {
-    FF_FUNCTION_MARKER(0x800120dcu, "SLUS_004.33");
+    FUNCTION_MARKER(0x800120dcu, "SLUS_004.33");
     uint32 remaining = 0x40000, stream, header;
     while (sdk_slus_next_stream(&stream, &header))
     {
@@ -1096,7 +1096,7 @@ static uint32 sdk_slus_release_stream(uint32 stream)
 
 GDB_CALL uint32 FUN_SLUS_800122A0(uint32 stream)
 {
-    FF_FUNCTION_MARKER(0x800122a0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x800122a0u, "SLUS_004.33");
     if (!stream)
         return 0;
     w_u16(0x8003038e, (uint16)r_s16(0x8003038e) ^ 1);
@@ -1106,13 +1106,13 @@ GDB_CALL uint32 FUN_SLUS_800122A0(uint32 stream)
 
 GDB_CALL uint32 FUN_8007676C(void)
 {
-    FF_FUNCTION_MARKER(0x8007676cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8007676cu, "GAME.EXE");
     return ff_spu_reset_startup(); /* 7678C mode0, existing native SPU reset. */
 }
 
 GDB_CALL void FUN_8006E0D4(uint32 guest_return_address)
 {
-    FF_FUNCTION_MARKER(0x8006e0d4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006e0d4u, "GAME.EXE");
     w_u32(0x80093fd8, guest_return_address);
     FUN_8006CE80();
     /* WIP card BIOS patch: B0:56 resolves a BIOS handler and replaces its
@@ -1124,7 +1124,7 @@ GDB_CALL void FUN_8006E0D4(uint32 guest_return_address)
 
 GDB_CALL void FUN_8006DED4(void)
 {
-    FF_FUNCTION_MARKER(0x8006ded4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ded4u, "GAME.EXE");
     FUN_8006DF24();
     /* WIP SKIP6E044 card interrupt patch boundary. */
     FUN_8006CE80();
@@ -1135,14 +1135,14 @@ GDB_CALL void FUN_8006DED4(void)
 
 GDB_CALL void FUN_80057380(void)
 {
-    FF_FUNCTION_MARKER(0x80057380u, "GAME.EXE");
+    FUNCTION_MARKER(0x80057380u, "GAME.EXE");
     FUN_8006CE70();
     FUN_8006DED4();
 }
 
 GDB_CALL uint32 FUN_80078D08(uint32 source, uint32 bytes)
 {
-    FF_FUNCTION_MARKER(0x80078d08u, "GAME.EXE");
+    FUNCTION_MARKER(0x80078d08u, "GAME.EXE");
     /* Native synchronous SpuWrite includes this entry's unsigned cap and
   * conditional completion-flag clear. */
     return ff_spu_transfer_write(source, bytes);
@@ -1150,7 +1150,7 @@ GDB_CALL uint32 FUN_80078D08(uint32 source, uint32 bytes)
 
 GDB_CALL sint32 FUN_SLUS_80012414(uint32 volume)
 {
-    FF_FUNCTION_MARKER(0x80012414u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80012414u, "SLUS_004.33");
     sint16 next = (sint16)((uint16)r_s16(volume) - 8);
     w_u16(volume, (uint16)next);
     if (next < 0)
@@ -1165,31 +1165,31 @@ uint32 ff_sdk_interrupts_enabled = 1;
 
 GDB_CALL void FUN_8006CE80(void)
 {
-    FF_FUNCTION_MARKER(0x8006ce80u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ce80u, "GAME.EXE");
     ff_sdk_interrupts_enabled = 0;
 }
 
 GDB_CALL void FUN_8006CE90(void)
 {
-    FF_FUNCTION_MARKER(0x8006ce90u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ce90u, "GAME.EXE");
     ff_sdk_interrupts_enabled = 1;
 }
 
 GDB_CALL void FUN_SLUS_8001370C(void)
 {
-    FF_FUNCTION_MARKER(0x8001370cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001370cu, "SLUS_004.33");
     ff_sdk_interrupts_enabled = 0;
 }
 
 GDB_CALL void FUN_SLUS_8001371C(void)
 {
-    FF_FUNCTION_MARKER(0x8001371cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001371cu, "SLUS_004.33");
     ff_sdk_interrupts_enabled = 1;
 }
 
 GDB_CALL void FUN_8006DE48(uint32 mode)
 {
-    FF_FUNCTION_MARKER(0x8006de48u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006de48u, "GAME.EXE");
     ++ff_dummy_calls[0]; /* WIP ChangeClearPAD(0). */
     FUN_8006CE80();
     FUN_8006DF04(mode);
@@ -1204,7 +1204,7 @@ GDB_CALL void FUN_8006DE48(uint32 mode)
 
 GDB_CALL void FUN_8006DE9C(void)
 {
-    FF_FUNCTION_MARKER(0x8006de9cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006de9cu, "GAME.EXE");
     FUN_8006CE80();
     FUN_8006DF14();
     ++ff_dummy_calls[0];
@@ -1213,7 +1213,7 @@ GDB_CALL void FUN_8006DE9C(void)
 
 GDB_CALL sint32 FUN_8006B050(void)
 {
-    FF_FUNCTION_MARKER(0x8006b050u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b050u, "GAME.EXE");
     static const uint32 specs[4] = {4, 0x8000, 0x100, 0x2000};
     uint32 i;
     sint32 result = 0;
@@ -1257,20 +1257,20 @@ static uint32 sdk_counter_overlay(uint32 bucket, uint32 entry_v0, sint32 entry_v
 
 GDB_CALL uint32 FUN_8006CBB4(uint32 bucket, uint32 entry_v0, sint32 entry_v1)
 {
-    FF_FUNCTION_MARKER(0x8006cbb4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cbb4u, "GAME.EXE");
     /* MIPS retains V0/V1 on entry; IDA's one-argument prototype loses them. */
     return sdk_counter_overlay(bucket, entry_v0, entry_v1, 0x80094cd8, 0x80094d20);
 }
 
 GDB_CALL uint32 FUN_8006CC64(uint32 bucket, uint32 entry_v0, sint32 entry_v1)
 {
-    FF_FUNCTION_MARKER(0x8006cc64u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cc64u, "GAME.EXE");
     return sdk_counter_overlay(bucket, entry_v0, entry_v1, 0x80094cfc, 0x80094dd4);
 }
 
 GDB_CALL uint32 FUN_SLUS_80012334(void)
 {
-    FF_FUNCTION_MARKER(0x80012334u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80012334u, "SLUS_004.33");
     uint32 countdown = 0x800000, offset;
     do
     {
@@ -1289,14 +1289,14 @@ GDB_CALL uint32 FUN_SLUS_80012334(void)
 
 GDB_CALL uint32 FUN_SLUS_800124E0(void)
 {
-    FF_FUNCTION_MARKER(0x800124e0u, "SLUS_004.33");
+    FUNCTION_MARKER(0x800124e0u, "SLUS_004.33");
     sint32 lines = (uint16)r_s16(0x80030362), groups = (lines - 1) / 16 + 1;
     return (uint32)(groups * (r_s16(0x80030358) ? 192 : 128));
 }
 
 GDB_CALL uint32 FUN_SLUS_800111CC(void)
 {
-    FF_FUNCTION_MARKER(0x800111ccu, "SLUS_004.33");
+    FUNCTION_MARKER(0x800111ccu, "SLUS_004.33");
     uint32 result = 0;
     if ((r_u8(0x80030439) >> 4) == 4)
         result = (uint32)(uint16)~r_s16(0x8003043a) << 16;
@@ -1307,7 +1307,7 @@ GDB_CALL uint32 FUN_SLUS_800111CC(void)
 
 GDB_CALL sint32 FUN_SLUS_80011F54(void)
 {
-    FF_FUNCTION_MARKER(0x80011f54u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80011f54u, "SLUS_004.33");
     PSX_RECT rectangle;
     rectangle.x = 0;
     rectangle.y = 0;
@@ -1320,7 +1320,7 @@ GDB_CALL sint32 FUN_SLUS_80011F54(void)
 
 GDB_CALL uint32 FUN_SLUS_800104B8(uint32 destination, uint32 source, uint32 words)
 {
-    FF_FUNCTION_MARKER(0x800104b8u, "SLUS_004.33");
+    FUNCTION_MARKER(0x800104b8u, "SLUS_004.33");
     uint32 groups = words >> 2, tail = words & 3, a, b, c, d;
     if ((sint32)words <= 0)
         return groups;
@@ -1351,7 +1351,7 @@ GDB_CALL uint32 FUN_SLUS_800104B8(uint32 destination, uint32 source, uint32 word
 
 GDB_CALL void FUN_SLUS_8001043C(uint32 destination, uint32 value, uint32 count)
 {
-    FF_FUNCTION_MARKER(0x8001043cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001043cu, "SLUS_004.33");
     uint32 n;
     if (!count)
         return;
@@ -1390,7 +1390,7 @@ GDB_CALL void FUN_SLUS_8001043C(uint32 destination, uint32 value, uint32 count)
 
 GDB_CALL uint32 FUN_SLUS_80011374(uint32 bytes)
 {
-    FF_FUNCTION_MARKER(0x80011374u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80011374u, "SLUS_004.33");
     uint32 result = r_u32(0x80030350);
     if (bytes & 3)
         bytes = (bytes + 4) & 0xfffffffcu;
@@ -1400,14 +1400,14 @@ GDB_CALL uint32 FUN_SLUS_80011374(uint32 bytes)
 
 GDB_CALL uint32 FUN_SLUS_800125AC(uint32 value)
 {
-    FF_FUNCTION_MARKER(0x800125acu, "SLUS_004.33");
+    FUNCTION_MARKER(0x800125acu, "SLUS_004.33");
     value &= 65535;
     return r_s16(0x80030358) ? ((3 * value / 2) & 65535) : value;
 }
 
 GDB_CALL uint32 FUN_SLUS_800112AC(void)
 {
-    FF_FUNCTION_MARKER(0x800112acu, "SLUS_004.33");
+    FUNCTION_MARKER(0x800112acu, "SLUS_004.33");
     w_u32(0x8003045c, FUN_SLUS_800111CC());
     w_u32(0x80030464, r_u32(0x8003045c) >> 16);
     if (r_u32(0x8003045c) & 8)
@@ -1419,34 +1419,34 @@ GDB_CALL uint32 FUN_SLUS_800112AC(void)
 
 GDB_CALL void FUN_8006DF04(uint32 mode)
 {
-    FF_FUNCTION_MARKER(0x8006df04u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006df04u, "GAME.EXE");
     /* WIP BIOS B0:4A InitCARD: no physical card controller on the host. */
     ++ff_dummy_calls[0];
 }
 
 GDB_CALL void FUN_8006DF14(void)
 {
-    FF_FUNCTION_MARKER(0x8006df14u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006df14u, "GAME.EXE");
     /* WIP BIOS B0:4B StartCARD; requests use the no-media event backend. */
     ++ff_dummy_calls[0];
 }
 
 GDB_CALL void FUN_8006DF24(void)
 {
-    FF_FUNCTION_MARKER(0x8006df24u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006df24u, "GAME.EXE");
     /* WIP BIOS B0:4C StopCARD; no hardware activity to stop. */
     ++ff_dummy_calls[0];
 }
 
 GDB_CALL sint32 FUN_8006D230(uint32 left, uint32 right, uint32 count)
 {
-    FF_FUNCTION_MARKER(0x8006d230u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006d230u, "GAME.EXE");
     for (;;)
     {
         uint32 a = r_u8(left), b = r_u8(right);
         ++left;
         if (a != b)
-            return (sint32) r_u8(left - 1) - (sint32) r_u8(right);
+            return (sint32)r_u8(left - 1) - (sint32)r_u8(right);
         --count;
         ++right;
         if ((sint32)count <= 0)
@@ -1456,13 +1456,13 @@ GDB_CALL sint32 FUN_8006D230(uint32 left, uint32 right, uint32 count)
 
 GDB_CALL void FUN_SLUS_80010EDC(void)
 {
-    FF_FUNCTION_MARKER(0x80010edcu, "SLUS_004.33");
+    FUNCTION_MARKER(0x80010edcu, "SLUS_004.33");
     /* Exact JR RA/NOP peer of GAME11FEC; do not emit a GAME marker. */
 }
 
 GDB_CALL void FUN_SLUS_8001AE80(uint32 a, uint32 b, uint32 c)
 {
-    FF_FUNCTION_MARKER(0x8001ae80u, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001ae80u, "SLUS_004.33");
     w_u32(0x80034268, a);
     w_u32(0x80032a30, b);
     w_u32(0x80034264, c);
@@ -1470,7 +1470,7 @@ GDB_CALL void FUN_SLUS_8001AE80(uint32 a, uint32 b, uint32 c)
 
 GDB_CALL uint32 FUN_SLUS_80010520(uint32 destination, uint32 source, sint32 count)
 {
-    FF_FUNCTION_MARKER(0x80010520u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80010520u, "SLUS_004.33");
     uint32 byte = r_u8(source); /* Initial BLEZ delay slot reads even for count<=0. */
     if (count <= 0)
         return byte;
@@ -1487,20 +1487,20 @@ GDB_CALL uint32 FUN_SLUS_80010520(uint32 destination, uint32 source, sint32 coun
 
 GDB_CALL uint32 FUN_SLUS_8001133C(void)
 {
-    FF_FUNCTION_MARKER(0x8001133cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001133cu, "SLUS_004.33");
     w_u32(0x80030350, 0x000a4838);
     return 0x000a4838;
 }
 
 GDB_CALL sint32 FUN_SLUS_8001263C(void)
 {
-    FF_FUNCTION_MARKER(0x8001263cu, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001263cu, "SLUS_004.33");
     return r_s16(0x80030358) ? 3 : 2;
 }
 
 GDB_CALL uint32 FUN_SLUS_80034388(uint32 text, uint32 x, uint32 y)
 {
-    FF_FUNCTION_MARKER(0x80034388u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80034388u, "SLUS_004.33");
     uint32 p = r_u32(0x800ac52c);
     uint8 byte;
     w_u32(p, 0x74ffffff);
@@ -1529,7 +1529,7 @@ static void sdk_sector_to_bcd(sint32 sector, uint32 destination)
 
 GDB_CALL sint32 FUN_SLUS_8001ABE8(uint32 destination, uint32 entry_v0)
 {
-    FF_FUNCTION_MARKER(0x8001abe8u, "SLUS_004.33");
+    FUNCTION_MARKER(0x8001abe8u, "SLUS_004.33");
     if (entry_v0)
         return -1;
     sdk_sector_to_bcd((sint32)((uint32)FUN_SLUS_80017F58(0x800329e8) + 1), destination);
@@ -1553,7 +1553,7 @@ static uint32 sdk_mips_multiply(ff_mips_1288c_registers *r, uint32 a, uint32 b)
 
 GDB_CALL void FUN_8001288C(ff_mips_1288c_registers *r)
 {
-    FF_FUNCTION_MARKER(0x8001288cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8001288cu, "GAME.EXE");
     /* Register ABI: IDA's empty void body loses all six inputs and four outputs. */
     r->a0 = sdk_mips_multiply(r, r->t6, r->t4);
     r->a1 = sdk_mips_multiply(r, r->v1, r->t5);
@@ -1593,7 +1593,7 @@ static sint32 sdk_card_write_dummy(sint32 fd, uint32 source, uint32 bytes)
 
 GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data)
 {
-    FF_FUNCTION_MARKER(0x8006b22cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b22cu, "GAME.EXE");
     uint32 words[4], source, destination;
     int i, j, frame;
     sint32 fd, written;
@@ -1636,7 +1636,7 @@ GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data
             w_u32(data + i + 4 * j, words[j]);
     }
     sdk_card_path(slot, name);
-    fd = sdk_card_open_dummy(0x80093f60, ((uint32)(sint32) r_s8(0x80094adb) << 16) | 0x200);
+    fd = sdk_card_open_dummy(0x80093f60, ((uint32)(sint32)r_s8(0x80094adb) << 16) | 0x200);
     if (fd == -1)
         return -1;
     sdk_card_close_dummy(fd);
@@ -1652,7 +1652,7 @@ GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data
 
 GDB_CALL uint32 FUN_8006CEF0(uint32 path, uint32 entry)
 {
-    FF_FUNCTION_MARKER(0x8006cef0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cef0u, "GAME.EXE");
     /* BIOS B0:42 firstfile, WIP empty card directory. */
     ++ff_dummy_calls[0];
     return 0;
@@ -1660,7 +1660,7 @@ GDB_CALL uint32 FUN_8006CEF0(uint32 path, uint32 entry)
 
 GDB_CALL sint32 FUN_8006CF10(uint32 path)
 {
-    FF_FUNCTION_MARKER(0x8006cf10u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006cf10u, "GAME.EXE");
     /* BIOS B0:45 erase, WIP absent card. */
     ++ff_dummy_calls[0];
     return 0;
@@ -1668,7 +1668,7 @@ GDB_CALL sint32 FUN_8006CF10(uint32 path)
 
 GDB_CALL sint32 FUN_8006B1C8(uint32 slot, uint32 name)
 {
-    FF_FUNCTION_MARKER(0x8006b1c8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b1c8u, "GAME.EXE");
     sint32 fd;
     sdk_card_path(slot, name);
     fd = sdk_card_open_dummy(0x80093f60, 1);
@@ -1680,7 +1680,7 @@ GDB_CALL sint32 FUN_8006B1C8(uint32 slot, uint32 name)
 
 GDB_CALL sint32 FUN_8006B6CC(uint32 slot)
 {
-    FF_FUNCTION_MARKER(0x8006b6ccu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b6ccu, "GAME.EXE");
     sprintf(psx_addr(0x80093f60, 1), "bu%2.2x:", slot & 255);
     /* WIP B0:41 format: absent card, no storage mutation. */
     ++ff_dummy_calls[0];
@@ -1689,7 +1689,7 @@ GDB_CALL sint32 FUN_8006B6CC(uint32 slot)
 
 GDB_CALL sint32 FUN_8006B710(uint32 slot, uint32 name)
 {
-    FF_FUNCTION_MARKER(0x8006b710u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b710u, "GAME.EXE");
     if (!FUN_8006B1C8(slot, name))
         return 1;
     sdk_card_path(slot, name);
@@ -1698,7 +1698,7 @@ GDB_CALL sint32 FUN_8006B710(uint32 slot, uint32 name)
 
 GDB_CALL sint32 FUN_8006B77C(uint32 slot, uint32 name, uint32 destination)
 {
-    FF_FUNCTION_MARKER(0x8006b77cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b77cu, "GAME.EXE");
     sint32 fd, count;
     sdk_card_path(slot, name);
     fd = sdk_card_open_dummy(0x80093f60, 1);
@@ -1711,7 +1711,7 @@ GDB_CALL sint32 FUN_8006B77C(uint32 slot, uint32 name, uint32 destination)
 
 GDB_CALL sint32 FUN_8006B9D0(void)
 {
-    FF_FUNCTION_MARKER(0x8006b9d0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b9d0u, "GAME.EXE");
     uint8 a, b, c, d;
     w_u8(0x80093cf0, 255);
     if (!FUN_8006B77C(0, 0x80093c04, 0x000e2d40))
@@ -1738,7 +1738,7 @@ static uint32 sdk_card_next_file_dummy(uint32 entry)
 
 GDB_CALL sint32 FUN_8006BF74(uint32 slot, uint32 entry)
 {
-    FF_FUNCTION_MARKER(0x8006bf74u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006bf74u, "GAME.EXE");
     uint8 saved[128];
     uint32 count = 0, path = 0x801fc600;
     char *buffer = psx_addr(path, 128);
@@ -1762,7 +1762,7 @@ GDB_CALL sint32 FUN_8006BF74(uint32 slot, uint32 entry)
 
 GDB_CALL sint32 FUN_8006BFFC(uint32 slot, uint32 names, uint32 entries)
 {
-    FF_FUNCTION_MARKER(0x8006bffcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006bffcu, "GAME.EXE");
     sint32 count, fd, bytes;
     uint32 i, blocks;
     uint8 saved[264];
@@ -1804,7 +1804,7 @@ GDB_CALL sint32 FUN_8006BFFC(uint32 slot, uint32 names, uint32 entries)
 
 GDB_CALL uint32 FUN_8006BDF4(uint32 character)
 {
-    FF_FUNCTION_MARKER(0x8006bdf4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006bdf4u, "GAME.EXE");
     uint32 ch = character & 255, group = 0, punctuation = 0, value;
     if (((ch - 32) & 255) < 16)
         punctuation = 1;
@@ -1831,7 +1831,7 @@ GDB_CALL uint32 FUN_8006BDF4(uint32 character)
 
 GDB_CALL sint32 FUN_8006BF14(uint32 destination, uint32 source)
 {
-    FF_FUNCTION_MARKER(0x8006bf14u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006bf14u, "GAME.EXE");
     while (r_s8(source))
     {
         uint32 ch = r_u8(source++);
@@ -1844,7 +1844,7 @@ GDB_CALL sint32 FUN_8006BF14(uint32 destination, uint32 source)
 
 GDB_CALL sint32 FUN_8006C178(uint32 character)
 {
-    FF_FUNCTION_MARKER(0x8006c178u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006c178u, "GAME.EXE");
     uint32 ch = character & 65535, high = ch >> 8;
     /* Original decision tree omits 5282 ('3'); do not fill that hole. */
     if ((ch & 255) == 0x82)
@@ -1865,7 +1865,7 @@ GDB_CALL sint32 FUN_8006C178(uint32 character)
 
 GDB_CALL void FUN_8006C6E8(uint32 destination, uint32 source)
 {
-    FF_FUNCTION_MARKER(0x8006c6e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006c6e8u, "GAME.EXE");
     uint32 ch;
     while ((ch = (uint16)r_s16(source)) != 0)
     {
@@ -1877,7 +1877,7 @@ GDB_CALL void FUN_8006C6E8(uint32 destination, uint32 source)
 
 GDB_CALL sint32 FUN_8006BA58(uint32 destination)
 {
-    FF_FUNCTION_MARKER(0x8006ba58u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006ba58u, "GAME.EXE");
     sint32 stage = r_s8(0x80093cf0);
     const char *format, *first, *second, *level;
     char *out = psx_addr(destination, 1);
@@ -1887,10 +1887,10 @@ GDB_CALL sint32 FUN_8006BA58(uint32 destination)
         return sprintf(out, format);
     }
     level = psx_addr(r_u32(0x8007f79c + 4u * (uint32)stage), 1);
-    first = psx_addr(r_u32(0x800b6e90 + 4u * (uint32)(sint32) r_s8(0x80093cf2)), 1);
+    first = psx_addr(r_u32(0x800b6e90 + 4u * (uint32)(sint32)r_s8(0x80093cf2)), 1);
     if (r_s8(0x80093cf1) == 1)
         return sprintf(out, psx_addr(r_u32(0x8009246c), 1), first, level);
-    second = psx_addr(r_u32(0x800b6e90 + 4u * (uint32)(sint32) r_s8(0x80093cf3)), 1);
+    second = psx_addr(r_u32(0x800b6e90 + 4u * (uint32)(sint32)r_s8(0x80093cf3)), 1);
     /* The level string is the fifth argument, stored at SP+10, omitted by IDA. */
     return sprintf(out, psx_addr(r_u32(0x80092470), 1), first, second, level);
 }
@@ -1905,13 +1905,13 @@ static sint32 sdk_bcd_sector(uint32 position)
 
 GDB_CALL sint32 FUN_800731E8(uint32 position)
 {
-    FF_FUNCTION_MARKER(0x800731e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800731e8u, "GAME.EXE");
     return sdk_bcd_sector(position);
 }
 
 GDB_CALL sint32 FUN_SLUS_80017F58(uint32 position)
 {
-    FF_FUNCTION_MARKER(0x80017f58u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80017f58u, "SLUS_004.33");
     return sdk_bcd_sector(position);
 }
 
@@ -1932,13 +1932,13 @@ static sint32 sdk_card_test_group(uint32 table)
 
 GDB_CALL sint32 FUN_8006B894(void)
 {
-    FF_FUNCTION_MARKER(0x8006b894u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b894u, "GAME.EXE");
     return sdk_card_test_group(0x80093cb0);
 }
 
 GDB_CALL sint32 FUN_8006B950(void)
 {
-    FF_FUNCTION_MARKER(0x8006b950u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b950u, "GAME.EXE");
     return sdk_card_test_group(0x80093cc0);
 }
 
@@ -1953,13 +1953,13 @@ static sint32 sdk_card_wait_group(uint32 table)
 
 GDB_CALL sint32 FUN_8006B820(void)
 {
-    FF_FUNCTION_MARKER(0x8006b820u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b820u, "GAME.EXE");
     return sdk_card_wait_group(0x80093cb0);
 }
 
 GDB_CALL sint32 FUN_8006B8DC(void)
 {
-    FF_FUNCTION_MARKER(0x8006b8dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b8dcu, "GAME.EXE");
     return sdk_card_wait_group(0x80093cc0);
 }
 
@@ -1971,7 +1971,7 @@ static void sdk_card_completion(uint32 result)
 
 GDB_CALL sint32 FUN_8006BB44(void)
 {
-    FF_FUNCTION_MARKER(0x8006bb44u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006bb44u, "GAME.EXE");
     uint32 state = r_u32(0x80093ce8);
     sint32 result;
     if (!state)
@@ -2056,7 +2056,7 @@ GDB_CALL sint32 FUN_8006BB44(void)
 
 GDB_CALL sint32 FUN_8006B998(void)
 {
-    FF_FUNCTION_MARKER(0x8006b998u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006b998u, "GAME.EXE");
     do
     {
         FUN_80061120();
@@ -2067,7 +2067,7 @@ GDB_CALL sint32 FUN_8006B998(void)
 
 GDB_CALL uint32 FUN_8006BDBC(uint32 output)
 {
-    FF_FUNCTION_MARKER(0x8006bdbcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006bdbcu, "GAME.EXE");
     FUN_8006BB44();
     FUN_8006B998();
     return FUN_8006BD9C(output);
@@ -2075,32 +2075,32 @@ GDB_CALL uint32 FUN_8006BDBC(uint32 output)
 
 GDB_CALL uint32 FUN_8007675C(void)
 {
-    FF_FUNCTION_MARKER(0x8007675cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8007675cu, "GAME.EXE");
     return r_u32(0x8008cb18);
 }
 
 GDB_CALL uint32 FUN_SLUS_80013F54(void)
 {
-    FF_FUNCTION_MARKER(0x80013f54u, "SLUS_004.33");
+    FUNCTION_MARKER(0x80013f54u, "SLUS_004.33");
     return r_u32(0x8001eb18);
 }
 
 GDB_CALL void FUN_80072694(sint32 x, sint32 y)
 {
-    FF_FUNCTION_MARKER(0x80072694u, "GAME.EXE");
+    FUNCTION_MARKER(0x80072694u, "GAME.EXE");
     /* SLL 16 discards the high half before the signed OFX/OFY write. */
     SetGeomOffset((sint16)x, (sint16)y);
 }
 
 GDB_CALL void FUN_800726B4(uint32 h)
 {
-    FF_FUNCTION_MARKER(0x800726b4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800726b4u, "GAME.EXE");
     gte_write_h((uint16)h);
 }
 
 GDB_CALL sint32 FUN_80064638(uint32 packet, uint32 unused, uint32 stacked)
 {
-    FF_FUNCTION_MARKER(0x80064638u, "GAME.EXE");
+    FUNCTION_MARKER(0x80064638u, "GAME.EXE");
     /* The color-split callee 64620 is exactly JR RA / NOP. V0 survives
   * as the signed color halfword shifted right one. */
     return r_s16(packet + 16) >> 1;
@@ -2120,7 +2120,7 @@ static sint32 sdk_cd_status_dummy(uint8 *status)
 
 GDB_CALL sint32 FUN_80067758(void)
 {
-    FF_FUNCTION_MARKER(0x80067758u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067758u, "GAME.EXE");
     uint32 result = r_u32(0x80093bb4);
     uint8 status[8];
     if (!result)
@@ -2135,7 +2135,7 @@ GDB_CALL sint32 FUN_80067758(void)
 
 GDB_CALL sint32 FUN_800677A0(void)
 {
-    FF_FUNCTION_MARKER(0x800677a0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800677a0u, "GAME.EXE");
     uint32 result = r_u32(0x80093bb4);
     uint8 status[16];
     if (result)
@@ -2156,19 +2156,19 @@ GDB_CALL sint32 FUN_800677A0(void)
 
 GDB_CALL sint32 FUN_800678E8(void)
 {
-    FF_FUNCTION_MARKER(0x800678e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800678e8u, "GAME.EXE");
     return FUN_80067758();
 }
 
 GDB_CALL sint32 FUN_80067908(void)
 {
-    FF_FUNCTION_MARKER(0x80067908u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067908u, "GAME.EXE");
     return FUN_800677A0();
 }
 
 GDB_CALL sint32 FUN_80067820(void)
 {
-    FF_FUNCTION_MARKER(0x80067820u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067820u, "GAME.EXE");
     uint32 track = r_u32(0x80093bac), result;
     uint8 status[8];
     sint32 current;

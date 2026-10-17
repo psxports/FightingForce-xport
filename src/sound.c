@@ -51,7 +51,7 @@ GDB_CALL sint32 FUN_800570F0(void)
     sint32 i;
     for (i = 0; i < 24; i++)
         if (r_s8(0x80094708 + (uint32)i) == 2)
-            FUN_80056F94(i, 2 * (sint32) r_s8(0x800946c0 + (uint32)i), 2 * (sint32) r_s8(0x80094720 + (uint32)i));
+            FUN_80056F94(i, 2 * (sint32)r_s8(0x800946c0 + (uint32)i), 2 * (sint32)r_s8(0x80094720 + (uint32)i));
     return 0;
 }
 
@@ -174,7 +174,7 @@ sint32 FUN_80056A18(void)
 
 GDB_CALL sint32 FUN_80056B78(void)
 {
-    FF_FUNCTION_MARKER(0x80056b78u, "GAME.EXE");
+    FUNCTION_MARKER(0x80056b78u, "GAME.EXE");
     return (sint32)ff_spu_reverb_channels(1, 0xffffff);
 }
 
@@ -248,7 +248,9 @@ sint32 ff_sound_resources_80056D2C(void)
 GDB_CALL uint32 FUN_80056640(void)
 {
     uint32 old = r_u32(0x80093550), next = old + 1;
-    w_u32(0x80093550, (sint32)next >= 16 ? 0 : next);
+    w_u32(0x80093550, next);
+    if ((sint32)next >= 16)
+        w_u32(0x80093550, 0);
     return 0x800a79c8 + (old << 6);
 }
 
@@ -289,15 +291,17 @@ GDB_CALL sint32 FUN_80056670(sint32 effect, sint32 volume, sint32 pitch)
 {
     if (ff_audit_sound_event)
         ff_audit_sound_event(0x80056670u, (uint32)effect, (uint32)volume, (uint32)pitch);
-    uint32 master = r_u8(0x80093d6e), attr = FUN_80056640(), voice, sample;
+    uint32 master = r_u8(0x80093d6e), attr = FUN_80056640(), voice, sample, sample_address;
     do
     {
         voice = r_u32(0x80093554) + 1;
-        if ((sint32)voice >= 24)
-            voice = 0;
         w_u32(0x80093554, voice);
+        if ((sint32)voice >= 24)
+            w_u32(0x80093554, 0);
+        voice = r_u32(0x80093554);
     } while (r_s8(0x80094708 + voice) == 2);
-    sample = r_u32(0x800b6ab8 + 4u * (uint32)effect);
+    sample_address = 0x800b6ab8 + 4u * (uint32)effect;
+    sample = r_u32(sample_address);
     if (sample == 0xffffffffu)
         FUN_800567F8((sint32)voice);
     else
@@ -306,15 +310,19 @@ GDB_CALL sint32 FUN_80056670(sint32 effect, sint32 volume, sint32 pitch)
         sint32 scaled = (sint32)((uint32)pitch * 1536u);
         uint32 note = (uint32)(scaled / 1024) - 1536u;
         w_u8(0x80094708 + voice, r_u8(0x800b6f68 + (uint32)effect));
+        voice = r_u32(0x80093554);
         w_u8(0x80094720 + voice, (uint8)level);
         w_u8(0x800946c0 + voice, (uint8)level);
+        voice = r_u32(0x80093554);
         w_u32(attr + 4, 227);
         w_u16(attr + 8, (uint16)((uint32)level << 7));
         w_u16(attr + 10, (uint16)((uint32)level << 7));
         w_u16(attr + 24, 21584);
         w_u16(attr + 22, (uint16)(((note << 1) & 0xffffff00u) + (note & 127)));
         w_u32(attr, 1u << (voice & 31));
-        w_u32(attr + 28, r_u32(0x8009354c) + sample);
+        sample = r_u32(0x8009354c);
+        sample += r_u32(sample_address);
+        w_u32(attr + 28, sample);
         if (!ff_services.spu_key_on_attributes)
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         ff_services.spu_key_on_attributes(attr);
@@ -442,7 +450,7 @@ GDB_CALL sint32 FUN_800293D8(sint32 index)
 /* 56840: voice pitch attribute; signed division after wrapped multiply. */
 GDB_CALL sint32 FUN_80056840(sint32 voice, sint32 pitch)
 {
-    FF_FUNCTION_MARKER(0x80056840u, "GAME.EXE");
+    FUNCTION_MARKER(0x80056840u, "GAME.EXE");
     uint32 attr = FUN_80056640();
     uint32 note = (uint32)((sint32)((uint32)pitch * 1536u) / 1024) - 1536u;
     w_u32(attr, 1u << ((uint32)voice & 31));

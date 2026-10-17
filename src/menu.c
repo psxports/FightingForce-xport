@@ -4,7 +4,7 @@
 
 GDB_CALL uint32 FUN_80067940(void)
 {
-    FF_FUNCTION_MARKER(0x80067940u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067940u, "GAME.EXE");
     uint32 handle = (uint32)ff_pc_create(0x80093bb8), block, row, offset, p, source, destination, value;
     uint8 group[16];
     if (!handle)
@@ -52,7 +52,7 @@ GDB_CALL uint32 FUN_80067940(void)
 
 GDB_CALL uint32 FUN_800697A4(void)
 {
-    FF_FUNCTION_MARKER(0x800697a4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800697a4u, "GAME.EXE");
     uint32 descriptor, p, palette;
     int i;
     sint32 width;
@@ -107,7 +107,7 @@ GDB_CALL uint32 FUN_800697A4(void)
 
 GDB_CALL uint32 FUN_800673BC(void)
 {
-    FF_FUNCTION_MARKER(0x800673bcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800673bcu, "GAME.EXE");
     uint32 p, model, page;
     int i;
     FUN_80067284();
@@ -139,7 +139,7 @@ GDB_CALL uint32 FUN_800673BC(void)
 
 GDB_CALL uint32 FUN_80069B34(void)
 {
-    FF_FUNCTION_MARKER(0x80069b34u, "GAME.EXE");
+    FUNCTION_MARKER(0x80069b34u, "GAME.EXE");
     uint32 buttons, tick;
     sint32 fade;
     DrawSync(0);
@@ -180,7 +180,7 @@ GDB_CALL uint32 FUN_80069B34(void)
 
 GDB_CALL uint32 FUN_8005A280(void)
 {
-    FF_FUNCTION_MARKER(0x8005a280u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005a280u, "GAME.EXE");
     uint32 scroll = 0, frame = 0, text = FUN_800611F8(0x80093584), p, source, destination, shade, result, saved[32];
     sint32 fade, slide, sprite, next, y, position[4];
     int i;
@@ -284,7 +284,7 @@ GDB_CALL uint32 FUN_8005A280(void)
 
 /* 58634: audited background dispatch 5887C..58BC8. The caller performs
  * horizon projection and the final fade, so this helper emits no entry marker. */
-void ff_draw_stage_background(void)
+void frame_draw_background(void)
 {
     uint32 stage = r_u32(0x80093d58);
     switch (stage)
@@ -441,7 +441,7 @@ static void menu_sky_sprite(uint32 x, uint32 y, uint32 v, uint32 height, int rel
 
 GDB_CALL uint32 FUN_80064F38(void)
 {
-    FF_FUNCTION_MARKER(0x80064f38u, "GAME.EXE");
+    FUNCTION_MARKER(0x80064f38u, "GAME.EXE");
     uint32 bias = 160, scroll, i;
     if (r_u32(0x80093d58) - 8 < 2)
     {
@@ -465,7 +465,7 @@ GDB_CALL uint32 FUN_80064F38(void)
 
 GDB_CALL uint32 FUN_800655C0(void)
 {
-    FF_FUNCTION_MARKER(0x800655c0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800655c0u, "GAME.EXE");
     uint32 scroll = ((uint32)(r_s16(0x8008d490) >> 5) + 160) & 255, i;
     for (i = 0; i < 3; ++i)
         menu_sky_sprite(scroll + 256 * i - 256, 128, 128, 128, 1);
@@ -477,7 +477,7 @@ GDB_CALL uint32 FUN_800655C0(void)
 
 GDB_CALL uint32 FUN_800664F0(void)
 {
-    FF_FUNCTION_MARKER(0x800664f0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800664f0u, "GAME.EXE");
     uint32 scroll, i;
     if ((sint32)(r_u32(0x8008d4d0) - 128) > 0)
         menu_sky_gradient(0, 0, 128, 2);
@@ -489,7 +489,7 @@ GDB_CALL uint32 FUN_800664F0(void)
 
 GDB_CALL uint32 FUN_80065274(void)
 {
-    FF_FUNCTION_MARKER(0x80065274u, "GAME.EXE");
+    FUNCTION_MARKER(0x80065274u, "GAME.EXE");
     uint32 horizon = r_u32(0x8008d4d0), top, middle, angle, scroll, v, i;
     if (r_u32(0x80093d58) - 8 < 2)
         horizon += 24;
@@ -510,7 +510,7 @@ GDB_CALL uint32 FUN_80065274(void)
 
 GDB_CALL uint32 FUN_80065B3C(void)
 {
-    FF_FUNCTION_MARKER(0x80065b3cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80065b3cu, "GAME.EXE");
     uint32 angle, horizon, p, color, scroll, v, i;
     uint8 red, green, blue;
     if ((sint32)r_u32(0x8008d4ac) < (sint32)0xf4000000u)
@@ -550,7 +550,7 @@ GDB_CALL uint32 FUN_80065B3C(void)
 
 GDB_CALL sint32 FUN_800659A8(void)
 {
-    FF_FUNCTION_MARKER(0x800659a8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800659a8u, "GAME.EXE");
     uint32 p = r_u32(0x8008d4b0);
     sint32 phase, volume = 0;
     w_u32(0x8008d4b0, p + 24);
@@ -581,7 +581,7 @@ GDB_CALL sint32 FUN_800659A8(void)
 
 GDB_CALL sint32 FUN_80052428(void)
 {
-    FF_FUNCTION_MARKER(0x80052428u, "GAME.EXE");
+    FUNCTION_MARKER(0x80052428u, "GAME.EXE");
     w_u32(0x80093d3c, 0);
     FUN_800690D8();
     w_u32(0x80092734, 1);
@@ -590,21 +590,21 @@ GDB_CALL sint32 FUN_80052428(void)
 
 GDB_CALL sint32 FUN_80052458(void)
 {
-    FF_FUNCTION_MARKER(0x80052458u, "GAME.EXE");
+    FUNCTION_MARKER(0x80052458u, "GAME.EXE");
     w_u32(0x80093d3c, 1);
     return FUN_800690D8();
 }
 
 GDB_CALL sint32 FUN_80052484(void)
 {
-    FF_FUNCTION_MARKER(0x80052484u, "GAME.EXE");
+    FUNCTION_MARKER(0x80052484u, "GAME.EXE");
     w_u32(0x80093d3c, 1);
     return FUN_80068D68();
 }
 
 GDB_CALL uint32 FUN_80064380(void)
 {
-    FF_FUNCTION_MARKER(0x80064380u, "GAME.EXE");
+    FUNCTION_MARKER(0x80064380u, "GAME.EXE");
     uint32 x = r_u32(0x8008d4a4), z = r_u32(0x8008d4ac), rx = x & 0xffffff, rz = z & 0xffffff;
     uint32 column = (uint32)((sint32)~x >> 24), row = (uint32)((sint32)~z >> 24), heading = (uint32)((r_s16(0x8008d490) + 2048) >> 12) & 15;
     uint32 i, p;
@@ -644,7 +644,7 @@ GDB_CALL uint32 FUN_80064380(void)
 
 GDB_CALL uint32 FUN_80066160(void)
 {
-    FF_FUNCTION_MARKER(0x80066160u, "GAME.EXE");
+    FUNCTION_MARKER(0x80066160u, "GAME.EXE");
     uint32 height = (uint32)((sint32)r_u32(0x80093db8) >> 9) + 64u + r_u32(0x8008d4d0);
     sint32 top = (sint32)(height - 256), middle = (sint32)(height - 128);
     uint32 color, p, i, angle, scroll, v;
@@ -745,31 +745,31 @@ static uint32 menu_black_quad(uint16 top, uint16 bottom, int horizon)
 
 GDB_CALL uint32 FUN_80064C1C(void)
 {
-    FF_FUNCTION_MARKER(0x80064c1cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80064c1cu, "GAME.EXE");
     return menu_black_quad(0, 0, 1);
 }
 
 GDB_CALL uint32 FUN_80065918(void)
 {
-    FF_FUNCTION_MARKER(0x80065918u, "GAME.EXE");
+    FUNCTION_MARKER(0x80065918u, "GAME.EXE");
     return menu_black_quad(0, 0, 1);
 }
 
 GDB_CALL uint32 FUN_800660DC(void)
 {
-    FF_FUNCTION_MARKER(0x800660dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800660dcu, "GAME.EXE");
     return menu_black_quad(0, 256, 0);
 }
 
 GDB_CALL uint32 FUN_80064CAC(void)
 {
-    FF_FUNCTION_MARKER(0x80064cacu, "GAME.EXE");
+    FUNCTION_MARKER(0x80064cacu, "GAME.EXE");
     return menu_black_quad(160, 255, 0);
 }
 
 GDB_CALL uint32 FUN_800667B8(void)
 {
-    FF_FUNCTION_MARKER(0x800667b8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800667b8u, "GAME.EXE");
     uint32 p = r_u32(0x8008d4b0);
     w_u32(0x8008d4b0, p + 36);
     w_u8(p + 3, 8);
@@ -799,7 +799,7 @@ GDB_CALL uint32 FUN_800667B8(void)
 
 GDB_CALL sint32 FUN_800524B0(void)
 {
-    FF_FUNCTION_MARKER(0x800524b0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800524b0u, "GAME.EXE");
     uint32 i, object, target;
     FUN_8004F520();
     w_u16(0x80093d34, (uint16)r_s16(0x8008d490));
@@ -807,8 +807,8 @@ GDB_CALL sint32 FUN_800524B0(void)
     for (i = 0; i < 3; ++i)
         w_u32(0x80093d28 + 4 * i, r_u32(0x8008d4a4 + 4 * i));
     w_u32(0x80093dd0, r_u32(0x80093dd0) + 1);
-    ff_menu_prepare_80058634_stage26();
-    ff_menu_stage_8001E168();
+    frame_prepare();
+    stage_update();
     FUN_80050CC8();
     /* A0 is the address of the selected-player array, not the IDA scalar. */
     FUN_80058E24(0x8009277c, (sint32)r_u32(0x80092784));
@@ -868,7 +868,7 @@ static uint32 menu_dim_backdrop(void)
 
 GDB_CALL uint32 FUN_8006A5B8(void)
 {
-    FF_FUNCTION_MARKER(0x8006a5b8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006a5b8u, "GAME.EXE");
     FUN_80067D3C();
     FUN_80067284();
     if (r_s16(0x8001000c) + r_s16(0x8001000e) + r_s16(0x80010010))
@@ -878,7 +878,7 @@ GDB_CALL uint32 FUN_8006A5B8(void)
 
 GDB_CALL sint32 FUN_80067E20(void)
 {
-    FF_FUNCTION_MARKER(0x80067e20u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067e20u, "GAME.EXE");
     FUN_80067D3C();
     if (r_u32(0x80093ba4))
         FUN_800524B0();
@@ -892,7 +892,7 @@ GDB_CALL sint32 FUN_80067E20(void)
 
 GDB_CALL sint32 FUN_800680CC(void)
 {
-    FF_FUNCTION_MARKER(0x800680ccu, "GAME.EXE");
+    FUNCTION_MARKER(0x800680ccu, "GAME.EXE");
     uint32 i;
     w_u32(0x80093c14, 0xffffffff);
     for (i = 0; i < 2; ++i)
@@ -905,7 +905,7 @@ GDB_CALL sint32 FUN_800680CC(void)
 
 GDB_CALL sint32 FUN_800520AC(void)
 {
-    FF_FUNCTION_MARKER(0x800520acu, "GAME.EXE");
+    FUNCTION_MARKER(0x800520acu, "GAME.EXE");
     static const uint32 color_offsets[4] = {0, 3, 9, 6};
     uint32 phase = r_u32(0x80092908), offset, color, raw, edge, selection;
     sint32 width, count;
@@ -954,7 +954,7 @@ GDB_CALL sint32 FUN_800520AC(void)
 
 GDB_CALL sint32 FUN_8005A690(void)
 {
-    FF_FUNCTION_MARKER(0x8005a690u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005a690u, "GAME.EXE");
     uint32 phase = 456960u, packet, pad;
     int frame, i;
     FUN_800638B8(24);
@@ -1013,7 +1013,7 @@ GDB_CALL sint32 FUN_8005A690(void)
  * explicitly instead of inventing the missing input from a RAM global. */
 GDB_CALL sint32 FUN_8004F6D0(uint32 entry_v1)
 {
-    FF_FUNCTION_MARKER(0x8004f6d0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8004f6d0u, "GAME.EXE");
     uint32 speed, target, p, values[5], result;
     int i;
     sint32 wanted, current;
@@ -1064,7 +1064,7 @@ GDB_CALL sint32 FUN_8004F6D0(uint32 entry_v1)
 
 GDB_CALL sint32 FUN_80051E50(void)
 {
-    FF_FUNCTION_MARKER(0x80051e50u, "GAME.EXE");
+    FUNCTION_MARKER(0x80051e50u, "GAME.EXE");
     uint32 phase = r_u32(0x80092900), count, i, raw, edge;
     uint8 color;
     sint32 width;
@@ -1126,8 +1126,8 @@ GDB_CALL sint32 FUN_8005717C(void)
     static const uint32 spec[4] = {4, 0x8000, 0x100, 0x2000};
     uint32 i;
     sint32 result = 0;
-    ResetCallback();       /* 75C14: native scheduling belongs to the window loop. */
-    ++ff_dummy_calls[1];   /* WIP729DC CdInit: host assets need no drive reset. */
+    ResetCallback();      /* 75C14: native scheduling belongs to the window loop. */
+    ++ff_dummy_calls[1];  /* WIP729DC CdInit: host assets need no drive reset. */
     w_u32(0x8008b6d4, 0); /* 72BC0(0) */
     ff_dummy_card_events_reset();
     for (i = 0; i < 8; i++)
@@ -1147,11 +1147,10 @@ GDB_CALL sint32 FUN_8005717C(void)
     return result;
 }
 
-/* 574B4..575E0, display part of 5748C. Platform/pad/event init5717C,
- * VBlank registration and CD TOC675FC precede this region and remain WIP.
- * Hardware fill/display/VSync/GTE calls use the AgentArmstrong host layer. */
+/* Original display region, also exposed to the historical region audit */
 GDB_CALL void ff_display_setup_800574B4(void)
 {
+    TILE clear = {0};
     uint16 offset;
     gpu_set_def_draw_env(0x800b8938, 0, 0, 320, 256);
     gpu_set_def_draw_env(0x800b8994, 320, 0, 320, 256);
@@ -1163,8 +1162,12 @@ GDB_CALL void ff_display_setup_800574B4(void)
     offset = (uint16)r_s16(0x80093d3a);
     w_u16(0x800947aa, offset);
     w_u16(0x800947be, offset);
+    clear.tag = 0x03000000;
+    clear.rgbc.code = 2;
+    clear.w = 640;
+    clear.h = 256;
     SetDispMask(1);
-    gpu_clear_menu_surfaces();
+    DrawPrim(&clear);
     FUN_80011D50(0xe7140);
     FUN_80011D50(0xe5140);
     VSync(0);
@@ -1173,6 +1176,24 @@ GDB_CALL void ff_display_setup_800574B4(void)
     SetGeomScreen(256);
     SetGeomOffset(160, 120);
     FUN_80011C60();
+}
+
+static sint32 display_vblank_callback(void *context, uint32 address)
+{
+    if (context != NULL || address != 0x8006467c)
+        return 0;
+    FUN_8006467C();
+    return 1;
+}
+
+GDB_CALL void display_initialize(void)
+{
+    FUNCTION_MARKER(0x8005748C, "GAME.EXE");
+    FUN_8005717C();
+    psx_bios_bind_guest_callback_service(display_vblank_callback, NULL);
+    VSyncCallbackPSX(0x8006467c);
+    FUN_800675FC();
+    ff_display_setup_800574B4();
 }
 
 /* 80011F50: count >> 1 WORDS, not bytes. Forward load/store order is deliberate. */
@@ -1273,6 +1294,88 @@ GDB_CALL void FUN_8005F214(void)
     w_u32(0x80093d10, 0);
 }
 
+/* Original 4FEF4..4FF70 */
+GDB_CALL void menu_prepare_frame(void)
+{
+    uint32 yaw, pitch, x, y, z, tick;
+    FUN_80058C14();
+    FUN_8004F520();
+    yaw = (uint16)r_s16(0x8008d490);
+    pitch = (uint16)r_s16(0x8008d492);
+    x = r_u32(0x8008d4a4);
+    y = r_u32(0x8008d4a8);
+    tick = r_u32(0x80093dd0);
+    z = r_u32(0x8008d4ac);
+    w_u16(0x80093d34, (uint16)yaw);
+    w_u16(0x80093d36, (uint16)pitch);
+    w_u32(0x80093d28, x);
+    w_u32(0x80093d2c, y);
+    w_u32(0x80093d30, z);
+    w_u32(0x80093dd0, tick + 1);
+    frame_prepare();
+}
+
+/* Original 4FF70..50238, ending before the caller's cleanup */
+GDB_CALL sint32 menu_update_frame(void)
+{
+    uint32 skip_scene, i;
+    if (!r_u32(0x80092788))
+    {
+        switch (r_u32(0x800927ec))
+        {
+            case 0x80050270:
+                FUN_80050270();
+                break;
+            case 0x80051e50:
+                FUN_80051E50();
+                break;
+            case 0x800520ac:
+                FUN_800520AC();
+                break;
+            case 0x80050798:
+                FUN_80050798();
+                break;
+            case 0x80050d98:
+                FUN_80050D98();
+                break;
+            case 0x80051c98:
+                FUN_80051C98();
+                break;
+            case 0x800519d4:
+                FUN_800519D4();
+                break;
+            case 0x80052624:
+                FUN_80052624();
+                break;
+            default:
+                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+    }
+    skip_scene = r_u32(0x80092734);
+    if (!skip_scene)
+    {
+        stage_update();
+        FUN_80050CC8();
+        FUN_80058E24(0x8009277c, (sint32)r_u32(0x80092784));
+        for (i = 0; (sint32)i < (sint32)r_u32(0x8009403c); i++)
+        {
+            uint32 object = 0x800b89f0 + 36 * i;
+            uint32 target = r_u32(0x800bbf78 + 4 * r_u32(object));
+            if (target)
+                ff_object_call(target, object);
+        }
+        FUN_8005C17C();
+        FUN_8001EE44();
+        FUN_80011D20();
+        FUN_800101CC(r_s16(0x8008d492));
+        FUN_8001033C(r_s16(0x8008d490));
+        FUN_8001EF68();
+        FUN_8001EDB8();
+        FUN_8001ED1C();
+    }
+    return ff_menu_tail_80050090(skip_scene != 0);
+}
+
 GDB_CALL sint32 ff_menu_tail_80050090(sint32 skip_scene)
 {
     int i;
@@ -1292,8 +1395,8 @@ GDB_CALL sint32 ff_menu_tail_80050090(sint32 skip_scene)
         if (r_s8(0x80094000))
         {
             w_u32(0x80093d1c, 0xffffffff);
-            w_u32(0x80093d58, (uint32)(sint32) r_s8(0x800947d4));
-            w_u32(0x800940b0, (uint32)(sint32) r_s8(0x80094816));
+            w_u32(0x80093d58, (uint32)(sint32)r_s8(0x800947d4));
+            w_u32(0x800940b0, (uint32)(sint32)r_s8(0x80094816));
             return 1;
         }
     }
@@ -1312,7 +1415,8 @@ GDB_CALL sint32 ff_menu_tail_80050090(sint32 skip_scene)
     }
     if (r_u32(0x8009278c) != 48)
         return 0;
-    for (i = 0; i < (sint32)r_u32(0x80092784); i++)
+    count = r_u32(0x80092784);
+    for (i = 0; i < (sint32)count; i++)
         w_u16(0x800b434c + 244u * i, (uint16)r_u32(0x800927a4 + 4 * r_u32(0x8009277c + 4u * i)));
     w_u32(0x80093d58, (r_u32(0x80093d68) & 2) ? r_u32(0x800927b4) : 0);
     w_u32(0x80093d1c, 0xffffffff);
@@ -1555,18 +1659,6 @@ GDB_CALL sint32 FUN_80050270(void)
     return result;
 }
 
-/* 8001E168 stage26 path. Other stage scripts are unported gameplay WIP. */
-GDB_CALL sint32 ff_menu_stage_8001E168(void)
-{
-    sint32 timer;
-    if (r_u32(0x80093d58) != 26)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    timer = (sint32)r_u32(0x80093dfc);
-    if (timer > 0)
-        w_u32(0x80093dfc, (uint32)timer - 1);
-    return 20;
-}
-
 /* 800586D0..80058768: selected display screen offset and shake term. */
 GDB_CALL void ff_display_offsets_800586D0(void)
 {
@@ -1706,13 +1798,13 @@ uint32 FUN_800611F8(uint32 name)
         width = (sint32)((uint32)count * 170u) / total;
         memset(&p, 0, sizeof(p));
         setPolyG4(&p);
-        p.r0 = p.r1 = 255;
-        p.r2 = p.r3 = 216;
-        p.b2 = p.b3 = 178;
-        p.x0 = p.x1 = 77;
-        p.x2 = p.x3 = (sint16)((uint32)width + 77);
-        p.y0 = p.y2 = 203;
-        p.y1 = p.y3 = 214;
+        p.p[0].rgbc.r = p.p[1].rgbc.r = 255;
+        p.p[2].rgbc.r = p.p[3].rgbc.r = 216;
+        p.p[2].rgbc.b = p.p[3].rgbc.b = 178;
+        p.p[0].xy.x = p.p[1].xy.x = 77;
+        p.p[2].xy.x = p.p[3].xy.x = (sint16)((uint32)width + 77);
+        p.p[0].xy.y = p.p[2].xy.y = 203;
+        p.p[1].xy.y = p.p[3].xy.y = 214;
         for (i = 0; i < 2; i++)
         {
             parity = r_u32(0x8008d4c4) & 1;
@@ -1725,55 +1817,50 @@ uint32 FUN_800611F8(uint32 name)
     return ff_resource_find_80061384(name);
 }
 
+static uint32 ff_texture_copy_palette(uint32 source, uint32 destination);
+
 uint32 FUN_80067108(uint32 texture_name, uint32 palette_name)
 {
-    uint32 texture = FUN_800611F8(texture_name), palette, i, result = 0;
+    uint32 texture = FUN_800611F8(texture_name), palette;
     uint8 first = r_u8(texture + 32), last = r_u8(texture + 32799);
     w_u16(0x80093b9e, 0);
     if (!ff_load_image(0x80093b9c, texture + 32))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    /* DrawSync has no work to wait for in the synchronous host upload. */
+    DrawSync(0);
     w_u16(0x80093b9e, 128);
     if (!ff_load_image(0x80093b9c, texture + 32 + 32800))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    DrawSync(0);
     palette = FUN_800611F8(palette_name);
-    w_u32(0x8008d4c8, (uint16)r_s16(palette + 2u * first) & 0x7fff);
-    w_u32(0x8008d4cc, (uint16)r_s16(palette + 2u * last) & 0x7fff);
-    for (i = 0; i < 512; i += 16)
-    {
-        uint32 words[4];
-        memcpy(words, psx_addr(palette + i, 16), 16);
-        memcpy(psx_addr(0x800b4ab8 + i, 16), words, 16);
-        result = words[0];
-    }
-    return result;
+    w_u32(0x8008d4c8, (uint16)r_s16(palette + 2 * first) & 0x7fff);
+    w_u32(0x8008d4cc, (uint16)r_s16(palette + 2 * last) & 0x7fff);
+    return ff_texture_copy_palette(palette, 0x800b4ab8);
 }
 
 /* 80063900..80063AD0, ending before map lookup/object initialization.
  * Return carries original s1 into the forthcoming map phase. */
 uint32 ff_terrain_textures_80063900(uint32 name)
 {
-    uint32 pbl = FUN_800611F8(name), source = pbl + 512, dest, i, x, y;
-    for (i = 0; i < 512; i += 16)
-    {
-        uint32 words[4];
-        memcpy(words, psx_addr(pbl + i, 16), 16);
-        memcpy(psx_addr(0x800b4cb8 + i, 16), words, 16);
-    }
-    w_u16(0x800b4cb8, 0);
+    uint32 pbl = FUN_800611F8(name), source = pbl + 512, dest, count, x, y;
+    ff_texture_copy_palette(pbl, 0x800b4cb8);
+    w_u8(0x800b4cb9, 0);
+    w_u8(0x800b4cb8, 0);
     if (!ff_load_image(0x80093a78, source))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    dest = r_u32(0x800947f0) + 20u * FUN_80011F20(r_u32(r_u32(0x80094038))) + 4;
+    count = r_u32(0x80094038);
+    count = FUN_80011F20(r_u32(count));
+    dest = r_u32(0x800947f0) + 20 * count + 4;
     w_u32(0x800947f0, dest);
     for (y = 0; y < 128; y++)
         for (x = 0; x < 128; x++)
             w_u8(dest + y * 128 + x, r_u8(source + y * 512 + x * 2));
-    if (!ff_load_image(0x80093a80, dest))
+    if (!ff_load_image(0x80093a80, r_u32(0x800947f0)))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    dest = r_u32(0x800947f0);
     for (y = 0; y < 64; y++)
         for (x = 0; x < 64; x++)
             w_u8(dest + y * 64 + x, r_u8(source + y * 1024 + x * 4));
-    if (!ff_load_image(0x80093a88, dest))
+    if (!ff_load_image(0x80093a88, r_u32(0x800947f0)))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     return source;
 }
@@ -1782,12 +1869,9 @@ uint32 ff_terrain_textures_80063900(uint32 name)
 uint32 ff_terrain_map_80063AE8(uint32 map, uint32 pixels)
 {
     uint32 i, x, y;
-    for (i = 0; i < 8192; i += 16)
-    {
-        uint32 words[4];
-        memcpy(words, psx_addr(map + i, 16), 16);
-        memcpy(psx_addr(0x8009f870 + i, 16), words, 16);
-    }
+    /* Preserve each original group of four reads followed by four writes */
+    for (i = 0; i < 8192; i += 512)
+        ff_texture_copy_palette(map + i, 0x8009f870 + i);
     for (y = 0; y < 64; y++)
         for (x = 0; x < 64; x++)
         {
@@ -2064,8 +2148,7 @@ static sint32 mpd_s16(uint32 p)
     return (sint16)((uint16)r_u8(p) * 256u + r_u8(p + 1));
 }
 
-/* Scene26 and sequence27 paths of173B0. Dynamic spawn classes and other
- * named gameplay regions remain WIP. Sequence27 uses kinds 0,7,8,14. */
+/* Original MPD objects, pooled items and named gameplay regions */
 uint32 ff_menu_objects_800173B0(uint32 map)
 {
     uint32 cursor = map + 8192, object = 0x800b89f0, region, i;
@@ -2079,16 +2162,11 @@ uint32 ff_menu_objects_800173B0(uint32 map)
         x = 0u - ((uint32)mpd_s16(cursor) << 19);
         z = 0u - ((uint32)mpd_s16(cursor + 2) << 19);
         cursor += 4;
-        if (type - 477u < 86)
+        if (type - 477u < 86 || type - 587u < 10)
         {
-            sint32 slot = FUN_800167C4((sint32)type, x, 0, z, 0);
+            sint32 slot = type - 477u < 86 ? FUN_800167C4((sint32)type, x, 0, z, 0) : FUN_80016654(type, x, 0, z);
             w_u16(0x8009a3d8 + 36u * (uint32)slot, (uint16)(2u * ff_rand_8006D348()));
             continue;
-        }
-        if (type - 587u < 10)
-        {
-            fprintf(stderr, "WIP: MPD pickup spawn16654\n");
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         }
         if (object + 36 * 8 > 0x800b9bf0)
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
@@ -2128,6 +2206,8 @@ uint32 ff_menu_objects_800173B0(uint32 map)
         w_u32(0x800940b8 + 4u * n, linked);
         object += 36;
     }
+    if (r_u32(0x80093d58) == 2)
+        w_u32(FUN_80030F44(), 5);
     for (i = 0; i < r_u32(0x8009403c); i++)
     {
         uint32 p = 0x800b89f0 + 36 * i, type = r_u32(p);
@@ -2142,7 +2222,7 @@ uint32 ff_menu_objects_800173B0(uint32 map)
     w_u32(0x8009479c, 0);
     while (r_u8(cursor) != 255)
     {
-        uint32 kind = r_u8(cursor++);
+        sint32 kind = r_s8(cursor++);
         sint32 mode, a, b, c, d;
         switch (kind)
         {
@@ -2223,10 +2303,10 @@ uint32 ff_menu_objects_800173B0(uint32 map)
         }
         if (region >= 0x8009f870)
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-        mode = r_s8(0x80094488 + kind);
+        mode = r_s8(0x80094488 + (uint32)kind);
         w_u16(region + 8, (uint16)kind);
         w_u16(region + 10, (uint16)mode);
-        w_u16(region + 12, r_u8(0x800946d8 + kind));
+        w_u16(region + 12, (uint16)r_s8(0x800946d8 + (uint32)kind));
         a = -8 * mpd_s16(cursor);
         b = -8 * mpd_s16(cursor + 2);
         c = -8 * mpd_s16(cursor + 4);
@@ -2269,44 +2349,60 @@ uint32 FUN_80063900(uint32 texture_name, uint32 map_name)
     return ff_terrain_map_80063AE8(map, pixels);
 }
 
-static void terrain_descriptor(uint32 address, uint8 left, uint8 top, uint8 right, uint8 bottom, uint16 page)
+static void terrain_descriptor(uint32 address, uint32 orientation)
+{
+    uint32 value;
+    w_u16(address + 2, 31808);
+    w_u16(address + 6, getTPage(1, 0, 768, 0));
+    value = r_u8(0x800947cc) + ((orientation & 1) ? 31 : 0);
+    w_u8(address + 8, value);
+    w_u8(address, value);
+    value = r_u8(0x800947ce) + (orientation < 2 ? 31 : 0);
+    w_u8(address + 5, value);
+    w_u8(address + 1, value);
+    value = r_u8(0x800947cc) + ((orientation & 1) ? 0 : 31);
+    w_u8(address + 10, value);
+    w_u8(address + 4, value);
+    value = r_u8(0x800947ce) + (orientation < 2 ? 0 : 31);
+    w_u8(address + 11, value);
+    w_u8(address + 9, value);
+}
+
+static void terrain_background_descriptor(uint32 address, uint32 page_x, uint32 right)
 {
     w_u16(address + 2, 31808);
-    w_u16(address + 6, page);
-    w_u8(address + 8, left);
-    w_u8(address, left);
-    w_u8(address + 5, top);
-    w_u8(address + 1, top);
+    w_u16(address + 6, getTPage(1, 0, page_x, 256));
+    w_u8(address + 8, 0);
+    w_u8(address, 0);
+    w_u8(address + 5, 224);
+    w_u8(address + 1, 224);
     w_u8(address + 10, right);
     w_u8(address + 4, right);
-    w_u8(address + 11, bottom);
-    w_u8(address + 9, bottom);
+    w_u8(address + 11, 239);
+    w_u8(address + 9, 239);
 }
 
 /* 80060DAC..80061098:64 tiles, four orientations, two background records.
  * The count advances256, excluding the final two records as in MIPS. */
 void ff_terrain_descriptors_80060DAC(void)
 {
-    uint32 base = r_u32(0x80094838), p = 0x800a8768 + 12 * base, i;
-    w_u16(0x800af4b2, (uint16)base);
+    uint32 base = r_u16(0x80094838), p, i, orientation;
+    w_u16(0x800af4b2, base);
+    p = 0x800a8768 + 12 * r_u32(0x80094838);
     for (i = 0; i < 64; i++)
     {
         uint8 u = (uint8)(32 * (i & 7)), v = (uint8)(32 * (i >> 3));
-        uint16 page = (uint16)getTPage(1, 0, 768, 0);
         w_u16(0x800947cc, u);
         w_u16(0x800947ce, v);
-        terrain_descriptor(p, u, (uint8)(v + 31), (uint8)(u + 31), v, page);
-        p += 12;
-        terrain_descriptor(p, (uint8)(u + 31), (uint8)(v + 31), u, v, page);
-        p += 12;
-        terrain_descriptor(p, u, v, (uint8)(u + 31), (uint8)(v + 31), page);
-        p += 12;
-        terrain_descriptor(p, (uint8)(u + 31), v, u, (uint8)(v + 31), page);
-        p += 12;
+        for (orientation = 0; orientation < 4; ++orientation)
+        {
+            terrain_descriptor(p, orientation);
+            p += 12;
+        }
         w_u32(0x80094838, r_u32(0x80094838) + 4);
     }
-    terrain_descriptor(p, 0, 224, 255, 239, (uint16)getTPage(1, 0, 0, 256));
-    terrain_descriptor(p + 12, 0, 224, 63, 239, (uint16)getTPage(1, 0, 128, 256));
+    terrain_background_descriptor(p, 0, 255);
+    terrain_background_descriptor(p + 12, 128, 63);
 }
 
 /* 80066EF4: reset the 64x256 texture allocation map and row occupancy. */
@@ -2344,11 +2440,11 @@ uint32 FUN_80066EF4(void)
 uint32 FUN_80066E4C(sint32 x, sint32 y, sint32 width, sint32 height)
 {
     sint32 row, col, yend = (sint32)((uint32)y + (uint32)height), xend = (sint32)((uint32)x + (uint32)width);
-    for (row = y; row < yend; row++)
+    for (row = y; row < yend; row = (sint32)((uint32)row + 1))
     {
         if (r_s16(0x80094208 + 2 * (uint32)row) == 256)
             return 0;
-        for (col = x; col < xend; col++)
+        for (col = x; col < xend; col = (sint32)((uint32)col + 1))
             if (r_u8(0xe1140 + 256 * (uint32)row + (uint32)col))
                 return 0;
     }
@@ -2364,11 +2460,13 @@ uint32 FUN_80066D14(void)
             continue;
         for (x = 0; x < 256; x += 4)
         {
-            uint8 *p = (uint8 *)psx_addr(0xe1140 + 256 * y + x, 4);
             if (r_u8(0xe1140 + 256 * y + x) || r_u8(0xe1141 + 256 * y + x) || r_u8(0xe1142 + 256 * y + x) || r_u8(0xe1143 + 256 * y + x))
                 continue;
-            memset(p, 1, 4);
-            w_u16(0x80094208 + 2 * y, (uint16)r_s16(0x80094208 + 2 * y) + 4);
+            w_u8(0xe1140 + 256 * y + x, 1);
+            w_u8(0xe1141 + 256 * y + x, 1);
+            w_u8(0xe1142 + 256 * y + x, 1);
+            w_u8(0xe1143 + 256 * y + x, 1);
+            w_u16(0x80094208 + 2 * y, r_u16(0x80094208 + 2 * y) + 4);
             w_u16(0x800947cc, 4 * x);
             w_u16(0x800947ce, 8 * y);
             return 8 * y;
@@ -2381,48 +2479,51 @@ uint32 FUN_80066D14(void)
 
 uint32 FUN_80066ACC(sint32 width, sint32 height, sint32 mode, uint32 rect)
 {
-    sint32 w = width, h, y, band, page, x, row, step;
-    /* Resource loader supplies positive dimensions and modes 0..2. */
-    if (width <= 0 || height <= 0 || width > 257 || height > 257 || mode < 0 || mode > 2)
-    {
-        fprintf(stderr, "WIP: unsupported texture allocation input\n");
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    step = 16 << mode;
+    sint32 w = width, h, y, band, page, x, row, col, step, ylimit, xlimit, row_end;
+    step = (sint32)((uint32)16 << ((uint32)mode & 31));
     if (mode == 0)
         w >>= 1;
     if (mode == 2)
-        w *= 2;
-    w = (w + 7) >> 3;
-    h = (height + 7) >> 3;
+        w = (sint32)((uint32)w << 1);
+    w = (sint32)((uint32)w + 7) >> 3;
+    h = (sint32)((uint32)height + 7) >> 3;
     if (w > 32)
         w = 32;
     if (h > 32)
         h = 32;
     for (band = 0; band < 64; band += 32)
-        for (y = band; y < band + 33 - h; y++)
+    {
+        ylimit = (sint32)((uint32)band + 33 - (uint32)h);
+        for (y = band; y < ylimit; y = (sint32)((uint32)y + 1))
         {
-            if (r_s16(0x80094208 + 2 * y) == 256)
+            if (r_s16(0x80094208 + 2 * (uint32)y) == 256)
                 continue;
-            for (page = 0; page < 256; page += step)
-                for (x = page; x < page + step - (w - 1); x++)
+            for (page = 0; page < 256; page = (sint32)((uint32)page + (uint32)step))
+            {
+                xlimit = (sint32)((uint32)page + (uint32)step - ((uint32)w - 1));
+                for (x = page; x < xlimit; x = (sint32)((uint32)x + 1))
                 {
                     if (!FUN_80066E4C(x, y, w, h))
                         continue;
-                    for (row = y; row < y + h; row++)
+                    row_end = (sint32)((uint32)y + (uint32)h);
+                    for (row = y; row < row_end; row = (sint32)((uint32)row + 1))
                     {
-                        memset(psx_addr(0xe1140 + 256 * row + x, w), 1, w);
-                        w_u16(0x80094208 + 2 * row, (uint16)r_s16(0x80094208 + 2 * row) + w);
+                        /* Original byte fill does nothing for a nonpositive count */
+                        for (col = 0; col < w; ++col)
+                            w_u8(0xe1140 + 256 * (uint32)row + (uint32)x + (uint32)col, 1);
+                        w_u16(0x80094208 + 2 * (uint32)row, r_u16(0x80094208 + 2 * (uint32)row) + (uint32)w);
                     }
-                    w_u16(0x800947cc, 8 * x);
-                    w_u16(0x800947ce, 8 * y);
-                    w_u16(rect, 4 * x);
-                    w_u16(rect + 2, 8 * y);
-                    w_u16(rect + 4, 4 * w);
-                    w_u16(rect + 6, 8 * h);
-                    return 8 * h;
+                    w_u16(0x800947cc, (uint32)x << 3);
+                    w_u16(0x800947ce, (uint32)y << 3);
+                    w_u16(rect, (uint32)x << 2);
+                    w_u16(rect + 2, (uint32)y << 3);
+                    w_u16(rect + 4, (uint32)w << 2);
+                    w_u16(rect + 6, (uint32)h << 3);
+                    return (uint32)h << 3;
                 }
+            }
         }
+    }
     fprintf(stderr, "WIP: texture allocation exhausted (original fatal loop)\n");
     ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     return 0;
@@ -2435,7 +2536,7 @@ void ff_effect_palette_8006055C(uint32 palette)
     for (level = 0; level < 9; level++)
         for (i = 0; i < 16; i++)
         {
-            uint32 c = (uint16)r_s16(palette + 160 + 2 * i);
+            uint32 c = r_u16(palette + 160 + 2 * i);
             sint32 r = (c & 31) - 4 * level, g = ((c >> 5) & 31) - 4 * level, b = ((c >> 10) & 31) - 4 * level;
             if (r < 0)
                 r = 0;
@@ -2446,8 +2547,9 @@ void ff_effect_palette_8006055C(uint32 palette)
             w_u16(0x800a1870 + 32 * level + 2 * i, 0x8000 + r + 32 * g + 1024 * b);
         }
     for (i = 0; i < 15; i++)
-        w_u16(0x800947f8 + 2 * i, (uint16)r_s16(palette + 32 + 2 * i));
+        w_u16(0x800947f8 + 2 * i, r_u16(palette + 32 + 2 * i));
     if (r_u32(0x80093d58) == 0)
+    {
         for (i = 0; i < 8; i++)
         {
             uint32 c = (uint16)r_s16(palette + 96 + 2 * i) | 0x8000;
@@ -2462,80 +2564,132 @@ void ff_effect_palette_8006055C(uint32 palette)
                 b--;
             w_u16(0x80094438 + 2 * i, 0x8000 + r + 32 * g + 1024 * b);
         }
+        r_u32(0x80093d58);
+    }
     /* Stages1,3,4 run a memory-free delay loop in the original. */
 }
 
 /* 800609B8..80060B8C: common texture descriptor, before resource-specific UV fixes. */
 uint32 ff_texture_descriptor_800609B8(uint32 width, uint32 height, uint32 mode, uint32 flags, uint32 allocated, uint32 palette_slot, sint32 palette_x, sint32 palette_y_next)
 {
-    uint32 count = r_u32(0x80094838), p = 0x800a8768 + 12 * (count + 1 - allocated);
-    uint32 x = (uint16)r_s16(0x800947cc), y = (uint16)r_s16(0x800947ce), page;
-    w_u16(0x8009acc8 + 2 * r_u32(0x8009440c), count);
+    uint32 index = r_u32(0x8009440c), count = r_u16(0x80094838), p, x, y, page, abr;
+    w_u16(0x8009acc8 + 2 * index, count);
+    count = r_u32(0x80094838);
+    p = 0x800a8768 + 12 * (count + 1 - allocated);
     w_u32(0x80094838, count + allocated);
     w_u16(p + 2, (palette_slot + 496) << 6);
     if (mode == 0)
         w_u16(p + 2, (uint32)(palette_x >> 4) + (((uint32)palette_y_next - 1) << 6));
-    page = (uint16)getTPage(mode, r_u32(0x8008012c + 4 * flags), ((sint32)((x & 0xff00) << 16)) >> 17, y & 256);
-    x &= 255;
-    y &= 255;
+    x = r_u16(0x800947cc);
+    y = r_u16(0x800947ce);
+    abr = r_u32(0x8008012c + 4 * flags);
+    page = (uint16)getTPage(mode, abr, ((sint32)((x & 0xff00) << 16)) >> 17, y & 256);
+    w_u16(p + 6, page);
+    x = r_u8(0x800947cc);
+    w_u16(0x800947cc, x);
+    y = r_u8(0x800947ce);
+    w_u16(0x800947ce, y);
     if (mode == 0)
     {
         x *= 2;
+        w_u16(0x800947cc, x);
         if (x >= 256)
         {
-            page = (uint16)(page + 1);
+            w_u16(p + 6, r_u16(p + 6) + 1);
             x &= 255;
+            w_u16(0x800947cc, x);
         }
     }
     if (mode == 2)
-        x >>= 1;
-    w_u16(p + 6, page);
-    w_u16(0x800947cc, x);
-    w_u16(0x800947ce, y);
+        w_u16(0x800947cc, (uint32)((sint16)r_u16(0x800947cc) >> 1));
+    x = r_u8(0x800947cc);
     w_u8(p + 8, (uint8)x);
     w_u8(p, (uint8)x);
+    y = r_u8(0x800947ce);
     w_u8(p + 5, (uint8)y);
     w_u8(p + 1, (uint8)y);
-    w_u8(p + 10, (uint8)(x + width - 1));
-    w_u8(p + 4, (uint8)(x + width - 1));
-    w_u8(p + 11, (uint8)(y + height - 1));
-    w_u8(p + 9, (uint8)(y + height - 1));
+    x = r_u8(0x800947cc) + width - 1;
+    w_u8(p + 10, (uint8)x);
+    w_u8(p + 4, (uint8)x);
+    y = r_u8(0x800947ce) + height - 1;
+    w_u8(p + 11, (uint8)y);
+    w_u8(p + 9, (uint8)y);
     if (flags)
         w_u8(p, r_u8(p) + 1);
     return p;
 }
 
 /* 80060B90..80060D60: resource-specific animated texture UV limits. */
-void ff_texture_uv_fix_80060B90(uint32 resource, uint32 ordinal, uint32 descriptor)
+static void ff_texture_uv_span(uint32 descriptor, uint32 target)
 {
-    uint32 target = 0, stage = r_u32(0x80093d58);
     uint8 y = r_u8(0x800947ce);
-    if (resource == 70)
-    {
-        if (stage == 0 && ordinal - 6 < 2)
-            target = 0x800945cc + 2 * ordinal;
-        else if (stage - 12 < 2 && ordinal - 136 < 4)
-            target = 0x800944c8 + 2 * ordinal;
-    }
-    else if (resource == 8 && ordinal == 62)
-        target = 0x800945d8;
-    else if (resource == 9 && ordinal - 40 < 4)
-        target = 0x80094588 + 2 * ordinal;
-    else if (resource == 20 && ordinal - 144 < 6)
-        target = 0x800944b8 + 2 * ordinal;
-    else if (resource == 23 && ordinal - 92 < 2)
-        target = 0x80094520 + 2 * ordinal;
-    if (target)
-    {
-        w_u8(descriptor + 1, y);
-        w_u16(target, (sint8)y);
-        w_u8(descriptor + 11, (uint8)(y + 31));
-        w_u8(descriptor + 9, (uint8)(y + 31));
-    }
+    w_u8(descriptor + 1, y);
+    w_u16(target, (sint8)y);
+    y = (uint8)(r_u8(0x800947ce) + 31);
+    w_u8(descriptor + 11, y);
+    w_u8(descriptor + 9, y);
 }
 
-/* 60394: archive palette/texture loading, descriptor tables and map relocation.
- * Optional611F8 progress display remains explicitly unsupported. */
+void ff_texture_uv_fix_80060B90(uint32 resource, uint32 ordinal, uint32 descriptor)
+{
+    uint32 stage;
+    if (resource == 70)
+    {
+        stage = r_u32(0x80093d58);
+        if (stage == 0)
+        {
+            if (ordinal - 6 < 2)
+                ff_texture_uv_span(descriptor, 0x800945cc + 2 * ordinal);
+            stage = r_u32(0x80093d58);
+        }
+        if (stage - 12 < 2 && ordinal - 136 < 4)
+            ff_texture_uv_span(descriptor, 0x800944c8 + 2 * ordinal);
+    }
+    else if (resource == 8 && ordinal == 62)
+        ff_texture_uv_span(descriptor, 0x800945d8);
+    else if (resource == 9 && ordinal - 40 < 4)
+        ff_texture_uv_span(descriptor, 0x80094588 + 2 * ordinal);
+    else if (resource == 20 && ordinal - 144 < 6)
+        ff_texture_uv_span(descriptor, 0x800944b8 + 2 * ordinal);
+    else if (resource == 23 && ordinal - 92 < 2)
+        ff_texture_uv_span(descriptor, 0x80094520 + 2 * ordinal);
+}
+
+static uint32 ff_texture_copy_palette(uint32 source, uint32 destination)
+{
+    uint32 offset, index, words[4], a, high, low, shift, aligned = !((source | destination) & 3);
+    for (offset = 0; offset < 512; offset += 16)
+    {
+        for (index = 0; index < 4; ++index)
+        {
+            a = source + offset + index * 4;
+            if (aligned)
+                words[index] = r_u32(a);
+            else
+            {
+                high = r_masked_u32((a + 3) & ~3, (1 << (((a + 3) & 3) + 1)) - 1);
+                low = r_masked_u32(a & ~3, (15 << (a & 3)) & 15);
+                words[index] = (high << ((3 - ((a + 3) & 3)) * 8)) | (low >> ((a & 3) * 8));
+            }
+        }
+        for (index = 0; index < 4; ++index)
+        {
+            a = destination + offset + index * 4;
+            if (aligned)
+                w_u32(a, words[index]);
+            else
+            {
+                shift = (a + 3) & 3;
+                w_masked_u32((a + 3) & ~3, words[index] >> ((3 - shift) * 8), (1 << (shift + 1)) - 1);
+                shift = a & 3;
+                w_masked_u32(a & ~3, words[index] << (shift * 8), (15 << shift) & 15);
+            }
+        }
+    }
+    return words[0];
+}
+
+/* Archive palette/texture loading, descriptor tables and map relocation */
 uint32 FUN_80060394(uint32 all_characters)
 {
     uint32 i, slot = 2, left = 0;
@@ -2546,42 +2700,42 @@ uint32 FUN_80060394(uint32 all_characters)
     w_u32(0x80093a58, 0);
     for (i = 0; i < 79; i++)
     {
-        uint32 name, p, ordinal, end;
-        if (!all_characters && i >= 36 && i <= 40 && r_s16(0x800b434c) != (sint32)(i - 36) && r_s16(0x800b4440) != (sint32)(i - 36))
+        uint32 name, p, ordinal, base, skip = 0;
+        if (i >= 36 && i <= 40 && r_s16(0x800b434c) != (sint32)(i - 36))
+            skip = r_s16(0x800b4440) != (sint32)(i - 36);
+        if (all_characters)
+            skip = 0;
+        if (skip)
             continue;
         name = r_u32(0x800ba040 + 4 * i);
         if (name && FUN_80061140(name))
         {
-            uint32 j, d;
-            p = FUN_800611F8(name);
+            uint32 d;
+            p = FUN_800611F8(r_u32(0x800ba040 + 4 * i));
             if (i == 0)
                 ff_effect_palette_8006055C(p);
             d = 0x800b4ab8 + 512 * (++slot);
-            for (j = 0; j < 512; j += 16)
-            {
-                uint8 block[16];
-                memcpy(block, psx_addr(p + j, 16), 16);
-                memcpy(psx_addr(d + j, 16), block, 16);
-            }
+            ff_texture_copy_palette(p, d);
         }
         name = r_u32(0x800bbe38 + 4 * i);
         if (!name || !FUN_80061140(name))
             continue;
-        p = FUN_800611F8(name);
-        end = p + r_u32(0x80094570);
+        p = FUN_800611F8(r_u32(0x800bbe38 + 4 * i));
+        base = p;
         ordinal = 0;
-        w_u16(0x800af418 + 2 * i, r_u32(0x8009440c));
-        while (p < end)
+        w_u16(0x800af418 + 2 * i, r_u16(0x8009440c));
+        while (p < base + r_u32(0x80094570))
         {
-            sint32 w = r_s16(p), h = r_s16(p + 2), mode = r_s8(p + 5);
-            uint32 flags = r_u8(p + 4) & 3, size, allocated = 1, d;
+            sint32 w = r_s16(p), h = r_s16(p + 2);
+            uint32 flags = r_u8(p + 4) & 3, size, allocated = 1, d, pixels = (uint32)(w * h);
+            sint32 mode = r_s8(p + 5);
             p += 32;
-            if (w <= 0 || h <= 0 || w > 257 || h > 257 || mode < 0 || mode > 2)
+            if (w >= 258 || h >= 258)
             {
                 fprintf(stderr, "WIP: malformed texture record\n");
                 ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
             }
-            size = (((mode == 0) ? ((w * h) >> 1) + 32 : (mode == 1 ? w * h : 2 * w * h)) + 31) & ~31u;
+            size = ((mode == 0 ? (uint32)((sint32)pixels >> 1) + 32 : mode == 1 ? pixels : pixels << 1) + 31) & ~31u;
             if (w == 8 && h == 8)
             {
                 flags = 0;
@@ -2604,7 +2758,7 @@ uint32 FUN_80060394(uint32 all_characters)
                     }
                     if (!gpu_load_rect(p, (sint16)palx, (sint16)paly, 16, 1))
                         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-                    paly++;
+                    paly = (sint32)((uint32)paly + 1);
                     left--;
                     p += 32;
                     size -= 32;
@@ -2614,6 +2768,7 @@ uint32 FUN_80060394(uint32 all_characters)
                 FUN_80066ACC(w, h, mode, rect);
                 if (!ff_load_image(rect, p))
                     ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+                DrawSync(0);
                 memcpy(psx_addr(rect, 8), saved_rect, 8);
                 p += size;
             }
@@ -2651,10 +2806,9 @@ uint32 FUN_80013848(void)
 {
     uint32 i, j, first[5], second[5], result = 2;
     for (i = 0; i < 5; i++)
-    {
         first[i] = r_u32(0x8008d4e0 + 4 * i);
+    for (i = 0; i < 5; i++)
         second[i] = r_u32(0x8008d4f4 + 4 * i);
-    }
     for (i = 0; i < 8; i++)
     {
         uint32 p = 0x800b4318 + 244 * i;
@@ -2665,23 +2819,26 @@ uint32 FUN_80013848(void)
         w_u32(p + 12, 69);
         w_u16(p + 74, 0);
         w_u8(p + 118, 0);
-        w_u8(p + 126, 255);
-        w_u8(p + 125, 255);
-        w_u8(p + 120, 255);
         w_u8(p + 116, 255);
+        w_u8(p + 120, 255);
+        w_u8(p + 125, 255);
+        w_u8(p + 126, 255);
         for (j = 54; j <= 60; j += 2)
             w_u16(p + j, 0);
         if (i >= 2)
             w_u16(p + 52, 65535);
         w_u8(p + 119, r_s16(p + 66) < 1 ? 62 : 0);
     }
-    memset(psx_addr(0x800ba210, 4032), 0, 4032);
+    for (i = 0; i < 4032; i++)
+        w_u8(0x800ba210 + i, 0);
     for (i = 0; i < 2; i++)
     {
         uint32 p = 0x800b4318 + 244 * i, meta = 0x800a8588 + 40 * i;
-        sint32 type = r_s16(p + 52);
+        sint32 type;
+        uint32 value;
         if (i && r_u32(0x800940b0) != 2)
             break;
+        type = r_s16(p + 52);
         if (type == -1)
             continue;
         if (type < 0 || type > 4)
@@ -2693,25 +2850,29 @@ uint32 FUN_80013848(void)
         w_u32(p + 184, 0);
         w_u8(meta + 5, (uint8)first[type]);
         w_u8(meta + 7, (uint8)second[type]);
-        w_u32(p + 240, r_u32(0x800b6e90 + 4 * type));
+        value = r_u32(0x800b6e90 + 4 * type);
+        w_u32(p + 240, value);
         if (i)
-            result = r_u32(p + 240);
+            result = value;
     }
     return result;
 }
 
 uint32 FUN_800526F0(void)
 {
-    memset(psx_addr(0x80094640, 32), 0, 32);
-    memset(psx_addr(0x80094374, 2), 0, 2);
+    uint32 i;
+    for (i = 0; i < 32; i++)
+        w_u8(0x80094640 + i, 0);
+    for (i = 0; i < 2; i++)
+        w_u8(0x80094374 + i, 0);
     return 0x80094374;
 }
 
 uint32 FUN_80018318(void)
 {
-    static const uint32 zero_words[] = {0x80093dc4, 0x80093dc0, 0x80093dbc, 0x800940a8, 0x800944d8, 0x80094410, 0x80093dd4, 0x80093dd0, 0x80094198, 0x80093e04, 0x80093ddc, 0x80093df0, 0x80093df8, 0x80093df4, 0x80094674, 0x800945d0};
-    static const uint32 later_words[] = {0x80093db8, 0x80093da8, 0x80093dac, 0x80093db0, 0x80093d60, 0x800941b8, 0x80093d24, 0x80093d20};
-    uint32 i, stage = r_u32(0x80093d58), shade;
+    static const uint32 zero_words[] = {0x80093dc4, 0x80093dc0, 0x80093dbc, 0x800940a8, 0x800944d8, 0x80094410, 0x80093dd4, 0x80093dd0, 0x80094198};
+    static const uint32 later_words[] = {0x80093db8, 0x80093da8, 0x80093dac, 0x80093db0};
+    uint32 i, stage, shade;
     w_u32(0x80093d04, 0);
     w_u32(0x80093d40, 0);
     w_u8(0x80093d48, 0);
@@ -2721,6 +2882,7 @@ uint32 FUN_80018318(void)
         w_u32(0x8009a3c8 + 36 * i, 0xffffffff);
     for (i = 0; i < 5; i++)
         w_u32(0x80094018 + 4 * i, 0);
+    stage = r_u32(0x80093d58);
     w_u32(0x800946b8, r_u32(0x800a7dc8 + 4 * stage));
     w_u32(0x80093e1c, 1);
     for (i = 0; i < sizeof(zero_words) / sizeof(zero_words[0]); i++)
@@ -2728,36 +2890,51 @@ uint32 FUN_80018318(void)
     w_u16(0x8008d492, 0);
     w_u8(0x80093dda, 0);
     w_u8(0x80093dd8, 0);
+    w_u32(0x80093e04, 0);
+    w_u32(0x80093ddc, 0);
     w_u8(0x80093e00, 0);
+    w_u32(0x80093df0, 0);
+    w_u32(0x80093df8, 0);
+    w_u32(0x80093df4, 0);
+    w_u32(0x80094674, 0);
+    w_u32(0x800945d0, 0);
     if (stage == 2)
         w_u32(0x80094674, 32);
     for (i = 0; i < sizeof(later_words) / sizeof(later_words[0]); i++)
         w_u32(later_words[i], 0);
     w_u32(0x80093db4, 2);
+    w_u32(0x80093d60, 0);
     w_u8(0x800941a4, 0);
+    w_u32(0x800941b8, 0);
     w_u8(0x80093dd9, 0);
     w_u32(0x80093e1c, 0xffffffff);
+    w_u32(0x80093d24, 0);
+    w_u32(0x80093d20, 0);
     FUN_800526F0();
     w_u32(0x80094554, 0xffffffff);
     w_u32(0x80094550, 0xffffffff);
+    stage = r_u32(0x80093d58);
     w_u8(0x80094670, stage == 2);
     if (stage == 2)
         w_u8(0x80093dd9, 1);
+    stage = r_u32(0x80093d58);
     shade = (stage == 0 || stage - 8 < 2 || stage - 10 < 2 || stage - 12 < 2 || stage == 16 || stage == 19 || stage - 21 < 2 || stage == 24) ? 0xffffffd0 : 0;
     w_u32(0x800941bc, shade);
     for (i = 0; i < 8; i++)
     {
         uint32 p = 0x800b4318 + 244 * i;
-        w_u8(p + 157, (uint8)shade);
-        w_u8(p + 158, (uint8)shade);
+        shade = r_u8(0x800941bc);
         w_u8(p + 159, (uint8)shade);
+        w_u8(p + 158, (uint8)shade);
+        w_u8(p + 157, (uint8)shade);
         w_u16(p + 88, 65535);
         w_u16(p + 138, 0);
         if (r_s16(p + 66) <= 0)
             w_u8(p + 119, 62);
     }
     w_u32(0x800947c8, 0);
-    memset(psx_addr(0x800944b8, 32), 255, 32);
+    for (i = 0; i < 32; i++)
+        w_u8(0x800944b8 + i, 255);
     return 0x800944b8;
 }
 
@@ -2925,28 +3102,28 @@ uint32 FUN_80060110(uint32 name, uint32 type, uint32 group)
 
 uint32 FUN_80061448(uint32 index, uint32 destination)
 {
-    uint32 attempt, name = r_u32(0x800b9bf0 + 4 * index);
+    uint32 attempt, entry = 0x800b9bf0 + 4 * index;
     w_u32(0x80094818, destination);
     for (attempt = 0; attempt < 5; attempt++)
     {
         sint32 size;
-        FUN_80067554(name, destination);
+        FUN_80067554(r_u32(entry), destination);
         size = (sint32)r_u32(0x80094570);
         if (size > 0)
         {
+            size = (sint32)r_u32(0x80094570);
             w_u32(0x800947d0, size);
             w_u32(0x80094038, destination);
             return size;
         }
     }
-    fprintf(stderr, "WIP: archive load failed (original fatal loop)\n");
     ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     return 0;
 }
 
 GDB_CALL sint32 FUN_80067554(uint32 name, uint32 destination)
 {
-    FF_FUNCTION_MARKER(0x80067554u, "GAME.EXE");
+    FUNCTION_MARKER(0x80067554u, "GAME.EXE");
     uint32 offset = destination & 0x1fffff;
     sint32 size;
     /* WIP CdSearchFile/Setloc/Read/ReadSync boundary: extracted files are copied
@@ -3195,11 +3372,12 @@ uint32 FUN_80069F78(void)
 }
 
 /* 4FBCC..4FEF4: return 0 at the first frame prefix, 1 on title timeout. */
-uint32 ff_menu_startup_8004FBCC(void)
+uint32 menu_initialize(void)
 {
-    uint32 actor, p, yaw, i;
+    uint32 actor, p, yaw, stage, texture, model;
+    sint32 index, sine;
     sint32 angle = -192;
-    w_u32(0x80093d68, 2); // TODO restore
+    w_u32(0x80093d68, 0);
     memset(psx_addr(0x800b4318, 1952), 0, 1952);
     FUN_80014498();
     w_u32(0x80093d50, 0);
@@ -3212,10 +3390,11 @@ uint32 ff_menu_startup_8004FBCC(void)
     FUN_80013848();
     w_u32(0x80093d58, 26);
     FUN_80061448(31, 0x116000);
-    w_u32(0x800946bc, r_u32(0x800b3e68));
-    if (r_u32(0x800a86d8 + 4 * 26) != 0x8005e7c0)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    FUN_8005E7C0();
+    stage = r_u32(0x80093d58);
+    model = r_u32(0x800b3e68);
+    texture = r_u32(0x800a86d8 + 4 * stage);
+    w_u32(0x800946bc, model);
+    ff_stage_textures_call(texture);
     FUN_80060394(1);
     FUN_80056CCC(197);
     w_u16(0x800b434c, 3);
@@ -3230,18 +3409,23 @@ uint32 ff_menu_startup_8004FBCC(void)
         p = actor + 52;
         yaw = (uint32)angle & 2047;
         w_u16(p + 4, (uint16)yaw);
+        yaw = (uint16)r_s16(p + 4);
+        index = r_s16(p + 4);
         w_u8(p + 70, 255);
         w_u16(p + 6, 0);
         w_u16(p + 8, 0);
         w_u16(p + 2, 0);
         w_u16(p + 10, (uint16)yaw);
-        w_u32(p - 12, (uint32)(sint32)r_s16(0x800802d0 + 2 * yaw) << 10);
-        w_u32(p - 4, 0xf3000000u - ((uint32)(sint32)r_s16(0x800802d0 + 2 * ((yaw + 512) & 2047)) << 10));
+        sine = r_s16(0x800802d0 + 2 * (uint32)index);
+        index = r_s16(p + 4);
+        w_u32(p - 12, (uint32)sine << 10);
+        w_u32(p - 4, 0xf3000000 - ((uint32)(sint32)r_s16(0x800802d0 + 2 * (((uint32)index + 512) & 2047)) << 10));
         w_u32(actor, 0);
+        index = r_s16(p);
         w_u32(p - 48, 0xffffffff);
         w_u32(p - 44, 0);
         w_u32(p - 40, 69);
-        FUN_80019F00(actor, r_u32(0x800b3be8 + 4 * (uint32)r_s16(p)), 69);
+        FUN_80019F00(actor, r_u32(0x800b3be8 + 4 * (uint32)index), 69);
     }
     FUN_8005EC90();
     FUN_8005FB00(0);
@@ -3252,11 +3436,12 @@ uint32 ff_menu_startup_8004FBCC(void)
     w_u32(0x8008d4a8, 0xfef00000);
     w_u16(0x800941a6, 0);
     w_u16(0x8009419c, 0);
-    for (i = 0; i < 3; i++)
-    {
-        w_u32(0x800942c8 + 8 * i, 0);
-        w_u32(0x80094474 + 4 * i, 0);
-    }
+    w_u32(0x800942d8, 0);
+    w_u32(0x800942d0, 0);
+    w_u32(0x800942c8, 0);
+    w_u32(0x8009447c, 0);
+    w_u32(0x80094478, 0);
+    w_u32(0x80094474, 0);
     w_u16(0x8008d490, 0);
     w_u32(0x8008d4a4, 0);
     w_u32(0x8008d4ac, 0xef800000);
@@ -3270,12 +3455,31 @@ uint32 ff_menu_startup_8004FBCC(void)
     w_u32(0x80092794, 0xffffffff);
     w_u32(0x80092790, 0xffffffff);
     w_u32(0x800927ec, 0x80050270);
-    for (i = 0; i < 4; i++)
-        w_u32(0x8009276c + 4 * i, 0);
+    w_u32(0x80092770, 0);
+    w_u32(0x8009276c, 0);
+    w_u32(0x80092778, 0);
+    w_u32(0x80092774, 0);
     w_u8(0x80094000, 0);
     w_u32(0x80092730, 0);
     w_u32(0x8009272c, 0);
     w_u32(0x80092734, 0);
+    return 0;
+}
+
+GDB_CALL uint32 menu_run(void)
+{
+    uint32 timeout;
+    FUNCTION_MARKER(0x8004fbcc, "GAME.EXE");
+    timeout = menu_initialize();
+    ff_services.frontend_frame = NULL;
+    if (timeout)
+        return 1;
+    do
+    {
+        menu_prepare_frame();
+    } while (!menu_update_frame());
+    FUN_8005F214();
+    FUN_80056ECC();
     return 0;
 }
 
@@ -4635,11 +4839,11 @@ uint32 FUN_80045BE4(void)
     w_u32(0x800af24c, 0x80055770);             /* 80045FBC */
     w_u32(0x800af2c4, 0x80055918);             /* 80045FC8 */
     w_u32(0x800af308, 0x800565a4);             /* 80045FD4 */
-    ff_init_copy289(0x8009cd48, 0x800aee90);    /* 80045FE8 */
+    ff_init_copy289(0x8009cd48, 0x800aee90);   /* 80045FE8 */
     w_u32(0x8009cfe0, 0x8004cb88);             /* 80046030 */
     w_u32(0x8009cfe4, 0x8004cd5c);             /* 8004603C */
     w_u32(0x8009cfec, 0x8004ce48);             /* 80046048 */
-    ff_init_copy289(0x80099f40, 0x800aee90);    /* 80046060 */
+    ff_init_copy289(0x80099f40, 0x800aee90);   /* 80046060 */
     w_u32(0x8009a368, 0x8004d2d4);             /* 800460A8 */
     w_u32(0x8009a36c, 0x8004d20c);             /* 800460B4 */
     w_u32(0x8009a370, 0x8004d288);             /* 800460C0 */
@@ -5189,7 +5393,7 @@ uint32 FUN_8003D370(void)
     w_u16(0x8009ec54, 0xf000);                 /* 8003DF18 */
     w_u16(0x8009ec56, 0xc400);                 /* 8003DF20 */
     w_u16(0x8009ec5c, 0xff90);                 /* 8003DF28 */
-    memset(psx_addr(0x80094578, 87), 0, 87);      /* 8003DF38 */
+    memset(psx_addr(0x80094578, 87), 0, 87);   /* 8003DF38 */
     w_u8(0x8009458c, 0x0);                     /* 8003DF48 */
     w_u8(0x8009458d, 0x0);                     /* 8003DF4C */
     w_u8(0x8009459c, 0x63);                    /* 8003DF54 */
@@ -5623,13 +5827,13 @@ uint32 FUN_8003D370(void)
 
 GDB_CALL sint32 FUN_8006A108(uint32 first, uint32 second, uint32 third)
 {
-    FF_FUNCTION_MARKER(0x8006a108u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006a108u, "GAME.EXE");
     sint32 result;
     FUN_800678E8();
     FUN_8005703C();
     do
     {
-        ff_game_prepare_80058634_stage0();
+        frame_prepare();
         FUN_8005C2A0();
         FUN_80061B7C(first, 32, 64);
         FUN_80061B7C(second, 32, 80);

@@ -5,9 +5,18 @@
 /* 5C740: object-local transform, with wrapped 32-bit camera subtraction. */
 GDB_CALL void FUN_8005C740(uint32 object)
 {
-    uint32 type = r_u32(object);
+    uint32 x, y, z, camera_x, camera_y, camera_z, type, height;
     sint32 angle;
-    FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) + r_u32(0x800990d8 + 4u * type) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
+    x = r_u32(object + 4);
+    camera_x = r_u32(0x8008d4a4);
+    type = r_u32(object);
+    y = r_u32(object + 8);
+    height = r_u32(0x800990d8 + 4u * type);
+    y += height;
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(object + 12);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
     FUN_800101CC(32768);
     angle = r_s16(object + 16);
     if (angle)
@@ -115,8 +124,8 @@ GDB_CALL uint32 FUN_8005C808(uint32 object)
 
 GDB_CALL uint32 FUN_8005D820(uint32 object)
 {
-    uint32 type = r_u32(object), a, b;
-    sint32 flags;
+    uint32 type = r_u32(object), a, selected;
+    sint32 flags, timer;
     FUN_80010040();
     FUN_8005C740(object);
     flags = r_s16(object + 22);
@@ -124,7 +133,7 @@ GDB_CALL uint32 FUN_8005D820(uint32 object)
     {
         return FUN_80010028();
     }
-    if (type - 496u < 2u && flags > 0)
+    if (type - 496u < 2u && r_s16(object + 22) > 0)
         FUN_8002BDD0(object);
     if (!r_u32(object + 8) && !r_s16(object + 24))
     {
@@ -137,17 +146,22 @@ GDB_CALL uint32 FUN_8005D820(uint32 object)
         if (type == 515)
             FUN_800100C4(0, 2621440, -2097152);
         a = r_u32(0x80094550);
-        b = r_u32(0x80094554);
-        if (((a != 0xffffffffu && 0x8009a3c8 + 36u * a == object) || (b != 0xffffffffu && 0x8009a3c8 + 36u * b == object)) && !r_u8(0x80093dd8) && !(r_u32(0x8008d4d4) & 31))
+        selected = a != 0xffffffffu && 0x8009a3c8 + 36u * a == object;
+        if (!selected)
+        {
+            a = r_u32(0x80094554);
+            selected = a != 0xffffffffu && 0x8009a3c8 + 36u * a == object;
+        }
+        if (selected && !r_u8(0x80093dd8) && !(r_u32(0x8008d4d4) & 31))
             w_u32(0x8008d4bc, 0x2cffffff);
         ff_static_model_80010B18(r_u32(0x80081720 + 4u * type), 0, 0);
     }
     else
     {
         ff_static_model_80010B18(r_u32(0x80081720 + 4u * type), 0, 0);
-        if (type == 683 && r_s16(object + 28) > 0)
+        if (type == 683 && (timer = r_s16(object + 28)) > 0)
         {
-            w_u16(object + 28, (uint16)(r_s16(object + 28) - 1));
+            w_u16(object + 28, (uint16)(timer - 1));
             FUN_800104A0(8192);
             FUN_800100C4(0, 0, 9437184);
             ff_static_model_80010B18(r_u32(0x800821d4 + 4u * (uint32)(sint32)r_s16(object + 28)), 0, 0);
@@ -578,7 +592,7 @@ GDB_CALL sint32 ff_characters_800593FC(void)
 /* 2BDD0: weapon effect intensity groups, projected depth bias and sprite. */
 GDB_CALL uint32 FUN_8002BDD0(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002bdd0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002bdd0u, "GAME.EXE");
     sint32 group = (r_s16(object + 22) + 29) / 30, position[4];
     uint32 temp = 0x801fc0e0;
     int i;
@@ -598,7 +612,7 @@ GDB_CALL uint32 FUN_8002BDD0(uint32 object)
 /* 5D67C: settled debris local transform and kind-dependent origin bias. */
 GDB_CALL uint32 FUN_8005D67C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d67cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d67cu, "GAME.EXE");
     uint32 kind;
     FUN_80010040();
     FUN_8005C740(object);
@@ -611,7 +625,7 @@ GDB_CALL uint32 FUN_8005D67C(uint32 object)
 /* 5B178: base and two hinged panels, caller owns the outer transform. */
 GDB_CALL uint32 FUN_8005B178(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b178u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b178u, "GAME.EXE");
     sint32 phase = r_s16(object + 28), height, angle;
     uint32 offset = (uint32)(phase < 3 ? phase : 2) << 9;
     height = (r_s16(0x800802d0 + offset) * 5) >> 12;

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #if defined(_WIN32)
-#include <windows.h>
+    #include <windows.h>
 #endif
 
 /* Required SDK data bindings from reviewed GAME GPU/CD entries */
@@ -92,23 +92,43 @@ static uint32 movie_service(uint32 address, uint32 a, uint32 b, uint32 c, uint32
 {
     switch (address)
     {
-    case 0x80012bbc: return ResetCallbackPSX();
-    case 0x8001772c: return CdInit();
-    case 0x80013808:
-    {
-        uint32 result = InitPAD(a, b, c, d);
-        if (movie_smoke_index >= 0)
-            xport_input_override(1, movie_smoke_buttons);
-        return result;
-    }
-    case 0x800138a4: return StartPAD();
-    case 0x800138d4: PadStopCom(); return 0;
-    case 0x80014658: return ResetGraph((sint32)a);
-    case 0x800148f0: return SetGraphDebug((sint32)a);
-    case 0x80014a7c: SetDispMask((sint32)a); return 0;
-    case 0x80012cb0: return StopCallback();
-    case 0x800136ac: FlushCache(); return 0;
-    default: ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); return 0;
+        case 0x80012bbc:
+            return ResetCallbackPSX();
+        case 0x8001772c:
+            return CdInit();
+        case 0x80013808:
+        {
+            uint32 result = InitPAD(a, b, c, d);
+            if (movie_smoke_index >= 0)
+                xport_input_override(1, movie_smoke_buttons);
+            return result;
+        }
+        case 0x800138a4:
+        {
+            uint32 result = StartPAD();
+            /* The original movie reader accepts only digital PAD reports */
+            PadSetMainMode(0, 0, 3);
+            PadSetMainMode(0x10, 0, 3);
+            return result;
+        }
+        case 0x800138d4:
+            PadStopCom();
+            return 0;
+        case 0x80014658:
+            return ResetGraph((sint32)a);
+        case 0x800148f0:
+            return SetGraphDebug((sint32)a);
+        case 0x80014a7c:
+            SetDispMask((sint32)a);
+            return 0;
+        case 0x80012cb0:
+            return StopCallback();
+        case 0x800136ac:
+            FlushCache();
+            return 0;
+        default:
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+            return 0;
     }
 }
 

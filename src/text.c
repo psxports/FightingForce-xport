@@ -2,7 +2,7 @@
 
 GDB_CALL sint32 FUN_80061800(uint32 text, uint32 buffer)
 {
-    FF_FUNCTION_MARKER(0x80061800u, "GAME.EXE");
+    FUNCTION_MARKER(0x80061800u, "GAME.EXE");
     uint32 p = buffer, word = buffer, line_width = 0, word_width = 0, i;
     uint8 ch;
     for (i = 0; i < 40; i++)
@@ -46,7 +46,7 @@ GDB_CALL sint32 FUN_80061800(uint32 text, uint32 buffer)
             }
         }
         letter = r_s8(p++);
-        word_width += (uint32)(sint32) r_s8(0x800800d0 + (uint32)FUN_80018670(letter));
+        word_width += (uint32)(sint32)r_s8(0x800800d0 + (uint32)FUN_80018670(letter));
     }
     w_u32(0x80094330, 0);
     for (;;)
@@ -62,7 +62,7 @@ GDB_CALL sint32 FUN_80061800(uint32 text, uint32 buffer)
 
 GDB_CALL sint32 FUN_8006159C(uint32 text, sint32 x, sint32 y, sint32 phase)
 {
-    FF_FUNCTION_MARKER(0x8006159cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006159cu, "GAME.EXE");
     sint32 position[4], letter, sprite, offset, step, width;
     position[1] = y;
     position[2] = 128;
@@ -96,13 +96,13 @@ GDB_CALL sint32 FUN_8006159C(uint32 text, sint32 x, sint32 y, sint32 phase)
 
 GDB_CALL sint32 FUN_800616DC(uint32 text, sint32 x, sint32 y, sint32 phase)
 {
-    FF_FUNCTION_MARKER(0x800616dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800616dcu, "GAME.EXE");
     sint32 position[4], letter, sprite, offset, step;
     position[1] = y;
     position[2] = 128;
     while (r_u8(text))
     {
-        letter = (sint32) r_s8(text++) - 65;
+        letter = (sint32)r_s8(text++) - 65;
         sprite = letter + r_s16(0x8009ad40 + 2u * (uint32)(sint32)r_s16(0x800af4a8));
         if (phase < 0)
             offset = 400;
@@ -123,7 +123,7 @@ GDB_CALL sint32 FUN_800616DC(uint32 text, sint32 x, sint32 y, sint32 phase)
 
 GDB_CALL sint32 FUN_800619E8(sint32 y)
 {
-    FF_FUNCTION_MARKER(0x800619e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800619e8u, "GAME.EXE");
     sint32 count = (sint32)r_u32(0x80094330);
     uint32 i = 0;
     if (count <= 0)
@@ -148,14 +148,14 @@ GDB_CALL sint32 FUN_800619E8(sint32 y)
 
 GDB_CALL sint32 FUN_80061CB8(uint32 text, sint32 x, sint32 y)
 {
-    FF_FUNCTION_MARKER(0x80061cb8u, "GAME.EXE");
+    FUNCTION_MARKER(0x80061cb8u, "GAME.EXE");
     uint32 width = (uint32)FUN_8005EFB8(text);
     return FUN_80061B7C(text, (sint32)((uint32)x + 10u - width), y);
 }
 
 GDB_CALL uint32 FUN_8005EEDC(void)
 {
-    FF_FUNCTION_MARKER(0x8005eedcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005eedcu, "GAME.EXE");
     sint32 level;
     w_u16(0x80093e14, 0);
     w_u16(0x80093e12, 0);
@@ -167,7 +167,7 @@ GDB_CALL uint32 FUN_8005EEDC(void)
 
 GDB_CALL uint32 FUN_8005EF30(void)
 {
-    FF_FUNCTION_MARKER(0x8005ef30u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005ef30u, "GAME.EXE");
     sint32 level;
     uint32 result;
     for (level = 256; level > 0; level -= 32)
@@ -182,7 +182,7 @@ GDB_CALL uint32 FUN_8005EF30(void)
  * just like the existing 12594 sprite path; no emulated RAM scratch alias. */
 GDB_CALL uint32 FUN_8005EF80(sint32 x, sint32 y, uint32 texture)
 {
-    FF_FUNCTION_MARKER(0x8005ef80u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005ef80u, "GAME.EXE");
     sint32 position[3] = {x, y, 256};
     return FUN_800124A0(position, texture);
 }
@@ -419,43 +419,71 @@ GDB_CALL sint32 FUN_80018670(sint32 value)
 GDB_CALL sint32 FUN_8005EFB8(uint32 text)
 {
     uint32 width = 0;
-    while (r_u8(text))
+    uint8 character = r_u8(text);
+    if (character)
     {
-        sint32 ch = r_s8(text++);
-        if (ch == 32)
-            width += 6;
-        else
+        do
         {
-            sint32 index = FUN_80018670(ch);
-            width += (sint32) r_s8(0x800800d0u + (uint32)index);
-        }
+            sint32 ch = (sint8)character;
+            text++;
+            if (ch == 32)
+                width += 6;
+            else
+            {
+                sint32 index = FUN_80018670(ch);
+                width += (sint32)r_s8(0x800800d0u + (uint32)index);
+            }
+            character = r_u8(text);
+        } while (r_s8(text));
     }
     return (sint32)(width + 10u);
 }
 
-/* Original GAME.EXE:80012390..800124A0. The two packets are inserted LIFO:
- * draw-mode packet first in the final chain, then the textured sprite. */
+/* Native text view for original stack-local strings, using the same guest font */
+sint32 text_width_host(const char *text)
+{
+    uint32 width = 0;
+    while (*text)
+    {
+        sint32 ch = (sint8)*text++;
+        if (ch == 32)
+            width += 6;
+        else
+            width += (sint32)r_s8(0x800800d0 + (uint32)FUN_80018670(ch));
+    }
+    return (sint32)(width + 10);
+}
+
+/* Draw-mode packet precedes the textured sprite in the final LIFO chain */
 GDB_CALL uint32 FUN_80012390(const sint32 *position, sint32 sprite)
 {
-    uint32 packet = r_u32(0x8008d4b0), descriptor = 0x800a8768u + (uint32)sprite * 12u;
+    uint32 packet = r_u32(0x8008d4b0), descriptor = 0x800a8768 + (uint32)sprite * 12;
+    sint32 x = (sint16)position[0], y = (sint16)position[1];
     uint32 uv_clut = r_u32(descriptor), mode = r_u32(descriptor + 4), end = r_u32(descriptor + 8);
-    uint32 semitrans = uv_clut & 1u, uv = uv_clut - semitrans;
-    uint32 delta = ((end >> 16) - uv) & 65535u;
-    uint32 table = r_u32(0x8008d4d8), ot = r_u32(0x8008d4b4);
-    uint32 bucket = ot + (sint32)r_s16(table + (uint32)(position[2] >> 2) * 2u);
+    uint32 semitrans = uv_clut & 1, uv = uv_clut - semitrans;
+    sint64 difference = (sint64)(end >> 16) - (sint32)uv;
+    uint32 delta, ot, table, bucket;
+    sint32 depth;
+    if (difference < -2147483647LL - 1 || difference > 2147483647LL)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    delta = (uint32)difference & 65535;
     w_u32(packet + 12, uv);
-    w_u32(packet + 4, (semitrans << 25) | 0x65000000u);
-    w_u16(packet + 8, (uint16)position[0]);
-    w_u16(packet + 10, (uint16)position[1]);
-    w_u16(packet + 16, (uint16)((delta & 255u) + 1));
+    w_u32(packet + 4, (semitrans << 25) | 0x65000000);
+    w_u16(packet + 8, (uint16)x);
+    w_u16(packet + 10, (uint16)y);
+    w_u16(packet + 16, (uint16)((delta & 255) + 1));
     w_u16(packet + 18, (uint16)((delta >> 8) + 1));
-    w_u32(packet, r_u32(bucket) | 0x04000000u);
-    w_u32(bucket, packet & 0xffffffu);
+    ot = r_u32(0x8008d4b4);
+    depth = position[2];
+    table = r_u32(0x8008d4d8);
+    bucket = ot + (sint32)r_s16(table + (uint32)(depth >> 2) * 2);
+    w_u32(packet, r_u32(bucket) | 0x04000000);
+    w_u32(bucket, packet & 0xffffff);
     packet += 20;
-    w_u32(packet + 4, (mode >> 16) + 0xe1000000u + 1024u);
+    w_u32(packet + 4, (mode >> 16) + 0xe1000000 + 1024);
     w_u32(packet + 8, 0);
-    w_u32(packet, r_u32(bucket) | 0x02000000u);
-    w_u32(bucket, packet & 0xffffffu);
+    w_u32(packet, r_u32(bucket) | 0x02000000);
+    w_u32(bucket, packet & 0xffffff);
     w_u32(0x8008d4b0, packet + 12);
     return 0x8008d4b0;
 }
@@ -516,10 +544,29 @@ GDB_CALL sint32 FUN_80061B7C(uint32 text, sint32 x, sint32 y)
         {
             sint32 glyph = FUN_80018670(ch), font = r_s16(0x800af4a8);
             FUN_80012390(position, (sint32)((uint32)glyph + (sint32)r_s16(0x8009acc8u + (uint32)font * 2u)));
-            position[0] = (sint32)((uint32)position[0] + (sint32) r_s8(0x800800d0u + (uint32)glyph));
+            position[0] = (sint32)((uint32)position[0] + (sint32)r_s8(0x800800d0u + (uint32)glyph));
         }
     }
     return (sint32)((uint32)position[0] + 10u);
+}
+
+/* Native text view for original stack-local strings; packets stay in guest RAM */
+sint32 text_draw_host(const char *text, sint32 x, sint32 y)
+{
+    sint32 position[3] = {x, y, 0};
+    while (*text)
+    {
+        sint32 ch = (sint8)*text++;
+        if (ch == 32)
+            position[0] = (sint32)((uint32)position[0] + 6);
+        else
+        {
+            sint32 glyph = FUN_80018670(ch), font = r_s16(0x800af4a8);
+            FUN_80012390(position, (sint32)((uint32)glyph + (uint32)(sint32)r_s16(0x8009acc8 + (uint32)font * 2)));
+            position[0] = (sint32)((uint32)position[0] + (uint32)(sint32)r_s8(0x800800d0 + (uint32)glyph));
+        }
+    }
+    return (sint32)((uint32)position[0] + 10);
 }
 
 /* Original GAME.EXE:80061ADC..80061B28. SRA width/2, not C signed division. */
@@ -562,7 +609,9 @@ GDB_CALL void FUN_80012A00(uint32 packet, sint32 sprite, sint32 x, sint32 y)
  * GPU traversal masks to 24 bits. A host pointer must never enter this chain. */
 GDB_CALL uint32 FUN_80011E40(uint32 bucket, uint32 packet)
 {
-    uint32 previous = r_u32(bucket), tag = previous | (r_u32(packet) & 0xff000000u);
+    uint32 tag = (uint32)(sint32)r_s8(packet + 3) << 24;
+    uint32 previous = r_u32(bucket);
+    tag |= previous;
     w_u32(bucket, packet);
     w_u32(packet, tag);
     return previous;
@@ -576,19 +625,24 @@ GDB_CALL sint32 FUN_80062C0C(uint32 text, sint32 x, sint32 y, uint32 colors)
     sint32 width = FUN_8005EFB8(text);
     uint32 advance = 0;
     sint8 delta[6];
-    uint8 previous[6];
+    uint8 previous[6], character;
     int i;
     if (!width)
         return 0;
     for (i = 0; i < 6; i++)
     {
         int k = i < 3 ? i : i + 3;
-        delta[i] = (sint8)(r_u8(colors + k + 3) - r_u8(colors + k));
+        uint8 right = r_u8(colors + k + 3);
         previous[i] = r_u8(colors + k);
+        delta[i] = (sint8)(right - previous[i]);
     }
-    while (r_u8(text))
+    character = r_u8(text);
+    if (!character)
+        return (sint32)((uint32)x + 170);
+    do
     {
-        sint32 ch = r_s8(text++);
+        sint32 ch = (sint8)character;
+        text++;
         if (ch == 32)
             advance += 6;
         else
@@ -603,25 +657,27 @@ GDB_CALL sint32 FUN_80062C0C(uint32 text, sint32 x, sint32 y, uint32 colors)
             {
                 sint32 product = (sint32)((uint32)(sint32)delta[i] * advance);
                 int k = i < 3 ? i : i + 3;
-                /* Original BREAK 6 on signed division overflow. */
+                /* Original BREAK 6 on signed division overflow */
                 if (width == -1 && (uint32)product == 0x80000000u)
                     ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
                 next[i] = (uint8)((uint32)r_u8(colors + k) + (uint32)(product / width));
             }
             for (i = 0; i < 3; i++)
-            {
                 w_u8(packet + 4 + i, (uint8)(previous[i] * 8u - 128u));
+            for (i = 0; i < 3; i++)
                 w_u8(packet + 16 + i, (uint8)(next[i] * 8u - 128u));
+            for (i = 0; i < 3; i++)
                 w_u8(packet + 28 + i, (uint8)(next[i + 3] * 8u - 128u));
+            for (i = 0; i < 3; i++)
                 w_u8(packet + 40 + i, (uint8)(previous[i + 3] * 8u - 128u));
-            }
             FUN_80012A00(packet, (sint32)((uint32)glyph + (sint32)r_s16(0x8009acc8u + (uint32)r_s16(0x800af4a8) * 2u)), (sint32)((uint32)x + advance), y);
-            advance += (sint32) r_s8(0x800800d0u + (uint32)glyph);
+            advance += (sint32)r_s8(0x800800d0u + (uint32)glyph);
             FUN_80011E40(r_u32(0x8008d4b4) + 8188, packet);
             for (i = 0; i < 6; i++)
                 previous[i] = next[i];
         }
-    }
+        character = r_u8(text);
+    } while (r_s8(text));
     return (sint32)(advance + (uint32)x + 170u);
 }
 
@@ -803,7 +859,7 @@ GDB_CALL uint32 FUN_80061D0C(uint32 text, sint32 x, sint32 y)
         {
             digit -= 48;
             FUN_80012390(position, digit + r_s16(0x8009ad14u + 2u * (uint32)(sint32)r_s16(0x800af4a8)));
-            position[0] = (sint32)((uint32)position[0] + (sint32) r_s8(0x80080140u + 10u * (uint32)digit + (r_u8(text) & 15)));
+            position[0] = (sint32)((uint32)position[0] + (sint32)r_s8(0x80080140u + 10u * (uint32)digit + (r_u8(text) & 15)));
         }
     }
     return 0;
@@ -894,7 +950,7 @@ GDB_CALL uint32 FUN_8006351C(uint32 xy, uint32 actor)
 /* 61B28: centered text, arithmetic width/2, fixed palette93BE4. */
 GDB_CALL sint32 FUN_80061B28(uint32 text, sint32 y)
 {
-    FF_FUNCTION_MARKER(0x80061b28u, "GAME.EXE");
+    FUNCTION_MARKER(0x80061b28u, "GAME.EXE");
     sint32 width = FUN_8005EFB8(text);
     return FUN_80062C0C(text, (sint32)(160u - (uint32)(width >> 1)), y, 0x80093be4);
 }

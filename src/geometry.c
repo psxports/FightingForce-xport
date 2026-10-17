@@ -3,17 +3,18 @@
 
 GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
 {
-    FF_FUNCTION_MARKER(0x80057788u, "GAME.EXE");
-    uint32 start[3], end[3], step[3], current[3], point[3], saved[16], packet = 0x801fd220;
+    FUNCTION_MARKER(0x80057788u, "GAME.EXE");
+    uint32 start[3], end[3], step[3], current[3], point[3], saved[16], packet = 0x801fd220, tx, ty, tz;
     sint32 count, index, depth, old_depth, width, new_width;
     int i, j;
     static const uint16 styles[4] = {1373, 827, 1647, 553};
     for (i = 0; i < 3; ++i)
     {
         start[i] = r_u32(first + 4 * i);
-        end[i] = r_u32(second + 4 * i);
         current[i] = start[i];
     }
+    for (i = 0; i < 3; ++i)
+        end[i] = r_u32(second + 4 * i);
     count = FUN_800163F4((sint32)start[0] >> 16, (sint32)start[2] >> 16, (sint32)end[0] >> 16, (sint32)end[2] >> 16) >> 8;
     if (count < 3)
         count = 3;
@@ -22,7 +23,10 @@ GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
     for (i = 0; i < 16; ++i)
         saved[i] = r_u32(0x801fd200 + 4 * i);
     FUN_80010040();
-    FUN_800100C4((sint32)(start[0] - r_u32(0x8008d4a4)), (sint32)(start[1] - r_u32(0x8008d4a8)), (sint32)(start[2] - r_u32(0x8008d4ac)));
+    tx = r_u32(0x8008d4a4);
+    ty = r_u32(0x8008d4a8);
+    tz = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(start[0] - tx), (sint32)(start[1] - ty), (sint32)(start[2] - tz));
     FUN_800120BC(0, 0, 0, 0x801fd200);
     FUN_80010028();
     for (index = 1; index <= count; ++index)
@@ -38,7 +42,10 @@ GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
             for (i = 0; i < 3; ++i)
                 point[i] = current[i] + (((ff_rand_8006D348() & 127) - 64u) << 17);
         FUN_80010040();
-        FUN_800100C4((sint32)(point[0] - r_u32(0x8008d4a4)), (sint32)(point[1] - r_u32(0x8008d4a8)), (sint32)(point[2] - r_u32(0x8008d4ac)));
+        tx = r_u32(0x8008d4a4);
+        ty = r_u32(0x8008d4a8);
+        tz = r_u32(0x8008d4ac);
+        FUN_800100C4((sint32)(point[0] - tx), (sint32)(point[1] - ty), (sint32)(point[2] - tz));
         FUN_800120BC(0, 0, 0, 0x801fd210);
         FUN_80010028();
         if ((sint32)r_u32(0x801fd20c) < 4 && (sint32)r_u32(0x801fd21c) < 4)
@@ -85,7 +92,7 @@ GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
 
 GDB_CALL uint32 FUN_80046EF0(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80046ef0u, "GAME.EXE");
+    FUNCTION_MARKER(0x80046ef0u, "GAME.EXE");
     uint32 kind = r_u32(object), bias, state;
     int visible = 0;
     if (r_s16(object + 16))
@@ -123,7 +130,7 @@ GDB_CALL uint32 FUN_80046EF0(uint32 object)
 
 GDB_CALL uint32 FUN_8002A640(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002a640u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a640u, "GAME.EXE");
     sint32 amplitude, scale;
     uint32 offset;
     if (r_u32(0x80093d58) == 18 && (sint32)r_u32(object + 4) < (sint32)0xe5300000u)
@@ -156,7 +163,7 @@ GDB_CALL uint32 FUN_8002A640(uint32 object)
 
 GDB_CALL uint32 FUN_8002C55C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002c55cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002c55cu, "GAME.EXE");
     uint32 z, color;
     sint32 shade;
     FUN_80010040();
@@ -182,7 +189,7 @@ GDB_CALL uint32 FUN_8002C55C(uint32 object)
 
 GDB_CALL uint32 FUN_800454E0(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x800454e0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800454e0u, "GAME.EXE");
     FUN_8001033C(r_s16(object + 16));
     if (r_s16(object + 20))
         FUN_800104A0(r_s16(object + 20));
@@ -198,7 +205,7 @@ GDB_CALL uint32 FUN_800454E0(uint32 object)
 
 GDB_CALL uint32 FUN_8005B404(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b404u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b404u, "GAME.EXE");
     sint32 phase = r_s16(object + 28), height;
     if (phase >= 3)
         phase = 2;
@@ -218,7 +225,7 @@ GDB_CALL uint32 FUN_8005B404(uint32 object)
 
 GDB_CALL uint32 FUN_80032C4C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032c4cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80032c4cu, "GAME.EXE");
     FUN_80010040();
     if ((sint32)r_u32(object + 4) > 0x13000000)
         FUN_8001033C(32768);
@@ -236,7 +243,7 @@ GDB_CALL uint32 FUN_80032C4C(uint32 object)
 
 GDB_CALL uint32 FUN_8005B598(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b598u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b598u, "GAME.EXE");
     sint32 phase = r_s16(object + 28), height;
     if (phase >= 3)
         phase = 2;
@@ -255,7 +262,7 @@ GDB_CALL uint32 FUN_8005B598(uint32 object)
 
 GDB_CALL uint32 FUN_8005AD54(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005ad54u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005ad54u, "GAME.EXE");
     uint32 kind = r_u32(object);
     if (r_s16(object + 16))
         FUN_8001033C(r_s16(object + 16));
@@ -272,7 +279,7 @@ GDB_CALL uint32 FUN_8005AD54(uint32 object)
 
 GDB_CALL uint32 FUN_8002CAC4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002cac4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002cac4u, "GAME.EXE");
     FUN_80010040();
     FUN_8001033C((sint32)((uint32)(sint32)r_s16(object + 16) << 5));
     FUN_800104A0(-r_s16(object + 20));
@@ -295,7 +302,7 @@ static void object_rotations(uint32 object);
 
 GDB_CALL uint32 FUN_80032818(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032818u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032818u, "GAME.EXE");
     uint32 kind = r_u32(object), state, mode;
     sint32 x, z, bias;
     int draw = 0;
@@ -320,7 +327,7 @@ GDB_CALL uint32 FUN_80032818(uint32 object)
 
 GDB_CALL uint32 FUN_80032A48(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032a48u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032a48u, "GAME.EXE");
     sint16 angle = (sint16)FUN_8001614C(r_s16(object + 6), r_s16(object + 14), r_s16(0x800b4342), r_s16(0x800b434a));
     w_u16(object + 16, (uint16)angle);
     FUN_8001033C(angle);
@@ -329,7 +336,7 @@ GDB_CALL uint32 FUN_80032A48(uint32 object)
 
 GDB_CALL uint32 FUN_80032D70(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032d70u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032d70u, "GAME.EXE");
     if ((sint32)r_u32(0x80094674) <= 0 && !FUN_800473B0((sint32)0xee000000u))
         return 0;
     object_rotations(object);
@@ -338,7 +345,7 @@ GDB_CALL uint32 FUN_80032D70(uint32 object)
 
 GDB_CALL sint32 FUN_80032E20(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032e20u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032e20u, "GAME.EXE");
     sint32 result;
     if (r_s16(object + 16))
         FUN_8001033C(r_s16(object + 16));
@@ -358,20 +365,20 @@ static uint32 object_faded_model(uint32 object)
 
 GDB_CALL uint32 FUN_8005B71C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b71cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b71cu, "GAME.EXE");
     return object_faded_model(object);
 }
 
 GDB_CALL uint32 FUN_8005C0E8(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005c0e8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005c0e8u, "GAME.EXE");
     FUN_80012190();
     return object_faded_model(object);
 }
 
 GDB_CALL uint32 FUN_800428EC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x800428ecu, "GAME.EXE");
+    FUNCTION_MARKER(0x800428ecu, "GAME.EXE");
     uint32 state = r_u32(0x80093d60);
     if ((sint32)state <= 0)
         return state;
@@ -380,7 +387,7 @@ GDB_CALL uint32 FUN_800428EC(uint32 object)
 
 GDB_CALL uint32 FUN_80042848(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80042848u, "GAME.EXE");
+    FUNCTION_MARKER(0x80042848u, "GAME.EXE");
     if (r_u32(0x80093d60) >= 2u)
         return 0;
     return object_faded_model(object);
@@ -388,7 +395,7 @@ GDB_CALL uint32 FUN_80042848(uint32 object)
 
 GDB_CALL uint32 FUN_80032D44(void)
 {
-    FF_FUNCTION_MARKER(0x80032d44u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032d44u, "GAME.EXE");
     return FUN_80011594(r_u32(0x80081b84), 0, 1024);
 }
 
@@ -396,7 +403,7 @@ static sint32 ff_project_local(sint32 x, sint32 y, sint32 z, sint32 dest[4]);
 
 GDB_CALL uint32 FUN_8005B844(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b844u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b844u, "GAME.EXE");
     sint32 brightness = (r_s16(0x800802d0 + ((r_u32(0x80093dd0) << 5) & 0x7e0u)) >> 9) + 65, point[4], distance, amount, scale;
     uint32 cutoff;
     ff_project_local(0, 0, 0, point);
@@ -428,7 +435,7 @@ GDB_CALL uint32 FUN_8005B844(uint32 object)
 
 GDB_CALL uint32 FUN_8005BA28(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005ba28u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005ba28u, "GAME.EXE");
     sint32 point[4], distance;
     uint32 phase, x, z, cutoff, color;
     FUN_80010040();
@@ -457,7 +464,7 @@ GDB_CALL uint32 FUN_8005BA28(uint32 object)
 
 GDB_CALL uint32 FUN_8005CEE4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005cee4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005cee4u, "GAME.EXE");
     sint32 a[4], b[4];
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
@@ -482,7 +489,7 @@ GDB_CALL uint32 FUN_8005CEE4(uint32 object)
 
 GDB_CALL uint32 FUN_8005D024(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d024u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d024u, "GAME.EXE");
     sint32 a[4], b[4];
     uint32 color;
     FUN_80010040();
@@ -501,41 +508,41 @@ GDB_CALL uint32 FUN_8005D024(uint32 object)
     return FUN_80010028();
 }
 
-/* PsyQ 72480/724F0 host boundary: SQR without SF, even LZCR and
- * reciprocal-sqrt table, then GPF without SF. COP2 register side effects WIP. */
+/* Original 72480/724F0 sequence, including COP2 bank and RGB FIFO effects */
 static void ff_normalize_screen(sint32 x, sint32 y, sint16 output[2])
 {
-    sint32 sx = (sint16)x, sy = (sint16)y, sum, scaled, shift;
-    uint32 bits, lz = 0, index, factor;
-    int64_t total = (int64_t)sx * sx + (int64_t)sy * sy;
+    sint32 sum, scaled, shift, factor;
+    uint32 leading;
+    int64_t total;
+    SVECTOR input;
+    VECTOR product;
+    xport_gte_write_data(9, (uint32)x);
+    xport_gte_write_data(10, (uint32)y);
+    xport_gte_write_data(11, 0);
+    xport_gte_execute(0xa00428);
+    total = (int64_t)(sint32)xport_gte_read_data(25);
+    total += (sint32)xport_gte_read_data(26);
+    total += (sint32)xport_gte_read_data(27);
     if (total > 2147483647)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     sum = (sint32)total;
-    bits = (uint32)sum;
-    if (sum < 0)
-        bits = ~bits;
-    if (!bits)
-        lz = 32;
-    else
-    {
-        while (!(bits & 0x80000000u))
-        {
-            lz++;
-            bits <<= 1;
-        }
-    }
-    lz &= ~1u;
-    shift = (31 - (sint32)lz) >> 1;
-    scaled = lz >= 24 ? (sint32)((uint32)sum << ((lz - 24) & 31u)) : sum >> ((24 - lz) & 31u);
-    index = ((uint32)scaled - 64u) * 2;
-    factor = (uint16)r_s16(0x800874b4 + index);
-    output[0] = (sint16)((sint32)((uint32)sx * factor) >> ((uint32)shift & 31u));
-    output[1] = (sint16)((sint32)((uint32)sy * factor) >> ((uint32)shift & 31u));
+    xport_gte_write_data(30, (uint32)sum);
+    leading = xport_gte_read_data(31) & ~1;
+    shift = (31 - (sint32)leading) >> 1;
+    scaled = leading >= 24 ? (sint32)((uint32)sum << ((leading - 24) & 31)) : sum >> ((24 - leading) & 31);
+    factor = r_s16(0x800874b4 + ((uint32)scaled - 64) * 2);
+    input.vx = (sint16)x;
+    input.vy = (sint16)y;
+    input.vz = 0;
+    input.pad = 0;
+    gte_gpf0(&input, factor, &product);
+    output[0] = (sint16)(product.vx >> ((uint32)shift & 31));
+    output[1] = (sint16)(product.vy >> ((uint32)shift & 31));
 }
 
 GDB_CALL uint32 FUN_8006A1B4(const sint32 *a, const sint32 *b, sint32 sprite)
 {
-    FF_FUNCTION_MARKER(0x8006a1b4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006a1b4u, "GAME.EXE");
     uint32 packet = r_u32(0x8008d4b0), texture = 0x800a8768 + 12u * (uint32)sprite, depth = (uint32)((sint32)((uint32)a[2] + (uint32)b[2]) >> 3), color;
     sint16 normal[2];
     sint32 numerator, width, dx, dy, ot;
@@ -563,7 +570,7 @@ GDB_CALL uint32 FUN_8006A1B4(const sint32 *a, const sint32 *b, sint32 sprite)
     {
         uint32 uv = texture + (pass ? 8u : 0u), p = packet + (pass ? 24u : 8u);
         point = pass ? b : a;
-        width = ((sint32) r_s8(uv + (pass ? 2u : 4u)) - (sint32) r_s8(uv)) >> 1;
+        width = ((sint32)r_s8(uv + (pass ? 2u : 4u)) - (sint32)r_s8(uv)) >> 1;
         numerator = (sint32)((uint32)width * (uint32)point[3]);
         if (!point[2] || (point[2] == -1 && (uint32)numerator == 0x80000000u))
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
@@ -581,7 +588,7 @@ GDB_CALL uint32 FUN_8006A1B4(const sint32 *a, const sint32 *b, sint32 sprite)
 
 GDB_CALL uint32 FUN_8005CDBC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005cdbcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005cdbcu, "GAME.EXE");
     sint32 a[4], b[4];
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
@@ -600,7 +607,7 @@ GDB_CALL uint32 FUN_8005CDBC(uint32 object)
 
 GDB_CALL uint32 FUN_8005DAD4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005dad4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005dad4u, "GAME.EXE");
     sint32 position[4];
     FUN_80010040();
     FUN_8005C740(object);
@@ -622,7 +629,7 @@ GDB_CALL uint32 FUN_8005DAD4(uint32 object)
 
 GDB_CALL uint32 FUN_8005D1FC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d1fcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d1fcu, "GAME.EXE");
     sint32 position[4];
     uint32 kind;
     FUN_80010040();
@@ -647,7 +654,7 @@ GDB_CALL uint32 FUN_8005D1FC(uint32 object)
 
 GDB_CALL uint32 FUN_8005C598(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005c598u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005c598u, "GAME.EXE");
     sint32 position[4];
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
@@ -659,7 +666,7 @@ GDB_CALL uint32 FUN_8005C598(uint32 object)
 
 GDB_CALL uint32 FUN_8005D53C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d53cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d53cu, "GAME.EXE");
     sint32 position[4];
     uint32 color;
     FUN_80010040();
@@ -679,7 +686,7 @@ GDB_CALL uint32 FUN_8005D53C(uint32 object)
 
 GDB_CALL uint32 FUN_8005B4F8(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b4f8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b4f8u, "GAME.EXE");
     if (r_s16(object + 16))
         FUN_8001033C(r_s16(object + 16));
     FUN_800100C4(0, 0x280000, 0);
@@ -692,7 +699,7 @@ GDB_CALL uint32 FUN_8005B4F8(uint32 object)
 
 GDB_CALL uint32 FUN_8005B350(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b350u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b350u, "GAME.EXE");
     if (r_s16(object + 16))
         FUN_8001033C(r_s16(object + 16));
     ff_static_model_80010B18(r_u32(0x80081830), 0, 8192);
@@ -706,7 +713,7 @@ GDB_CALL uint32 FUN_8005B350(uint32 object)
 
 GDB_CALL uint32 FUN_80044CD4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80044cd4u, "GAME.EXE");
+    FUNCTION_MARKER(0x80044cd4u, "GAME.EXE");
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
     if (r_s16(object + 20))
@@ -721,7 +728,7 @@ GDB_CALL uint32 FUN_80044CD4(uint32 object)
 
 GDB_CALL uint32 FUN_8005CD1C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005cd1cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005cd1cu, "GAME.EXE");
     sint32 position[4];
     FUN_80010040();
     FUN_8005C740(object);
@@ -737,7 +744,7 @@ GDB_CALL uint32 FUN_8005CD1C(uint32 object)
 
 GDB_CALL uint32 FUN_8005BBAC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005bbacu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bbacu, "GAME.EXE");
     sint32 position[4];
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
@@ -753,7 +760,7 @@ GDB_CALL uint32 FUN_8005BBAC(uint32 object)
 /* 11594: distance-faded quads and lines; GTE projection uses the port boundary. */
 GDB_CALL uint32 FUN_80011590(uint32 model, uint32 unused, sint32 bias)
 {
-    FF_FUNCTION_MARKER(0x80011590u, "GAME.EXE");
+    FUNCTION_MARKER(0x80011590u, "GAME.EXE");
     /* No resolved call targets11590; the word is normally read as cutoff data.
   * If entered as code, SLL V0,ZERO,16 falls through11594. V0 is overwritten
   * at11598 before any read, so the existing11594 body is the exact successor. */
@@ -762,7 +769,7 @@ GDB_CALL uint32 FUN_80011590(uint32 model, uint32 unused, sint32 bias)
 
 GDB_CALL uint32 FUN_80011594(uint32 model, uint32 unused, sint32 bias)
 {
-    FF_FUNCTION_MARKER(0x80011594u, "GAME.EXE");
+    FUNCTION_MARKER(0x80011594u, "GAME.EXE");
     sint32 count = (sint32)r_u32(model + 4), position[4], cutoff;
     uint32 vertices = r_u32(model), xy, depths, total, n, face, left, p, ot, depth_table;
     FUN_80010170();
@@ -872,7 +879,7 @@ GDB_CALL uint32 FUN_80011594(uint32 model, uint32 unused, sint32 bias)
 
 GDB_CALL uint32 FUN_800450F8(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x800450f8u, "GAME.EXE");
+    FUNCTION_MARKER(0x800450f8u, "GAME.EXE");
     sint32 position[4], z;
     uint32 i;
     FUN_80010040();
@@ -886,7 +893,7 @@ GDB_CALL uint32 FUN_800450F8(uint32 object)
 
 GDB_CALL uint32 FUN_8004277C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8004277cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8004277cu, "GAME.EXE");
     if ((sint32)r_u32(object + 8) <= (sint32)0xe0000000u)
         return 0;
     FUN_80010040();
@@ -901,7 +908,7 @@ GDB_CALL uint32 FUN_8004277C(uint32 object)
 
 GDB_CALL uint32 FUN_8005B684(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b684u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b684u, "GAME.EXE");
     sint32 position[4];
     uint32 model, color;
     ff_project_local(0, 0, 0, position);
@@ -915,7 +922,7 @@ GDB_CALL uint32 FUN_8005B684(uint32 object)
 
 GDB_CALL uint32 FUN_8005B7AC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005b7acu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005b7acu, "GAME.EXE");
     sint32 position[4], shade;
     uint32 color;
     ff_project_local(0, 0, 0, position);
@@ -932,7 +939,7 @@ GDB_CALL uint32 FUN_8005B7AC(uint32 object)
 
 GDB_CALL uint32 FUN_8005D160(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d160u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d160u, "GAME.EXE");
     sint32 position[4];
     FUN_80010040();
     FUN_8005C740(object);
@@ -948,7 +955,7 @@ GDB_CALL uint32 FUN_8005D160(uint32 object)
 
 GDB_CALL uint32 FUN_8005D608(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d608u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d608u, "GAME.EXE");
     sint32 position[4];
     FUN_80010040();
     FUN_8005C740(object);
@@ -963,7 +970,7 @@ GDB_CALL uint32 FUN_8005D608(uint32 object)
 
 GDB_CALL uint32 FUN_8005D7A4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d7a4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d7a4u, "GAME.EXE");
     if ((uint32)FUN_80012190() - 257u >= 0xeffu)
         return 0;
     ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
@@ -972,7 +979,7 @@ GDB_CALL uint32 FUN_8005D7A4(uint32 object)
 
 GDB_CALL uint32 FUN_8005BD7C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005bd7cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bd7cu, "GAME.EXE");
     sint32 phase = (sint32)r_u32(0x80093da8) >> 4;
     uint32 color, height, i;
     if (phase < 433)
@@ -1003,7 +1010,7 @@ GDB_CALL uint32 FUN_8005BD7C(uint32 object)
 
 GDB_CALL void FUN_80047108(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80047108u, "GAME.EXE");
+    FUNCTION_MARKER(0x80047108u, "GAME.EXE");
     object_rotations(object);
 }
 
@@ -1022,7 +1029,7 @@ static void object_rotations(uint32 object)
 
 GDB_CALL uint32 FUN_8005AB18(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005ab18u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005ab18u, "GAME.EXE");
     if (!FUN_80011E5C())
         return 0;
     if (r_s16(object + 16))
@@ -1032,7 +1039,7 @@ GDB_CALL uint32 FUN_8005AB18(uint32 object)
 
 GDB_CALL uint32 FUN_8005BD04(uint32 model, uint32 height)
 {
-    FF_FUNCTION_MARKER(0x8005bd04u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bd04u, "GAME.EXE");
     if (height + 0x17ffu >= 0x1fffu)
         return 0;
     FUN_80010040();
@@ -1043,7 +1050,7 @@ GDB_CALL uint32 FUN_8005BD04(uint32 model, uint32 height)
 
 GDB_CALL uint32 FUN_8002A858(void)
 {
-    FF_FUNCTION_MARKER(0x8002a858u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a858u, "GAME.EXE");
     if ((sint32)r_u32(0x80094004) > 0x0fffffff)
         return 1;
     return ff_static_model_80010B18(r_u32(0x80081cc0), 0, 0);
@@ -1051,7 +1058,7 @@ GDB_CALL uint32 FUN_8002A858(void)
 
 GDB_CALL uint32 FUN_8002A8FC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002a8fcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a8fcu, "GAME.EXE");
     uint32 angle;
     FUN_800100C4(0, 0x02800000, 0);
     angle = r_u32(0x80093dd0);
@@ -1080,25 +1087,25 @@ static uint32 rising_particle(uint32 object, sint32 end_age)
 
 GDB_CALL uint32 FUN_8002ACE8(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002ace8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002ace8u, "GAME.EXE");
     return rising_particle(object, 16);
 }
 
 GDB_CALL uint32 FUN_8002AD7C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002ad7cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002ad7cu, "GAME.EXE");
     return rising_particle(object, 64);
 }
 
 GDB_CALL uint32 FUN_8002B150(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002b150u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002b150u, "GAME.EXE");
     return rising_particle(object, 16);
 }
 
 GDB_CALL uint32 FUN_80032680(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032680u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032680u, "GAME.EXE");
     if ((uint16)((uint16)r_s16(0x8008d490) + 16384u) <= 32768u)
         return 0;
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
@@ -1106,14 +1113,14 @@ GDB_CALL uint32 FUN_80032680(uint32 object)
 
 GDB_CALL uint32 FUN_800326DC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x800326dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800326dcu, "GAME.EXE");
     uint32 kind = r_u32(object);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * kind), 0, kind - 133u < 2u ? 1024 : 512);
 }
 
 GDB_CALL uint32 FUN_80032728(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032728u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032728u, "GAME.EXE");
     if (!r_u32(0x80094674))
         return 0;
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 512);
@@ -1121,7 +1128,7 @@ GDB_CALL uint32 FUN_80032728(uint32 object)
 
 GDB_CALL uint32 FUN_800327B0(void)
 {
-    FF_FUNCTION_MARKER(0x800327b0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800327b0u, "GAME.EXE");
     sint32 phase = (sint32)(r_u32(0x80093dd0) - 270u);
     if (phase < 0)
         phase = 0;
@@ -1133,7 +1140,7 @@ GDB_CALL uint32 FUN_800327B0(void)
 
 GDB_CALL uint32 FUN_80032AA4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032aa4u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032aa4u, "GAME.EXE");
     uint32 offset = r_u32(0x80094674) << 3;
     if (r_u32(object) == 467)
         offset = 0u - offset;
@@ -1143,7 +1150,7 @@ GDB_CALL uint32 FUN_80032AA4(uint32 object)
 
 GDB_CALL uint32 FUN_80032B20(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032b20u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032b20u, "GAME.EXE");
     uint32 offset = r_u32(0x80094674) << 3;
     if (r_u32(object) == 470)
         offset = 0u - offset;
@@ -1153,7 +1160,7 @@ GDB_CALL uint32 FUN_80032B20(uint32 object)
 
 GDB_CALL uint32 FUN_80033068(sint32 index)
 {
-    FF_FUNCTION_MARKER(0x80033068u, "GAME.EXE");
+    FUNCTION_MARKER(0x80033068u, "GAME.EXE");
     if (r_u32(0x800b4334 + 244u * (uint32)index) & 0x800u)
         return FUN_80032EE0(index);
     return (uint32)FUN_80056670(187, 255, 6144);
@@ -1161,26 +1168,26 @@ GDB_CALL uint32 FUN_80033068(sint32 index)
 
 GDB_CALL sint32 FUN_80033DC8(sint32 index)
 {
-    FF_FUNCTION_MARKER(0x80033dc8u, "GAME.EXE");
+    FUNCTION_MARKER(0x80033dc8u, "GAME.EXE");
     sint32 value = r_s16(0x800b436c + 244u * (uint32)index);
     return value ? value : FUN_80056670(28, 255, 6144);
 }
 
 GDB_CALL uint32 FUN_8002A00C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002a00cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a00cu, "GAME.EXE");
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 256);
 }
 
 GDB_CALL uint32 FUN_80032774(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032774u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032774u, "GAME.EXE");
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 512);
 }
 
 GDB_CALL uint32 FUN_8002A7DC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002a7dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a7dcu, "GAME.EXE");
     FUN_8001033C(r_s16(object + 16));
     ff_static_model_80010B18(r_u32(0x80082340), 0, 0);
     FUN_800100C4(0, 0x016a0000, -10485760);
@@ -1190,7 +1197,7 @@ GDB_CALL uint32 FUN_8002A7DC(uint32 object)
 
 GDB_CALL uint32 FUN_8002A89C(void)
 {
-    FF_FUNCTION_MARKER(0x8002a89cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a89cu, "GAME.EXE");
     ff_static_model_80010B18(r_u32(0x80082360), 0, 0);
     FUN_800100C4(0x04e00000, 0x00f00000, 0);
     FUN_8001033C(16384);
@@ -1199,7 +1206,7 @@ GDB_CALL uint32 FUN_8002A89C(void)
 
 GDB_CALL uint32 FUN_8002AA6C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002aa6cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002aa6cu, "GAME.EXE");
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) + r_u32(0x800990d8 + 4u * r_u32(object)) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
     FUN_800101CC(32768);
@@ -1212,7 +1219,7 @@ GDB_CALL uint32 FUN_8002AA6C(uint32 object)
 
 GDB_CALL uint32 FUN_8002ABE0(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002abe0u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002abe0u, "GAME.EXE");
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
     FUN_800104A0(r_s16(object + 20));
@@ -1224,7 +1231,7 @@ GDB_CALL uint32 FUN_8002ABE0(uint32 object)
 
 GDB_CALL uint32 FUN_8002C294(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002c294u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002c294u, "GAME.EXE");
     uint32 kind = r_u32(object);
     if (r_u32(0x80093d60) == 2)
         ++kind;
@@ -1233,7 +1240,7 @@ GDB_CALL uint32 FUN_8002C294(uint32 object)
 
 GDB_CALL uint32 FUN_80032B98(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80032b98u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032b98u, "GAME.EXE");
     uint32 offset = r_u32(0x80094794);
     FUN_80010040();
     offset <<= 19;
@@ -1247,14 +1254,14 @@ GDB_CALL uint32 FUN_80032B98(uint32 object)
 
 GDB_CALL uint32 FUN_8003EE7C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8003ee7cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8003ee7cu, "GAME.EXE");
     FUN_8001033C(49152);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
 GDB_CALL uint32 FUN_8005BC64(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005bc64u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bc64u, "GAME.EXE");
     FUN_80010040();
     FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
     FUN_8001033C((sint32)(16384u - ((uint32)(sint32)r_s16(object + 16) << 5)));
@@ -1264,7 +1271,7 @@ GDB_CALL uint32 FUN_8005BC64(uint32 object)
 
 GDB_CALL uint32 FUN_8005BF0C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005bf0cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bf0cu, "GAME.EXE");
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
     w_u32(0x8008d4bc, 0x2c404040);
@@ -1274,7 +1281,7 @@ GDB_CALL uint32 FUN_8005BF0C(uint32 object)
 
 GDB_CALL uint32 FUN_8005BF7C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005bf7cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bf7cu, "GAME.EXE");
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
     FUN_800101CC(r_s16(object + 18));
@@ -1285,7 +1292,7 @@ GDB_CALL uint32 FUN_8005BF7C(uint32 object)
 
 GDB_CALL uint32 FUN_8005BFF4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005bff4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005bff4u, "GAME.EXE");
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
     FUN_800101CC(r_s16(object + 18));
@@ -1304,7 +1311,7 @@ GDB_CALL uint32 FUN_8005BFF4(uint32 object)
 
 GDB_CALL uint32 FUN_8005D2E4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d2e4u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d2e4u, "GAME.EXE");
     FUN_80010040();
     FUN_8005C740(object);
     ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
@@ -1313,7 +1320,7 @@ GDB_CALL uint32 FUN_8005D2E4(uint32 object)
 
 GDB_CALL uint32 FUN_8005D340(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d340u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d340u, "GAME.EXE");
     uint32 scale, color;
     FUN_80010040();
     FUN_8005C740(object);
@@ -1327,14 +1334,14 @@ GDB_CALL uint32 FUN_8005D340(uint32 object)
 
 GDB_CALL sint32 FUN_80012190(void)
 {
-    FF_FUNCTION_MARKER(0x80012190u, "GAME.EXE");
+    FUNCTION_MARKER(0x80012190u, "GAME.EXE");
     return r_s16(r_u32(0x8008d494) + 30);
 }
 
 /* 124A0: FT4 sprite packet. UV extent subtraction is 16-bit, OT offset signed. */
 GDB_CALL uint32 FUN_800124A0(const sint32 *position, uint32 texture)
 {
-    FF_FUNCTION_MARKER(0x800124a0u, "GAME.EXE");
+    FUNCTION_MARKER(0x800124a0u, "GAME.EXE");
     uint32 packet = r_u32(0x8008d4b0), uv = 0x800a8768 + 12u * texture;
     sint32 x = (sint16)position[0], y = (sint16)position[1];
     uint32 first = r_u32(uv), second = r_u32(uv + 4), last = r_u32(uv + 8);
@@ -1366,7 +1373,7 @@ GDB_CALL uint32 FUN_800124A0(const sint32 *position, uint32 texture)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_80011E28(uint32 head, uint32 packet, uint32 flags)
 {
-    FF_FUNCTION_MARKER(0x80011e28u, "GAME.EXE");
+    FUNCTION_MARKER(0x80011e28u, "GAME.EXE");
     uint32 old = r_u32(head);
     w_u32(head, packet);
     w_u32(packet, old | flags);
@@ -1376,14 +1383,14 @@ GDB_CALL uint32 FUN_80011E28(uint32 head, uint32 packet, uint32 flags)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8001F510(void)
 {
-    FF_FUNCTION_MARKER(0x8001f510u, "GAME.EXE");
+    FUNCTION_MARKER(0x8001f510u, "GAME.EXE");
     return 0;
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8002A154(void)
 {
-    FF_FUNCTION_MARKER(0x8002a154u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a154u, "GAME.EXE");
     w_u16(r_u32(0x800947c8) + 28, 1);
     return 1;
 }
@@ -1391,13 +1398,13 @@ GDB_CALL uint32 FUN_8002A154(void)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8002A974(void)
 {
-    FF_FUNCTION_MARKER(0x8002a974u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002a974u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8002C1DC(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002c1dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002c1dcu, "GAME.EXE");
     w_u32(object, 0xffffffffu);
     return 0xffffffffu;
 }
@@ -1405,7 +1412,7 @@ GDB_CALL uint32 FUN_8002C1DC(uint32 object)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8002C27C(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002c27cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8002c27cu, "GAME.EXE");
     w_u32(object, 0xffffffffu);
     return 0xffffffffu;
 }
@@ -1413,7 +1420,7 @@ GDB_CALL uint32 FUN_8002C27C(uint32 object)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8002EB58(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002eb58u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002eb58u, "GAME.EXE");
     uint32 value = (uint16)r_s16(object + 16) + 1004u;
     w_u16(object + 16, (uint16)value);
     return value;
@@ -1422,19 +1429,19 @@ GDB_CALL uint32 FUN_8002EB58(uint32 object)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_80032ED8(void)
 {
-    FF_FUNCTION_MARKER(0x80032ed8u, "GAME.EXE");
+    FUNCTION_MARKER(0x80032ed8u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8003B774(void)
 {
-    FF_FUNCTION_MARKER(0x8003b774u, "GAME.EXE");
+    FUNCTION_MARKER(0x8003b774u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_800415F4(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x800415f4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800415f4u, "GAME.EXE");
     w_u32(object, 0xffffffffu);
     return 0xffffffffu;
 }
@@ -1442,7 +1449,7 @@ GDB_CALL uint32 FUN_800415F4(uint32 object)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_80041600(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x80041600u, "GAME.EXE");
+    FUNCTION_MARKER(0x80041600u, "GAME.EXE");
     w_u32(object, 0xffffffffu);
     return 0xffffffffu;
 }
@@ -1450,124 +1457,124 @@ GDB_CALL uint32 FUN_80041600(uint32 object)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_80041B4C(void)
 {
-    FF_FUNCTION_MARKER(0x80041b4cu, "GAME.EXE");
+    FUNCTION_MARKER(0x80041b4cu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8004483C(void)
 {
-    FF_FUNCTION_MARKER(0x8004483cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8004483cu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_80044D88(void)
 {
-    FF_FUNCTION_MARKER(0x80044d88u, "GAME.EXE");
+    FUNCTION_MARKER(0x80044d88u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_800455DC(void)
 {
-    FF_FUNCTION_MARKER(0x800455dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800455dcu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8004EF64(void)
 {
-    FF_FUNCTION_MARKER(0x8004ef64u, "GAME.EXE");
+    FUNCTION_MARKER(0x8004ef64u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_800582DC(void)
 {
-    FF_FUNCTION_MARKER(0x800582dcu, "GAME.EXE");
+    FUNCTION_MARKER(0x800582dcu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005862C(void)
 {
-    FF_FUNCTION_MARKER(0x8005862cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005862cu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005C654(void)
 {
-    FF_FUNCTION_MARKER(0x8005c654u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005c654u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005C65C(void)
 {
-    FF_FUNCTION_MARKER(0x8005c65cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005c65cu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005C664(void)
 {
-    FF_FUNCTION_MARKER(0x8005c664u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005c664u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005D150(void)
 {
-    FF_FUNCTION_MARKER(0x8005d150u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d150u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005D158(void)
 {
-    FF_FUNCTION_MARKER(0x8005d158u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d158u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005DACC(void)
 {
-    FF_FUNCTION_MARKER(0x8005daccu, "GAME.EXE");
+    FUNCTION_MARKER(0x8005daccu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8005E138(void)
 {
-    FF_FUNCTION_MARKER(0x8005e138u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005e138u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8005F050(uint32 value)
 {
-    FF_FUNCTION_MARKER(0x8005f050u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005f050u, "GAME.EXE");
     return value;
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8005F234(uint32 value)
 {
-    FF_FUNCTION_MARKER(0x8005f234u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005f234u, "GAME.EXE");
     return value;
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_80064620(void)
 {
-    FF_FUNCTION_MARKER(0x80064620u, "GAME.EXE");
+    FUNCTION_MARKER(0x80064620u, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL uint32 FUN_8006467C(void)
 {
-    FF_FUNCTION_MARKER(0x8006467cu, "GAME.EXE");
+    FUNCTION_MARKER(0x8006467cu, "GAME.EXE");
     return 0;
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_80066ABC(void)
 {
-    FF_FUNCTION_MARKER(0x80066abcu, "GAME.EXE");
+    FUNCTION_MARKER(0x80066abcu, "GAME.EXE");
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 GDB_CALL void FUN_8006A0F8(void)
 {
-    FF_FUNCTION_MARKER(0x8006a0f8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8006a0f8u, "GAME.EXE");
 }
 
 #include <stdlib.h>
@@ -1755,61 +1762,24 @@ GDB_CALL void FUN_800101CC(sint32 angle)
         ff_pitch_index_800101E0(index);
 }
 
-/* GTE reciprocal approximation. The 257-entry UNR lookup is generated by its
- * integer formula; clamp the final entry rather than wrapping it to 255. */
-static uint32 ff_gte_divide(uint32 h, uint32 z)
-{
-    uint32 i, q;
-    sint32 u, d, recip;
-    if (h >= 2u * z)
-        return 0x1ffff;
-    while (z < 0x8000)
-    {
-        z <<= 1;
-        h <<= 1;
-    }
-    i = ((z & 0x7fff) + 0x40) >> 7;
-    u = (sint32)(((0x40000u / (i + 0x100u)) + 1u) / 2u) - 0x101;
-    if (u < 0)
-        u = 0;
-    if (u > 255)
-        u = 255;
-    u += 0x101;
-    d = ((sint32)z * (-u) + 0x80) >> 8;
-    recip = (u * (0x20000 + d) + 0x80) >> 8;
-    q = (uint32)(((uint64)h * (uint32)recip + 0x8000) >> 16);
-    return q > 0x1ffff ? 0x1ffff : q;
-}
-
-static sint32 ff_geom_clamp(sint32 n, sint32 lo, sint32 hi)
-{
-    return n < lo ? lo : n > hi ? hi : n;
-}
-
-/* 800120BC reads V0's result from the RTPT FIFO (SXY0/SZ1).
- * Only those memory outputs are exposed here; other COP2 side effects are WIP.
- * FF uses integer screen offsets; host geometry setup supplies those and H. */
+/* RTPT retains V1/V2 and exposes V0 through SXY0/SZ1 */
 static sint32 ff_project_local(sint32 x, sint32 y, sint32 z, sint32 dest[4])
 {
-    MATRIX m;
-    SVECTOR v;
-    VECTOR q;
-    uint32 a = r_u32(0x8008d494), depth, ratio;
-    sint32 ox, oy, sx, sy, result;
-    memcpy(&m, psx_addr(a, 32), 32);
-    v.vx = (sint16)x;
-    v.vy = (sint16)y;
-    v.vz = (sint16)z;
-    v.pad = 0;
-    ApplyMatrix(&m, &v, &q);
-    q.vx += m.t[0] >> 16;
-    q.vy += m.t[1] >> 16;
-    q.vz += m.t[2] >> 16;
-    depth = (uint32)ff_geom_clamp(q.vz, 0, 65535);
-    ratio = ff_gte_divide((uint16)ReadGeomScreen(), depth);
-    ReadGeomOffset(&ox, &oy);
-    sx = ff_geom_clamp(ox + (sint32)(((sint64)ff_geom_clamp(q.vx, -32768, 32767) * ratio) >> 16), -1024, 1023);
-    sy = ff_geom_clamp(oy + (sint32)(((sint64)ff_geom_clamp(q.vy, -32768, 32767) * ratio) >> 16), -1024, 1023);
+    uint32 a = r_u32(0x8008d494), words[8], i, packed, depth;
+    sint32 sx, sy, result;
+    for (i = 0; i < 8; ++i)
+        words[i] = r_u32(a + i * 4);
+    for (i = 0; i < 5; ++i)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; ++i)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+    xport_gte_write_data(0, ((uint32)y << 16) | ((uint32)x & 65535));
+    xport_gte_write_data(1, (uint32)z);
+    xport_gte_execute(0x280030);
+    depth = xport_gte_read_data(17) & 65535;
+    packed = xport_gte_read_data(12);
+    sx = (sint16)packed;
+    sy = (sint16)(packed >> 16);
     result = depth < 40 ? 4 : ((uint16)sx < 320 && (uint16)sy < 256 ? 0 : 1);
     dest[0] = sx;
     dest[1] = sy;
@@ -1820,7 +1790,7 @@ static sint32 ff_project_local(sint32 x, sint32 y, sint32 z, sint32 dest[4])
 
 GDB_CALL uint32 FUN_800112A4(uint32 unused, uint32 column, uint32 row)
 {
-    FF_FUNCTION_MARKER(0x800112a4u, "GAME.EXE");
+    FUNCTION_MARKER(0x800112a4u, "GAME.EXE");
     uint32 r, n, packed, xy = 0x001fe800, depths = 0x1f800000, p, ot, head, offset = 0, cell, texture, sx[4], uv[3], color;
     sint32 point[4], z = -2048, cutoff, depth, delta, fade;
     column <<= 1;
@@ -1932,7 +1902,7 @@ void ff_sky_occluder_80065B3C(void)
 
 GDB_CALL uint32 FUN_80064D34(uint32 left, uint32 right)
 {
-    FF_FUNCTION_MARKER(0x80064d34u, "GAME.EXE");
+    FUNCTION_MARKER(0x80064d34u, "GAME.EXE");
     sint32 points[4][4];
     uint32 i, p;
     FUN_80011D20();
@@ -1967,14 +1937,14 @@ GDB_CALL sint32 FUN_800120BC(sint32 x, sint32 y, sint32 z, uint32 dest)
     return result;
 }
 
-/* Partial 80058634, exact range 80058844..8005887C. Host-private temporary
- * substitutes the original caller's stack output. Remaining scene work is WIP. */
-GDB_CALL void ff_menu_horizon_80058844(void)
+/* Original 58844..5887C horizon projection uses native caller-local output */
+GDB_CALL void frame_project_horizon(void)
 {
+    sint32 position[4];
     FUN_80011D20();
     FUN_800101CC(r_s16(0x8008d492));
-    FUN_800120BC(0, 0, 32767, 0x801fc020);
-    w_u32(0x8008d4d0, r_u32(0x801fc024));
+    ff_project_local(0, 0, 32767, position);
+    w_u32(0x8008d4d0, (uint32)position[1]);
 }
 
 /* 80011D50: forward OT, 2048 entries; raw pointer stores retain alias bits.
@@ -2254,12 +2224,6 @@ GDB_CALL void ff_model_transform_8001060C(uint32 model, uint32 pose)
     memcpy(psx_addr(0x801fc090, 16), saved, 16);
 }
 
-static sint32 ff_model_nclip(uint32 a, uint32 b, uint32 c)
-{
-    sint32 x0 = (sint16)a, y0 = (sint16)(a >> 16), x1 = (sint16)b, y1 = (sint16)(b >> 16), x2 = (sint16)c, y2 = (sint16)(c >> 16);
-    return (sint32)((uint32)x0 * (uint32)(y1 - y2) + (uint32)x1 * (uint32)(y2 - y0) + (uint32)x2 * (uint32)(y0 - y1));
-}
-
 /* Shared polygon phase. Signed packed XY tests and line bucket alias behavior
  * deliberately follow MIPS rather than a generic polygon clipping policy. */
 GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 xy, uint32 depths, sint32 bias)
@@ -2288,7 +2252,7 @@ GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 x
         }
         else
         {
-            sint32 z0 = r_s16(depths + (i0 >> 1)), z2 = r_s16(depths + (i2 >> 1));
+            sint32 z0 = r_s16(depths + (i0 >> 1)), z2 = r_s16(depths + (i2 >> 1)), clip;
             if (z0 <= 0 || z2 <= 0)
                 goto next_record;
             depth = (sint32)((uint32)(z0 + z2) + (uint32)bias) >> 3;
@@ -2300,11 +2264,16 @@ GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 x
             d = r_u32(xy + i3);
             if ((a & 65535) >= 320 && (b & 65535) >= 320 && (c & 65535) >= 320 && (d & 65535) >= 320)
                 goto next_record;
+            xport_gte_write_data(12, a);
+            xport_gte_write_data(14, c);
             if ((sint32)a <= 0 && (sint32)b <= 0 && (sint32)c <= 0 && (sint32)d < 0)
                 goto next_record;
+            xport_gte_write_data(13, b);
             bucket = ot + (uint32)(sint32)r_s16(table + 2u * (uint32)depth);
+            xport_gte_execute(0x140006);
             flags = r_u32(records + 8);
-            if (!(flags & 1) && ff_model_nclip(a, b, c) < 0)
+            clip = (sint32)xport_gte_read_data(24);
+            if (!(flags & 1) && clip < 0)
                 goto next_record;
             if (flags & 2)
             {
@@ -2843,56 +2812,67 @@ GDB_CALL uint32 FUN_8005AC08(uint32 object)
 GDB_CALL sint32 FUN_8005C17C(void)
 {
     sint32 i, count;
-    uint32 object = 0x800b89f0, type, target;
+    uint32 object = 0x800b89f0, type, target, x, y, z;
     FUN_80011C60();
     count = (sint32)r_u32(0x8009403c);
     if (count <= 0)
         return count;
-    for (i = 0; i < (sint32)r_u32(0x8009403c); i++, object += 36)
+    i = 0;
+    do
     {
         type = r_u32(object);
-        if (type == 55)
-            continue;
-        if (!r_u32(0x80081720 + 4 * type))
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* original fatal loop */
-        FUN_80010040();
-        FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
-        FUN_800101CC(32768);
-        target = r_u32(0x80097408 + 4 * type);
-        if (target == 0x8002a0c4)
-            FUN_8002A0C4(object);
-        else if (target == 0x80029f48)
-            FUN_80029F48();
-        else if (target == 0x8003262c)
-            FUN_8003262C(object);
-        else if (target == 0x8002a048)
-            FUN_8002A048(object);
-        else if (target == 0x8002ab40)
-            FUN_8002AB40(object);
-        else if (target == 0x8005ab84)
-            FUN_8005AB84(object);
-        else if (target == 0x8005ac08)
-            FUN_8005AC08(object);
-        else if (target == 0x8002a97c)
-            FUN_8002A97C(object);
-        else if (target == 0x8005b178)
-            FUN_8005B178(object);
-        else if (target == 0x8005b350)
-            FUN_8005B350(object);
-        else if (target == 0x8005ae3c)
-            ff_car_render_8005AE3C(object);
-        else if (target == 0x800451a0)
-            FUN_800451A0(object);
-        else if (target == 0x800452ac)
-            FUN_800452AC(object);
-        else
-            ff_object_call(target, object);
-        FUN_80010028();
-    }
+        if (type != 55)
+        {
+            if (!r_u32(0x80081720 + 4 * type))
+                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* Original fatal loop */
+            FUN_80010040();
+            x = r_u32(object + 4);
+            x -= r_u32(0x8008d4a4);
+            y = r_u32(object + 8);
+            y -= r_u32(0x8008d4a8);
+            z = r_u32(object + 12);
+            z -= r_u32(0x8008d4ac);
+            FUN_800100C4((sint32)x, (sint32)y, (sint32)z);
+            FUN_800101CC(32768);
+            target = r_u32(0x80097408 + 4 * type);
+            if (target == 0x8002a0c4)
+                FUN_8002A0C4(object);
+            else if (target == 0x80029f48)
+                FUN_80029F48();
+            else if (target == 0x8003262c)
+                FUN_8003262C(object);
+            else if (target == 0x8002a048)
+                FUN_8002A048(object);
+            else if (target == 0x8002ab40)
+                FUN_8002AB40(object);
+            else if (target == 0x8005ab84)
+                FUN_8005AB84(object);
+            else if (target == 0x8005ac08)
+                FUN_8005AC08(object);
+            else if (target == 0x8002a97c)
+                FUN_8002A97C(object);
+            else if (target == 0x8005b178)
+                FUN_8005B178(object);
+            else if (target == 0x8005b350)
+                FUN_8005B350(object);
+            else if (target == 0x8005ae3c)
+                ff_car_render_8005AE3C(object);
+            else if (target == 0x800451a0)
+                FUN_800451A0(object);
+            else if (target == 0x800452ac)
+                FUN_800452AC(object);
+            else
+                ff_object_call(target, object);
+            FUN_80010028();
+        }
+        i++;
+        count = (sint32)r_u32(0x8009403c);
+        object += 36;
+    } while (i < count);
     return 0;
 }
 
-/* 2B2E4 stationary branch and lifetime tail. Incoming a1 is overwritten by
+/* 2B2E4 item motion, impact and lifetime. Incoming a1 is overwritten by
  * LH object+24 in actual MIPS; IDA's single-argument signature is valid here. */
 GDB_CALL sint32 FUN_8002B2E4(uint32 object)
 {
@@ -2926,10 +2906,12 @@ GDB_CALL sint32 FUN_8002B2E4(uint32 object)
                                 FUN_80056670(30, 255, 6144);
                             if (type == 478 || type == 480 || type == 482)
                             {
-                                if (ff_wip_visit(0x8002b478, "object", __FUNCTION__, __FILE__, __LINE__, 1, "return_zero_from_function"))
-                                    return 0;
-                                abort();
-                            } /* WIP breakable material effects */
+                                int particle;
+                                w_u32(object, type + 1);
+                                FUN_80056670(113, 255, 6400);
+                                for (particle = 0; particle < 12; particle++)
+                                    FUN_800315A4(599 + (type - 478) / 2, r_u32(object + 4), r_u32(object + 8), r_u32(object + 12), (uint16)r_s16(object + 16) >> 5);
+                            }
                             if (type - 499u >= 5u && type != 504 && type != 506 && type != 515 && type - 496u >= 2u && type != 505)
                             {
                                 w_u16(object + 22, (uint16)(r_s16(object + 22) - 1));
@@ -3131,7 +3113,7 @@ GDB_CALL uint32 FUN_8005C2F0(uint32 object)
 /* 5C480: fixed palette80080090, signed age/4 and size thresholds9/17. */
 GDB_CALL uint32 FUN_8005C480(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005c480u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005c480u, "GAME.EXE");
     uint32 temp = 0x801fc0d0, table, color;
     sint32 age, x, y, z;
     FUN_80010040();
@@ -3191,7 +3173,7 @@ GDB_CALL uint32 FUN_8002B28C(uint32 object)
 /* 2AF78: four ordered environment probes; expiry does not skip this update. */
 GDB_CALL sint32 FUN_8002AF78(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002af78u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002af78u, "GAME.EXE");
     uint32 actor = 0x800b4318 + 244u * (uint32)(sint32)r_s16(object + 28), point[4], angle, dx, dz;
     sint16 age = (sint16)((uint16)r_s16(object + 22) + 1u);
     sint32 result;
@@ -3228,7 +3210,7 @@ GDB_CALL uint32 FUN_8002B120(uint32 object)
 /* 5D3D8: signed age scaling and unclamped wrapping grayscale, MIPS exact. */
 GDB_CALL uint32 FUN_8005D3D8(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8005d3d8u, "GAME.EXE");
+    FUNCTION_MARKER(0x8005d3d8u, "GAME.EXE");
     uint32 shade, kind;
     sint32 scale;
     FUN_80010040();
@@ -3277,7 +3259,7 @@ GDB_CALL uint32 FUN_8002AE64(uint32 object)
 /* 2AE10: indexed twin2AE64; only signed expiry threshold differs (14/28). */
 GDB_CALL uint32 FUN_8002AE10(uint32 object)
 {
-    FF_FUNCTION_MARKER(0x8002ae10u, "GAME.EXE");
+    FUNCTION_MARKER(0x8002ae10u, "GAME.EXE");
     uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u), speed;
     uint32 delta;
     w_u16(object + 22, age);
@@ -3293,27 +3275,13 @@ GDB_CALL uint32 FUN_8002AE10(uint32 object)
 /* 11FEC: original JR RA/NOP; no result or side effects. */
 GDB_CALL void FUN_80011FEC(void)
 {
-    FF_FUNCTION_MARKER(0x80011fecu, "GAME.EXE");
+    FUNCTION_MARKER(0x80011fecu, "GAME.EXE");
 }
 
 GDB_CALL uint32 ff_object_call(uint32 target, uint32 object)
 {
     if (target == 0x800420f8)
-    {
-        uint32 temp = 0x801fc340, saved[9], retained[9] = {0x00000ad7, 1, 0x800b8e4c, 31, 0x800bbf78, 0xffffffffu, 17, 1, 13};
-        uint32 result;
-        int i;
-        /* State22 at tick5672 proves the retained words at entry SP-50. */
-        for (i = 0; i < 9; i++)
-        {
-            saved[i] = r_u32(temp + 4u * i);
-            w_u32(temp + 4u * i, retained[i]);
-        }
-        result = FUN_800420F8(object, temp);
-        for (i = 0; i < 9; i++)
-            w_u32(temp + 4u * i, saved[i]);
-        return result;
-    }
+        return FUN_800420F8(object, 0);
 
     if (target == 0x8002d7c8)
         return FUN_8002D7C8(object);
@@ -3739,8 +3707,18 @@ GDB_CALL sint32 FUN_8001EDB8(void)
 /* 8005C66C: default effect model with height offset and yaw/pitch/roll order. */
 GDB_CALL uint32 FUN_8005C66C(uint32 object)
 {
+    uint32 x, y, z, camera_x, camera_y, camera_z, type, height;
     FUN_80010040();
-    FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) + r_u32(0x800990d8 + 4 * r_u32(object)) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
+    x = r_u32(object + 4);
+    camera_x = r_u32(0x8008d4a4);
+    type = r_u32(object);
+    y = r_u32(object + 8);
+    height = r_u32(0x800990d8 + 4 * type);
+    y += height;
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(object + 12);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
     FUN_800101CC(32768);
     FUN_8001033C(r_s16(object + 16));
     FUN_800101CC(r_s16(object + 18));
@@ -3767,17 +3745,38 @@ GDB_CALL sint32 FUN_8001EF68(void)
     return 0;
 }
 
-/* 8001ED1C:64 dynamic object updates. Default physics remains WIP. */
+/* 8001ED1C:64 dynamic object updates with original callback stack provenance */
 GDB_CALL sint32 FUN_8001ED1C(void)
 {
-    uint32 i, object, type, target;
+    uint32 i, object, type, target, previous_car = 0, retained_angle = 0x800bbf78;
     for (i = 0, object = 0x8009a3c8; i < 64; i++, object += 36)
     {
         type = r_u32(object);
         if (type == 0xffffffff)
             continue;
         target = r_u32(0x800bbf78 + 4 * type);
-        ff_object_call(target ? target : 0x8002ba48, object);
+        if (target == 0x800420f8)
+        {
+            scene_helicopter_call(object, previous_car, retained_angle);
+            previous_car = 0;
+        }
+        else if (target == 0x8004471c)
+        {
+            ff_object_call(target, object);
+            previous_car = object;
+            retained_angle = 0x800bbf78;
+        }
+        else if (!target || target == 0x8002ba48 || target == 0x8002ba68)
+        {
+            /* Physics preserves height and saves incoming S0 as angle */
+            ff_object_call(target ? target : 0x8002ba48, object);
+            retained_angle = object;
+        }
+        else
+        {
+            ff_object_call(target ? target : 0x8002ba48, object);
+            previous_car = 0;
+        }
     }
     return 0;
 }
@@ -3842,7 +3841,7 @@ GDB_CALL uint32 FUN_800614F4(sint32 x, sint32 y, sint32 z, uint32 output[3])
  * uninitialized stack; reject them rather than invent attachment geometry. */
 GDB_CALL uint32 FUN_8001B9F4(sint32 index, sint32 attachment, uint32 output[3])
 {
-    uint32 pose = 0x800ba210 + 504u * (uint32)index, offset, point[3];
+    uint32 pose = 0x800ba210 + 504u * (uint32)index, offset, point[3], x, y, z;
     int i;
     FUN_80010040();
     FUN_80011D20();
@@ -3867,7 +3866,10 @@ GDB_CALL uint32 FUN_8001B9F4(sint32 index, sint32 attachment, uint32 output[3])
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         return 0;
     }
-    FUN_800614F4((sint32)r_u32(pose + offset), (sint32)r_u32(pose + offset + 4), (sint32)r_u32(pose + offset + 8), point);
+    x = r_u32(pose + offset);
+    y = r_u32(pose + offset + 4);
+    z = r_u32(pose + offset + 8);
+    FUN_800614F4((sint32)x, (sint32)y, (sint32)z, point);
     for (i = 0; i < 3; i++)
         output[i] = r_u32(0x8008d4a4 + 4u * i) + point[i];
     return FUN_80010028();
