@@ -4,7 +4,9 @@
 GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
 {
     FUNCTION_MARKER(0x80057788u, "GAME.EXE");
-    uint32 start[3], end[3], step[3], current[3], point[3], saved[16], packet = 0x801fd220, tx, ty, tz;
+    uint32 start[3], end[3], step[3], current[3], point[3], tx, ty, tz;
+    sint32 previous[4], projected[4];
+    uint16 packet[9];
     sint32 count, index, depth, old_depth, width, new_width;
     int i, j;
     static const uint16 styles[4] = {1373, 827, 1647, 553};
@@ -20,14 +22,12 @@ GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
         count = 3;
     for (i = 0; i < 3; ++i)
         step[i] = (uint32)((sint32)(end[i] - start[i]) / count) << 1;
-    for (i = 0; i < 16; ++i)
-        saved[i] = r_u32(0x801fd200 + 4 * i);
     FUN_80010040();
     tx = r_u32(0x8008d4a4);
     ty = r_u32(0x8008d4a8);
     tz = r_u32(0x8008d4ac);
     FUN_800100C4((sint32)(start[0] - tx), (sint32)(start[1] - ty), (sint32)(start[2] - tz));
-    FUN_800120BC(0, 0, 0, 0x801fd200);
+    ff_project_local(0, 0, 0, previous);
     FUN_80010028();
     for (index = 1; index <= count; ++index)
     {
@@ -46,47 +46,45 @@ GDB_CALL uint32 FUN_80057788(uint32 first, uint32 second)
         ty = r_u32(0x8008d4a8);
         tz = r_u32(0x8008d4ac);
         FUN_800100C4((sint32)(point[0] - tx), (sint32)(point[1] - ty), (sint32)(point[2] - tz));
-        FUN_800120BC(0, 0, 0, 0x801fd210);
+        ff_project_local(0, 0, 0, projected);
         FUN_80010028();
-        if ((sint32)r_u32(0x801fd20c) < 4 && (sint32)r_u32(0x801fd21c) < 4)
+        if (previous[3] < 4 && projected[3] < 4)
         {
-            old_depth = (sint32)r_u32(0x801fd208);
-            depth = (sint32)r_u32(0x801fd218);
+            old_depth = previous[2];
+            depth = projected[2];
             if (!old_depth || !depth)
-                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* Original57A2C/57A60 BREAK. */
+                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* Original57A2C/57A60 BREAK */
             width = 65536 / old_depth;
             new_width = 65536 / depth;
-            w_u16(packet + 4, (uint16)r_s16(0x801fd200));
-            w_u16(packet + 6, (uint16)((uint16)r_s16(0x801fd204) - (uint32)width));
-            w_u16(packet + 8, (uint16)r_s16(0x801fd210));
-            w_u16(packet + 10, (uint16)((uint16)r_s16(0x801fd214) - (uint32)new_width));
-            w_u16(packet + 12, (uint16)r_s16(0x801fd210));
-            w_u16(packet + 14, (uint16)((uint16)r_s16(0x801fd214) + (uint32)new_width));
-            w_u16(packet, (uint16)r_s16(0x801fd200));
-            w_u16(packet + 2, (uint16)((uint16)r_s16(0x801fd204) + (uint32)width));
+            packet[2] = (uint16)previous[0];
+            packet[3] = (uint16)((uint16)previous[1] - (uint32)width);
+            packet[4] = (uint16)projected[0];
+            packet[5] = (uint16)((uint16)projected[1] - (uint32)new_width);
+            packet[6] = (uint16)projected[0];
+            packet[7] = (uint16)((uint16)projected[1] + (uint32)new_width);
+            packet[0] = (uint16)previous[0];
+            packet[1] = (uint16)((uint16)previous[1] + (uint32)width);
             if (index != 1 && index != count)
-                ff_rand_8006D348(); /* Unused result is still an RNG advance. */
-            w_u16(packet + 16, 831);
-            depth = (sint32)r_u32(0x801fd218) >> 2;
-            w_u16(packet, (uint16)r_s16(0x801fd210));
-            w_u16(packet + 2, (uint16)r_s16(0x801fd214));
+                ff_rand_8006D348(); /* Unused result is still an RNG advance */
+            packet[8] = 831;
+            depth = projected[2] >> 2;
+            packet[0] = (uint16)projected[0];
+            packet[1] = (uint16)projected[1];
             for (j = 0; j < 4; ++j)
             {
-                uint32 target = packet + (j & 1 ? 0 : 4), base = packet + (j & 1 ? 4 : 0);
+                int target = j & 1 ? 0 : 2, base = j & 1 ? 2 : 0;
                 sint32 delta;
                 delta = FUN_80057700(depth);
-                w_u16(target, (uint16)((uint16)r_s16(base) + (uint32)delta));
+                packet[target] = (uint16)(packet[base] + (uint32)delta);
                 delta = FUN_80057700(depth);
-                w_u16(target + 2, (uint16)((uint16)r_s16(base + 2) + (uint32)delta));
-                w_u16(packet + 16, styles[j]);
-                FUN_80064638(packet, (uint32)depth, 129);
+                packet[target + 1] = (uint16)(packet[base + 1] + (uint32)delta);
+                packet[8] = styles[j];
+                ff_stack_color_80064638(packet);
             }
         }
         for (i = 0; i < 4; ++i)
-            w_u32(0x801fd200 + 4 * i, r_u32(0x801fd210 + 4 * i));
+            previous[i] = projected[i];
     }
-    for (i = 0; i < 16; ++i)
-        w_u32(0x801fd200 + 4 * i, saved[i]);
     return 1;
 }
 
@@ -94,38 +92,65 @@ GDB_CALL uint32 FUN_80046EF0(uint32 object)
 {
     FUNCTION_MARKER(0x80046ef0u, "GAME.EXE");
     uint32 kind = r_u32(object), bias, state;
-    int visible = 0;
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    sint32 angle = r_s16(object + 16), x, z;
+    if (angle)
+        FUN_8001033C(angle);
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     bias = kind - 207u < 4u || kind == 214 || kind == 211 ? 512 : 0;
     state = r_u32(0x80093d60);
-    if (!state && (sint32)r_u32(object + 12) <= (sint32)0xf2900000u)
-        visible = 1;
-    if (!visible)
+    if (!state)
     {
+        z = (sint32)r_u32(object + 12);
+        if (z <= (sint32)0xf2900000)
+            goto draw_model;
         state = r_u32(0x80093d60);
-        if ((state - 1u < 2u || (!state && r_u32(0x80094674))) && (sint32)r_u32(object + 12) > (sint32)0xf2900000u && (sint32)r_u32(object + 4) > 0x06000000)
-            visible = 1;
+        if (!state)
+        {
+            if (r_u32(0x80094674))
+                goto test_front;
+            state = r_u32(0x80093d60);
+        }
     }
-    if (!visible)
+    if (state - 1 < 2)
     {
-        state = r_u32(0x80093d60);
-        if (((state == 2 && r_u32(0x80094674)) || state - 3u < 2u || state == 5) && r_u32(object + 4) + 0x0dffffffu <= 0x13fffffeu)
-            visible = 1;
+        z = (sint32)r_u32(object + 12);
+        goto test_front;
     }
-    if (!visible)
+    goto select_middle;
+
+test_front:
+    if (z > (sint32)0xf2900000)
     {
-        state = r_u32(0x80093d60);
-        if (((state == 4 && r_u32(0x80094674)) || state - 5u < 2u) && (sint32)r_u32(object + 4) < (sint32)0xf2000000u)
-            visible = 1;
+        x = (sint32)r_u32(object + 4);
+        if (x > 0x06000000)
+            goto draw_model;
     }
-    if (visible)
-        return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, bias);
-    return 0;
+select_middle:
+    state = r_u32(0x80093d60);
+    if ((state == 2 && r_u32(0x80094674)) || state - 3 < 2 || state == 5)
+    {
+        x = (sint32)r_u32(object + 4);
+        if ((uint32)x + 0x0dffffff <= 0x13fffffe)
+            goto draw_model;
+    }
+    state = r_u32(0x80093d60);
+    if (state == 4 && r_u32(0x80094674))
+        goto test_left;
+    state = r_u32(0x80093d60);
+    if (state - 5 >= 2)
+        return 0;
+test_left:
+    x = (sint32)r_u32(object + 4);
+    if (x >= (sint32)0xf2000000)
+        return 0;
+
+draw_model:
+    return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, bias);
 }
 
 GDB_CALL uint32 FUN_8002A640(uint32 object)
@@ -147,7 +172,7 @@ GDB_CALL uint32 FUN_8002A640(uint32 object)
     FUN_800100C4(0, (sint32)((uint32)(sint32)r_s16(0x800802d0 + offset) * (uint32)amplitude), 0);
     ff_static_model_80010B18(r_u32(0x80081c74), 0, 0);
     FUN_800100C4(0, 0x00100000, 0);
-    FUN_8001033C((sint32)((uint32)(uint16)r_s16(0x80093dd0) << 12));
+    FUN_8001033C((sint32)((uint32)r_u16(0x80093dd0) << 12));
     ff_static_model_80010B18(r_u32(0x80081ff0), 0, 0);
     FUN_80010028();
     if (r_u32(0x80093d58) == 18)
@@ -164,16 +189,25 @@ GDB_CALL uint32 FUN_8002A640(uint32 object)
 GDB_CALL uint32 FUN_8002C55C(uint32 object)
 {
     FUNCTION_MARKER(0x8002c55cu, "GAME.EXE");
-    uint32 z, color;
-    sint32 shade;
+    uint32 x, y, z, color, offset, camera_x, camera_y, camera_z;
+    sint32 shade, wave, angle;
     FUN_80010040();
-    z = r_u32(object + 12) - ((uint32)(sint32)r_s16(0x800806d0 + (((uint32)(sint32)r_s16(object + 26) << 3) & 0xff8u)) << 9);
-    FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(z - r_u32(0x8008d4ac)));
+    y = r_u32(object + 8);
+    offset = ((uint32)(sint32)r_s16(object + 26) << 3) & 0xff8;
+    wave = r_s16(0x800806d0 + offset);
+    z = r_u32(object + 12) - ((uint32)wave << 9);
+    x = r_u32(object + 4);
+    camera_x = r_u32(0x8008d4a4);
+    camera_y = r_u32(0x8008d4a8);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
     FUN_800101CC(32768);
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
     shade = ((sint32)z >> 19) - 450;
     if (shade < 0)
         shade = 0;
@@ -190,11 +224,14 @@ GDB_CALL uint32 FUN_8002C55C(uint32 object)
 GDB_CALL uint32 FUN_800454E0(uint32 object)
 {
     FUNCTION_MARKER(0x800454e0u, "GAME.EXE");
+    sint32 angle;
     FUN_8001033C(r_s16(object + 16));
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     FUN_800100C4((sint32)0xfb000000u, 0, 0);
     FUN_80011594(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
     FUN_800100C4(0x05000000, 0, 0);
@@ -206,20 +243,23 @@ GDB_CALL uint32 FUN_800454E0(uint32 object)
 GDB_CALL uint32 FUN_8005B404(uint32 object)
 {
     FUNCTION_MARKER(0x8005b404u, "GAME.EXE");
-    sint32 phase = r_s16(object + 28), height;
+    sint32 phase = r_s16(object + 28), height, angle;
     if (phase >= 3)
         phase = 2;
     height = r_s16(0x800802d0 + ((uint32)phase << 9)) >> 9;
     w_u16(object + 26, 0);
     w_u16(object + 22, 0);
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     ff_static_model_80010B18(r_u32(0x80081830), 0, 8192);
     FUN_800100C4(0, (sint32)((64u - (uint32)height) << 16), 0);
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
@@ -244,19 +284,22 @@ GDB_CALL uint32 FUN_80032C4C(uint32 object)
 GDB_CALL uint32 FUN_8005B598(uint32 object)
 {
     FUNCTION_MARKER(0x8005b598u, "GAME.EXE");
-    sint32 phase = r_s16(object + 28), height;
+    sint32 phase = r_s16(object + 28), height, angle;
     if (phase >= 3)
         phase = 2;
     height = (5 * r_s16(0x800802d0 + ((uint32)phase << 9))) >> 12;
     w_u16(object + 26, 0);
     w_u16(object + 22, 0);
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     FUN_800100C4(0, (sint32)((40u - (uint32)height) << 16), 0);
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
@@ -264,16 +307,19 @@ GDB_CALL uint32 FUN_8005AD54(uint32 object)
 {
     FUNCTION_MARKER(0x8005ad54u, "GAME.EXE");
     uint32 kind = r_u32(object);
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    sint32 angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     FUN_80010040();
     FUN_800100C4(0, (sint32)r_u32(object + 8), 0);
     ff_static_model_80010B18(r_u32(0x80081720 + 4u * (kind == 87 ? 89u : 106u)), 0, 8192);
     FUN_80010028();
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
@@ -305,30 +351,82 @@ GDB_CALL uint32 FUN_80032818(uint32 object)
     FUNCTION_MARKER(0x80032818u, "GAME.EXE");
     uint32 kind = r_u32(object), state, mode;
     sint32 x, z, bias;
-    int draw = 0;
     object_rotations(object);
     bias = (kind - 207u < 4u || kind == 214 || kind == 211) ? 512 : 0;
     state = r_u32(0x80093d60);
-    mode = r_u32(0x80094674);
+    if (!state)
+    {
+        z = (sint32)r_u32(object + 12);
+        if (z <= (sint32)0xf2900000)
+            goto draw_model;
+        state = r_u32(0x80093d60);
+        if (!state)
+        {
+            mode = r_u32(0x80094674);
+            if (mode)
+                goto test_front;
+        }
+    }
+    state = r_u32(0x80093d60);
+    if (state - 1 < 2 || state == 3)
+    {
+        z = (sint32)r_u32(object + 12);
+        goto test_front;
+    }
+    goto select_middle;
+
+test_front:
+    if (z > (sint32)0xf2900000)
+    {
+        x = (sint32)r_u32(object + 4);
+        if (x > 0x06000000)
+            goto draw_model;
+    }
+    state = r_u32(0x80093d60);
+select_middle:
+    if (state == 2)
+    {
+        mode = r_u32(0x80094674);
+        if (mode)
+            goto test_middle;
+    }
+    state = r_u32(0x80093d60);
+    if (state - 3 < 2 || state == 5)
+        goto test_middle;
+    goto select_left;
+
+test_middle:
     x = (sint32)r_u32(object + 4);
-    z = (sint32)r_u32(object + 12);
-    if (!state && z <= (sint32)0xf2900000u)
-        draw = 1;
-    else if (((!state && mode) || state - 1u < 3u) && z > (sint32)0xf2900000u && x > 0x06000000)
-        draw = 1;
-    else if (((state == 2 && mode) || state - 3u < 3u) && (uint32)x + 0x0dffffffu <= 0x13fffffeu)
-        draw = 1;
-    else if (((state == 4 && mode) || state - 5u < 2u) && x < (sint32)0xf2000000u)
-        draw = 1;
-    if (draw)
-        return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, bias);
-    return 0;
+    if ((uint32)x + 0x0dffffff <= 0x13fffffe)
+        goto draw_model;
+    state = r_u32(0x80093d60);
+select_left:
+    if (state == 4)
+    {
+        mode = r_u32(0x80094674);
+        if (mode)
+            goto test_left;
+    }
+    state = r_u32(0x80093d60);
+    if (state - 5 >= 2)
+        return 0;
+test_left:
+    x = (sint32)r_u32(object + 4);
+    if (x >= (sint32)0xf2000000)
+        return 0;
+
+draw_model:
+    return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, bias);
 }
 
 GDB_CALL uint32 FUN_80032A48(uint32 object)
 {
     FUNCTION_MARKER(0x80032a48u, "GAME.EXE");
-    sint16 angle = (sint16)FUN_8001614C(r_s16(object + 6), r_s16(object + 14), r_s16(0x800b4342), r_s16(0x800b434a));
+    sint32 x = r_s16(object + 6);
+    sint32 z = r_s16(object + 14);
+    sint32 player_x = r_s16(0x800b4342);
+    sint32 player_z = r_s16(0x800b434a);
+    sint16 angle = (sint16)FUN_8001614C(x, z, player_x, player_z);
     w_u16(object + 16, (uint16)angle);
     FUN_8001033C(angle);
     return FUN_80032818(object);
@@ -346,13 +444,13 @@ GDB_CALL uint32 FUN_80032D70(uint32 object)
 GDB_CALL sint32 FUN_80032E20(uint32 object)
 {
     FUNCTION_MARKER(0x80032e20u, "GAME.EXE");
-    sint32 result;
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    sint32 result, angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     FUN_80011594(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
     FUN_800100C4(0, (sint32)((uint32)(sint32)r_s16(object + 26) << 16), 0x00d00000);
     FUN_80011594(r_u32(0x80081d44), 0, 0);
-    result = r_s16(0x800802d0 + ((r_u32(0x80093dd0) << 5) & 0x7e0u)) >> 7;
+    result = (sint16)r_u16(0x800802d0 + ((r_u32(0x80093dd0) << 5) & 0x7e0u)) >> 7;
     w_u16(object + 26, (uint16)result);
     return result;
 }
@@ -399,12 +497,10 @@ GDB_CALL uint32 FUN_80032D44(void)
     return FUN_80011594(r_u32(0x80081b84), 0, 1024);
 }
 
-static sint32 ff_project_local(sint32 x, sint32 y, sint32 z, sint32 dest[4]);
-
 GDB_CALL uint32 FUN_8005B844(uint32 object)
 {
     FUNCTION_MARKER(0x8005b844u, "GAME.EXE");
-    sint32 brightness = (r_s16(0x800802d0 + ((r_u32(0x80093dd0) << 5) & 0x7e0u)) >> 9) + 65, point[4], distance, amount, scale;
+    sint32 brightness = ((sint16)r_u16(0x800802d0 + ((r_u32(0x80093dd0) << 5) & 0x7e0u)) >> 9) + 65, point[4], distance, amount, scale;
     uint32 cutoff;
     ff_project_local(0, 0, 0, point);
     cutoff = r_u32(0x80011590);
@@ -687,41 +783,50 @@ GDB_CALL uint32 FUN_8005D53C(uint32 object)
 GDB_CALL uint32 FUN_8005B4F8(uint32 object)
 {
     FUNCTION_MARKER(0x8005b4f8u, "GAME.EXE");
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    sint32 angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     FUN_800100C4(0, 0x280000, 0);
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
 GDB_CALL uint32 FUN_8005B350(uint32 object)
 {
     FUNCTION_MARKER(0x8005b350u, "GAME.EXE");
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    sint32 angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     ff_static_model_80010B18(r_u32(0x80081830), 0, 8192);
     FUN_800100C4(0, 0x400000, 0);
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
 GDB_CALL uint32 FUN_80044CD4(uint32 object)
 {
     FUNCTION_MARKER(0x80044cd4u, "GAME.EXE");
+    sint32 angle;
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
-    FUN_8001033C((sint32)((uint32)(uint16)r_s16(0x80093dd0) << 12));
+    FUN_8001033C((sint32)((uint32)r_u16(0x80093dd0) << 12));
     ff_static_model_80010B18(r_u32(0x80081ff0), 0, 0);
     return FUN_80010028();
 }
@@ -767,22 +872,61 @@ GDB_CALL uint32 FUN_80011590(uint32 model, uint32 unused, sint32 bias)
     return FUN_80011594(model, unused, bias);
 }
 
+static uint32 ff_matrix_pointer_add(uint32 a, sint32 delta);
+
 GDB_CALL uint32 FUN_80011594(uint32 model, uint32 unused, sint32 bias)
 {
     FUNCTION_MARKER(0x80011594u, "GAME.EXE");
-    sint32 count = (sint32)r_u32(model + 4), position[4], cutoff;
-    uint32 vertices = r_u32(model), xy, depths, total, n, face, left, p, ot, depth_table;
-    FUN_80010170();
-    xy = count < 193 ? 0x1f800000 : 0x1fe800;
-    depths = count < 127 ? 0x1f800200 : count < 193 ? 0x1fe400 : count < 385 ? 0x1f800000 : 0x1fe400;
-    total = count <= 6 ? 6 : ((uint32)count + 2u) / 3u * 3u;
-    for (n = 0; n < total; n++)
+    uint32 matrix = r_u32(0x8008d494), words[8], vertices, xy, depths, xy_output, depth_output;
+    uint32 face, left, p, ot, depth_table, saved_depths[3];
+    sint32 count, below127, below193, below385 = 0, cutoff;
+    int i;
+    for (i = 0; i < 5; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 5; i < 8; i++)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+    count = r_s32(model + 4);
+    vertices = r_u32(model);
+    below127 = (sint32)ff_matrix_pointer_add((uint32)count, -127);
+    below193 = (sint32)ff_matrix_pointer_add((uint32)count, -193);
+    if (below127 >= 0)
+        below385 = (sint32)ff_matrix_pointer_add((uint32)count, -385);
+    xy = below127 < 0 || below193 < 0 ? 0x1f800000 : 0x1fe800;
+    depths = below127 < 0 ? 0x1f800200 : below193 < 0 ? 0x1fe400 : below385 < 0 ? 0x1f800000 : 0x1fe400;
+    xy_output = ff_matrix_pointer_add(xy, 12);
+    depth_output = ff_matrix_pointer_add(depths, 6);
+    for (i = 0; i < 6; i++)
+        xport_gte_write_data(i, r_u32(vertices + 4 * i));
+    xport_gte_execute(0x280030);
+    vertices = ff_matrix_pointer_add(vertices, 24);
+    count = (sint32)ff_matrix_pointer_add((uint32)count, -3);
+    for (i = 0; i < 3; i++)
+        w_u32(xy_output - 12 + 4 * i, xport_gte_read_data(12 + i));
+    for (i = 0; i < 3; i++)
+        saved_depths[i] = xport_gte_read_data(17 + i);
+    /* The original always projects a second triple before storing the first depths */
+    do
     {
-        uint32 v = vertices + 8u * n;
-        ff_project_local(r_s16(v), r_s16(v + 2), r_s16(v + 4), position);
-        w_u32(xy + 4u * n, ((uint32)position[0] & 65535u) | ((uint32)position[1] << 16));
-        w_u16(depths + 2u * n, (uint16)position[2]);
-    }
+        for (i = 0; i < 6; i++)
+            xport_gte_write_data(i, r_u32(vertices + 4 * i));
+        xport_gte_execute(0x280030);
+        vertices = ff_matrix_pointer_add(vertices, 24);
+        for (i = 0; i < 3; i++)
+            w_u16(depth_output - 6 + 2 * i, (uint16)saved_depths[i]);
+        xy_output = ff_matrix_pointer_add(xy_output, 12);
+        depth_output = ff_matrix_pointer_add(depth_output, 6);
+        count = (sint32)ff_matrix_pointer_add((uint32)count, -3);
+        for (i = 0; i < 3; i++)
+            w_u32(xy_output - 12 + 4 * i, xport_gte_read_data(12 + i));
+        for (i = 0; i < 3; i++)
+            saved_depths[i] = xport_gte_read_data(17 + i);
+    } while (count > 0);
+    for (i = 0; i < 3; i++)
+        w_u16(depth_output - 6 + 2 * i, (uint16)saved_depths[i]);
     /* 11590 is also read as the 0x1400 distance cutoff; see boundary audit. */
     face = r_u32(model + 8);
     left = r_u32(model + 12);
@@ -792,52 +936,84 @@ GDB_CALL uint32 FUN_80011594(uint32 model, uint32 unused, sint32 bias)
     p = r_u32(0x8008d4b0);
     do
     {
-        uint32 packed = r_u32(face), second = r_u32(face + 4), i0 = packed & 65535u, i1 = packed >> 16;
-        sint32 d0 = r_s16(depths + (i0 >> 1)), depth;
-        --left;
+        uint32 second = r_u32(face + 4), packed = r_u32(face), i0 = packed & 65535, i1 = packed >> 16;
+        sint32 d0 = r_s16(ff_matrix_pointer_add(depths, (sint32)(i0 >> 1))), depth;
         if ((sint32)second < 0)
         {
-            depth = (d0 + r_s16(depths + (i1 >> 1))) >> 3;
+            sint32 sum = d0 + r_s16(ff_matrix_pointer_add(depths, (sint32)(i1 >> 1)));
+            uint32 first_xy, second_xy;
+            left = ff_matrix_pointer_add(left, -1);
+            /* ADD of bias can trap even though the following SRA overwrites its result */
+            ff_matrix_pointer_add((uint32)sum, bias);
+            depth = sum >> 3;
+            first_xy = ff_matrix_pointer_add(xy, (sint32)i0);
+            if (depth > 8188)
+                goto next_face;
+            second_xy = ff_matrix_pointer_add(xy, (sint32)i1);
             if (depth > 0 && depth <= 8188)
             {
-                uint32 command = r_u32(face + 8), s0 = r_u32(xy + i0), s1 = r_u32(xy + i1);
-                uint32 bucket = ot + (uint32)(sint32)r_s16(depth_table + 2u * (uint32)depth);
+                uint32 command = r_u32(face + 8), s0 = r_u32(first_xy), s1 = r_u32(second_xy);
+                sint32 offset = r_s16(ff_matrix_pointer_add(depth_table, depth << 1));
+                uint32 bucket, next;
                 w_u32(p + 4, command);
                 w_u32(p + 8, s0);
                 w_u32(p + 12, s1);
-                w_u32(p, r_u32(bucket) | 0x03000000u);
+                bucket = ff_matrix_pointer_add(ot, offset);
+                uint32 link = r_u32(bucket);
+                face = ff_matrix_pointer_add(face, 12);
+                w_u32(p, link | 0x03000000u);
+                next = ff_matrix_pointer_add(p, 16);
                 w_u32(bucket, p);
-                p += 16;
+                p = next;
+                continue;
             }
         }
-        else if (d0 > 0)
+        else
         {
+            left = ff_matrix_pointer_add(left, -1);
+            if (d0 <= 0)
+                goto next_face;
             uint32 i2 = second & 65535u, i3 = second >> 16, color = 0x2d000000u;
-            sint32 d1 = r_s16(depths + (i2 >> 1));
+            sint32 d1 = r_s16(ff_matrix_pointer_add(depths, (sint32)(i2 >> 1)));
             if (d1 > 0)
             {
-                sint32 delta;
-                depth = (sint32)((uint32)(d0 + d1) + (uint32)bias) >> 1;
-                delta = (sint32)((uint32)depth - (uint32)cutoff);
+                sint32 delta, fade;
+                sint64 difference;
+                depth = (sint32)ff_matrix_pointer_add((uint32)(d0 + d1), bias) >> 1;
+                difference = (sint64)depth - cutoff;
+                if (difference < -2147483647LL - 1 || difference > 2147483647LL)
+                    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+                delta = (sint32)difference;
+                fade = (sint32)ff_matrix_pointer_add((uint32)delta, 2048);
                 if (delta <= 0)
                 {
-                    sint32 fade = (sint32)((uint32)delta + 2048u);
                     if (fade >= 0)
                     {
                         uint32 shade = 128u - (uint32)(fade >> 4);
                         color = 0x2c000000u | shade | (shade << 8) | (shade << 16);
                     }
                     depth >>= 2;
+                    uint32 first_xy = ff_matrix_pointer_add(xy, (sint32)i0);
                     if (depth <= 8192)
                     {
-                        uint32 s0 = r_u32(xy + i0), s1 = r_u32(xy + i1), s2 = r_u32(xy + i2), s3 = r_u32(xy + i3);
-                        if (((s0 & 65535u) < 320 || (s1 & 65535u) < 320 || (s2 & 65535u) < 320 || (s3 & 65535u) < 320) && ((sint32)s0 > 0 || (sint32)s1 > 0 || (sint32)s2 > 0 || (sint32)s3 >= 0))
+                        uint32 s0 = r_u32(first_xy), s1 = r_u32(ff_matrix_pointer_add(xy, (sint32)i1));
+                        uint32 s2 = r_u32(ff_matrix_pointer_add(xy, (sint32)i2)), s3 = r_u32(ff_matrix_pointer_add(xy, (sint32)i3));
+                        if ((s0 & 65535u) < 320 || (s1 & 65535u) < 320 || (s2 & 65535u) < 320 || (s3 & 65535u) < 320)
                         {
-                            uint32 offset = (uint32)(sint32)r_s16(depth_table + 2u * (uint32)depth), flags = r_u32(face + 8);
-                            sint32 area = (sint32)((sint64)(sint16)s0 * ((sint16)(s1 >> 16) - (sint16)(s2 >> 16)) + (sint64)(sint16)s1 * ((sint16)(s2 >> 16) - (sint16)(s0 >> 16)) + (sint64)(sint16)s2 * ((sint16)(s0 >> 16) - (sint16)(s1 >> 16)));
+                            uint32 flags;
+                            sint32 offset, area;
+                            xport_gte_write_data(12, s0);
+                            xport_gte_write_data(14, s2);
+                            if ((sint32)s0 <= 0 && (sint32)s1 <= 0 && (sint32)s2 <= 0 && (sint32)s3 < 0)
+                                goto next_face;
+                            xport_gte_write_data(13, s1);
+                            offset = r_s16(ff_matrix_pointer_add(depth_table, (sint32)((uint32)depth << 1)));
+                            xport_gte_execute(0x140006);
+                            flags = r_u32(face + 8);
+                            area = (sint32)xport_gte_read_data(24);
                             if ((flags & 1u) || area >= 0)
                             {
-                                uint32 texture = 0x800a8768 + (flags >> 16), uv, mode, end, semi, bucket = ot + offset;
+                                uint32 texture = ff_matrix_pointer_add(0x800a8768, (sint32)(flags >> 16)), uv, mode, end, semi, bucket, next;
                                 if (flags & 2u)
                                 {
                                     w_u32(p + 8, s1);
@@ -861,16 +1037,19 @@ GDB_CALL uint32 FUN_80011594(uint32 model, uint32 unused, sint32 bias)
                                 w_u16(p + 28, (uint16)end);
                                 w_u16(p + 36, (uint16)(end >> 16));
                                 w_u32(p + 4, (semi << 25) | color);
+                                bucket = ff_matrix_pointer_add(ot, offset);
                                 w_u32(p, r_u32(bucket) | 0x09000000u);
+                                next = ff_matrix_pointer_add(p, 40);
                                 w_u32(bucket, p & 0xffffffu);
-                                p += 40;
+                                p = next;
                             }
                         }
                     }
                 }
             }
         }
-        face += 12;
+    next_face:
+        face = ff_matrix_pointer_add(face, 12);
     } while (left);
     w_u32(0x8008d4bc, 0x2d000000u);
     w_u32(0x8008d4b0, p);
@@ -880,12 +1059,17 @@ GDB_CALL uint32 FUN_80011594(uint32 model, uint32 unused, sint32 bias)
 GDB_CALL uint32 FUN_800450F8(uint32 object)
 {
     FUNCTION_MARKER(0x800450f8u, "GAME.EXE");
-    sint32 position[4], z;
-    uint32 i;
+    sint32 position[4], x, y, z;
+    uint32 i, camera_x, camera_y, camera_z;
     FUN_80010040();
     z = r_s16(object + 14);
-    FUN_800100C4((sint32)(0u - r_u32(0x8008d4a4)), (sint32)(0u - r_u32(0x8008d4a8)), (sint32)(0u - r_u32(0x8008d4ac)));
-    ff_project_local(r_s16(object + 6), r_s16(object + 10), z, position);
+    camera_x = r_u32(0x8008d4a4);
+    camera_y = r_u32(0x8008d4a8);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(0 - camera_x), (sint32)(0 - camera_y), (sint32)(0 - camera_z));
+    x = r_s16(object + 6);
+    y = r_s16(object + 10);
+    ff_project_local(x, y, z, position);
     for (i = 0; i < 32; i++)
         FUN_80044D88();
     return FUN_80010028();
@@ -901,7 +1085,7 @@ GDB_CALL uint32 FUN_8004277C(uint32 object)
     FUN_800104A0(r_s16(object + 20));
     FUN_800101CC(r_s16(object + 18));
     ff_static_model_80010B18(r_u32(0x800821dc), 0, 0);
-    FUN_8001033C((sint32)((uint32)(uint16)r_s16(0x80093dd0) << 12));
+    FUN_8001033C((sint32)((uint32)r_u16(0x80093dd0) << 12));
     ff_static_model_80010B18(r_u32(0x80081ff0), 0, 0);
     return FUN_80010028();
 }
@@ -1060,9 +1244,11 @@ GDB_CALL uint32 FUN_8002A8FC(uint32 object)
 {
     FUNCTION_MARKER(0x8002a8fcu, "GAME.EXE");
     uint32 angle;
+    sint32 x;
     FUN_800100C4(0, 0x02800000, 0);
+    x = (sint32)r_u32(object + 4);
     angle = r_u32(0x80093dd0);
-    if ((sint32)r_u32(object + 4) > 0)
+    if (x > 0)
         angle = 0u - angle;
     FUN_800104A0((sint32)(angle << 12));
     return ff_static_model_80010B18(r_u32(0x80081d60), 0, 0);
@@ -1106,7 +1292,7 @@ GDB_CALL uint32 FUN_8002B150(uint32 object)
 GDB_CALL uint32 FUN_80032680(uint32 object)
 {
     FUNCTION_MARKER(0x80032680u, "GAME.EXE");
-    if ((uint16)((uint16)r_s16(0x8008d490) + 16384u) <= 32768u)
+    if ((uint16)(r_u16(0x8008d490) + 16384) <= 32768)
         return 0;
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
@@ -1207,8 +1393,18 @@ GDB_CALL uint32 FUN_8002A89C(void)
 GDB_CALL uint32 FUN_8002AA6C(uint32 object)
 {
     FUNCTION_MARKER(0x8002aa6cu, "GAME.EXE");
+    uint32 x, y, z, camera_x, camera_y, camera_z, kind, height;
     FUN_80010040();
-    FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) + r_u32(0x800990d8 + 4u * r_u32(object)) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
+    x = r_u32(object + 4);
+    camera_x = r_u32(0x8008d4a4);
+    kind = r_u32(object);
+    y = r_u32(object + 8);
+    height = r_u32(0x800990d8 + 4 * kind);
+    y += height;
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(object + 12);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
     FUN_800101CC(32768);
     FUN_8001033C(r_s16(object + 16));
     FUN_800104A0(-r_s16(object + 20));
@@ -1299,7 +1495,7 @@ GDB_CALL uint32 FUN_8005BFF4(uint32 object)
     FUN_800104A0(-r_s16(object + 20));
     ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, -256);
     FUN_800100C4(-3145728, 2621440, 0);
-    FUN_8001033C((sint32)((uint32)(uint16)r_s16(0x80093dd0) << 12));
+    FUN_8001033C((sint32)((uint32)r_u16(0x80093dd0) << 12));
     ff_static_model_80010B18(r_u32(0x80081ff0), 0, -256);
     FUN_80010028();
     FUN_80010040();
@@ -1338,15 +1534,29 @@ GDB_CALL sint32 FUN_80012190(void)
     return r_s16(r_u32(0x8008d494) + 30);
 }
 
-/* 124A0: FT4 sprite packet. UV extent subtraction is 16-bit, OT offset signed. */
+static uint32 ff_matrix_pointer_add(uint32 a, sint32 delta);
+
+/* 124A0: signed UV subtraction precedes truncation; OT offsets remain signed */
 GDB_CALL uint32 FUN_800124A0(const sint32 *position, uint32 texture)
 {
     FUNCTION_MARKER(0x800124a0u, "GAME.EXE");
-    uint32 packet = r_u32(0x8008d4b0), uv = 0x800a8768 + 12u * texture;
+    uint32 packet = r_u32(0x8008d4b0), uv;
     sint32 x = (sint16)position[0], y = (sint16)position[1];
-    uint32 first = r_u32(uv), second = r_u32(uv + 4), last = r_u32(uv + 8);
-    uint32 mode = first & 1u, base = first - mode, extent = ((last >> 16) - base) & 65535u;
-    uint32 right = (extent & 255u) + (uint32)x, bottom = (extent >> 8) + (uint32)y, ot, depth, lookup, link;
+    uint32 first, second, last, mode, base, extent, right, bottom, ot, depth, lookup, link, next;
+    sint64 difference;
+    uv = ff_matrix_pointer_add(0x800a8768, (sint32)(texture << 2));
+    uv = ff_matrix_pointer_add(uv, (sint32)(texture << 3));
+    first = r_u32(uv);
+    second = r_u32(uv + 4);
+    last = r_u32(uv + 8);
+    mode = first & 1;
+    base = first - mode;
+    difference = (sint64)(last >> 16) - (sint32)base;
+    if (difference < -2147483647LL - 1 || difference > 2147483647LL)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    extent = (uint32)difference & 65535;
+    right = (extent & 255) + (uint32)x;
+    bottom = (extent >> 8) + (uint32)y;
     w_u32(packet + 12, base);
     w_u32(packet + 20, second);
     w_u16(packet + 28, (uint16)last);
@@ -1363,10 +1573,12 @@ GDB_CALL uint32 FUN_800124A0(const sint32 *position, uint32 texture)
     ot = r_u32(0x8008d4b4);
     depth = (uint32)(position[2] >> 2);
     lookup = r_u32(0x8008d4d8);
-    link = ot + (uint32)(sint32)r_s16(lookup + 2u * depth);
+    lookup = ff_matrix_pointer_add(lookup, (sint32)(depth << 1));
+    link = ff_matrix_pointer_add(ot, r_s16(lookup));
     w_u32(packet, r_u32(link) | 0x09000000u);
+    next = ff_matrix_pointer_add(packet, 40);
     w_u32(link, packet & 0xffffffu);
-    w_u32(0x8008d4b0, packet + 40);
+    w_u32(0x8008d4b0, next);
     return 0x8008d4b0;
 }
 
@@ -1703,45 +1915,52 @@ GDB_CALL sint32 FUN_80011D20(void)
     return 4096;
 }
 
-/* Shared rotation-column MVMVA output semantics for pitch, yaw and roll. */
-static void ff_matrix_scratch_columns(uint32 a, MATRIX *matrix)
+/* Rotation columns retain the original MVMVA and IR read pipeline */
+static void ff_matrix_scratch_columns(uint32 a)
 {
-    SVECTOR v;
-    VECTOR q;
-    sint16 out[9];
-    int col, row;
-    for (col = 0; col < 3; col++)
-    {
-        v.vx = r_s16(0x1f8003e0 + 2u * col);
-        v.vy = r_s16(0x1f8003e6 + 2u * col);
-        v.vz = r_s16(0x1f8003ec + 2u * col);
-        v.pad = 0;
-        ApplyMatrix(matrix, &v, &q);
-        for (row = 0; row < 3; row++)
-        {
-            sint32 n = row == 0 ? q.vx : row == 1 ? q.vy : q.vz;
-            if (n < -32768)
-                n = -32768;
-            if (n > 32767)
-                n = 32767;
-            out[3 * row + col] = (sint16)n;
-        }
-    }
-    for (row = 0; row < 9; row++)
-        w_u16(a + 2u * row, (uint16)out[row]);
-    w_u32(a + 16, (uint32)(sint32)out[8]);
+    uint32 words[5], first[3], second[3], third_x, third_y, x, y, z;
+    int i;
+    for (i = 0; i < 5; i++)
+        words[i] = r_u32(a + 4 * i);
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    y = r_u16(0x1f8003e6);
+    x = r_u16(0x1f8003e0);
+    z = r_u32(0x1f8003ec);
+    xport_gte_write_data(0, x | (y << 16));
+    xport_gte_write_data(1, z);
+    xport_gte_execute(0x486012);
+    y = r_u16(0x1f8003e8);
+    x = r_u16(0x1f8003e2);
+    z = (uint32)(sint32)r_s16(0x1f8003ee);
+    for (i = 0; i < 3; i++)
+        first[i] = xport_gte_read_data(9 + i);
+    xport_gte_write_data(0, x | (y << 16));
+    xport_gte_write_data(1, z);
+    xport_gte_execute(0x486012);
+    y = r_u16(0x1f8003ea);
+    x = r_u16(0x1f8003e4);
+    z = r_u32(0x1f8003f0);
+    for (i = 0; i < 3; i++)
+        second[i] = xport_gte_read_data(9 + i);
+    xport_gte_write_data(0, x | (y << 16));
+    xport_gte_write_data(1, z);
+    xport_gte_execute(0x486012);
+    w_u32(a, (first[0] & 65535) | (second[0] << 16));
+    w_u32(a + 12, (first[2] & 65535) | (second[2] << 16));
+    third_x = xport_gte_read_data(9);
+    third_y = xport_gte_read_data(10);
+    w_u32(a + 4, (third_x & 65535) | (first[1] << 16));
+    w_u32(a + 8, (second[1] & 65535) | (third_y << 16));
+    w_u32(a + 16, xport_gte_read_data(11));
 }
 
-/* 800101CC: rotate current matrix by table pitch, MVMVA rotation-only columns.
- * AA ApplyMatrix supplies fixed-point multiplication; GTE IR saturation follows.
- * No native consumer relies on this routine's unspecified zero-angle return. */
+/* Table pitch uses three rotation-only MVMVA columns */
 GDB_CALL void ff_pitch_index_800101E0(uint32 index)
 {
     uint32 a, pair;
-    MATRIX m;
     pair = r_u32(0x80087640 + index);
     a = r_u32(0x8008d494);
-    memcpy(&m, psx_addr(a, 32), 32);
     w_u32(0x1f8003e0, 4096);
     w_u32(0x1f8003e4, 0);
     w_u16(0x1f8003e8, (uint16)(pair >> 16));
@@ -1749,7 +1968,7 @@ GDB_CALL void ff_pitch_index_800101E0(uint32 index)
     w_u16(0x1f8003ec, 0);
     w_u16(0x1f8003ee, (uint16)(0u - (pair & 65535)));
     w_u32(0x1f8003f0, pair >> 16);
-    ff_matrix_scratch_columns(a, &m);
+    ff_matrix_scratch_columns(a);
 }
 
 GDB_CALL void FUN_800101CC(sint32 angle)
@@ -1763,7 +1982,7 @@ GDB_CALL void FUN_800101CC(sint32 angle)
 }
 
 /* RTPT retains V1/V2 and exposes V0 through SXY0/SZ1 */
-static sint32 ff_project_local(sint32 x, sint32 y, sint32 z, sint32 dest[4])
+GDB_CALL sint32 ff_project_local(sint32 x, sint32 y, sint32 z, sint32 dest[4])
 {
     uint32 a = r_u32(0x8008d494), words[8], i, packed, depth;
     sint32 sx, sy, result;
@@ -1792,27 +2011,51 @@ GDB_CALL uint32 FUN_800112A4(uint32 unused, uint32 column, uint32 row)
 {
     FUNCTION_MARKER(0x800112a4u, "GAME.EXE");
     uint32 r, n, packed, xy = 0x001fe800, depths = 0x1f800000, p, ot, head, offset = 0, cell, texture, sx[4], uv[3], color;
-    sint32 point[4], z = -2048, cutoff, depth, delta, fade;
+    uint32 matrix, words[8], projected_depths[3];
+    sint32 z = -2048, cutoff, depth, delta, fade;
+    sint64 difference;
+    int i;
     column <<= 1;
     row <<= 7;
-    FUN_80010170();
-    /* RTPT: eighteen vertices per row with a seventeen-vertex stride.
-  * Packed VXY increments carry into Y after X crosses FFFF. */
+    matrix = r_u32(0x8008d494);
+    for (i = 0; i < 5; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 5; i < 8; i++)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+    /* Six RTPT triples per row with a seventeen-point stride */
     for (r = 0; r < 17; ++r, z += 256)
     {
-        for (n = 0, packed = 0xf800; n < 18; ++n, packed += 256)
+        xport_gte_write_data(1, (uint32)z);
+        xport_gte_write_data(3, (uint32)z);
+        xport_gte_write_data(5, (uint32)z);
+        packed = 0xf800;
+        for (n = 0; n < 6; n++)
         {
-            ff_project_local((sint16)packed, (sint16)(packed >> 16), z, point);
-            w_u32(xy, ((uint32)point[0] & 65535) | ((uint32)point[1] << 16));
-            w_u16(depths, (uint16)point[2]);
-            xy += 4;
-            depths += 2;
+            for (i = 0; i < 3; i++)
+            {
+                xport_gte_write_data(2 * i, packed);
+                packed += 256;
+            }
+            xport_gte_execute(0x280030);
+            for (i = 0; i < 3; i++)
+                w_u32(xy + 4 * i, xport_gte_read_data(12 + i));
+            for (i = 0; i < 3; i++)
+                projected_depths[i] = xport_gte_read_data(17 + i);
+            for (i = 0; i < 3; i++)
+                w_u16(depths + 2 * i, (uint16)projected_depths[i]);
+            xy += 12;
+            depths += 6;
         }
         xy -= 4;
         depths -= 2;
     }
-    p = r_u32(0x8008d4b0);
+    color = r_u32(0x8008d4bc);
     ot = r_u32(0x8008d4b4) + 8;
+    p = r_u32(0x8008d4b0);
     head = r_u32(ot);
     cutoff = (sint32)r_u32(0x80011590);
     for (r = 0; r < 16; ++r)
@@ -1821,27 +2064,37 @@ GDB_CALL uint32 FUN_800112A4(uint32 unused, uint32 column, uint32 row)
         {
             column &= 0x7e;
             row &= 0x1f80;
-            cell = (uint16)r_s16(0x8009f870 + column + row);
+            cell = r_u16(0x8009f870 + column + row);
             if (cell != 0xfffc && r_s16(0x1f800000 + (offset >> 1)) > 0)
             {
                 depth = r_s16(0x1f800024 + (offset >> 1));
-                delta = (sint32)((uint32)depth - (uint32)cutoff);
-                if (depth > 0 && delta <= 0)
+                if (depth > 0)
                 {
-                    color = 0x2d000000;
-                    fade = (sint32)((uint32)delta + 2048u);
-                    if (fade >= 0)
-                    {
-                        uint32 shade = 128u - (uint32)(fade >> 4);
-                        color = 0x2c000000 | shade | (shade << 8) | (shade << 16);
-                    }
                     sx[0] = r_u32(0x001fe800 + offset);
                     sx[1] = r_u32(0x001fe804 + offset);
+                    color = 0x2d000000;
+                    difference = (sint64)depth - cutoff;
+                    if (difference < -2147483647 - 1 || difference > 2147483647)
+                        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+                    delta = (sint32)difference;
+                    /* The ADDI in the rejection branch delay slot still executes */
+                    difference += 2048;
+                    if (difference > 2147483647)
+                        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+                    fade = (sint32)difference;
+                    if (delta > 0)
+                        goto next_faded_tile;
+                    if (fade >= 0)
+                    {
+                        uint32 shade = 128 - (uint32)(fade >> 4);
+                        color = 0x2c000000 | shade | (shade << 8) | (shade << 16);
+                    }
                     sx[2] = r_u32(0x001fe844 + offset);
                     sx[3] = r_u32(0x001fe848 + offset);
+                    /* Horizontal rejection still executes this delay-slot store */
+                    w_u32(p + 8, sx[0]);
                     if ((sx[0] & 65535) < 320 || (sx[1] & 65535) < 320 || (sx[2] & 65535) < 320 || (sx[3] & 65535) < 320)
                     {
-                        w_u32(p + 8, sx[0]);
                         w_u32(p + 16, sx[1]);
                         w_u32(p + 24, sx[2]);
                         w_u32(p + 32, sx[3]);
@@ -1860,6 +2113,7 @@ GDB_CALL uint32 FUN_800112A4(uint32 unused, uint32 column, uint32 row)
                     }
                 }
             }
+        next_faded_tile:
             column -= 2;
             offset += 4;
         }
@@ -2001,32 +2255,36 @@ static uint32 ff_matrix_pointer_add(uint32 a, sint32 delta)
     return (uint32)n;
 }
 
-static void ff_matrix_load_gte(MATRIX *source)
+static void ff_matrix_load_gte(const uint32 words[8])
 {
-    MATRIX m = *source;
-    m.t[0] >>= 16;
-    m.t[1] >>= 16;
-    m.t[2] >>= 16;
-    SetRotMatrix(&m);
-    SetTransMatrix(&m);
+    int i;
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; i++)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
 }
 
 /* 80011F74: load all eight words before stores, then reload COP2 controls. */
 GDB_CALL void FUN_80011F74(uint32 source)
 {
-    MATRIX m;
-    memcpy(&m, psx_addr(source, 32), 32);
-    memcpy(psx_addr(r_u32(0x8008d494), 32), &m, 32);
-    ff_matrix_load_gte(&m);
+    uint32 target = r_u32(0x8008d494), words[8];
+    int i;
+    for (i = 0; i < 8; i++)
+        words[i] = r_u32(source + 4 * i);
+    for (i = 0; i < 8; i++)
+        w_u32(target + 4 * i, words[i]);
+    ff_matrix_load_gte(words);
 }
 
 /* 80010170: reload geometry registers from the current matrix, without moving
  * its pointer or modifying the matrix. Translation fractions are discarded. */
 GDB_CALL void FUN_80010170(void)
 {
-    MATRIX m;
-    memcpy(&m, psx_addr(r_u32(0x8008d494), 32), 32);
-    ff_matrix_load_gte(&m);
+    uint32 source = r_u32(0x8008d494), words[8];
+    int i;
+    for (i = 0; i < 8; i++)
+        words[i] = r_u32(source + 4 * i);
+    ff_matrix_load_gte(words);
 }
 
 /* 80010028 only advances the pointer: it does not reload GTE registers. */
@@ -2040,12 +2298,14 @@ GDB_CALL uint32 FUN_80010028(void)
 /* 80010040 snapshots all eight source words before writing the lower slot. */
 GDB_CALL uint32 FUN_80010040(void)
 {
-    uint32 a = r_u32(0x8008d494), b;
-    MATRIX m;
-    memcpy(&m, psx_addr(a, 32), 32);
+    uint32 a = r_u32(0x8008d494), b, words[8];
+    int i;
+    for (i = 0; i < 8; i++)
+        words[i] = r_u32(a + 4 * i);
     b = ff_matrix_pointer_add(a, -32);
-    memcpy(psx_addr(b, 32), &m, 32);
-    ff_matrix_load_gte(&m);
+    for (i = 0; i < 8; i++)
+        w_u32(b + 4 * i, words[i]);
+    ff_matrix_load_gte(words);
     w_u32(0x8008d494, b);
     return b;
 }
@@ -2054,20 +2314,18 @@ GDB_CALL uint32 FUN_80010040(void)
  * fractions are discarded before the operation; stores wrap after SLL 16. */
 GDB_CALL uint32 FUN_800100C4(sint32 x, sint32 y, sint32 z)
 {
-    uint32 a = r_u32(0x8008d494);
-    MATRIX m;
-    SVECTOR v;
-    VECTOR q;
-    memcpy(&m, psx_addr(a, 32), 32);
-    ff_matrix_load_gte(&m);
-    v.vx = (sint16)(x >> 16);
-    v.vy = (sint16)(y >> 16);
-    v.vz = (sint16)(z >> 16);
-    v.pad = 0;
-    ApplyMatrix(&m, &v, &q);
-    w_u32(a + 20, ((uint32)q.vx + (uint32)(m.t[0] >> 16)) << 16);
-    w_u32(a + 24, ((uint32)q.vy + (uint32)(m.t[1] >> 16)) << 16);
-    w_u32(a + 28, ((uint32)q.vz + (uint32)(m.t[2] >> 16)) << 16);
+    uint32 a = r_u32(0x8008d494), words[8], result[3];
+    int i;
+    for (i = 0; i < 8; i++)
+        words[i] = r_u32(a + 4 * i);
+    ff_matrix_load_gte(words);
+    xport_gte_write_data(0, ((uint32)x >> 16) | ((uint32)y & 0xffff0000));
+    xport_gte_write_data(1, (uint32)(z >> 16));
+    xport_gte_execute(0x480012);
+    for (i = 0; i < 3; i++)
+        result[i] = xport_gte_read_data(25 + i) << 16;
+    for (i = 0; i < 3; i++)
+        w_u32(a + 20 + 4 * i, result[i]);
     return a;
 }
 
@@ -2075,7 +2333,6 @@ GDB_CALL uint32 FUN_800100C4(sint32 x, sint32 y, sint32 z)
 GDB_CALL void ff_yaw_index_80010350(uint32 index)
 {
     uint32 pair, a;
-    MATRIX m;
     pair = r_u32(0x80087640 + index);
     a = r_u32(0x8008d494);
     w_u32(0x1f8003e0, pair >> 16);
@@ -2083,8 +2340,7 @@ GDB_CALL void ff_yaw_index_80010350(uint32 index)
     w_u32(0x1f8003e8, 4096);
     w_u32(0x1f8003ec, pair & 65535);
     w_u32(0x1f8003f0, pair >> 16);
-    memcpy(&m, psx_addr(a, 32), 32);
-    ff_matrix_scratch_columns(a, &m);
+    ff_matrix_scratch_columns(a);
 }
 
 GDB_CALL void FUN_8001033C(sint32 angle)
@@ -2100,8 +2356,9 @@ GDB_CALL void FUN_8001033C(sint32 angle)
 /* 800104B4 is also called directly by the model stream with a table offset. */
 GDB_CALL void ff_roll_index_800104B4(uint32 index)
 {
-    uint32 pair = r_u32(0x80087640 + index), a = r_u32(0x8008d494);
-    MATRIX m;
+    uint32 pair, a;
+    pair = r_u32(0x80087640 + index);
+    a = r_u32(0x8008d494);
     w_u16(0x1f8003e0, (uint16)(pair >> 16));
     w_u16(0x1f8003e2, (uint16)(0u - (pair & 65535)));
     w_u16(0x1f8003e4, 0);
@@ -2109,8 +2366,7 @@ GDB_CALL void ff_roll_index_800104B4(uint32 index)
     w_u32(0x1f8003e8, pair >> 16);
     w_u32(0x1f8003ec, 0);
     w_u32(0x1f8003f0, 4096);
-    memcpy(&m, psx_addr(a, 32), 32);
-    ff_matrix_scratch_columns(a, &m);
+    ff_matrix_scratch_columns(a);
 }
 
 GDB_CALL void FUN_800104A0(sint32 angle)
@@ -2123,16 +2379,20 @@ GDB_CALL void FUN_800104A0(sint32 angle)
         ff_roll_index_800104B4(index);
 }
 
-static void ff_model_rotations(uint32 roll, uint32 yaw, uint32 pitch)
+static void ff_model_rotations(uint32 source, int halfwords)
 {
+    uint32 roll, yaw, pitch;
+    roll = halfwords ? (uint32)(sint32)r_s16(source) : r_u32(source);
     if (roll)
         ff_roll_index_800104B4(roll << 2);
+    yaw = halfwords ? (uint32)(sint32)r_s16(source + 2) : r_u32(source + 4);
     if (yaw)
     {
         if (yaw == 0x80000000u)
             ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
         ff_yaw_index_80010350(((0u - yaw) & 0xfff) << 2);
     }
+    pitch = halfwords ? (uint32)(sint32)r_s16(source + 4) : r_u32(source + 8);
     if (pitch)
     {
         if (pitch == 0x80000000u)
@@ -2141,14 +2401,15 @@ static void ff_model_rotations(uint32 roll, uint32 yaw, uint32 pitch)
     }
 }
 
-/* Partial 8001060C: transform phase through 80010AB8. The final matrix pop
- * and polygon phase remain caller work; no model is drawn by this entry yet. */
+/* Model stream transform phase through 80010AB8
+ * FUN_8001060C performs the final matrix pop and shared packet phase */
 GDB_CALL void ff_model_transform_8001060C(uint32 model, uint32 pose)
 {
-    uint32 stream = model + r_u32(model + 24), counts = model + 32, vertices = r_u32(model), index = 0, command;
-    uint32 saved[4];
+    uint32 stream, counts = model + 32, vertices, index = 0, command;
     sint32 angle;
-    memcpy(saved, psx_addr(0x801fc090, 16), 16);
+    r_u32(model + 4);
+    vertices = r_u32(model);
+    stream = model + r_u32(model + 24);
     FUN_80010040();
     angle = r_s16(pose + 220);
     if (angle)
@@ -2159,31 +2420,48 @@ GDB_CALL void ff_model_transform_8001060C(uint32 model, uint32 pose)
     angle = r_s16(pose + 216);
     if (angle)
         ff_roll_index_800104B4(((uint32)angle & 0xfff) << 2);
+    command = r_u32(stream);
+    stream += 4;
     for (;;)
     {
-        uint32 flag, bone, count, matrix, out = 0, k;
-        command = r_u32(stream);
-        stream += 4;
-        if (!command)
-            break;
+        uint32 flag, bone, count, matrix, out = 0, words[8], xyz[3];
+        int i;
         if (command == 1)
         {
             FUN_80010040();
-            continue;
+            goto next_command;
         }
         if (command == 2)
         {
             FUN_80010028();
-            continue;
+            goto next_command;
         }
         flag = r_u32(stream);
-        FUN_800100C4((sint32)r_u32(stream + 4), (sint32)r_u32(stream + 8), (sint32)r_u32(stream + 12));
+        matrix = r_u32(0x8008d494);
+        for (i = 0; i < 5; i++)
+            words[i] = r_u32(matrix + 4 * i);
+        for (i = 0; i < 5; i++)
+            xport_gte_write_control(i, words[i]);
+        for (i = 5; i < 8; i++)
+            words[i] = r_u32(matrix + 4 * i);
+        for (i = 5; i < 8; i++)
+            xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+        for (i = 0; i < 3; i++)
+            xyz[i] = r_u32(stream + 4 + 4 * i);
         stream += 16;
-        ff_model_rotations(r_u32(stream), r_u32(stream + 4), r_u32(stream + 8));
+        xport_gte_write_data(0, (xyz[0] >> 16) | (xyz[1] & 0xffff0000));
+        xport_gte_write_data(1, (uint32)((sint32)xyz[2] >> 16));
+        xport_gte_execute(0x480012);
+        matrix = r_u32(0x8008d494);
+        for (i = 0; i < 3; i++)
+            xyz[i] = xport_gte_read_data(25 + i) << 16;
+        for (i = 0; i < 3; i++)
+            w_u32(matrix + 20 + 4 * i, xyz[i]);
+        ff_model_rotations(stream, 0);
         stream += 12;
         bone = pose + 6 * r_u32(stream);
         stream += 4;
-        ff_model_rotations((uint32)(sint32)r_s16(bone + 216), (uint32)(sint32)r_s16(bone + 218), (uint32)(sint32)r_s16(bone + 220));
+        ff_model_rotations(bone + 216, 1);
         if (flag == 1)
         {
             ff_yaw_index_80010350(r_u32(pose) << 2);
@@ -2192,68 +2470,118 @@ GDB_CALL void ff_model_transform_8001060C(uint32 model, uint32 pose)
         else if (flag == 2 || flag == 3 || flag == 10 || flag == 11)
         {
             out = flag == 2 ? 4 : flag == 3 ? 36 : flag == 10 ? 68 : 100;
-            memcpy(psx_addr(pose + out, 32), psx_addr(r_u32(0x8008d494), 32), 32);
+            matrix = r_u32(0x8008d494);
+            for (i = 0; i < 8; i++)
+                words[i] = r_u32(matrix + 4 * i);
+            for (i = 0; i < 8; i++)
+                w_u32(pose + out + 4 * i, words[i]);
             out = 0;
         }
         else if (flag >= 4 && flag <= 9)
             out = 132 + 12 * (flag - 4);
-        matrix = r_u32(0x8008d494);
         if (out)
-            memcpy(psx_addr(pose + out, 12), psx_addr(matrix + 20, 12), 12);
+        {
+            matrix = r_u32(0x8008d494);
+            for (i = 0; i < 3; i++)
+                xyz[i] = r_u32(matrix + 20 + 4 * i);
+            for (i = 0; i < 3; i++)
+                w_u32(pose + out + 4 * i, xyz[i]);
+        }
         count = r_u32(counts);
         counts += 4;
         if (count)
         {
-            FUN_80010170();
-            for (k = 0; k < count; k += 3)
+            uint32 vertex, xy, depth_out, remaining = count, depths[3];
+            matrix = r_u32(0x8008d494);
+            for (i = 0; i < 8; i++)
+                words[i] = r_u32(matrix + 4 * i);
+            for (i = 0; i < 5; i++)
+                xport_gte_write_control(i, words[i]);
+            for (i = 5; i < 8; i++)
+                xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+            vertex = vertices + 8 * index;
+            xy = 0x1fe800 + 4 * index;
+            depth_out = 0x1fe400 + 2 * index;
+            index += count;
+            do
             {
-                uint32 j;
-                for (j = 0; j < 3; j++)
-                {
-                    uint32 n = index + k + j, v = vertices + 8 * n;
-                    FUN_800120BC(r_s16(v), r_s16(v + 2), r_s16(v + 4), 0x801fc090);
-                    w_u32(0x1fe800 + 4 * n, (r_u32(0x801fc090) & 65535) | (r_u32(0x801fc094) << 16));
-                    w_u16(0x1fe400 + 2 * n, (uint16)r_u32(0x801fc098));
-                }
-            }
+                for (i = 0; i < 6; i++)
+                    xport_gte_write_data(i, r_u32(vertex + 4 * i));
+                xport_gte_execute(0x280030);
+                vertex += 24;
+                if ((sint32)remaining < -2147483645)
+                    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+                remaining -= 3;
+                for (i = 0; i < 3; i++)
+                    w_u32(xy + 4 * i, xport_gte_read_data(12 + i));
+                for (i = 0; i < 3; i++)
+                    depths[i] = xport_gte_read_data(17 + i);
+                for (i = 0; i < 3; i++)
+                    w_u16(depth_out + 2 * i, (uint16)depths[i]);
+                xy += 12;
+                depth_out += 6;
+            } while ((sint32)remaining > 0);
         }
-        index += count;
-        ff_model_rotations(r_u32(stream), r_u32(stream + 4), r_u32(stream + 8));
+        ff_model_rotations(stream, 0);
         stream += 12;
+    next_command:
+        command = r_u32(stream);
+        stream += 4;
+        if (!command)
+            break;
     }
-    memcpy(psx_addr(0x801fc090, 16), saved, 16);
 }
 
 /* Shared polygon phase. Signed packed XY tests and line bucket alias behavior
  * deliberately follow MIPS rather than a generic polygon clipping policy. */
 GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 xy, uint32 depths, sint32 bias)
 {
-    uint32 packet = r_u32(0x8008d4b0), ot = r_u32(0x8008d4b4), table = r_u32(0x8008d4d8), color = r_u32(0x8008d4bc), blend = r_u32(0x8008d4c0);
+    uint32 packet, ot, table, color, blend;
+    table = r_u32(0x8008d4d8);
+    color = r_u32(0x8008d4bc);
+    blend = r_u32(0x8008d4c0);
+    ot = r_u32(0x8008d4b4);
+    packet = r_u32(0x8008d4b0);
     if (!count)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     do
     {
-        uint32 first = r_u32(records), second = r_u32(records + 4), i0 = first & 65535, i1 = first >> 16, i2 = second & 65535, i3 = second >> 16;
+        uint32 first, second, i0, i1, i2, i3;
         sint32 depth;
         uint32 a, b, c, d, bucket, texture, uv0, uv1, uv2, flags;
+        second = r_u32(records + 4);
+        first = r_u32(records);
+        i0 = first & 65535;
+        i1 = first >> 16;
+        i2 = second & 65535;
+        i3 = second >> 16;
         if ((sint32)second < 0)
         {
-            /* 80010F24's bias addition is overwritten by the next instruction. */
-            depth = (r_s16(depths + (i0 >> 1)) + r_s16(depths + (i1 >> 1))) >> 3;
+            sint32 z0 = r_s16(depths + (i0 >> 1));
+            sint32 z1 = r_s16(depths + (i1 >> 1));
+            /* 80010F24's bias addition is overwritten by the next instruction */
+            depth = (z0 + z1) >> 3;
             if (depth <= 0 || depth > 8188)
                 goto next_record;
-            bucket = ot + (uint32)(sint32)r_s16(table + 2u * (uint32)depth);
-            w_u32(packet + 4, r_u32(records + 8));
-            w_u32(packet + 8, r_u32(xy + i0));
-            w_u32(packet + 12, r_u32(xy + i1));
+            flags = r_u32(records + 8);
+            a = r_u32(xy + i0);
+            b = r_u32(xy + i1);
+            bucket = ot + (uint32)(sint32)r_s16(table + 2 * (uint32)depth);
+            w_u32(packet + 4, flags);
+            w_u32(packet + 8, a);
+            w_u32(packet + 12, b);
             w_u32(packet, r_u32(bucket) | 0x03000000);
             w_u32(bucket, packet);
             packet += 16;
         }
         else
         {
-            sint32 z0 = r_s16(depths + (i0 >> 1)), z2 = r_s16(depths + (i2 >> 1)), clip;
-            if (z0 <= 0 || z2 <= 0)
+            sint32 z0, z2, clip;
+            z0 = r_s16(depths + (i0 >> 1));
+            if (z0 <= 0)
+                goto next_record;
+            z2 = r_s16(depths + (i2 >> 1));
+            if (z2 <= 0)
                 goto next_record;
             depth = (sint32)((uint32)(z0 + z2) + (uint32)bias) >> 3;
             if (depth > 8192)
@@ -2269,7 +2597,7 @@ GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 x
             if ((sint32)a <= 0 && (sint32)b <= 0 && (sint32)c <= 0 && (sint32)d < 0)
                 goto next_record;
             xport_gte_write_data(13, b);
-            bucket = ot + (uint32)(sint32)r_s16(table + 2u * (uint32)depth);
+            bucket = ot + (uint32)(sint32)r_s16(table + 2 * (uint32)depth);
             xport_gte_execute(0x140006);
             flags = r_u32(records + 8);
             clip = (sint32)xport_gte_read_data(24);
@@ -2315,31 +2643,70 @@ GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 x
 
 GDB_CALL uint32 FUN_8001060C(uint32 model, uint32 pose)
 {
+    uint32 records, count;
     ff_model_transform_8001060C(model, pose);
     FUN_80010028();
-    return ff_model_packets_80010CA0(r_u32(model + 12), r_u32(model + 8), 0x1fe800, 0x1fe400, 0);
+    records = r_u32(model + 8);
+    count = r_u32(model + 12);
+    return ff_model_packets_80010CA0(count, records, 0x1fe800, 0x1fe400, 0);
 }
 
-/* Static entry shares packets but selects projection buffers by vertex count.
- * The pipelined original always projects at least two triples. */
+/* Static entry pipelines depth stores behind the next RTPT triple
+ * The original always projects at least two triples */
 GDB_CALL uint32 ff_static_model_80010B18(uint32 model, uint32 unused, sint32 bias)
 {
-    sint32 count = (sint32)r_u32(model + 4);
-    uint32 xy, depths, vertices = r_u32(model), n, total, saved[4];
+    sint32 count;
+    uint32 matrix, words[8], xy, depths, vertices, xy_out, depth_out;
+    uint32 previous_depths[3], remaining, records, packets;
+    int i;
+    matrix = r_u32(0x8008d494);
+    for (i = 0; i < 5; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 5; i < 8; i++)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+    count = r_s32(model + 4);
+    vertices = r_u32(model);
+    /* Both initial ADDI comparisons execute before the first branch */
+    if (count < -2147483455)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     xy = count < 193 ? 0x1f800000 : 0x1fe800;
     depths = count < 127 ? 0x1f800200 : count < 193 ? 0x1fe400 : count < 385 ? 0x1f800000 : 0x1fe400;
-    total = count <= 6 ? 6 : ((uint32)count + 2) / 3 * 3;
-    memcpy(saved, psx_addr(0x801fc090, 16), 16);
-    FUN_80010170();
-    for (n = 0; n < total; n++)
+    xy_out = xy + 12;
+    depth_out = depths + 6;
+    for (i = 0; i < 6; i++)
+        xport_gte_write_data(i, r_u32(vertices + 4 * i));
+    xport_gte_execute(0x280030);
+    vertices += 24;
+    remaining = (uint32)count - 3;
+    for (i = 0; i < 3; i++)
+        w_u32(xy_out - 12 + 4 * i, xport_gte_read_data(12 + i));
+    for (i = 0; i < 3; i++)
+        previous_depths[i] = xport_gte_read_data(17 + i);
+    do
     {
-        uint32 v = vertices + 8 * n;
-        FUN_800120BC(r_s16(v), r_s16(v + 2), r_s16(v + 4), 0x801fc090);
-        w_u32(xy + 4 * n, (r_u32(0x801fc090) & 65535) | (r_u32(0x801fc094) << 16));
-        w_u16(depths + 2 * n, (uint16)r_u32(0x801fc098));
-    }
-    memcpy(psx_addr(0x801fc090, 16), saved, 16);
-    return ff_model_packets_80010CA0(r_u32(model + 12), r_u32(model + 8), xy, depths, bias);
+        for (i = 0; i < 6; i++)
+            xport_gte_write_data(i, r_u32(vertices + 4 * i));
+        xport_gte_execute(0x280030);
+        vertices += 24;
+        for (i = 0; i < 3; i++)
+            w_u16(depth_out - 6 + 2 * i, (uint16)previous_depths[i]);
+        xy_out += 12;
+        depth_out += 6;
+        remaining -= 3;
+        for (i = 0; i < 3; i++)
+            w_u32(xy_out - 12 + 4 * i, xport_gte_read_data(12 + i));
+        for (i = 0; i < 3; i++)
+            previous_depths[i] = xport_gte_read_data(17 + i);
+    } while ((sint32)remaining > 0);
+    for (i = 0; i < 3; i++)
+        w_u16(depth_out - 6 + 2 * i, (uint16)previous_depths[i]);
+    records = r_u32(model + 8);
+    packets = r_u32(model + 12);
+    return ff_model_packets_80010CA0(packets, records, xy, depths, bias);
 }
 
 GDB_CALL uint32 FUN_80067B8C(uint32 model, uint32 unused, sint32 bias)
@@ -2357,29 +2724,57 @@ GDB_CALL void FUN_80011C60(void)
     FUN_8001033C((uint16)r_s16(0x8008d490));
 }
 
-/* 8001100C terrain grid: 18 projections per row, with the last point
- * overwritten by the following row (17-point stride). Packed X increments
- * carry into Y at zero: retain that original one-unit Y difference. */
+/* Terrain grid uses six RTPT triples per row and a 17-point row stride
+ * Packed X increments carry into Y at zero as in the original */
 GDB_CALL uint32 FUN_8001100C(sint32 unused, sint32 tile_x, sint32 tile_z)
 {
-    uint32 row, col, n, packed, xy, p = r_u32(0x8008d4b0), ot = r_u32(0x8008d4b4) + 4;
-    uint32 head = r_u32(ot), color = r_u32(0x8008d4bc), sx = (uint32)tile_x << 1, sz = (uint32)tile_z << 7;
+    uint32 row, col, n, packed, p, ot, head, color, matrix, words[8], depths[3];
+    uint32 sx = (uint32)tile_x << 1, sz = (uint32)tile_z << 7;
+    int i;
+    matrix = r_u32(0x8008d494);
+    for (i = 0; i < 5; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 5; i < 8; i++)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
     for (row = 0; row < 17; row++)
-        for (col = 0; col < 18; col++)
+    {
+        uint32 z = (uint32)-2048 + row * 256;
+        xport_gte_write_data(1, z);
+        xport_gte_write_data(3, z);
+        xport_gte_write_data(5, z);
+        packed = 0xf800;
+        for (col = 0; col < 18; col += 3)
         {
-            packed = 0xf800 + col * 256;
+            for (i = 0; i < 3; i++)
+            {
+                xport_gte_write_data(2 * i, packed);
+                packed += 256;
+            }
+            xport_gte_execute(0x280030);
             n = row * 17 + col;
-            FUN_800120BC((sint16)packed, (sint16)(packed >> 16), -2048 + (sint32)row * 256, 0x801fc040);
-            xy = (r_u32(0x801fc040) & 65535) | (r_u32(0x801fc044) << 16);
-            w_u32(0x1fe800 + 4 * n, xy);
-            w_u16(0x1f800000 + 2 * n, (uint16)r_u32(0x801fc048));
+            for (i = 0; i < 3; i++)
+                w_u32(0x1fe800 + 4 * (n + i), xport_gte_read_data(12 + i));
+            for (i = 0; i < 3; i++)
+                depths[i] = xport_gte_read_data(17 + i);
+            for (i = 0; i < 3; i++)
+                w_u16(0x1f800000 + 2 * (n + i), (uint16)depths[i]);
         }
+    }
+    color = r_u32(0x8008d4bc);
+    ot = r_u32(0x8008d4b4);
+    p = r_u32(0x8008d4b0);
+    ot += 4;
+    head = r_u32(ot);
     for (row = 0; row < 16; row++)
     {
         for (col = 0; col < 16; col++)
         {
             sint32 tile;
-            uint32 v0, v1, v2, v3, t, uv;
+            uint32 v0, v1, v2, v3, t, uv, descriptor0, descriptor1;
             sx &= 0x7e;
             sz &= 0x1f80;
             tile = r_s16(0x8009f870 + sx + sz);
@@ -2397,9 +2792,11 @@ GDB_CALL uint32 FUN_8001100C(sint32 unused, sint32 tile_x, sint32 tile_z)
                     w_u32(p + 24, v2);
                     w_u32(p + 32, v3);
                     t = 0x800a8768 + ((uint32)tile << 2);
-                    w_u32(p + 12, r_u32(t));
-                    w_u32(p + 20, r_u32(t + 4));
+                    descriptor0 = r_u32(t);
+                    descriptor1 = r_u32(t + 4);
                     uv = r_u32(t + 8);
+                    w_u32(p + 12, descriptor0);
+                    w_u32(p + 20, descriptor1);
                     w_u16(p + 28, (uint16)uv);
                     w_u16(p + 36, (uint16)(uv >> 16));
                     w_u32(p + 4, color);
@@ -2456,14 +2853,21 @@ GDB_CALL sint32 FUN_80064150(void)
 /* 80063EEC: four terrain grids and optional distant texture/quads. */
 GDB_CALL sint32 FUN_80063EEC(void)
 {
-    uint32 cx = r_u32(0x8008d4a4), cz = r_u32(0x8008d4ac), x = cx & 0xffffff, z = cz & 0xffffff;
-    uint32 tx = (uint32)((sint32)~cx >> 24), tz = (uint32)((sint32)~cz >> 24);
-    uint32 direction = (uint32)((r_s16(0x8008d490) + 2048) >> 12) & 15;
+    uint32 cx, cz, x, z, tx, tz, direction, position[4];
     int i;
+    cx = r_u32(0x8008d4a4);
+    x = cx & 0xffffff;
+    cz = r_u32(0x8008d4ac);
+    z = cz & 0xffffff;
+    direction = (uint32)((r_s16(0x8008d490) + 2048) >> 12) & 15;
+    tx = (uint32)((sint32)~cx >> 24);
+    tz = (uint32)((sint32)~cz >> 24);
     if (r_s16(0x8008d492) < 8192)
     {
-        uint32 dx = r_u32(0x80093a90 + 4 * direction), dz = r_u32(0x80093ad0 + 4 * direction);
+        uint32 dx, dz;
+        dx = r_u32(0x80093a90 + 4 * direction);
         x += dx << 23;
+        dz = r_u32(0x80093ad0 + 4 * direction);
         z += dz << 23;
         tx += (uint32)((sint32)dx >> 1);
         tz += (uint32)((sint32)dz >> 1);
@@ -2479,13 +2883,13 @@ GDB_CALL sint32 FUN_80063EEC(void)
     if (r_u32(0x80093d58) == 0xffffffff)
         return -1;
     FUN_80064150();
-    w_u32(0x801fc060, 0);
-    w_u32(0x801fc064, r_u32(0x8008d4d0));
-    w_u32(0x801fc068, 32767);
-    w_u32(0x801fc06c, 21);
-    FUN_800128F4(0x801fc060, r_s16(0x800af4b2) + 256);
-    w_u32(0x801fc060, 256);
-    return (sint32)FUN_800128F4(0x801fc060, r_s16(0x800af4b2) + 257);
+    position[0] = 0;
+    position[1] = r_u32(0x8008d4d0);
+    position[2] = 32767;
+    position[3] = 21;
+    ff_stack_height_sprite_800128F4(position, r_s16(0x800af4b2) + 256);
+    position[0] += 256;
+    return (sint32)ff_stack_height_sprite_800128F4(position, r_s16(0x800af4b2) + 257);
 }
 
 /* 80058E24: four menu actors, their shadows and selected-player rings. */
@@ -2597,66 +3001,96 @@ static void ff_object_rotations(uint32 object)
 
 GDB_CALL uint32 FUN_8002A0C4(uint32 object)
 {
+    FUNCTION_MARKER(0x8002a0c4, "GAME.EXE");
     ff_object_rotations(object);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4 * r_u32(object)), 0, 0);
 }
 
 GDB_CALL uint32 FUN_80029F48(void)
 {
-    uint32 model, angle = (uint16)r_s16(0x8008d490);
-    if ((sint32)r_u32(0x80093d60) < 3 || ((angle + 12288u) & 65535u) >= 24577u)
+    FUNCTION_MARKER(0x80029f48, "GAME.EXE");
+    uint32 model;
+    if (r_s32(0x80093d60) < 3 || ((r_u16(0x8008d490) + 12288) & 65535) >= 24577)
         ff_static_model_80010B18(r_u32(0x8008180c), 0, 0);
-    if ((sint32)r_u32(0x80093d60) < 3)
+    if (r_s32(0x80093d60) < 3)
         model = 56;
     else
-        model = (((uint32)(uint16)r_s16(0x8008d490) + 16384u) & 65535u) > 32768u ? 58 : 57;
+        model = ((r_u16(0x8008d490) + 16384) & 65535) > 32768 ? 58 : 57;
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * model), 0, 0);
 }
 
 GDB_CALL uint32 FUN_8003262C(uint32 object)
 {
+    FUNCTION_MARKER(0x8003262c, "GAME.EXE");
     FUN_8001033C(r_s16(object + 16));
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 128);
 }
 
 GDB_CALL uint32 FUN_8002A048(uint32 object)
 {
-    if ((((uint32)(uint16)r_s16(0x8008d490) + 16383u) & 65535u) >= 32767u)
+    FUNCTION_MARKER(0x8002a048, "GAME.EXE");
+    sint32 angle;
+    if (((r_u16(0x8008d490) + 16383) & 65535) >= 32767)
         return 0;
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
 GDB_CALL uint32 FUN_8002AB40(uint32 object)
 {
-    uint32 phase;
+    FUNCTION_MARKER(0x8002ab40, "GAME.EXE");
+    uint32 phase, tick;
     if ((sint32)r_u32(0x80093dd0) < 2)
         w_u16(object + 26, (uint16)ff_rand_8006D348());
-    phase = (((uint32)(sint32)r_s16(object + 26) + r_u32(0x80093dd0)) << 5) & 0xfe0u;
+    phase = (uint32)(sint32)r_s16(object + 26);
+    tick = r_u32(0x80093dd0);
+    phase = ((phase + tick) << 5) & 0xfe0;
     FUN_800100C4(0, 0, 8 * (sint32)r_s16(0x800802d0 + phase));
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
 }
 
-/* 11E5C MVMVA of zero vector: MAC1/3 equal the signed translations loaded
- * from matrix+20/+28 after SRA16; no perspective divide is performed. */
 GDB_CALL sint32 FUN_80011E5C(void)
 {
+    FUNCTION_MARKER(0x80011e5c, "GAME.EXE");
     uint32 matrix = r_u32(0x8008d494);
-    sint32 x = (sint32)r_u32(matrix + 20) >> 16, z = (sint32)r_u32(matrix + 28) >> 16;
-    if (z < 80)
+    uint32 words[8];
+    sint32 x, z;
+    int i;
+    for (i = 0; i < 8; i++)
+        words[i] = r_u32(matrix + 4 * i);
+    for (i = 0; i < 5; i++)
+        xport_gte_write_control(i, words[i]);
+    for (i = 5; i < 8; i++)
+        xport_gte_write_control(i, (uint32)((sint32)words[i] >> 16));
+    xport_gte_write_data(0, 0);
+    xport_gte_write_data(1, 0);
+    xport_gte_execute(0x480012);
+    x = (sint32)xport_gte_read_data(25);
+    xport_gte_read_data(26);
+    z = (sint32)xport_gte_read_data(27);
+    /* Zero-vector MACs equal signed 16-bit translations, so ADD/SUB cannot overflow */
+    if (z - 80 < 0)
         return 0;
     if (x <= 0)
         x = -x;
-    return z - x - (z < 800 ? z >> 2 : z >> 3) >= 0;
+    x += (uint32)z < 800 ? z >> 2 : z >> 3;
+    return z - x >= 0;
 }
 
 GDB_CALL uint32 FUN_8005AB84(uint32 object)
 {
+    FUNCTION_MARKER(0x8005ab84, "GAME.EXE");
     sint16 angle;
+    sint32 object_x, object_z, player_x, player_z;
     if (!FUN_80011E5C())
         return 0;
-    angle = (sint16)FUN_8001614C(r_s16(object + 6), r_s16(object + 14), r_s16(0x800b4342), r_s16(0x800b434a));
+    object_x = r_s16(object + 6);
+    object_z = r_s16(object + 14);
+    player_x = r_s16(0x800b4342);
+    player_z = r_s16(0x800b434a);
+    angle = (sint16)FUN_8001614C(object_x, object_z, player_x, player_z);
     w_u16(object + 16, (uint16)angle);
     FUN_8001033C(angle);
     return ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
@@ -2664,6 +3098,7 @@ GDB_CALL uint32 FUN_8005AB84(uint32 object)
 
 GDB_CALL uint32 FUN_8002A97C(uint32 object)
 {
+    FUNCTION_MARKER(0x8002a97c, "GAME.EXE");
     FUN_80010040();
     FUN_800100C4(0, 0x800000, 0);
     FUN_8001033C(r_s16(object + 16));
@@ -2671,7 +3106,7 @@ GDB_CALL uint32 FUN_8002A97C(uint32 object)
     FUN_800101CC(r_s16(object + 18));
     ff_static_model_80010B18(r_u32(0x800818f8), 0, 0);
     FUN_800100C4(0, 0x400000, 0);
-    FUN_8001033C((sint32)((uint32)(uint16)r_u32(0x80093dd0) << 12));
+    FUN_8001033C((sint32)((uint32)r_u16(0x80093dd0) << 12));
     ff_static_model_80010B18(r_u32(0x80081ff0), 0, 0);
     FUN_80010028();
     FUN_80010040();
@@ -2685,17 +3120,20 @@ GDB_CALL uint32 FUN_8002A97C(uint32 object)
 GDB_CALL uint32 ff_car_render_8005AE3C(uint32 object)
 {
     static const sint32 lights[6][3] = {{80, 36, -376}, {-80, 36, -376}, {128, 36, 384}, {-128, 36, 384}, {140, 68, -176}, {-140, 68, -176}};
-    uint32 original_kind = r_u32(object), phase, shade, color, temp = 0x801fc0c0, result;
-    sint32 position[4];
-    int i, j;
-    if (r_s16(object + 16))
-        FUN_8001033C(r_s16(object + 16));
+    uint32 original_kind = r_u32(object), phase, shade, color, result;
+    sint32 position[4], angle;
+    int i;
+    angle = r_s16(object + 16);
+    if (angle)
+        FUN_8001033C(angle);
     ff_static_model_80010B18(r_u32(0x800818c8), 0, 8192);
     FUN_800100C4(0, 2621440, 0);
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
-    if (r_s16(object + 18))
-        FUN_800101CC(r_s16(object + 18));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
+    angle = r_s16(object + 18);
+    if (angle)
+        FUN_800101CC(angle);
     ff_static_model_80010B18(r_u32(0x80081720 + 4u * r_u32(object)), 0, 0);
     if (!r_s16(object + 30))
         return 0;
@@ -2705,12 +3143,9 @@ GDB_CALL uint32 ff_car_render_8005AE3C(uint32 object)
     result = 0;
     for (i = original_kind == 94 ? 0 : 4; i < 6; i++)
     {
-        FUN_800120BC(lights[i][0], lights[i][1], lights[i][2], temp);
-        result = r_u32(temp + 12);
+        result = (uint32)ff_project_local(lights[i][0], lights[i][1], lights[i][2], position);
         if (!result)
         {
-            for (j = 0; j < 3; j++)
-                position[j] = (sint32)r_u32(temp + 4u * j);
             position[2] = (sint32)((uint32)position[2] - (i < 4 ? 32u : 48u));
             position[3] = 640;
             w_u32(0x8008d4bc, color);
@@ -2723,15 +3158,18 @@ GDB_CALL uint32 ff_car_render_8005AE3C(uint32 object)
 /* 800451A0: compound scene model, spinning component and ground shadow. */
 GDB_CALL uint32 FUN_800451A0(uint32 object)
 {
+    FUNCTION_MARKER(0x800451a0, "GAME.EXE");
+    sint32 angle;
     if ((sint32)r_u32(object + 8) <= -536870912)
         return 0;
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
     FUN_800101CC(r_s16(object + 18) + 4096);
     ff_static_model_80010B18(r_u32(0x80082424), 0, 0);
-    FUN_8001033C((sint32)((uint32)(uint16)r_u32(0x80093dd0) << 12));
+    FUN_8001033C((sint32)((uint32)r_u16(0x80093dd0) << 12));
     ff_static_model_80010B18(r_u32(0x80081ff0), 0, 0);
     FUN_80010028();
     FUN_80010040();
@@ -2744,11 +3182,14 @@ GDB_CALL uint32 FUN_800451A0(uint32 object)
 /* 800452AC: static object with three phase-offset effect attachments. */
 GDB_CALL uint32 FUN_800452AC(uint32 object)
 {
+    FUNCTION_MARKER(0x800452ac, "GAME.EXE");
     uint32 phase, i, p;
+    sint32 angle;
     FUN_80010040();
     FUN_8001033C(r_s16(object + 16));
-    if (r_s16(object + 20))
-        FUN_800104A0(r_s16(object + 20));
+    angle = r_s16(object + 20);
+    if (angle)
+        FUN_800104A0(angle);
     if (r_s16(object + 18))
         FUN_800101CC(4096);
     ff_static_model_80010B18(r_u32(0x80081720 + 4 * r_u32(object)), 0, 0);
@@ -2782,6 +3223,7 @@ GDB_CALL uint32 FUN_80059394(void)
 /* 5AC08 compound roadside model, depth shade and alternating shadow. */
 GDB_CALL uint32 FUN_8005AC08(uint32 object)
 {
+    FUNCTION_MARKER(0x8005ac08, "GAME.EXE");
     uint32 type = r_u32(object), position[3];
     sint32 depth, shade;
     if (!FUN_80011E5C())
@@ -3084,55 +3526,61 @@ GDB_CALL uint32 FUN_800122E0(sint32 x, sint32 y, sint32 z, uint32 color)
     return ff_particle_packet(x, y, z, color, 2);
 }
 
-/* 5C2F0: original stack output uses host-private RAM temporary here. */
+/* Project a particle using the kind and language palette */
 GDB_CALL uint32 FUN_8005C2F0(uint32 object)
 {
-    uint32 temp = 0x801fc0a0, table, color;
-    sint32 age, x, y, z;
+    uint32 table, color, x, y, z, camera_x, camera_y, camera_z;
+    sint32 age, position[4];
     FUN_80010040();
-    FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
-    FUN_800120BC(0, 0, 0, temp);
-    if (!r_u32(temp + 12))
+    x = r_u32(object + 4);
+    camera_x = r_u32(0x8008d4a4);
+    y = r_u32(object + 8);
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(object + 12);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
+    ff_project_local(0, 0, 0, position);
+    if (!position[3])
     {
-        age = r_s16(object + 26);
         table = r_u32(object) == 1 ? 0x80080050 : r_u32(0x80093d70) == 2 ? 0x80080070 : 0x80080030;
+        age = (sint16)r_u16(object + 26);
         color = (uint32)(sint32)r_s16(table + 2u * (uint32)(age >> 2));
-        x = (sint32)r_u32(temp);
-        y = (sint32)r_u32(temp + 4);
-        z = (sint32)r_u32(temp + 8);
+        age = r_s16(object + 26);
         if (age >= 17)
-            FUN_800121A8(x, y, z, color);
-        else if (age >= 9)
-            FUN_80012240(x, y, z, color);
+            FUN_800121A8(position[0], position[1], position[2], color);
+        else if (r_s16(object + 26) >= 9)
+            FUN_80012240(position[0], position[1], position[2], color);
         else
-            FUN_800122E0(x, y, z, color);
+            FUN_800122E0(position[0], position[1], position[2], color);
     }
     return FUN_80010028();
 }
 
-/* 5C480: fixed palette80080090, signed age/4 and size thresholds9/17. */
+/* Fixed palette80080090, signed age/4 and size thresholds9/17 */
 GDB_CALL uint32 FUN_8005C480(uint32 object)
 {
     FUNCTION_MARKER(0x8005c480u, "GAME.EXE");
-    uint32 temp = 0x801fc0d0, table, color;
-    sint32 age, x, y, z;
+    uint32 color, x, y, z, camera_x, camera_y, camera_z;
+    sint32 age, position[4];
     FUN_80010040();
-    FUN_800100C4((sint32)(r_u32(object + 4) - r_u32(0x8008d4a4)), (sint32)(r_u32(object + 8) - r_u32(0x8008d4a8)), (sint32)(r_u32(object + 12) - r_u32(0x8008d4ac)));
-    FUN_800120BC(0, 0, 0, temp);
-    if (!r_u32(temp + 12))
+    x = r_u32(object + 4);
+    camera_x = r_u32(0x8008d4a4);
+    y = r_u32(object + 8);
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(object + 12);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
+    ff_project_local(0, 0, 0, position);
+    if (!position[3])
     {
-        age = r_s16(object + 26);
-        table = 0x80080090;
-        color = (uint32)(sint32)r_s16(table + 2u * (uint32)(age >> 2));
-        x = (sint32)r_u32(temp);
-        y = (sint32)r_u32(temp + 4);
-        z = (sint32)r_u32(temp + 8);
+        age = (sint16)r_u16(object + 26);
+        color = (uint32)(sint32)r_s16(0x80080090 + 2 * (uint32)(age >> 2));
         if (age >= 17)
-            FUN_800121A8(x, y, z, color);
-        else if (age >= 9)
-            FUN_80012240(x, y, z, color);
+            FUN_800121A8(position[0], position[1], position[2], color);
+        else if (r_s16(object + 26) >= 9)
+            FUN_80012240(position[0], position[1], position[2], color);
         else
-            FUN_800122E0(x, y, z, color);
+            FUN_800122E0(position[0], position[1], position[2], color);
     }
     return FUN_80010028();
 }
@@ -3682,9 +4130,7 @@ GDB_CALL uint32 ff_object_call(uint32 target, uint32 object)
             return FUN_8005C66C(object);
         default:
             fprintf(stderr, "XPORT_CALLBACK target=%08X object=%08X kind=%08X tick=%u\n", target, object, r_u32(object), r_u32(0x80093dd0));
-            if (ff_wip_visit(target, "object_callback", __FUNCTION__, __FILE__, __LINE__, 1, "skip_unknown_callback_return_zero"))
-                return 0;
-            abort();
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     }
 }
 

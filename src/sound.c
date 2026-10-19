@@ -11,8 +11,8 @@ GDB_CALL sint32 FUN_80056F94(sint32 voice, sint32 unused, sint32 right)
     attr = FUN_80056640();
     second = (sint32)((uint32)(first >> 8) * master);
     w_u32(attr + 4, 3);
-    w_u32(attr, 1u << ((uint32)voice & 31));
     w_u16(attr + 8, (uint16)((uint32)(first >> 8) << 6));
+    w_u32(attr, 1u << ((uint32)voice & 31));
     w_u16(attr + 10, (uint16)((uint32)(second >> 8) << 6));
     if (!ff_services.spu_voice_attributes)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
@@ -48,10 +48,14 @@ GDB_CALL sint32 FUN_8005703C(void)
 
 GDB_CALL sint32 FUN_800570F0(void)
 {
-    sint32 i;
+    sint32 i, left, right;
     for (i = 0; i < 24; i++)
         if (r_s8(0x80094708 + (uint32)i) == 2)
-            FUN_80056F94(i, 2 * (sint32)r_s8(0x800946c0 + (uint32)i), 2 * (sint32)r_s8(0x80094720 + (uint32)i));
+        {
+            left = r_s8(0x800946c0 + (uint32)i);
+            right = r_s8(0x80094720 + (uint32)i);
+            FUN_80056F94(i, 2 * left, 2 * right);
+        }
     return 0;
 }
 
@@ -208,38 +212,47 @@ sint32 ff_sound_voice_defaults_80056C30(uint32 a)
     return 0;
 }
 
-/* 56CCC:80056D2C..80056EA8. Caller has reset offsets/SPU allocator and
- * loaded the sound archive. Hardware initialization prefix remains WIP. */
+/* 56CCC resource loops after voice/CD setup and archive loading */
 sint32 ff_sound_resources_80056D2C(void)
 {
-    uint32 table, name, id, size, total = 0, offset = 0, source;
+    uint32 table, name, id, size, total = 0, offset = 0, source, base;
+    sint32 first_byte;
     for (table = 0x8007f848; r_u32(table + 4) != 0xffffffff; table += 8)
     {
         name = r_u32(table);
         if (!FUN_80061140(name))
             continue;
+        name = r_u32(table);
         FUN_800611F8(name);
-        size = (r_u32(0x80094570) + 15) & ~15u;
+        size = (r_u32(0x80094570) + 15) & ~15;
         total = total - 48 + size;
         w_u32(0x80094570, size);
     }
     w_u32(0x8009354c, (uint32)ff_spu_allocate_startup(total + 1024));
     ff_spu_transfer_wait();
-    for (table = 0x8007f848; r_u32(table + 4) != 0xffffffff; table += 8)
+    table = 0x8007f848;
+    id = r_u32(table + 4);
+    for (; id != 0xffffffff; table += 8, id = r_u32(table + 4))
     {
         name = r_u32(table);
-        id = r_u32(table + 4);
         if (!FUN_80061140(name))
             continue;
+        name = r_u32(table);
         source = FUN_800611F8(name);
-        size = (r_u32(0x80094570) + 15) & ~15u;
+        size = r_u32(0x80094570);
+        base = r_u32(0x8009354c);
         w_u32(0x800b6ab8 + 4 * id, offset);
+        size = (size + 15) & ~15;
         w_u32(0x80094570, size);
-        ff_spu_transfer_address(r_u32(0x8009354c) + offset);
+        ff_spu_transfer_address(base + offset);
+        size = r_u32(0x80094570);
         ff_spu_transfer_write(source + 48, size - 48);
         ff_spu_transfer_wait();
-        offset = offset - 48 + r_u32(0x80094570);
-        w_u8(0x800b6f68 + id, (r_u8(name) == 'L' && r_u8(name + 1) == '_') ? 2 : 1);
+        name = r_u32(table);
+        size = r_u32(0x80094570);
+        first_byte = r_s8(name);
+        offset = offset - 48 + size;
+        w_u8(0x800b6f68 + id, (first_byte == 'L' && r_s8(name + 1) == '_') ? 2 : 1);
     }
     return -1;
 }
@@ -330,28 +343,55 @@ GDB_CALL sint32 FUN_80056670(sint32 effect, sint32 volume, sint32 pitch)
     return (sint32)r_u32(0x80093554);
 }
 
-/* 80046884: camera-relative pan and sine-table distance attenuation. */
-GDB_CALL sint32 ff_spatial_sound_80046884(uint32 position, uint32 *volume, uint32 *pan)
+/* Camera-relative pan and sine-table distance attenuation */
+static sint32 spatial_sound_80046884(uint32 position, const uint32 native_position[3], uint32 volume_address, uint32 pan_address, uint32 *native_volume, uint32 *native_pan)
 {
-    sint32 x = r_s16(0x8008d4a6), z = r_s16(0x8008d4ae), px = r_s16(position + 2), pz = r_s16(position + 10), distance, p, v;
-    uint32 angle = (uint32)FUN_8001614C(x, z, px, pz) - (uint16)r_s16(0x8008d490);
+    sint32 x, z, px, pz, distance, p, v;
+    uint32 angle, camera_angle;
+    x = r_s16(0x8008d4a6);
+    z = r_s16(0x8008d4ae);
+    px = native_position ? (sint32)native_position[0] >> 16 : r_s16(position + 2);
+    pz = native_position ? (sint32)native_position[2] >> 16 : r_s16(position + 10);
+    angle = (uint32)FUN_8001614C(x, z, px, pz);
+    camera_angle = r_u16(0x8008d490);
+    x = r_s16(0x8008d4a6);
+    z = r_s16(0x8008d4ae);
+    px = native_position ? (sint32)native_position[0] >> 16 : r_s16(position + 2);
+    pz = native_position ? (sint32)native_position[2] >> 16 : r_s16(position + 10);
+    angle -= camera_angle;
     distance = FUN_800163F4(x, z, px, pz) >> 5;
     if (distance >= 512)
         distance = 511;
-    p = 127 - (r_s16(0x800802d0 + ((angle >> 4) & 0xffe)) >> 9);
+    p = 127 - ((sint16)r_u16(0x800802d0 + ((angle >> 4) & 0xffe)) >> 9);
     if (p < 0)
         p = 0;
     else if ((sint16)p >= 256)
         p = 255;
-    *pan = (uint32)(sint32)(sint16)p;
-    v = ((uint16)r_s16(0x800802d0 + 2 * (511 - distance)) >> 7) & 255;
-    *volume = (uint32)v;
+    if (native_pan)
+        *native_pan = (uint32)(sint32)(sint16)p;
+    else
+        w_u32(pan_address, (uint32)(sint32)(sint16)p);
+    v = (r_u16(0x800802d0 + 2 * (511 - distance)) >> 7) & 255;
+    if (native_volume)
+        *native_volume = (uint32)v;
+    else
+        w_u32(volume_address, (uint32)v);
     return v;
+}
+
+GDB_CALL sint32 ff_spatial_sound_80046884(uint32 position, uint32 *volume, uint32 *pan)
+{
+    return spatial_sound_80046884(position, NULL, 0, 0, volume, pan);
+}
+
+GDB_CALL sint32 ff_stack_spatial_sound_80046884(const uint32 position[3], uint32 volume, uint32 pan)
+{
+    return spatial_sound_80046884(0, position, volume, pan, NULL, NULL);
 }
 
 GDB_CALL sint32 FUN_80046884(uint32 position, uint32 volume, uint32 pan)
 {
-    return ff_spatial_sound_80046884(position, (uint32 *)psx_addr(volume, 4), (uint32 *)psx_addr(pan, 4));
+    return spatial_sound_80046884(position, NULL, volume, pan, NULL, NULL);
 }
 
 /* 800568C8: wrapped signed products, cached channel levels and SPU attributes. */
@@ -375,28 +415,35 @@ GDB_CALL sint32 FUN_800568C8(sint32 voice, sint32 volume, sint32 pan)
     return ff_services.spu_voice_attributes(attr);
 }
 
-/* 80043520: orbiting scene object and its two spatial sound channels. */
+/* Orbiting scene object and its two spatial sound channels */
 GDB_CALL sint32 FUN_80043520(uint32 object)
 {
-    uint32 angle = (uint16)r_s16(object + 18), saved[2];
-    sint32 volume, result;
-    w_u32(object + 8, r_u32(object + 8) + ((uint32)(sint32)r_s16(0x800802d0 + 2 * (angle >> 5)) << 8));
-    w_u32(object + 12, r_u32(object + 12) - ((uint32)(sint32)r_s16(0x800802d0 + 2 * (((r_s16(object + 18) >> 5) + 512) & 2047)) << 8));
-    w_u32(object + 4, r_u32(object + 4) + ((uint32)(sint32)r_s16(0x800802d0 + 2 * (angle >> 5)) << 6));
+    uint32 angle, increment, value, spatial_volume, pan;
+    sint32 volume, voice;
+    angle = r_u16(object + 18);
+    increment = (uint32)(sint32)r_s16(0x800802d0 + 2 * (angle >> 5)) << 8;
+    value = r_u32(object + 8);
+    w_u32(object + 8, value + increment);
+    angle = r_u16(object + 18);
+    increment = (uint32)(sint32)r_s16(0x800802d0 + 2 * ((((sint16)angle >> 5) + 512) & 2047)) << 8;
+    value = r_u32(object + 12);
+    w_u32(object + 12, value - increment);
+    angle = r_u16(object + 18);
+    increment = (uint32)(sint32)r_s16(0x800802d0 + 2 * (angle >> 5)) << 6;
+    value = r_u32(object + 4);
+    w_u32(object + 4, value + increment);
+    angle = r_u16(object + 18);
     w_u16(object + 18, (uint16)(angle - 128));
     w_u16(object + 20, 2048);
-    saved[0] = r_u32(0x801fc090);
-    saved[1] = r_u32(0x801fc094);
-    FUN_80046884(object + 4, 0x801fc090, 0x801fc094);
-    FUN_800568C8((sint32)r_u32(0x80092738), (sint32)r_u32(0x801fc090), (sint32)r_u32(0x801fc094));
-    FUN_80046884(object + 4, 0x801fc090, 0x801fc094);
-    volume = (sint32)((r_u32(0x801fc090) - 128) << 1);
+    ff_spatial_sound_80046884(object + 4, &spatial_volume, &pan);
+    voice = (sint32)r_u32(0x80092738);
+    FUN_800568C8(voice, (sint32)spatial_volume, (sint32)pan);
+    ff_spatial_sound_80046884(object + 4, &spatial_volume, &pan);
+    volume = (sint32)((spatial_volume - 128) << 1);
     if (volume < 0)
         volume = 0;
-    result = FUN_800568C8((sint32)r_u32(0x80092744), volume, (sint32)r_u32(0x801fc094));
-    w_u32(0x801fc090, saved[0]);
-    w_u32(0x801fc094, saved[1]);
-    return result;
+    voice = (sint32)r_u32(0x80092744);
+    return FUN_800568C8(voice, volume, (sint32)pan);
 }
 
 /* 293D8 selection prefix. Keep RNG calls separate and ordered before56670. */

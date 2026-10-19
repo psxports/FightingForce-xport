@@ -1594,7 +1594,7 @@ static sint32 sdk_card_write_dummy(sint32 fd, uint32 source, uint32 bytes)
 GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data)
 {
     FUNCTION_MARKER(0x8006b22cu, "GAME.EXE");
-    uint32 words[4], source, destination;
+    uint32 words[4], source, destination, shift;
     int i, j, frame;
     sint32 fd, written;
     if (FUN_8006B1C8(slot, name))
@@ -1613,9 +1613,17 @@ GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data
     {
         int n = i < 6 ? 3 : 2;
         for (j = 0; j < n; ++j)
-            words[j] = r_u32(0x80080224 + 4u * (i + j));
+        {
+            source = 0x80080224 + 4 * (i + j);
+            r_masked_u32(source, 15);
+            words[j] = r_masked_u32(source, 15);
+        }
         for (j = 0; j < n; ++j)
-            w_u32(0x80094b38 + 4u * (i + j), words[j]);
+        {
+            destination = 0x80094b38 + 4 * (i + j);
+            w_masked_u32(destination, words[j], 15);
+            w_masked_u32(destination, words[j], 15);
+        }
         i += n;
     }
     for (frame = 0; frame < 3; ++frame)
@@ -1631,9 +1639,29 @@ GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data
     for (i = 0; i < 512; i += 16)
     {
         for (j = 0; j < 4; ++j)
-            words[j] = r_u32(0x80094ad8 + i + 4 * j);
+        {
+            source = 0x80094ad8 + i + 4 * j;
+            if (data & 3)
+            {
+                r_masked_u32(source, 15);
+                words[j] = r_masked_u32(source, 15);
+            }
+            else
+                words[j] = r_u32(source);
+        }
         for (j = 0; j < 4; ++j)
-            w_u32(data + i + 4 * j, words[j]);
+        {
+            destination = data + i + 4 * j;
+            if (data & 3)
+            {
+                shift = (destination + 3) & 3;
+                w_masked_u32((destination + 3) & ~3, words[j] >> ((3 - shift) * 8), (1 << (shift + 1)) - 1);
+                shift = destination & 3;
+                w_masked_u32(destination & ~3, words[j] << (shift * 8), (15 << shift) & 15);
+            }
+            else
+                w_u32(destination, words[j]);
+        }
     }
     sdk_card_path(slot, name);
     fd = sdk_card_open_dummy(0x80093f60, ((uint32)(sint32)r_s8(0x80094adb) << 16) | 0x200);
@@ -1644,7 +1672,7 @@ GDB_CALL sint32 FUN_8006B22C(uint32 slot, uint32 name, uint32 title, uint32 data
     if (fd == -1)
         return -2;
     if (r_u32(0x80092484))
-        FUN_80068788();
+        ff_wrapped_card_notice_80068788(name);
     written = sdk_card_write_dummy(fd, data, 8192);
     sdk_card_close_dummy(fd);
     return written == 8192 ? 1 : -3;
@@ -1879,20 +1907,30 @@ GDB_CALL sint32 FUN_8006BA58(uint32 destination)
 {
     FUNCTION_MARKER(0x8006ba58u, "GAME.EXE");
     sint32 stage = r_s8(0x80093cf0);
-    const char *format, *first, *second, *level;
+    uint32 format, first, second, level;
+    sint32 first_type, second_type;
     char *out = psx_addr(destination, 1);
     if (stage == -1 || stage == -2)
     {
-        format = psx_addr(r_u32(stage == -1 ? 0x80092464 : 0x80092468), 1);
-        return sprintf(out, format);
+        format = r_u32(stage == -1 ? 0x80092464 : 0x80092468);
+        return sprintf(out, psx_addr(format, 1));
     }
-    level = psx_addr(r_u32(0x8007f79c + 4u * (uint32)stage), 1);
-    first = psx_addr(r_u32(0x800b6e90 + 4u * (uint32)(sint32)r_s8(0x80093cf2)), 1);
     if (r_s8(0x80093cf1) == 1)
-        return sprintf(out, psx_addr(r_u32(0x8009246c), 1), first, level);
-    second = psx_addr(r_u32(0x800b6e90 + 4u * (uint32)(sint32)r_s8(0x80093cf3)), 1);
+    {
+        first_type = r_s8(0x80093cf2);
+        format = r_u32(0x8009246c);
+        level = r_u32(0x8007f79c + 4 * (uint32)stage);
+        first = r_u32(0x800b6e90 + 4 * (uint32)first_type);
+        return sprintf(out, psx_addr(format, 1), psx_addr(first, 1), psx_addr(level, 1));
+    }
+    level = r_u32(0x8007f79c + 4 * (uint32)stage);
+    first_type = r_s8(0x80093cf2);
+    format = r_u32(0x80092470);
+    second_type = r_s8(0x80093cf3);
+    first = r_u32(0x800b6e90 + 4 * (uint32)first_type);
+    second = r_u32(0x800b6e90 + 4 * (uint32)second_type);
     /* The level string is the fifth argument, stored at SP+10, omitted by IDA. */
-    return sprintf(out, psx_addr(r_u32(0x80092470), 1), first, second, level);
+    return sprintf(out, psx_addr(format, 1), psx_addr(first, 1), psx_addr(second, 1), psx_addr(level, 1));
 }
 
 /* Identical instruction words in GAME and SLUS; private arithmetic avoids
@@ -2103,7 +2141,13 @@ GDB_CALL sint32 FUN_80064638(uint32 packet, uint32 unused, uint32 stacked)
     FUNCTION_MARKER(0x80064638u, "GAME.EXE");
     /* The color-split callee 64620 is exactly JR RA / NOP. V0 survives
   * as the signed color halfword shifted right one. */
-    return r_s16(packet + 16) >> 1;
+    return (sint16)r_u16(packet + 16) >> 1;
+}
+
+/* Native caller-local packet follows the same original null draw boundary */
+GDB_CALL sint32 ff_stack_color_80064638(const uint16 packet[9])
+{
+    return (sint16)packet[8] >> 1;
 }
 
 /* WIP CD boundary: acknowledge commands without media playback. */

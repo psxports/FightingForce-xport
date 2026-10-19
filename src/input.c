@@ -179,13 +179,14 @@ uint32 FUN_8005FB00(sint32 player)
 /* 80068114: mapped controller edges, deliberately does not write 800927A0. */
 GDB_CALL uint32 FUN_80068114(sint32 player)
 {
+    FUNCTION_MARKER(0x80068114, "GAME.EXE");
     if (ff_services.audit_input_event)
         ff_services.audit_input_event(2);
     uint32 offset = (uint32)player * 4, raw = (uint32)FUN_8005F5AC((sint32)r_u32(0x80094288 + offset));
     uint32 edge = (raw ^ r_u32(0x80092790 + offset)) & raw;
     w_u32(0x80092798 + offset, edge);
     w_u32(0x80092790 + offset, raw);
-    return edge;
+    return r_u32(0x80092798 + offset);
 }
 
 #include <stdlib.h>
@@ -195,13 +196,12 @@ FF_SERVICES ff_services;
 /* GAME.EXE:800573A8. The second pad is counted only if the first is valid. */
 GDB_CALL sint32 FUN_800573A8(void)
 {
+    FUNCTION_MARKER(0x800573a8, "GAME.EXE");
     uint32 pad = r_u32(0x8009355c);
-    uint8 type = r_u8(pad + 1) >> 4;
-    if ((type != 4 && type != 7 && type != 5) || r_u8(pad) == 255)
+    if (((r_u8(pad + 1) >> 4) != 4 && (r_u8(pad + 1) >> 4) != 7 && (r_u8(pad + 1) >> 4) != 5) || r_u8(r_u32(0x8009355c)) == 255)
         return 0;
     pad = r_u32(0x80093560);
-    type = r_u8(pad + 1) >> 4;
-    return ((type == 4 || type == 7 || type == 5) && r_u8(pad) != 255) ? 2 : 1;
+    return (((r_u8(pad + 1) >> 4) == 4 || (r_u8(pad + 1) >> 4) == 7 || (r_u8(pad + 1) >> 4) == 5) && r_u8(r_u32(0x80093560)) != 255) ? 2 : 1;
 }
 
 /* GAME.EXE:8005EC90. Return is always one, not the controller count. */
@@ -217,10 +217,13 @@ GDB_CALL sint32 FUN_8005EC90(void)
  * Runtime SPU binding is WIP; no sound dummy is installed. */
 GDB_CALL uint32 FUN_80056ECC(void)
 {
+    FUNCTION_MARKER(0x80056ecc, "GAME.EXE");
+    uint32 i;
     if (!ff_services.spu_key)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     ff_services.spu_key(0, 0xffffffu);
-    memset(psx_addr(0x80094708, 24), 0, 24);
+    for (i = 0; i < 24; i++)
+        w_u8(0x80094708 + i, 0);
     return 0x80094708;
 }
 
@@ -228,21 +231,24 @@ GDB_CALL uint32 FUN_80056ECC(void)
  * The reset path does not return: IDA's post-longjmp store is unreachable. */
 GDB_CALL sint32 FUN_8005F5AC(sint32 controller)
 {
+    FUNCTION_MARKER(0x8005f5ac, "GAME.EXE");
     ff_audit_input_packet(controller);
     /* Apply recorded buttons at the original decode-time load */
     if (ff_services.audit_input_event)
         ff_services.audit_input_event(0);
     uint32 index = (uint32)controller, pad = controller ? 0x80094770 : 0x80094748;
     uint32 disconnect = 0x80093a1c + index, unsupported = 0x80093a20 + index;
-    sint16 buttons = (sint16) ~(uint16)r_s16(pad + 2);
+    sint16 buttons;
+    sint32 decoded_type;
     uint8 type = r_u8(pad + 1) >> 4;
     w_u8(0x80094114, type);
+    buttons = (sint16)~r_u16(pad + 2);
     if (buttons == -1)
         buttons = 0;
     if (r_u8(pad) == 255)
     {
         type = 255;
-        if ((sint8)r_u8(disconnect) < 0)
+        if (r_s8(disconnect) < 0)
         {
             w_u8(disconnect, (uint8)(r_u8(disconnect) + 1));
             type = 4;
@@ -252,44 +258,57 @@ GDB_CALL sint32 FUN_8005F5AC(sint32 controller)
     }
     else
         w_u8(disconnect, 0);
-    if (type == 4)
+    decoded_type = r_s8(0x80094114);
+    if (decoded_type == 4)
         w_u8(unsupported, 0);
-    else if (type == 7 || type == 5)
+    else if (decoded_type == 7 || decoded_type == 5)
     {
-        sint32 x = (sint32)r_u8(pad + 6) - 128, y = (sint32)r_u8(pad + 7) - 128;
+        sint32 raw_x, x, y;
         w_u8(unsupported, 0);
         w_u8(0x80094114, 22);
+        raw_x = r_u8(pad + 6);
+        x = raw_x - 128;
+        w_u32(0x800945d4, (uint32)x);
+        y = (sint32)r_u8(pad + 7) - 128;
+        w_u32(0x800945f8, (uint32)y);
         if (x > 0)
         {
-            x -= 32;
+            x = raw_x - 160;
+            w_u32(0x800945d4, (uint32)x);
             if (x < 0)
-                x = 0;
+                w_u32(0x800945d4, 0);
         }
         else
         {
-            x += 32;
+            x = (sint32)(r_u32(0x800945d4) + 32);
+            w_u32(0x800945d4, (uint32)x);
             if (x > 0)
-                x = 0;
+                w_u32(0x800945d4, 0);
         }
+        y = r_s32(0x800945f8);
         if (y > 0)
         {
-            y -= 32;
+            y = (sint32)((uint32)y - 32);
+            w_u32(0x800945f8, (uint32)y);
             if (y < 0)
-                y = 0;
+                w_u32(0x800945f8, 0);
         }
         else
         {
-            y += 32;
+            y = (sint32)(r_u32(0x800945f8) + 32);
+            w_u32(0x800945f8, (uint32)y);
             if (y > 0)
-                y = 0;
+                w_u32(0x800945f8, 0);
         }
-        w_u32(0x800945d4, (uint32)((x * 341) >> 8));
-        w_u32(0x800945f8, (uint32)((y * 341) >> 8));
+        x = (sint32)(r_u32(0x800945d4) * 341) >> 8;
+        w_u32(0x800945d4, (uint32)x);
+        y = (sint32)(r_u32(0x800945f8) * 341) >> 8;
+        w_u32(0x800945f8, (uint32)y);
     }
     else
     {
         type = 255;
-        if ((sint8)r_u8(unsupported) < 15)
+        if (r_s8(unsupported) < 15)
         {
             w_u8(unsupported, (uint8)(r_u8(unsupported) + 1));
             type = 4;
@@ -297,9 +316,9 @@ GDB_CALL sint32 FUN_8005F5AC(sint32 controller)
         w_u8(0x80094114, type);
         buttons = 0;
     }
-    if ((buttons & 9) == 9 && !r_u8(0x80093cf8))
+    if ((buttons & 9) == 9 && !r_s8(0x80093cf8))
     {
-        sint16 count = (sint16)((uint16)r_s16(0x80093a18 + 2u * index) + 1u);
+        sint16 count = (sint16)(r_u16(0x80093a18 + 2 * index) + 1);
         w_u16(0x80093a18 + 2u * index, (uint16)count);
         if (count >= 31)
         {

@@ -78,10 +78,12 @@ GDB_CALL void FUN_80011A04(uint32 actor)
 GDB_CALL sint32 FUN_8001AE7C(uint32 actor)
 {
     uint32 stage, v, result;
-    if (r_u32(actor + 12) != 269 || (sint32)r_u32(actor + 16) >= 0)
+    if (r_u32(actor + 12) != 269)
+        return 269;
+    v = r_u32(actor + 16);
+    if ((sint32)v >= 0)
         return 269;
     stage = r_u32(0x80093d58);
-    v = r_u32(actor + 16);
     if (!stage)
         result = v << 1;
     else if (stage == 15)
@@ -102,16 +104,38 @@ GDB_CALL sint32 FUN_8001AE7C(uint32 actor)
  * Equality against the old prediction uses the full action argument. */
 GDB_CALL sint32 FUN_80052758(sint32 index, sint32 action)
 {
+    FUNCTION_MARKER(0x80052758, "GAME.EXE");
     uint32 base = 0x80094640 + ((uint32)index << 4);
-    int end, start, length;
-    uint8 value;
-    memmove(psx_addr(base, 15), psx_addr(base + 1, 15), 15);
+    uint32 left_address, right_address;
+    int end, start, length, byte;
+    sint32 difference;
+    uint8 value, left, right;
+    for (byte = 0; byte < 15; byte++)
+    {
+        value = r_u8(base + (uint32)byte + 1);
+        w_u8(base + (uint32)byte, value);
+    }
     w_u8(base + 15, (uint8)action);
     w_u8(0x80094414 + (uint32)index, (r_u8(0x80094374 + (uint32)index) == (uint32)action));
     for (end = 12, length = 4; end < 16; end++, length--)
         for (start = end - 1; start >= 0; start--)
         {
-            if (!memcmp(psx_addr(base + (uint32)start, (size_t)length), psx_addr(base + (uint32)end, (size_t)length), (size_t)length))
+            difference = 0;
+            for (byte = 0; byte < length; byte++)
+            {
+                left_address = base + (uint32)(start + byte);
+                right_address = base + (uint32)(end + byte);
+                left = r_u8(left_address);
+                right = r_u8(right_address);
+                if (left != right)
+                {
+                    left = r_u8(left_address);
+                    right = r_u8(right_address);
+                    difference = (sint32)left - (sint32)right;
+                    break;
+                }
+            }
+            if (!difference)
             {
                 value = r_u8(base + (uint32)(start + length));
                 w_u8(0x80094374 + (uint32)index, value);
@@ -139,9 +163,12 @@ GDB_CALL sint32 FUN_80019F00(uint32 actor, uint32 table, sint32 animation)
     w_u16(actor + 84, 0);
     w_u32(actor, old);
     index = (uint32)((sint32)((actor - 0x800b4318u) * 0xc10c9715u) >> 2);
-    flags = (uint16)r_s16(0x800b39a0 + ((uint32)animation << 1));
-    if (index < 2 && ((flags >> 3) & 15))
-        FUN_80052758((sint32)index, (sint32)((flags >> 3) & 15));
+    if (index < 2)
+    {
+        flags = (uint16)r_s16(0x800b39a0 + ((uint32)animation << 1));
+        if ((flags >> 3) & 15)
+            FUN_80052758((sint32)index, (sint32)((flags >> 3) & 15));
+    }
     flags = (uint16)r_s16(0x800b39a0 + ((uint32)animation << 1));
     if (!(flags & 2) && r_s16(actor + 52) != 17)
     {
@@ -391,63 +418,97 @@ GDB_CALL uint32 ff_rand_8006D348(void)
     return (seed >> 16) & 0x7fff;
 }
 
-static sint32 collision_circle(uint32 obstacle, uint32 x, uint32 z, sint32 *sn, sint32 *cs)
+static sint32 collision_circle(uint32 obstacle, uint32 x, uint32 z, uint32 *table_offset)
 {
-    uint32 offset = (uint32)FUN_8001627C((sint32)x >> 16, (sint32)z >> 16, r_s16(obstacle + 4), r_s16(obstacle + 6)) * 2;
-    *sn = r_s16(0x800802d0 + offset);
-    *cs = r_s16(0x800806d0 + offset);
-    return FUN_800163F4((sint32)(x + ((uint32)*sn << 8)) >> 16, (sint32)(z - ((uint32)*cs << 8)) >> 16, r_s16(obstacle + 4), r_s16(obstacle + 6));
+    sint32 cx, cz, angle, sn, cs;
+    cx = r_s16(obstacle + 4);
+    cz = r_s16(obstacle + 6);
+    angle = FUN_8001627C((sint32)x >> 16, (sint32)z >> 16, cx, cz);
+    cx = r_s16(obstacle + 4);
+    *table_offset = (uint32)(sint32)(sint16)angle * 2;
+    sn = r_s16(0x800802d0 + *table_offset);
+    cs = r_s16(0x800806d0 + *table_offset);
+    cz = r_s16(obstacle + 6);
+    return FUN_800163F4((sint32)(x + ((uint32)sn << 8)) >> 16, (sint32)(z - ((uint32)cs << 8)) >> 16, cx, cz);
 }
 
 /* 8001A4D0: ordered obstacle correction and second-pass rejection. The clear
  * flag persists across records, as do the cached rectangle candidate integers. */
-GDB_CALL sint32 FUN_8001A4D0(uint32 actor, uint32 xa, uint32 za)
+static sint32 collision_candidate_8001A4D0(uint32 actor, uint32 xa, uint32 za, uint32 *native_x, uint32 *native_z)
 {
     uint32 x, z, dx, dz, o;
     sint32 xi, zi, oldx, oldz, i, clear = 1, changed = 0;
     if (r_s16(actor + 80))
         return 1;
-    x = r_u32(xa);
-    z = r_u32(za);
+    x = native_x ? *native_x : r_u32(xa);
+    z = native_z ? *native_z : r_u32(za);
     xi = (sint32)x >> 16;
     zi = (sint32)z >> 16;
     oldx = r_s16(actor + 42);
     oldz = r_s16(actor + 50);
     dx = x - (uint32)oldx;
-    dz = z - (uint32)oldx; /* Original uses old X for both differences. */
+    dz = z - (uint32)oldx; /* Original uses old X for both differences */
     for (i = 0, o = 0x8009ec70; i < (sint32)r_u32(0x8009479c); i++, o += 24)
     {
-        sint32 type = r_s16(o + 10), sn, cs;
+        sint32 type, sn, cs;
         if (r_s16(o + 12) < 2)
             continue;
+        type = r_s16(o + 10);
         if (type == 1)
         {
-            uint32 object = r_u32(o + 20), offset = ((uint16)r_s16(object + 16) >> 5) * 2;
-            sint32 cx = r_s16(object + 6), cz = r_s16(object + 14), lx, lz, angle, k;
-            uint32 rx = (uint32)((sint32)x >> 16) - (uint32)cx, rz = (uint32)((sint32)z >> 16) - (uint32)cz;
+            uint32 object = r_u32(o + 20), offset = (r_u16(object + 16) >> 5) * 2;
+            sint32 cx, cz, lx, lz, angle, k;
+            uint32 rx, rz;
+            cx = r_s16(object + 6);
             cs = r_s16(0x800806d0 + offset);
+            rx = (uint32)((sint32)x >> 16) - (uint32)cx;
+            cz = r_s16(object + 14);
             sn = r_s16(0x800802d0 + offset);
+            rz = (uint32)((sint32)z >> 16) - (uint32)cz;
             lx = (sint32)(rx * (uint32)cs + rz * (uint32)sn) >> 15;
             lz = (sint32)(rz * (uint32)cs - rx * (uint32)sn) >> 15;
             angle = (sint16)FUN_8001627C(lx, lz, 0, 0);
             for (k = 0; k < 2048; k += 256)
             {
-                sint32 sx = r_s16(0x800802d0 + 2 * k) >> 9, sz = r_s16(0x800806d0 + 2 * k) >> 9;
-                sint32 hx = r_s16(o), hz = r_s16(o + 2), px = (sint32)((uint32)lx + (uint32)sx), pz = (sint32)((uint32)lz + (uint32)sz), corner;
-                if (px <= -hx || px >= hx || pz <= -hz || pz >= hz)
+                sint32 sx, sz, hx, hz, px, pz, corner, encoded_angle;
+                sx = (sint16)r_u16(0x800802d0 + 2 * k) >> 9;
+                sz = (sint16)r_u16(0x800806d0 + 2 * k) >> 9;
+                hx = r_s16(o);
+                px = (sint32)((uint32)lx + (uint32)sx);
+                pz = (sint32)((uint32)lz + (uint32)sz);
+                if (px <= -hx || px >= hx)
+                    continue;
+                hz = r_s16(o + 2);
+                if (pz <= -hz || pz >= hz)
                     continue;
                 clear = 0;
                 changed = 1;
                 corner = (sint16)FUN_8001627C(0, 0, hx, -hz);
                 if (angle < corner || 2048 - corner < angle)
+                {
+                    hz = r_s16(o + 2);
+                    encoded_angle = r_s16(object + 16);
                     lz = hz - sz;
+                }
                 else if (angle < 1024 - corner)
+                {
+                    encoded_angle = r_s16(object + 16);
+                    hx = r_s16(o);
                     lx = -hx - sx;
+                }
                 else if (angle < 1024 + corner)
+                {
+                    hz = r_s16(o + 2);
+                    encoded_angle = r_s16(object + 16);
                     lz = -hz - sz;
+                }
                 else
+                {
+                    encoded_angle = r_s16(object + 16);
+                    hx = r_s16(o);
                     lx = hx - sx;
-                offset = (uint32)((-r_s16(object + 16)) >> 4) & 0xffe;
+                }
+                offset = (uint32)((-encoded_angle) >> 4) & 0xffe;
                 cs = r_s16(0x800806d0 + offset);
                 sn = r_s16(0x800802d0 + offset);
                 x = ((uint32)cx + (uint32)((sint32)((uint32)lx * (uint32)cs + (uint32)lz * (uint32)sn) >> 15)) << 16;
@@ -457,9 +518,15 @@ GDB_CALL sint32 FUN_8001A4D0(uint32 actor, uint32 xa, uint32 za)
         }
         else if (type)
         {
-            if (collision_circle(o, x, z, &sn, &cs) < r_s16(o))
+            uint32 offset, scale, penetration;
+            sint32 distance = collision_circle(o, x, z, &offset);
+            sint32 radius = r_s16(o);
+            if (distance < radius)
             {
-                uint32 scale = (((uint32)(sint32)r_s16(o) - r_u32(0x800941a0)) << 1) + 256;
+                penetration = r_u32(0x800941a0);
+                sn = r_s16(0x800802d0 + offset);
+                scale = (((uint32)radius - penetration) << 1) + 256;
+                cs = r_s16(0x800806d0 + offset);
                 clear = 0;
                 changed = 1;
                 x -= (uint32)sn * scale;
@@ -468,7 +535,11 @@ GDB_CALL sint32 FUN_8001A4D0(uint32 actor, uint32 xa, uint32 za)
         }
         else
         {
-            sint32 left = r_s16(o) - 32, right = r_s16(o + 4) + 32, bottom = r_s16(o + 2) - 32, top = r_s16(o + 6) + 32, side = 0;
+            sint32 left, right, bottom, top, side = 0;
+            bottom = r_s16(o + 2) - 32;
+            right = r_s16(o + 4) + 32;
+            top = r_s16(o + 6) + 32;
+            left = r_s16(o) - 32;
             if (xi < left || xi > right || zi < bottom || zi > top)
                 continue;
             clear = 0;
@@ -506,27 +577,61 @@ GDB_CALL sint32 FUN_8001A4D0(uint32 actor, uint32 xa, uint32 za)
     if (changed)
         for (i = 0, o = 0x8009ec70; i < (sint32)r_u32(0x8009479c); i++, o += 24)
         {
-            sint32 type = r_s16(o + 10), reject = 0, sn, cs;
-            if (r_s16(o + 12) < 2 || type == 1)
+            sint32 type, reject = 0;
+            if (r_s16(o + 12) < 2)
+                continue;
+            type = r_s16(o + 10);
+            if (type == 1)
                 continue;
             if (!type)
             {
                 xi = (sint32)x >> 16;
                 zi = (sint32)z >> 16;
-                reject = xi >= r_s16(o) - 32 && xi <= r_s16(o + 4) + 32 && zi >= r_s16(o + 2) - 32 && zi <= r_s16(o + 6) + 32;
+                {
+                    sint32 bottom, right, top, left;
+                    bottom = r_s16(o + 2) - 32;
+                    right = r_s16(o + 4) + 32;
+                    top = r_s16(o + 6) + 32;
+                    left = r_s16(o) - 32;
+                    reject = xi >= left && xi <= right && zi >= bottom && zi <= top;
+                }
             }
             else if (type == 2)
-                reject = collision_circle(o, x, z, &sn, &cs) <= r_s16(o);
+            {
+                uint32 offset;
+                sint32 distance = collision_circle(o, x, z, &offset);
+                sint32 radius = r_s16(o);
+                reject = distance <= radius;
+            }
             if (reject)
             {
-                w_u32(xa, r_u32(actor + 40));
-                w_u32(za, r_u32(actor + 48));
+                x = r_u32(actor + 40);
+                if (native_x)
+                    *native_x = x;
+                else
+                    w_u32(xa, x);
+                z = r_u32(actor + 48);
+                if (native_z)
+                    *native_z = z;
+                else
+                    w_u32(za, z);
                 return 0;
             }
         }
-    w_u32(xa, x);
-    w_u32(za, z);
+    if (native_x)
+        *native_x = x;
+    else
+        w_u32(xa, x);
+    if (native_z)
+        *native_z = z;
+    else
+        w_u32(za, z);
     return clear;
+}
+
+GDB_CALL sint32 FUN_8001A4D0(uint32 actor, uint32 xa, uint32 za)
+{
+    return collision_candidate_8001A4D0(actor, xa, za, NULL, NULL);
 }
 
 static int collision_excluded_animation(uint32 n)
@@ -536,14 +641,7 @@ static int collision_excluded_animation(uint32 n)
 
 GDB_CALL void ff_collision_candidate(uint32 actor, uint32 *x, uint32 *z)
 {
-    uint32 savedx = r_u32(0x801fc080), savedz = r_u32(0x801fc084);
-    w_u32(0x801fc080, *x);
-    w_u32(0x801fc084, *z);
-    FUN_8001A4D0(actor, 0x801fc080, 0x801fc084);
-    *x = r_u32(0x801fc080);
-    *z = r_u32(0x801fc084);
-    w_u32(0x801fc080, savedx);
-    w_u32(0x801fc084, savedz);
+    collision_candidate_8001A4D0(actor, 0, 0, x, z);
 }
 
 /* 8001B2C4: ordered pair separation. The global call counter is not decremented

@@ -99,6 +99,12 @@
     <ClCompile Include="..\..\audit\audit_menu.c" />
     <ClCompile Include="..\..\audit\audit_sound.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_spu.c" />
+    
+    
+    
+    
+    <ClCompile Include="..\..\..\..\xport\src\psx_vsync_wait_guest.c" />
+    
     <ClCompile Include="..\..\..\..\xport\src\psx.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_gpu.c">
       <Optimization>MaxSpeed</Optimization>

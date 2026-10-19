@@ -32,16 +32,13 @@ GDB_CALL void FUN_8005C740(uint32 object)
 /* 5C808: complete type dispatch; unknown kinds are original no-draw cases. */
 GDB_CALL uint32 FUN_8005C808(uint32 object)
 {
-    uint32 type = r_u32(object), temp = 0x801fc0b0, shade, table = 0;
+    uint32 type = r_u32(object), shade, table = 0;
     sint32 position[4], age, sample = 0;
-    int i;
     FUN_80010040();
     FUN_8005C740(object);
-    FUN_800120BC(0, 0, 0, temp);
-    if (r_u32(temp + 12))
+    ff_project_local(0, 0, 0, position);
+    if (position[3])
         return FUN_80010028();
-    for (i = 0; i < 4; i++)
-        position[i] = (sint32)r_u32(temp + 4u * i);
     if (type - 862u < 3)
     {
         position[0] = (sint32)((uint32)position[0] - 12u);
@@ -53,33 +50,35 @@ GDB_CALL uint32 FUN_8005C808(uint32 object)
         return FUN_80010028(); /* Original stores size but never draws. */
     if (type == 881)
     {
-        w_u16(object + 22, (uint16)((uint16)r_s16(object + 22) + 1u));
-        if (r_s16(object + 22) == 7)
+        age = (sint16)(uint16)(r_u16(object + 22) + 1);
+        w_u16(object + 22, (uint16)age);
+        if (age == 7)
             w_u32(object, 0xffffffffu);
         return FUN_80010028();
     }
-    age = r_s16(object + 22);
     switch (type)
     {
         case 870:
+            age = r_s16(object + 22);
             shade = 32u - ((uint32)age << 1);
             position[3] = 384;
             w_u32(0x8008d4bc, 0x2c000000u + (shade << 16) + (shade << 8) + shade);
             table = 0x8009ad0a;
-            sample = age;
+            sample = r_s16(object + 22);
             break;
         case 871:
         case 872:
+            age = r_s16(object + 22);
             shade = 32u - (uint32)age;
             position[3] = 512;
             w_u32(0x8008d4bc, type == 871 ? 0x2c000000u + (shade << 16) + (shade << 8) + shade : 0x2c000000u + (shade << 8));
             table = 0x8009ad0a;
-            sample = age >> 1;
+            sample = (sint16)r_u16(object + 22) >> 1;
             break;
         case 879:
             position[3] = 512;
             table = 0x8009ad94;
-            sample = age;
+            sample = r_s16(object + 22);
             break;
         case 873:
         case 874:
@@ -87,31 +86,34 @@ GDB_CALL uint32 FUN_8005C808(uint32 object)
             position[3] = 512;
             w_u32(0x8008d4bc, 0x2c303030);
             table = type == 880 ? 0x8009ad9c : 0x8009ad78;
-            sample = age >> (type == 874 ? 2 : 1);
+            sample = (sint16)r_u16(object + 22) >> (type == 874 ? 2 : 1);
             break;
         case 877:
             position[2] = (sint32)((uint32)position[2] - 16u);
+            age = r_s16(object + 22);
             position[3] = (sint32)r_u32(0x8008010c + 4u * (uint32)age);
             w_u32(0x8008d4bc, 0x2c608080);
             table = 0x8009adce;
-            sample = age;
+            sample = r_s16(object + 22);
             break;
         case 865:
         case 866:
             position[3] = 256;
             table = type == 865 ? 0x8009acd6 : 0x8009ad4c;
-            sample = age;
+            sample = r_s16(object + 22);
             break;
         case 575:
+            age = r_s16(object + 22);
             shade = 64u - ((uint32)age << 2);
             w_u32(0x8008d4bc, 0x2c000000u + (shade << 14) + (shade << 7) + shade);
-            position[3] = (sint32)(((uint32)age << 5) + 256u);
+            position[3] = (sint32)(((uint32)(sint32)r_s16(object + 22) << 5) + 256);
             table = 0x8009ad5a;
             break;
         case 576:
+            age = (sint16)r_u16(object + 22);
             shade = 32u - (uint32)(age >> 1);
             w_u32(0x8008d4bc, 0x2c000000u + (shade << 16) + (shade << 8) + shade);
-            position[3] = (sint32)(((uint32)age << 5) + 256u);
+            position[3] = (sint32)(((uint32)(sint32)r_s16(object + 22) << 5) + 256);
             table = 0x8009ad76;
             break;
         default:
@@ -152,7 +154,7 @@ GDB_CALL uint32 FUN_8005D820(uint32 object)
             a = r_u32(0x80094554);
             selected = a != 0xffffffffu && 0x8009a3c8 + 36u * a == object;
         }
-        if (selected && !r_u8(0x80093dd8) && !(r_u32(0x8008d4d4) & 31))
+        if (selected && !r_s8(0x80093dd8) && !(r_u32(0x8008d4d4) & 31))
             w_u32(0x8008d4bc, 0x2cffffff);
         ff_static_model_80010B18(r_u32(0x80081720 + 4u * type), 0, 0);
     }
@@ -198,7 +200,8 @@ GDB_CALL void FUN_80010F94(sint32 x, sint32 y, sint32 z)
 /* 5FB44: continue prompt, fade, countdown and one/two-controller selection. */
 GDB_CALL sint32 FUN_8005FB44(void)
 {
-    uint32 value = r_u32(0x80093dd4), step, text = 0x801fc200, buttons, palette;
+    uint32 value = r_u32(0x80093dd4), step, buttons, palette;
+    char text[128];
     sint32 red = 0, green, timer, width, x;
     if ((sint32)value <= 0)
         return (sint32)value;
@@ -224,20 +227,24 @@ GDB_CALL sint32 FUN_8005FB44(void)
     if (r_u32(0x80093dd4) != 191)
         goto advance;
     FUN_80067D3C();
-    sprintf((char *)psx_addr(text, 128), "%s ?", (const char *)psx_addr(r_u32(0x800924ec), 1));
-    FUN_80061ADC(text, 100);
+    sprintf(text, "%s ?", (const char *)psx_addr(r_u32(0x800924ec), 1));
+    text_center_host(text, 100);
     timer = (sint32)r_u32(0x80093d4c);
-    sprintf((char *)psx_addr(text, 128), "%d", (sint32)(10u - (uint32)(timer / 30)));
+    sprintf(text, "%d", (sint32)(10u - (uint32)(timer / 30)));
     timer = (sint32)r_u32(0x80093d4c);
     if (timer % 30 < 4)
-        FUN_80061B28(text, 130);
+        text_center_gradient_host(text, 130);
     else
-        FUN_80061ADC(text, 130);
+        text_center_host(text, 130);
     if (r_u32(0x80093d70) == 2)
-        sprintf((char *)psx_addr(text, 128), "ANZAHL DER CONTINUES = %d", (sint32)r_u32(0x80093d50));
+        sprintf(text, "ANZAHL DER CONTINUES = %d", (sint32)r_u32(0x80093d50));
     else
-        sprintf((char *)psx_addr(text, 128), "%sS = %d", (const char *)psx_addr(r_u32(0x800924ec), 1), (sint32)r_u32(0x80093d50));
-    FUN_80061ADC(text, 190);
+    {
+        uint32 label = r_u32(0x800924ec);
+        uint32 continues = r_u32(0x80093d50);
+        sprintf(text, "%sS = %d", (const char *)psx_addr(label, 1), (sint32)continues);
+    }
+    text_center_host(text, 190);
     width = FUN_8005EFB8(r_u32(0x800924dc));
     x = FUN_8005EFB8(r_u32(0x800924d8));
     x = (sint32)(320u - (uint32)width - (uint32)x) >> 1;
@@ -278,16 +285,22 @@ GDB_CALL sint32 ff_game_over_8005FB44_live(void)
     return FUN_8005FB44();
 }
 
-static void actor_color(uint32 actor, int player)
+static uint32 actor_color(uint32 actor, int player)
 {
-    sint32 r = 128 + r_s8(actor + 157), g = 128 + r_s8(actor + 158), b = 128 + r_s8(actor + 159);
-    uint8 flags = r_u8(actor + 156);
-    uint32 color = 0x2c000000;
+    sint32 r, g, b;
+    uint8 flags;
+    uint32 color;
+    r = 128 + r_s8(actor + 157);
+    g = 128 + r_s8(actor + 158);
+    b = 128 + r_s8(actor + 159);
+    w_u32(0x8008d4bc, 0x2c000000);
+    flags = r_u8(actor + 156);
     if (flags & 2)
     {
-        color = 0x2e000000;
-        w_u32(0x8008d4c0, flags >> 4);
+        w_u32(0x8008d4bc, 0x2e000000);
+        w_u32(0x8008d4c0, r_u8(actor + 156) >> 4);
     }
+    flags = r_u8(actor + 156);
     if (flags & 4)
     {
         r += player ? 96 : 128;
@@ -299,15 +312,19 @@ static void actor_color(uint32 actor, int player)
             g = 255;
         if (b >= 256)
             b = 255;
-        w_u8(actor + 156, flags & 251);
+        w_u8(actor + 156, r_u8(actor + 156) & 251);
     }
-    w_u32(0x8008d4bc, color | (uint32)r | ((uint32)g << 8) | ((uint32)b << 16));
+    color = r_u32(0x8008d4bc) | (uint32)r | ((uint32)g << 8) | ((uint32)b << 16);
+    w_u32(0x8008d4bc, color);
+    return color;
 }
 
 /* 58D9C: item correction rotations in Z/Y/X order, then signed fixed translation. */
 GDB_CALL uint32 FUN_80058D9C(uint32 correction)
 {
+    FUNCTION_MARKER(0x80058d9c, "GAME.EXE");
     sint32 angle = r_s16(correction + 2);
+    uint32 x, y, z;
     if (angle)
         FUN_800104A0(angle);
     angle = r_s16(correction + 4);
@@ -316,10 +333,13 @@ GDB_CALL uint32 FUN_80058D9C(uint32 correction)
     angle = r_s16(correction);
     if (angle)
         FUN_800101CC(angle);
-    return FUN_800100C4((sint32)((uint32)(sint32)r_s16(correction + 6) << 16), (sint32)((uint32)(sint32)r_s16(correction + 8) << 16), (sint32)((uint32)(sint32)r_s16(correction + 10) << 16));
+    x = (uint32)(sint32)r_s16(correction + 6) << 16;
+    y = (uint32)(sint32)r_s16(correction + 8) << 16;
+    z = (uint32)(sint32)r_s16(correction + 10) << 16;
+    return FUN_800100C4((sint32)x, (sint32)y, (sint32)z);
 }
 
-/* Player right-hand path59E78..5A05C. NPC/left-hand paths remain explicit WIP. */
+/* Player right-hand path59E78..5A05C retains character-specific corrections */
 static void player_right_item(uint32 actor, uint32 index, uint32 color)
 {
     sint32 slot = r_s8(actor + 126), type;
@@ -350,8 +370,8 @@ static void player_right_item(uint32 actor, uint32 index, uint32 color)
             FUN_8001033C(61440);
             FUN_800104A0(4096);
         }
+        type = r_s16(actor + 52);
     }
-    type = r_s16(actor + 52);
     if (type == 2)
     {
         if (kind == 506)
@@ -481,8 +501,16 @@ static void actor_trail(uint32 actor, uint32 index)
 
 static void actor_van(uint32 actor)
 {
+    uint32 x, y, z, camera_x, camera_y, camera_z, height;
     FUN_80010040();
-    FUN_800100C4((sint32)(r_u32(actor + 40) - r_u32(0x8008d4a4)), (sint32)(r_u32(actor + 44) + r_u32(0x8009911c) - r_u32(0x8008d4a8)), (sint32)(r_u32(actor + 48) - r_u32(0x8008d4ac)));
+    x = r_u32(actor + 40);
+    camera_x = r_u32(0x8008d4a4);
+    y = r_u32(actor + 44);
+    height = r_u32(0x8009911c);
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(actor + 48);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y + height - camera_y), (sint32)(z - camera_z));
     FUN_800101CC(32768);
     FUN_8001033C((sint16)((uint32)(sint32)r_s16(actor + 56) << 5));
     ff_static_model_80010B18(r_u32(0x80081824), 0, 0);
@@ -500,20 +528,28 @@ static void actor_van(uint32 actor)
 
 static void actor_body(uint32 actor, uint32 index, sint32 type, int player)
 {
-    uint32 color;
+    uint32 color, x, y, z, camera_x, camera_y, camera_z, height;
     sint32 yaw, scale;
     FUN_80010040();
-    FUN_800100C4((sint32)(r_u32(actor + 40) - r_u32(0x8008d4a4)), (sint32)(r_u32(actor + 44) + r_u32(0x800990d8 + 4u * (uint32)type) - r_u32(0x8008d4a8)), (sint32)(r_u32(actor + 48) - r_u32(0x8008d4ac)));
+    x = r_u32(actor + 40);
+    camera_x = r_u32(0x8008d4a4);
+    y = r_u32(actor + 44);
+    height = r_u32(0x800990d8 + 4 * (uint32)type);
+    camera_y = r_u32(0x8008d4a8);
+    z = r_u32(actor + 48);
+    camera_z = r_u32(0x8008d4ac);
+    FUN_800100C4((sint32)(x - camera_x), (sint32)(y + height - camera_y), (sint32)(z - camera_z));
     if ((!player && type == 51) || FUN_80011E5C())
     {
         w_u32(actor + 232, r_u32(actor + 232) & ~2u);
-        actor_color(actor, player);
-        color = r_u32(0x8008d4bc);
+        color = actor_color(actor, player);
         if (!player && type == 51)
             FUN_8001033C(32768);
         yaw = (sint16)(0u - ((uint32)(sint32)r_s16(actor + 56) << 5)) + 32768;
         FUN_8001033C(yaw);
-        FUN_800100C4(0, (sint32)r_u32(actor + 16), (sint32)r_u32(actor + 32));
+        y = r_u32(actor + 16);
+        z = r_u32(actor + 32);
+        FUN_800100C4(0, (sint32)y, (sint32)z);
         if (!player && type == 14 && (r_u8(actor + 156) & 8))
             actor_trail(actor, index);
         FUN_8001060C(r_u32(0x80081720 + 4u * (uint32)r_s16(actor + 52)), 0x800ba210 + 504u * index);
@@ -524,7 +560,12 @@ static void actor_body(uint32 actor, uint32 index, sint32 type, int player)
         actor_other_item(actor, index, color, 1, player);
         FUN_80010028();
         FUN_80010040();
-        FUN_800100C4((sint32)(r_u32(actor + 40) - r_u32(0x8008d4a4)), (sint32)(0u - r_u32(0x8008d4a8)), (sint32)(r_u32(actor + 48) - r_u32(0x8008d4ac)));
+        x = r_u32(actor + 40);
+        camera_x = r_u32(0x8008d4a4);
+        camera_y = r_u32(0x8008d4a8);
+        z = r_u32(actor + 48);
+        camera_z = r_u32(0x8008d4ac);
+        FUN_800100C4((sint32)(x - camera_x), (sint32)(0 - camera_y), (sint32)(z - camera_z));
         yaw = (sint16)(0u - ((uint32)(sint32)r_s16(actor + 56) << 5)) + 32768;
         FUN_8001033C(yaw);
         if (player)
@@ -533,7 +574,9 @@ static void actor_body(uint32 actor, uint32 index, sint32 type, int player)
         {
             if (type == 28 || type == 51)
                 FUN_8001033C(16384);
-            scale = ((sint32)(r_u32(actor + 44) + r_u32(actor + 16)) >> 12) + (type == 50 ? 24576 : 16384);
+            y = r_u32(actor + 44);
+            height = r_u32(actor + 16);
+            scale = (sint32)((uint32)((sint32)(y + height) >> 12) + (type == 50 ? 24576 : 16384));
             if (scale > 0)
             {
                 FUN_80010F94(scale, scale, scale);
@@ -549,15 +592,16 @@ static void actor_body(uint32 actor, uint32 index, sint32 type, int player)
 /* 593FC: character, held-item, trail, van and shadow rendering. */
 GDB_CALL sint32 ff_characters_800593FC(void)
 {
+    FUNCTION_MARKER(0x800593fc, "GAME.EXE");
     sint32 i, type, count;
-    uint32 actor;
+    uint32 actor, x, y, z, camera_x, camera_y, camera_z, model, frame;
     FUN_80011C60();
     ff_game_over_8005FB44_live();
     for (i = 2; i < 8; i++)
     {
         actor = 0x800b4318 + 244u * (uint32)i;
         type = r_s16(actor + 52);
-        if (type == -1 || (r_u8(actor + 119) & 2))
+        if (type == -1 || (r_s8(actor + 119) & 2))
             continue;
         if (type == 17)
         {
@@ -569,23 +613,35 @@ GDB_CALL sint32 ff_characters_800593FC(void)
     count = (sint32)r_u32(0x800940b0);
     if (count <= 0)
         return count;
-    for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
+    i = 0;
+    do
     {
         if (r_u32(0x80093e04) == 2)
             return 2;
         actor = 0x800b4318 + 244u * (uint32)i;
         type = r_s16(actor + 52);
-        if (type == -1 || (r_u8(actor + 119) & 2))
-            continue;
-        if (r_s16(actor + 98))
+        if (type != -1 && !(r_u8(actor + 119) & 2))
         {
-            FUN_80010040();
-            FUN_800100C4((sint32)(r_u32(actor + 40) - r_u32(0x8008d4a4)), (sint32)(r_u32(actor + 44) - r_u32(0x8008d4a8)), (sint32)(r_u32(actor + 48) - r_u32(0x8008d4ac)));
-            ff_static_model_80010B18(r_u32(0x800824ac + 4u * ((uint32)i & 1)), r_u32(actor + 8), 0);
-            FUN_80010028();
+            if (r_s16(actor + 98))
+            {
+                FUN_80010040();
+                x = r_u32(actor + 40);
+                camera_x = r_u32(0x8008d4a4);
+                y = r_u32(actor + 44);
+                camera_y = r_u32(0x8008d4a8);
+                z = r_u32(actor + 48);
+                camera_z = r_u32(0x8008d4ac);
+                FUN_800100C4((sint32)(x - camera_x), (sint32)(y - camera_y), (sint32)(z - camera_z));
+                model = r_u32(0x800824ac + 4 * ((uint32)i & 1));
+                frame = r_u32(actor + 8);
+                ff_static_model_80010B18(model, frame, 0);
+                FUN_80010028();
+            }
+            actor_body(actor, (uint32)i, type, 1);
         }
-        actor_body(actor, (uint32)i, type, 1);
-    }
+        ++i;
+        count = (sint32)r_u32(0x800940b0);
+    } while (i < count);
     return 0;
 }
 
@@ -594,18 +650,14 @@ GDB_CALL uint32 FUN_8002BDD0(uint32 object)
 {
     FUNCTION_MARKER(0x8002bdd0u, "GAME.EXE");
     sint32 group = (r_s16(object + 22) + 29) / 30, position[4];
-    uint32 temp = 0x801fc0e0;
-    int i;
     /* Group2/above takes the unconditional path at2BE0C. */
     if (group < 2 && (group != 1 || !(r_u32(0x80093dd0) & 2)))
         return 2;
-    FUN_800120BC(0, 0, 0, temp);
-    if ((sint32)r_u32(temp + 8) >= 65)
-        w_u32(temp + 8, r_u32(temp + 8) - 64u);
-    if (r_u32(temp + 12))
+    ff_project_local(0, 0, 0, position);
+    if (position[2] >= 65)
+        position[2] = (sint32)((uint32)position[2] - 64);
+    if (position[3])
         return (uint32)group << 1;
-    for (i = 0; i < 4; i++)
-        position[i] = (sint32)r_u32(temp + 4u * i);
     return FUN_80012390(position, r_s16(0x8009adba + 2u * (uint32)group));
 }
 
@@ -647,7 +699,7 @@ GDB_CALL uint32 FUN_8005B178(uint32 object)
     FUN_80010028();
     FUN_80010040();
     FUN_800100C4(0, 5963776, -9437184);
-    FUN_800101CC(r_s16(0x800802d0 + ((uint32)(sint32)r_s16(object + 28) << 8)) >> 2);
+    FUN_800101CC((sint16)r_u16(0x800802d0 + ((uint32)(sint32)r_s16(object + 28) << 8)) >> 2);
     ff_static_model_80010B18(r_u32(0x80081724 + 4u * r_u32(object)), 0, 0);
     FUN_80010028();
     FUN_800100C4(0, 5767168, 14286848);

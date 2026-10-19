@@ -42,6 +42,7 @@ static uint32 diag_input_history_count, diag_input_scope;
 static uint32 diag_connected = 1;
 static uint32 diag_phase_base, diag_sequence_stage, diag_resume_pc, diag_menu_jobs;
 static uint32 diag_highscore_saved[2];
+static uint32 diag_menu_scene_context = 0xffffffff;
 static const char *diag_phase_directory;
 static uint32 diag_phase_interval = 300;
 static int diagnostic_checkpoint(const char *path, int load);
@@ -314,7 +315,7 @@ static int diagnostic_init(void)
 
 static int diagnostic_checkpoint(const char *path, int load)
 {
-    static const char checkpoint_abi[64] = "FightingForce native checkpoint ABI 2";
+    static const char checkpoint_abi[64] = "FightingForce native checkpoint ABI 5";
     FILE *f;
     int ok;
     uint32 magic = 0x31434646;
@@ -331,6 +332,7 @@ static int diagnostic_checkpoint(const char *path, int load)
     else
         ok = fwrite(&magic, 4, 1, f) == 1 && fwrite(checkpoint_abi, 1, 64, f) == 64;
     ok = ok && ff_state_block(f, DRAM, sizeof(DRAM), load) && ff_state_block(f, psx_addr(0x1f800000, 1024), 1024, load) && psx_state_io(f, load) && gpu_state_io(f, load) && ff_audio_state_io(f, load) && FF_STATE(f, ff_dummy_calls, load) && FF_STATE(f, ff_dummy_card_pending, load) && FF_STATE(f, ff_sdk_interrupts_enabled, load) && FF_STATE(f, ff_host_pad_state, load) && FF_STATE(f, ff_sdk_counter_state, load);
+    ok = ok && FF_STATE(f, diag_menu_scene_context, load);
     if (load && fgetc(f) != EOF)
         ok = 0;
     if (fclose(f))
@@ -592,7 +594,8 @@ static int save_world_boundary(FILE *f)
 /* Original post-game continuation returns one for the outer menu */
 static int gameplay_continue(int result)
 {
-    uint32 stage;
+    uint32 stage, first_score, second_score, continues, players;
+    sint32 branch;
     w_u32(0x800941a8, 0);
     FUN_8005ED78();
     if (result == 2)
@@ -612,28 +615,13 @@ static int gameplay_continue(int result)
                 sequence_run(4, sequence_prepare_frame);
                 w_u32(0x80093d58, 22);
                 break;
-            case 20:
-                sequence_run(3, sequence_prepare_frame);
-                w_u32(0x80093d58, 17);
-                break;
-            case 21:
-                sequence_run(2, sequence_prepare_frame);
-                w_u32(0x80093d58, 18);
-                break;
-            case 24:
-                sequence_run(6, sequence_prepare_frame);
-                sequence_run(7, sequence_prepare_frame);
-                FUN_8006AB80(r_u32(0x80094030), r_u32(0x80094034));
-                w_u32(0x80093d58, 25);
-                w_u32(0x80093d3c, 0);
-                FUN_80068D68();
-                return 1;
             case 6:
-                if (r_s8(0x80093de0) == 0)
+                branch = r_s8(0x80093de0);
+                if (branch == 0)
                     w_u32(0x80093d58, 10);
-                if (r_s8(0x80093de0) == 1)
+                if (branch == 1)
                     w_u32(0x80093d58, 8);
-                if (r_s8(0x80093de0) == 2)
+                if (branch == 2)
                     w_u32(0x80093d58, 7);
                 break;
             case 7:
@@ -650,11 +638,35 @@ static int gameplay_continue(int result)
             case 16:
                 w_u32(0x80093d58, 21);
                 break;
-            case 19:
-                w_u32(0x80093d58, 16);
-                break;
             default:
-                w_u32(0x80093d58, stage + 1);
+                stage = r_u32(0x80093d58);
+                switch (stage)
+                {
+                    case 19:
+                        w_u32(0x80093d58, 16);
+                        break;
+                    case 20:
+                        sequence_run(3, sequence_prepare_frame);
+                        w_u32(0x80093d58, 17);
+                        break;
+                    case 21:
+                        sequence_run(2, sequence_prepare_frame);
+                        w_u32(0x80093d58, 18);
+                        break;
+                    case 24:
+                        sequence_run(6, sequence_prepare_frame);
+                        sequence_run(7, sequence_prepare_frame);
+                        first_score = r_u32(0x80094030);
+                        second_score = r_u32(0x80094034);
+                        FUN_8006AB80(first_score, second_score);
+                        w_u32(0x80093d58, 25);
+                        w_u32(0x80093d3c, 0);
+                        FUN_80068D68();
+                        return 1;
+                    default:
+                        w_u32(0x80093d58, stage + 1);
+                        break;
+                }
                 break;
         }
         stage = r_u32(0x80093d58);
@@ -668,11 +680,15 @@ static int gameplay_continue(int result)
     {
         if (r_u32(0x80093d4c) == 329)
         {
-            FUN_8006AB80(r_u32(0x80094030), r_u32(0x80094034));
+            first_score = r_u32(0x80094030);
+            second_score = r_u32(0x80094034);
+            FUN_8006AB80(first_score, second_score);
             return 1;
         }
         FUN_80014498();
-        w_u32(0x80093d50, r_u32(0x80093d50) - r_u32(0x800940b0));
+        continues = r_u32(0x80093d50);
+        players = r_u32(0x800940b0);
+        w_u32(0x80093d50, continues - players);
     }
     return result == 1;
 }
@@ -1019,9 +1035,11 @@ static void frontend_select_demo(void)
 /* Original 15C6C..15CEC with the agreed memory-card startup exception */
 static void game_initialize(void)
 {
+    uint32 byte;
     /* Original nullsub_47 is only JR RA/NOP */
     FUN_8006A50C();
-    memset(psx_addr(0x8009e858, 1044), 0, 1044);
+    for (byte = 0; byte < 1044; ++byte)
+        w_u8(0x8009e858 + byte, 0);
     FUN_8003EE4C();
     FUN_8003EF78();
     FUN_80046854();
@@ -1069,7 +1087,10 @@ GDB_CALL int game_run(void)
 static int frontend_start(void)
 {
     if (!frontend_full_run)
+    {
+        diag_menu_scene_context = 0xffffffff;
         return (int)menu_initialize();
+    }
     return menu_run() ? 1 : FRONTEND_GAME_READY;
 }
 
@@ -1222,6 +1243,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     diag_phase_base = 0;
     diag_resume_pc = 0;
     diag_menu_jobs = 0;
+    diag_menu_scene_context = 0xffffffff;
     diag_phase_directory = getenv("FF_PHASE_CHECKPOINT_DIRECTORY");
     diag_phase_interval = 300;
     if (!diagnostic_init())
@@ -1388,6 +1410,7 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
                 FUN_80056ECC();
                 w_u32(0x800941a8, 0);
                 FUN_8005ED78();
+                diag_menu_scene_context = 0xffffffff;
                 result = (int)menu_initialize();
                 ff_services.frontend_frame = NULL;
             }
@@ -1489,7 +1512,7 @@ frontend_ready:
         else
             menu_fixture_present();
         callback = trace ? r_u32(0x800927ec) : 0;
-        cleanup = menu_update_frame();
+        cleanup = ff_menu_update_frame(&diag_menu_scene_context);
         if (trace)
         {
             uint32 row[8] = {frame, callback, r_u32(0x800927ec), r_u32(0x80092730), r_u32(0x8009277c), r_u32(0x80092780), r_u32(0x8009272c), r_u32(0x80092788)};

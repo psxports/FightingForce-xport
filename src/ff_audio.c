@@ -70,13 +70,33 @@ static void slus_spu_control_write(uint16 value)
 GDB_CALL uint32 FUN_SLUS_8001CF10(uint32 entry_v0, FF_SLUS_SERVICE service)
 {
     FUNCTION_MARKER(0x8001cf10u, "SLUS_004.33");
-    uint32 attempts = 0, callback;
-    slus_spu_control_write(slus_spu_control() & 0xffcf);
-    while ((slus_spu_control() & 0x30) && attempts < 0xf01)
-        ++attempts;
+    uint32 address = r_u32(0x80030294) + 0x1aa, attempts, callback;
+    int hardware = (address & 0x1fffffff) == 0x1f801daa;
+    uint16 control = hardware ? ff_spu_common_state[4] : r_u16(address);
+    /* 1D5D4 is a pure caller-stack delay; native device timing is handled by the adapter */
+    control &= 0xffcf;
+    if (hardware)
+        ff_spu_common_state[4] = control;
+    else
+        w_u16(address, control);
+    control = hardware ? ff_spu_common_state[4] : r_u16(address);
+    if (control & 0x30)
+    {
+        attempts = 1;
+        while (attempts < 0xf01)
+        {
+            control = hardware ? ff_spu_common_state[4] : r_u16(address);
+            ++attempts;
+            if (!(control & 0x30))
+                break;
+        }
+    }
     callback = r_u32(0x800302cc);
     if (callback)
+    {
+        callback = r_u32(0x800302cc);
         return service(callback, 0xf0000000u, 0, 0, 0, 0);
+    }
     return service(0x8001783c, 0xf0000009u, 0x20, 0, 0, 0); /* DeliverEvent, not a fabricated callback result. */
 }
 

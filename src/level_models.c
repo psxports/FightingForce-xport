@@ -2153,9 +2153,9 @@ GDB_CALL sint32 FUN_80067D3C(void)
     for (i = 0; i < 4; i++)
     {
         uint32 angle = i ? ((phase + 512u * i) & 2047u) : phase;
-        value = r_s16(0x800802d0 + 2u * angle) >> 11;
+        value = (sint16)r_u16(0x800802d0 + 2u * angle) >> 11;
         for (j = 0; j < 3; j++)
-            w_u8(0x80093be4 + offsets[i] + j, (uint8)value);
+            w_u8(0x80093be4 + offsets[i] + 2 - j, (uint8)value);
     }
     w_u32(0x80093bfc, (phase + 32u) & 2047u);
     return value;
@@ -2888,19 +2888,21 @@ GDB_CALL sint32 level_run(void)
 /* 167C4 has five arguments; caller SP+10 becomes SP+48 after prologue. */
 GDB_CALL sint32 FUN_800167C4(sint32 type, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
-    uint32 p = 0x8009a3c8;
+    FUNCTION_MARKER(0x800167c4, "GAME.EXE");
+    uint32 p = 0x8009a3c8, byte;
     sint32 i;
     for (i = 0; i < 64; i++, p += 36)
     {
         if (r_u32(p) != 0xffffffffu)
             continue;
-        memset(psx_addr(p, 36), 0, 36);
+        for (byte = 0; byte < 36; byte++)
+            w_u8(p + byte, 0);
         w_u32(p, (uint32)type);
         w_u32(p + 4, x);
         w_u32(p + 8, y);
         w_u32(p + 12, z);
         w_u16(p + 16, (uint16)angle);
-        w_u16(p + 22, (uint16)r_s8(0x8009439c + (uint32)type));
+        w_u16(p + 22, (uint16)(sint16)(sint8)r_u8(0x8009439c + (uint32)type));
         if ((uint32)type - 587u < 10)
             w_u16(p + 22, 300);
         return i;
@@ -2957,49 +2959,72 @@ GDB_CALL uint32 FUN_80014808(void)
 /* 4C1CC: load and relocate the stage's AI command streams. */
 GDB_CALL uint32 FUN_8004C1CC(void)
 {
-    uint32 p = 0x800bcde0, end, table = 0x80084f84, block_end, count, offsets, commands, j, q, flags, size;
+    FUNCTION_MARKER(0x8004c1cc, "GAME.EXE");
+    uint32 p = 0x800bcde0, end, table = 0x80084f84, block_end, count, initial_count, offsets, commands, j, q, flags, size, value;
     FUN_80061448(r_u32(0x80093d58) + 120, 0x116000);
     size = r_u32(0x800947d0);
-    memcpy(psx_addr(p, size), psx_addr(0x116000, size), size);
+    for (j = 0; (sint32)j < (sint32)size; j++)
+        w_u8(p + j, r_u8(0x116000 + j));
+    size = r_u32(0x800947d0);
     if (size >= 0x1801)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* original infinite loop at4C224 */
-    end = p + (size & ~3u);
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* Original infinite loop at4C224 */
+    size = r_u32(0x800947d0);
+    end = p + (size & ~3);
     while (p < end)
     {
-        block_end = p + 4u * r_u32(p);
+        block_end = p + 4 * r_u32(p);
         p += 4;
         count = r_u32(p);
         w_u32(table, count);
+        count = r_u32(table);
+        initial_count = r_u32(table);
         p += 4;
         offsets = p;
-        commands = p + 4u * count;
+        commands = p + 4 * count;
         w_u32(table + 4, offsets);
         w_u32(table + 12, 0);
         w_u32(table + 8, commands);
-        for (j = 0; (sint32)j < (sint32)r_u32(table); j++)
+        j = 0;
+        if ((sint32)initial_count > 0)
         {
-            q = commands + 4u * r_u32(offsets + 4u * j);
             do
             {
-                flags = r_u32(0x8007f60c + 8u * r_u32(q));
-                if (flags)
-                    w_u32(offsets + 4u * j, r_u32(offsets + 4u * j) | (flags << 16) | 0x80000000u);
-                flags = r_u32(q + 8);
-                q += 12;
-            } while (flags);
+                offsets = r_u32(table + 4);
+                value = r_u32(offsets + 4 * j);
+                commands = r_u32(table + 8);
+                q = commands + 4 * value;
+                do
+                {
+                    flags = r_u32(0x8007f60c + 8 * r_u32(q));
+                    if (flags)
+                    {
+                        offsets = r_u32(table + 4);
+                        value = r_u32(offsets + 4 * j);
+                        w_u32(offsets + 4 * j, (flags << 16) | value | 0x80000000);
+                    }
+                    flags = r_u32(q + 8);
+                    q += 12;
+                } while (flags);
+                count = r_u32(table);
+                j++;
+            } while ((sint32)j < (sint32)count);
         }
+        commands = r_u32(table + 8);
         for (q = commands + 4; q < block_end; q += 12)
         {
             flags = r_u32(q);
-            w_u32(table + 12, r_u32(table + 12) | r_u32(0x8007f60c + 8u * flags));
-            w_u32(q, r_u32(0x8007f608 + 8u * r_u32(q)));
+            value = r_u32(table + 12);
+            flags = r_u32(0x8007f60c + 8 * flags);
+            w_u32(table + 12, value | flags);
+            w_u32(q, r_u32(0x8007f608 + 8 * r_u32(q)));
         }
         table += 16;
         p = block_end;
     }
     FUN_80061448(r_u32(0x80093d58) + 145, 0x116000);
     size = r_u32(0x800947d0);
-    memcpy(psx_addr(0x800a7e58, size), psx_addr(0x116000, size), size);
+    for (j = 0; (sint32)j < (sint32)size; j++)
+        w_u8(0x800a7e58 + j, r_u8(0x116000 + j));
     return 0x800a7e58;
 }
 
@@ -3010,7 +3035,7 @@ GDB_CALL uint32 FUN_80016A28(uint32 region, sint32 type, sint32 action, sint32 k
     sint32 minx = 32767, minz = 32767, maxx = -32768, maxz = -32768, i, n, x, z;
     uint32 model, vertices, result;
     int oriented;
-    w_u16(region + 16, (uint16)(action - 1));
+    w_u16(region + 16, (uint16)((uint32)action - 1));
     w_u16(region + 14, (uint16)type);
     w_u16(region + 12, (uint16)kind);
     oriented = ((uint32)kind - 10u) < 2 || ((uint32)kind - 12u) < 2 || kind == 21 || type == 781;
@@ -3023,16 +3048,16 @@ GDB_CALL uint32 FUN_80016A28(uint32 region, sint32 type, sint32 action, sint32 k
         x = r_s16(vertices);
         if (x > maxx)
         {
-            maxx = r_s16(vertices);
-            x = maxx;
+            maxx = x;
+            x = r_s16(vertices);
         }
         if (x < minx)
             minx = x;
         z = r_s16(vertices + 4);
         if (z > maxz)
         {
-            maxz = r_s16(vertices + 4);
-            z = maxz;
+            maxz = z;
+            z = r_s16(vertices + 4);
         }
         if (z < minz)
             minz = z;
@@ -3072,6 +3097,7 @@ GDB_CALL uint32 FUN_8003B77C(uint32 region, sint32 type)
 {
     uint32 entry = 0x80086f84, value = r_u16(entry);
     sint32 action, kind, padding;
+    uint8 angle;
     if ((sint16)value == -1)
         return 0xffffffffu;
     for (;;)
@@ -3082,7 +3108,8 @@ GDB_CALL uint32 FUN_8003B77C(uint32 region, sint32 type)
             kind = r_s8(entry + 3);
             padding = r_s8(entry + 4);
             FUN_80016A28(region, type, action, kind, padding);
-            w_u16(region + 18, (uint16)r_s8(entry + 5));
+            angle = r_u8(entry + 5);
+            w_u16(region + 18, (uint16)(sint16)(sint8)angle);
         }
         entry += 6;
         value = r_u16(entry);
@@ -3093,19 +3120,26 @@ GDB_CALL uint32 FUN_8003B77C(uint32 region, sint32 type)
 
 GDB_CALL uint32 FUN_80017BB0(void)
 {
-    sint32 i = 0;
-    uint32 object = 0x800b89f0, region, result = r_u32(0x8009403c);
-    for (; i < (sint32)r_u32(0x8009403c); i++, object += 36)
+    uint32 i = 0;
+    uint32 object = 0x800b89f0, region, coordinate, type, result = r_u32(0x8009403c);
+    if ((sint32)result <= 0)
+        return result;
+    do
     {
         region = 0x8009ec70 + 24u * r_u32(0x8009479c);
         w_u32(region + 20, object);
-        w_u16(region + 4, (uint16)r_s16(object + 6));
-        w_u16(region, (uint16)r_s16(object + 6));
-        w_u16(region + 6, (uint16)r_s16(object + 14));
-        w_u16(region + 2, (uint16)r_s16(object + 14));
-        FUN_8003B77C(region, (sint32)r_u32(object));
-        result = 0;
-    }
+        coordinate = r_u16(object + 6);
+        w_u16(region + 4, coordinate);
+        w_u16(region, coordinate);
+        coordinate = r_u16(object + 14);
+        w_u16(region + 6, coordinate);
+        w_u16(region + 2, coordinate);
+        type = r_u32(object);
+        ++i;
+        FUN_8003B77C(region, (sint32)type);
+        result = (sint32)i < (sint32)r_u32(0x8009403c);
+        object += 36;
+    } while (result);
     return result;
 }
 

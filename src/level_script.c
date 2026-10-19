@@ -1,4 +1,5 @@
 #include "ff.h"
+#include <stdio.h>
 
 GDB_CALL sint32 FUN_8004BE28(void)
 {
@@ -61,10 +62,21 @@ static void script_create(void)
     }
     table = r_u32(0x800b3be8 + 4u * (uint32)type);
     index = FUN_8004AF18(type, x, z, yaw, flag, timer, 0);
+    // TODO Increase the NPC slot count
+    if (index < 0)
+    {
+        fprintf(stderr, "NPC pool exhausted in script_create: record=%08X type=%d allocation=primary slots=2..7\n", p, type);
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
     actor = 0x800b4318 + 244u * (uint32)index;
     if (type == 44 || type == 45 || type == 46)
     {
         companion = FUN_8004AF18(51, x, z, yaw, 0, 0, 0);
+        if (companion < 0)
+        {
+            fprintf(stderr, "NPC pool exhausted in script_create: record=%08X type=%d allocation=companion primary=%d slots=2..7\n", p, type, index);
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
         w_u16(actor + 88, (uint16)companion);
         w_u16(0x800b4318 + 244u * (uint32)companion + 88, (uint16)index);
     }
