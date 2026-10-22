@@ -76,7 +76,7 @@ done:
     if (input)
         fclose(input);
     if (!success)
-        fprintf(stderr, "Cannot open original CDXA movie: %s\n", asset);
+        FF_DIAGNOSTIC(fprintf(stderr, "Cannot open original CDXA movie: %s\n", asset));
     return success;
 }
 
@@ -193,8 +193,8 @@ sint32 ff_movie_smoke(void)
         uint32 audio_before = g_xport_audio_nonzero_buffers;
         movie_smoke_index = i;
         result = FUN_SLUS_8001287C(names[i], movie_service);
-        fprintf(report, "movie_smoke %d result %d frames %u width %u height %u audio_nonzero %u peak %u\n", i, result, r_u32(0x8003036c), r_u32(0x80030400), r_u32(0x80030404), g_xport_audio_nonzero_buffers - audio_before, g_xport_audio_peak);
-        fflush(report);
+        FF_DIAGNOSTIC(fprintf(report, "movie_smoke %d result %d frames %u width %u height %u audio_nonzero %u peak %u\n", i, result, r_u32(0x8003036c), r_u32(0x80030400), r_u32(0x80030404), g_xport_audio_nonzero_buffers - audio_before, g_xport_audio_peak));
+        FF_DIAGNOSTIC(fflush(report));
         if (result != 1 || r_u32(0x8003036c) != 61 || g_xport_audio_nonzero_buffers == audio_before)
         {
             success = 0;
@@ -206,8 +206,8 @@ sint32 ff_movie_smoke(void)
     {
         movie_smoke_buttons = skip_buttons[i];
         result = FUN_SLUS_8001287C(names[0], movie_service);
-        fprintf(report, "movie_skip %08X result %d frames %u fade %d restored_cd %d %d\n", movie_smoke_buttons, result, r_u32(0x8003036c), r_s16(0x801fe6a0), ff_spu_common_state[2], ff_spu_common_state[3]);
-        fflush(report);
+        FF_DIAGNOSTIC(fprintf(report, "movie_skip %08X result %d frames %u fade %d restored_cd %d %d\n", movie_smoke_buttons, result, r_u32(0x8003036c), r_s16(0x801fe6a0), ff_spu_common_state[2], ff_spu_common_state[3]));
+        FF_DIAGNOSTIC(fflush(report));
         if (result != (i ? 1 : 2) || r_u32(0x8003036c) >= 638 || ff_spu_common_state[2] || ff_spu_common_state[3])
             success = 0;
     }

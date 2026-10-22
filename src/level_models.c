@@ -2615,8 +2615,9 @@ GDB_CALL uint32 ff_game_input_8005F23C(void)
 {
     if (ff_services.audit_input_event)
         ff_services.audit_input_event(1);
-    uint32 value, cursor;
-    if (r_u32(0x80093d08) == 2)
+    uint32 value, cursor, mode, index, base, count;
+    mode = r_u32(0x80093d08);
+    if (mode == 2)
     {
         value = (uint16)FUN_8005F5AC(r_u32(0x80094288));
         w_u32(0x80093a10, value);
@@ -2624,24 +2625,33 @@ GDB_CALL uint32 ff_game_input_8005F23C(void)
         value = (uint16)FUN_8005F5AC(r_u32(0x8009428c));
         w_u32(0x80093a14, value);
         w_u32(0x80093a14, value | ((uint32)(sint32)r_s8(0x80094114) << 16));
-        w_u32(r_u32(0x80093d0c) + 8 * r_u32(0x80093d10), r_u32(0x80093a10));
-        w_u32(r_u32(0x80093d0c) + 8 * r_u32(0x80093d10) + 4, r_u32(0x80093a14));
+        index = r_u32(0x80093d10);
+        base = r_u32(0x80093d0c);
+        value = r_u32(0x80093a10);
+        w_u32(base + 8 * index, value);
+        index = r_u32(0x80093d10);
+        base = r_u32(0x80093d0c);
+        value = r_u32(0x80093a14);
+        w_u32(base + 8 * index + 4, value);
         value = r_u32(0x80093d10) + 1;
         w_u32(0x80093d10, value);
         return value;
     }
-    if (r_u32(0x80093d08) == 1)
+    if (mode == 1)
     {
-        if ((sint32)r_u32(0x80093d14) >= (sint32)(r_u32(0x80093d10) - 1))
+        count = r_u32(0x80093d10);
+        index = r_u32(0x80093d14);
+        if ((sint32)index >= (sint32)(count - 1))
         {
             w_u32(0x80093a10, 0);
             w_u32(0x80093a14, 0);
             goto playback_exit;
         }
-        cursor = r_u32(0x80093d0c) + 8 * r_u32(0x80093d14);
+        cursor = r_u32(0x80093d0c) + 8 * index;
         value = FUN_8005F050(r_u32(cursor));
         w_u32(0x80093a10, FUN_8005F234(value));
-        cursor = r_u32(0x80093d0c) + 8 * r_u32(0x80093d14);
+        index = r_u32(0x80093d14);
+        cursor = r_u32(0x80093d0c) + 8 * index;
         value = FUN_8005F050(r_u32(cursor + 4));
         w_u32(0x80093a14, FUN_8005F234(value));
         w_u32(0x80093d14, r_u32(0x80093d14) + 1);
@@ -2721,6 +2731,7 @@ GDB_CALL sint32 ff_level_ambient_80014584_stage0(void)
         w_u32(0x800944b8, (uint32)result);
         return result;
     }
+    stage = r_u32(0x80093d58);
     if (stage == 18)
     {
         sint32 result = FUN_80056670(235, 128, 6144);
@@ -2914,18 +2925,22 @@ GDB_CALL sint32 FUN_800167C4(sint32 type, uint32 x, uint32 y, uint32 z, uint32 a
 GDB_CALL uint32 FUN_80014808(void)
 {
     uint32 stage = r_u32(0x80093d58), x = (uint32)(sint32)r_s16(0x80094378 + 2u * stage) << 16;
-    uint32 z = (uint32)(sint32)r_s16(0x800943c0 + 2u * stage) << 16, p, dx, dz;
-    sint32 angle = r_s16(0x800942e8 + 2u * stage), i;
-    for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
-    {
-        FUN_8005FB00(i);
-        p = 0x800b4354 + 244u * (uint32)i;
-        w_u8(p + 62, 255);
-        w_u16(p - 4, (uint16)angle);
-        w_u16(p + 2, (uint16)((uint32)angle << 5));
-        w_u16(p - 2, 0);
-        w_u16(p, 0);
-    }
+    uint32 z = (uint32)(sint32)r_s16(0x800943c0 + 2u * stage) << 16, p, dx, dz, i = 0, count;
+    sint32 angle = r_s16(0x800942e8 + 2u * stage);
+    count = r_u32(0x800940b0);
+    if ((sint32)count > 0)
+        do
+        {
+            FUN_8005FB00((sint32)i);
+            p = 0x800b4354 + 244u * i;
+            w_u8(p + 62, 255);
+            count = r_u32(0x800940b0);
+            ++i;
+            w_u16(p - 4, (uint16)angle);
+            w_u16(p + 2, (uint16)((uint32)angle << 5));
+            w_u16(p - 2, 0);
+            w_u16(p, 0);
+        } while ((sint32)i < (sint32)count);
     if (r_u32(0x800940b0) == 1)
     {
         w_u32(0x800b4340, x);

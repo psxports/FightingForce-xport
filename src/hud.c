@@ -228,18 +228,24 @@ GDB_CALL uint32 ff_hud_800620BC_stage0(void)
 GDB_CALL uint32 frame_draw_scene(void)
 {
     sint32 fade;
+    sint32 red, green, blue;
+    uint32 tick;
     if ((sint32)r_u32(0x80093d58) < 26)
         ff_hud_800620BC_stage0();
     if ((sint32)r_u32(0x80093dd4) >= 192)
         FUN_80061ADC(0x80093570, 110);
-    if (r_s16(0x8001000c) + r_s16(0x8001000e) + r_s16(0x80010010))
+    red = r_s16(0x8001000c);
+    green = r_s16(0x8001000e);
+    blue = r_s16(0x80010010);
+    if (red + green + blue)
         FUN_8006471C();
     if (r_u32(0x80094190))
         FUN_80064820();
     frame_project_horizon();
     frame_draw_background();
-    if ((sint32)r_u32(0x80093dd0) >= 33)
+    tick = r_u32(0x80093dd0);
+    if ((sint32)tick >= 33)
         return 0;
-    fade = (sint32)((r_u32(0x80093dd0) << 3) - 256u);
+    fade = (sint32)((tick << 3) - 256u);
     return FUN_80011CCC(fade, fade, fade);
 }

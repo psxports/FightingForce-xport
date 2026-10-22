@@ -5,14 +5,14 @@
 sint32 ff_load_ram(const char *path)
 {
     FILE *f = xport_fopen(path, "rb");
-    size_t n;
-    int extra;
+    size_t n, trailing;
+    uint8 extra;
     if (!f)
         return 0;
     n = fread(DRAM, 1, sizeof(DRAM), f);
-    extra = fgetc(f);
+    trailing = fread(&extra, 1, 1, f);
     fclose(f);
-    return n == sizeof(DRAM) && extra == EOF;
+    return n == sizeof(DRAM) && trailing == 0;
 }
 
 /* Restore only reviewed initialized data, never original MIPS code */

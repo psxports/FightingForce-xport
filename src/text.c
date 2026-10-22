@@ -287,24 +287,28 @@ sint32 FUN_8005E9E8(sint32 player)
  * coordinate stores; AA PsyQ initializers reuse existing normalized twins. */
 GDB_CALL uint32 FUN_8006686C(void)
 {
-    sint32 x = (sint32)((uint32)((sint32)r_u32(0x8008d4a4) >> 8) - (((uint32)(sint32)r_s16(0x8008d490) << 10) + 0x200000u)) >> 16;
-    uint32 horizon = r_u32(0x8008d4d0) - 256u, a, color;
+    sint32 camera_x = r_s32(0x8008d4a4);
+    sint32 yaw = r_s16(0x8008d490);
+    sint32 x = (sint32)((uint32)(camera_x >> 8) - (((uint32)yaw << 10) + 0x200000)) >> 16;
+    uint32 horizon = r_u32(0x8008d4d0) - 256u, a, color, red;
     uint8 *p;
     if ((sint32)horizon > 0)
     {
+        red = (uint32)r_u8(0x8008d4c8) << 3;
         color = r_u32(0x8008d4c8);
         a = r_u32(0x8008d4b0);
         w_u32(0x8008d4b0, a + 24);
         p = psx_addr(a, 24);
         setPolyF4(p);
-        p[4] = (uint8)(color << 3);
-        p[5] = (uint8)(((sint32)color >> 2) & ~7);
-        p[6] = (uint8)(((sint32)color >> 7) & ~7);
+        w_u8(a + 4, (uint8)red);
+        w_u8(a + 5, (uint8)(((sint32)color >> 2) & ~7));
+        w_u8(a + 6, (uint8)(((sint32)color >> 7) & ~7));
         w_u16(a + 8, 0);
         w_u16(a + 10, 0);
         w_u16(a + 12, 320);
         w_u16(a + 14, 0);
         w_u16(a + 16, 0);
+        horizon = (uint32)r_u16(0x8008d4d0) - 256;
         w_u16(a + 18, (uint16)horizon);
         w_u16(a + 20, 320);
         w_u16(a + 22, (uint16)horizon);
@@ -317,8 +321,10 @@ GDB_CALL uint32 FUN_8006686C(void)
     w_u16(a + 14, 0x7c00);
     setShadeTex(p, 1);
     w_u16(a + 8, (uint16)(0u - (uint32)x));
+    horizon = (uint32)r_u16(0x8008d4d0) - 256;
     w_u16(a + 10, (uint16)horizon);
-    p[12] = p[13] = 0;
+    w_u8(a + 12, 0);
+    w_u8(a + 13, 0);
     w_u16(a + 16, 256);
     w_u16(a + 18, 256);
     FUN_80011E40(r_u32(0x8008d4b4), a);
@@ -766,16 +772,28 @@ sint32 text_center_gradient_host(const char *text, sint32 y)
 }
 
 /* Numeric and caller-local variable-height FT4 share the original packet order */
+static uint32 sprite_checked_add(uint32 value, sint32 addend)
+{
+    sint64 sum = (sint64)(sint32)value + addend;
+    if (sum < -2147483647LL - 1 || sum > 2147483647LL)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    return (uint32)sum;
+}
+
 static uint32 variable_height_sprite_800128F4(uint32 position, const uint32 native_position[4], sint32 sprite)
 {
     uint32 p, d, uv, mode, end, color, bit, depth, height, bucket, ot, table;
+    uint32 scaled_sprite, depth_address, next_packet;
     sint32 x, y;
     sint64 diff, bottom;
     uint32 right;
     p = r_u32(0x8008d4b0);
     x = native_position ? (sint16)native_position[0] : r_s16(position);
     y = native_position ? (sint16)native_position[1] : r_s16(position + 4);
-    d = 0x800a8768 + (uint32)sprite * 12;
+    scaled_sprite = (uint32)sprite << 2;
+    d = sprite_checked_add(0x800a8768, (sint32)scaled_sprite);
+    scaled_sprite <<= 1;
+    d = sprite_checked_add(d, (sint32)scaled_sprite);
     uv = r_u32(d);
     mode = r_u32(d + 4);
     end = r_u32(d + 8);
@@ -806,16 +824,19 @@ static uint32 variable_height_sprite_800128F4(uint32 position, const uint32 nati
     w_u16(p + 34, (uint16)bottom);
     ot = r_u32(0x8008d4b4);
     table = r_u32(0x8008d4d8);
-    bucket = ot + (sint32)r_s16(table + ((uint32)((sint32)depth >> 2) << 1));
+    depth_address = sprite_checked_add(table, (sint32)((uint32)((sint32)depth >> 2) << 1));
+    bucket = sprite_checked_add(ot, r_s16(depth_address));
     w_u32(p, r_u32(bucket) | 0x09000000);
+    next_packet = sprite_checked_add(p, 40);
     w_u32(bucket, p & 0xffffff);
     w_u32(0x8008d4bc, 0x2d000000);
-    w_u32(0x8008d4b0, p + 40);
+    w_u32(0x8008d4b0, next_packet);
     return 0x8008d4b0;
 }
 
 GDB_CALL uint32 FUN_800128F4(uint32 position, sint32 sprite)
 {
+    FUNCTION_MARKER(0x800128f4, "GAME.EXE");
     return variable_height_sprite_800128F4(position, NULL, sprite);
 }
 
@@ -950,24 +971,27 @@ GDB_CALL uint32 FUN_80063100(uint32 xy, uint32 actor)
     return previous;
 }
 
-/* 61D0C: score digits use signed kerning indexed by the next low nibble.
- * Unlike 61B7C, the original returns zero, including an empty string. */
+/* Score digits retain separate carried-character and continuation reads */
 GDB_CALL uint32 FUN_80061D0C(uint32 text, sint32 x, sint32 y)
 {
     sint32 position[3] = {x, y, 0};
-    while (r_u8(text))
-    {
-        sint32 digit = r_s8(text++);
-        if (digit == 32)
-            position[0] = (sint32)((uint32)position[0] + 6u);
-        else
+    uint32 character = r_u8(text);
+    if (character)
+        do
         {
-            digit -= 48;
-            FUN_80012390(position, digit + r_s16(0x8009ad14u + 2u * (uint32)(sint32)r_s16(0x800af4a8)));
-            position[0] = (sint32)((uint32)position[0] + (sint32)r_s8(0x80080140u + 10u * (uint32)digit + (r_u8(text) & 15)));
-        }
-    }
-    return 0;
+            sint32 digit = (sint8)character;
+            ++text;
+            if (digit == 32)
+                position[0] = (sint32)((uint32)position[0] + 6u);
+            else
+            {
+                digit -= 48;
+                FUN_80012390(position, digit + r_s16(0x8009ad14u + 2u * (uint32)(sint32)r_s16(0x800af4a8)));
+                position[0] = (sint32)((uint32)position[0] + (sint32)r_s8(0x80080140u + 10u * (uint32)digit + (r_u8(text) & 15)));
+            }
+            character = r_u8(text);
+        } while (r_s8(text));
+    return character << 24;
 }
 
 /* 61E0C is a two-byte decimal formatter, not general sprintf. Negative
@@ -1015,9 +1039,12 @@ GDB_CALL uint32 FUN_8006351C(uint32 xy, uint32 actor)
     special = r_s16(actor + 52) == 53;
     for (i = 0; i < 4; i++)
     {
-        bytes[4 + 8 * i] = i < 2 ? (wide ? 0 : 128) : 255;
-        bytes[5 + 8 * i] = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
-        bytes[6 + 8 * i] = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
+        w_u8(p + 4 + 8 * i, i < 2 ? (wide ? 0 : 128) : 255);
+        w_u8(p + 5 + 8 * i, i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255));
+        w_u8(p + 6 + 8 * i, i < 2 ? (special ? 128 : 0) : (special ? 255 : 128));
+    }
+    for (i = 0; i < 4; i++)
+    {
         w_u16(p + 8 + 8 * i, (uint16)(x - (i < 2 ? 0 : (uint32)shown)));
         w_u16(p + 10 + 8 * i, (uint16)(y + 2 + ((i & 1) ? 4 : 0)));
     }
@@ -1035,8 +1062,9 @@ GDB_CALL uint32 FUN_8006351C(uint32 xy, uint32 actor)
         w_u32(0x8008d4b0, p + 24);
         bytes = psx_addr(p, 24);
         setPolyF4(bytes);
-        bytes[4] = (uint8)fade;
-        bytes[5] = bytes[6] = 0;
+        w_u8(p + 4, (uint8)fade);
+        w_u8(p + 5, 0);
+        w_u8(p + 6, 0);
         for (i = 0; i < 4; i++)
         {
             w_u16(p + 8 + 4 * i, (uint16)(x - (uint32)(i < 2 ? shown : old)));

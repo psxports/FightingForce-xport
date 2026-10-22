@@ -4,6 +4,7 @@ GDB_CALL sint32 FUN_8001A268(sint32 index)
 {
     FUNCTION_MARKER(0x8001a268u, "GAME.EXE");
     uint32 actor = 0x800b4318 + 244u * (uint32)index, state = r_u32(actor + 12), distance, offset, x, z, other, dx, dz;
+    uint32 sine, cosine, count;
     if (state == 87)
         distance = 352;
     else if (state == 82 || state == 69 || state - 198u < 3u)
@@ -11,9 +12,14 @@ GDB_CALL sint32 FUN_8001A268(sint32 index)
     else
         return 0;
     offset = 2u * (uint32)(sint32)r_s16(actor + 56);
-    x = r_u32(actor + 40) + (uint32)(sint32)r_s16(0x800802d0 + offset) * distance;
-    z = r_u32(actor + 48) - (uint32)(sint32)r_s16(0x800806d0 + offset) * distance;
-    if (r_u32(0x800940b0) == 2)
+    sine = (uint32)(sint32)r_s16(0x800802d0 + offset);
+    cosine = (uint32)(sint32)r_s16(0x800806d0 + offset);
+    x = r_u32(actor + 40);
+    z = r_u32(actor + 48);
+    count = r_u32(0x800940b0);
+    x += sine * distance;
+    z -= cosine * distance;
+    if (count == 2)
     {
         other = 0x800b4318 + 244u * (1u - (uint32)index);
         dx = x - r_u32(other + 40);
@@ -104,7 +110,7 @@ GDB_CALL uint32 ff_transform_stack_vector_800234E8(uint32 matrix, uint32 point[3
 
 static void player_wip_abort(uint32 pc)
 {
-    if (getenv("FF_CAPTURE_WIP"))
+    if (FF_DIAGNOSTIC_ENV("FF_CAPTURE_WIP"))
     {
         FILE *f = xport_fopen("../status/gameplay/player-abort.ram", "wb");
         if (f)
@@ -119,7 +125,7 @@ static void player_wip_abort(uint32 pc)
             fclose(f);
         }
     }
-    fprintf(stderr, "WIP player24008 branch %08X\n", pc);
+    FF_DIAGNOSTIC(fprintf(stderr, "WIP player24008 branch %08X\n", pc));
     abort();
 }
 

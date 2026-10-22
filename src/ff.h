@@ -3,6 +3,14 @@
     #include "xport.h"
     #include "psx.h"
     #include "wip.h"
+/* Diagnostic expressions and environment controls are Debug-only */
+#if defined(NDEBUG)
+    #define FF_DIAGNOSTIC(...) do {} while (0)
+    #define FF_DIAGNOSTIC_ENV(name) NULL
+#else
+    #define FF_DIAGNOSTIC(...) do { __VA_ARGS__; } while (0)
+    #define FF_DIAGNOSTIC_ENV(name) getenv(name)
+#endif
 GDB_CALL uint32 FUN_8006F60C(uint32 table, uint32 count, uint32 entry_v0);
 GDB_CALL uint32 FUN_8006F6C4(uint32 table, uint32 count, uint32 entry_v0);
 GDB_CALL uint32 FUN_SLUS_80014F70(uint32 table, uint32 count, uint32 entry_v0);
@@ -964,7 +972,7 @@ GDB_CALL void ff_pitch_index_800101E0(uint32 index);
 GDB_CALL void ff_yaw_index_80010350(uint32 index);
 GDB_CALL void FUN_80010170(void);
 GDB_CALL void ff_model_transform_8001060C(uint32 model, uint32 pose);
-GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 xy, uint32 depths, sint32 bias);
+GDB_CALL uint32 ff_model_packets_80010CA0(uint32 count, uint32 records, uint32 xy, uint32 depths, sint32 bias, sint32 depth_carrier);
 GDB_CALL uint32 FUN_8001060C(uint32 model, uint32 pose);
 GDB_CALL uint32 ff_static_model_80010B18(uint32 model, uint32 unused, sint32 bias);
 GDB_CALL uint32 FUN_80067B8C(uint32 model, uint32 unused, sint32 bias);
@@ -1079,7 +1087,7 @@ GDB_CALL sint32 FUN_8001EE44(void);
 
 GDB_CALL uint32 FUN_80064684(void);
 
-GDB_CALL void ff_display_offsets_800586D0(void);
+GDB_CALL uint32 ff_display_offsets_800586D0(void);
 GDB_CALL uint32 FUN_8006471C(void);
 GDB_CALL uint32 FUN_80014498(void);
 GDB_CALL uint32 FUN_80011F20(uint32 value);

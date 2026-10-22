@@ -141,8 +141,8 @@ sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 ca
     char path[sizeof(extracted) + 6];
     uint32 size;
     FILE *f;
-    size_t got;
-    int extra;
+    size_t got, trailing;
+    uint8 extra;
     ++ff_dummy_calls[1];
     {
         /* Read only an extracted ISO file below DATA */
@@ -187,8 +187,8 @@ sint32 ff_dummy_archive_read(const char *disc_name, void *destination, uint32 ca
             return 0;
         }
         got = fread(destination, 1, size, f);
-        extra = fgetc(f);
+        trailing = fread(&extra, 1, 1, f);
         fclose(f);
-        return got == size && extra == EOF ? (sint32)size : 0;
+        return got == size && trailing == 0 ? (sint32)size : 0;
     }
 }

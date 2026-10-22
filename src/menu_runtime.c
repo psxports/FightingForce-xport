@@ -50,6 +50,7 @@ static int diagnostic_phase_checkpoint(uint32 pc);
 
 static int diagnostic_prime_input_packets(void)
 {
+#if !defined(NDEBUG)
     uint32 expected[2], tick = r_u32(0x80093dd0);
     uint8 packet[34];
     long position;
@@ -68,6 +69,10 @@ static int diagnostic_prime_input_packets(void)
     }
     clearerr(diag_input_calls);
     return fseek(diag_input_calls, position, SEEK_SET) == 0;
+#else
+    /* Debug replay files are not available in Release */
+    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+#endif
 }
 
 void ff_audit_sequence_context(uint32 old_stage)
@@ -139,12 +144,12 @@ void ff_audit_input_packet(sint32 controller)
     {
         entry->expected_tick = expected[0];
         entry->expected_controller = expected[1];
-        fprintf(stderr, "Diagnostic input call mismatch at ordinal %u tick %u controller %d expected_tick %u expected_controller %u scope %u\n", diag_input_ordinal, entry->tick, controller, expected[0], expected[1], diag_input_scope);
+        FF_DIAGNOSTIC(fprintf(stderr, "Diagnostic input call mismatch at ordinal %u tick %u controller %d expected_tick %u expected_controller %u scope %u\n", diag_input_ordinal, entry->tick, controller, expected[0], expected[1], diag_input_scope));
         count = diag_input_history_count < 16u ? diag_input_history_count : 16u;
         for (i = 0; i < count; i++)
         {
             entry = &diag_input_history[(diag_input_history_count - count + i) & 15u];
-            fprintf(stderr, "Diagnostic input history ordinal %u tick %u controller %u expected_tick %u expected_controller %u scope %u\n", entry->ordinal, entry->tick, entry->controller, entry->expected_tick, entry->expected_controller, entry->scope);
+            FF_DIAGNOSTIC(fprintf(stderr, "Diagnostic input history ordinal %u tick %u controller %u expected_tick %u expected_controller %u scope %u\n", entry->ordinal, entry->tick, entry->controller, entry->expected_tick, entry->expected_controller, entry->scope));
         }
         longjmp(menu_exit, 1);
     }
@@ -262,6 +267,7 @@ static void diagnostic_input(uint32 event)
 
 static int diagnostic_load_pad_schedule(const char *path, uint32 segments[36000][3], uint32 *count)
 {
+#if !defined(NDEBUG)
     FILE *file;
     uint32 i;
     if (!path)
@@ -284,11 +290,15 @@ static int diagnostic_load_pad_schedule(const char *path, uint32 segments[36000]
         if (segments[i][0] > segments[i][1] || segments[i][1] >= diag_end_tick || segments[i][2] > 65535 || (i && segments[i][0] <= segments[i - 1][1]))
             return 0;
     return 1;
+#else
+    /* Debug replay files are not available in Release */
+    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+#endif
 }
 
 static int diagnostic_init(void)
 {
-    const char *path = getenv("FF_AUDIT_PAD_SCHEDULE"), *decode_path = getenv("FF_AUDIT_DECODE_PAD_SCHEDULE"), *end = getenv("FF_AUDIT_END_TICK");
+    const char *path = FF_DIAGNOSTIC_ENV("FF_AUDIT_PAD_SCHEDULE"), *decode_path = FF_DIAGNOSTIC_ENV("FF_AUDIT_DECODE_PAD_SCHEDULE"), *end = FF_DIAGNOSTIC_ENV("FF_AUDIT_END_TICK");
     char *tail;
     diag_enabled = 0;
     ff_services.audit_input_event = NULL;
@@ -315,6 +325,7 @@ static int diagnostic_init(void)
 
 static int diagnostic_checkpoint(const char *path, int load)
 {
+#if !defined(NDEBUG)
     static const char checkpoint_abi[64] = "FightingForce native checkpoint ABI 5";
     FILE *f;
     int ok;
@@ -340,11 +351,15 @@ static int diagnostic_checkpoint(const char *path, int load)
     if (!xport_audio_init())
         ok = 0;
     return ok;
+#else
+    /* Debug replay files are not available in Release */
+    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+#endif
 }
 
 static const char *diagnostic_output(void)
 {
-    const char *p = diag_enabled ? getenv("FF_AUDIT_OUTPUT") : NULL;
+    const char *p = diag_enabled ? FF_DIAGNOSTIC_ENV("FF_AUDIT_OUTPUT") : NULL;
     return p ? p : "../status/gameplay/frontend-game-loop-final.ram";
 }
 
@@ -383,6 +398,7 @@ static int diagnostic_phase_checkpoint(uint32 pc)
 
 static int diagnostic_phase_restore(const char *path, FILE *menu_input)
 {
+#if !defined(NDEBUG)
     char context_path[1040];
     uint32 context[12];
     FILE *file;
@@ -417,6 +433,10 @@ static int diagnostic_phase_restore(const char *path, FILE *menu_input)
     diag_highscore_saved[0] = context[10];
     diag_highscore_saved[1] = context[11];
     return 1;
+#else
+    /* Debug replay files are not available in Release */
+    ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+#endif
 }
 
 /* Physical CD/card services remain dummy; route game-side menu logic through
@@ -431,7 +451,7 @@ static sint32 menu_aux(uint32 function, sint32 a, sint32 b)
         return FUN_80052458();
     if (function == 0x80052484)
         return FUN_80052484();
-    fprintf(stderr, "WIP: untranslated menu service %08X\n", function);
+    FF_DIAGNOSTIC(fprintf(stderr, "WIP: untranslated menu service %08X\n", function));
     longjmp(menu_exit, 1);
 }
 
@@ -461,7 +481,6 @@ static void title_host_frame(void)
     if (xport_isquit())
         longjmp(menu_exit, 1);
     ff_host_pad_publish(diag_enabled ? diag_connected : 1, buttons, 0);
-    VSync(0);
 }
 
 /* Original 58634 with native PAD polling and the existing host GPU submission */
@@ -489,8 +508,7 @@ GDB_CALL uint32 frame_prepare(void)
     display = 0x800947a0 + 20 * parity;
     PutDispEnv((DISPENV *)psx_addr(display, sizeof(DISPENV)));
     FUN_80064684();
-    ff_display_offsets_800586D0();
-    parity = r_u32(0x8008d4c4) & 1;
+    parity = ff_display_offsets_800586D0();
     gpu_begin();
     gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
     if (diag_enabled)
@@ -545,7 +563,7 @@ int ff_game_prefix_preview(void)
     }
     ff_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    printf("game_prefix_result %d tick %u\n", result, r_u32(0x80093dd0));
+    FF_DIAGNOSTIC(printf("game_prefix_result %d tick %u\n", result, r_u32(0x80093dd0)));
     ff_audit_end();
     return result;
 }
@@ -726,14 +744,14 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     volatile uint32 frame;
     uint32 vblank_start, audio_start, nonzero_start, detail_from = 0, detail_to = 0;
     uint64 started, finished;
-    int phase_aligned = diag_enabled && getenv("FF_AUDIT_PHASE_ALIGNED") && strcmp(getenv("FF_AUDIT_PHASE_ALIGNED"), "1") == 0;
-    const char *resume = diag_enabled ? getenv("FF_CHECKPOINT_LOAD") : NULL, *checkpoint = diag_enabled ? getenv("FF_CHECKPOINT_SAVE") : NULL;
-    const char *checkpoint_tick_text = diag_enabled ? getenv("FF_CHECKPOINT_TICK") : NULL;
+    int phase_aligned = diag_enabled && FF_DIAGNOSTIC_ENV("FF_AUDIT_PHASE_ALIGNED") && strcmp(FF_DIAGNOSTIC_ENV("FF_AUDIT_PHASE_ALIGNED"), "1") == 0;
+    const char *resume = diag_enabled ? FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_LOAD") : NULL, *checkpoint = diag_enabled ? FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_SAVE") : NULL;
+    const char *checkpoint_tick_text = diag_enabled ? FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_TICK") : NULL;
     uint32 checkpoint_tick = checkpoint_tick_text ? (uint32)strtoul(checkpoint_tick_text, NULL, 10) : 0;
-    const char *checkpoint_directory = diag_enabled ? getenv("FF_CHECKPOINT_DIRECTORY") : NULL;
-    const char *interval_text = getenv("FF_CHECKPOINT_INTERVAL");
+    const char *checkpoint_directory = diag_enabled ? FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_DIRECTORY") : NULL;
+    const char *interval_text = FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_INTERVAL");
     uint32 checkpoint_interval = 300, next_checkpoint = 0;
-    int stage_soak = diag_enabled && getenv("FF_STAGE_SOAK") && !strcmp(getenv("FF_STAGE_SOAK"), "1");
+    int stage_soak = diag_enabled && FF_DIAGNOSTIC_ENV("FF_STAGE_SOAK") && !strcmp(FF_DIAGNOSTIC_ENV("FF_STAGE_SOAK"), "1");
     char periodic_path[1024], *interval_end;
     if (checkpoint_directory && interval_text)
     {
@@ -763,8 +781,8 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         result = sequence_run(0, sequence_prepare_frame);
         if (diag_phase_limit && diag_phase_count == diag_phase_limit)
             return 0;
-        printf("continuous_sequence_result %d tick %u stage %u\n", result, r_u32(0x80093dd0), r_u32(0x80093d58));
-        fflush(stdout);
+        FF_DIAGNOSTIC(printf("continuous_sequence_result %d tick %u stage %u\n", result, r_u32(0x80093dd0), r_u32(0x80093d58)));
+        FF_DIAGNOSTIC(fflush(stdout));
         /* 15EC0..15EE8 ignores15720's result, including user skip0. */
         result = 9;
     }
@@ -813,17 +831,17 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             return 8;
         }
     }
-    if (limit && getenv("FF_TRACE_WORLD"))
+    if (limit && FF_DIAGNOSTIC_ENV("FF_TRACE_WORLD"))
     {
         snprintf(actor_path, sizeof(actor_path), "%s.world", output);
         world = xport_fopen(actor_path, "wb");
         if (!world || (!phase_aligned && !save_world_boundary(world)))
             return 8;
     }
-    if (limit && diag_enabled && getenv("FF_DETAIL_FROM") && getenv("FF_DETAIL_TO"))
+    if (limit && diag_enabled && FF_DIAGNOSTIC_ENV("FF_DETAIL_FROM") && FF_DIAGNOSTIC_ENV("FF_DETAIL_TO"))
     {
-        detail_from = (uint32)strtoul(getenv("FF_DETAIL_FROM"), NULL, 10);
-        detail_to = (uint32)strtoul(getenv("FF_DETAIL_TO"), NULL, 10);
+        detail_from = (uint32)strtoul(FF_DIAGNOSTIC_ENV("FF_DETAIL_FROM"), NULL, 10);
+        detail_to = (uint32)strtoul(FF_DIAGNOSTIC_ENV("FF_DETAIL_TO"), NULL, 10);
         if (detail_to < detail_from || detail_to - detail_from > 120)
             return 8;
         snprintf(actor_path, sizeof(actor_path), "%s.detail", output);
@@ -868,15 +886,15 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             }
             if (!diagnostic_checkpoint(periodic_path, 0))
                 return 15;
-            printf("periodic_checkpoint_saved tick %u path %s\n", next_checkpoint, periodic_path);
+            FF_DIAGNOSTIC(printf("periodic_checkpoint_saved tick %u path %s\n", next_checkpoint, periodic_path));
             next_checkpoint += checkpoint_interval;
         }
         if (checkpoint && checkpoint_tick != 0 && checkpoint_tick == r_u32(0x80093dd0))
         {
             if (!diagnostic_checkpoint(checkpoint, 0))
                 return 15;
-            printf("checkpoint_saved tick %u path %s\n", checkpoint_tick, checkpoint);
-            if (getenv("FF_CHECKPOINT_STOP"))
+            FF_DIAGNOSTIC(printf("checkpoint_saved tick %u path %s\n", checkpoint_tick, checkpoint));
+            if (FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_STOP"))
                 break;
         }
         /* Original PAD polling has published this tick before the game boundary */
@@ -955,7 +973,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
             level_initialize();
             ff_level_ready_80014B70_stage0();
             result = 0;
-            if (getenv("FF_TRANSITION_CHECKPOINT_SAVE") && !diagnostic_checkpoint(getenv("FF_TRANSITION_CHECKPOINT_SAVE"), 0))
+            if (FF_DIAGNOSTIC_ENV("FF_TRANSITION_CHECKPOINT_SAVE") && !diagnostic_checkpoint(FF_DIAGNOSTIC_ENV("FF_TRANSITION_CHECKPOINT_SAVE"), 0))
                 return 15;
         }
         if (output && frame == 299)
@@ -965,7 +983,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
     }
     finished = xport_timer_get();
     if (diag_enabled)
-        printf("diagnostic_profile prefix_ms %.3f tail_ms %.3f record_ms %.3f gpu_submit_ms %.3f\n", prefix_ticks / 1000.0, tail_ticks / 1000.0, record_ticks / 1000.0, diag_gpu_ticks / 1000.0);
+        FF_DIAGNOSTIC(printf("diagnostic_profile prefix_ms %.3f tail_ms %.3f record_ms %.3f gpu_submit_ms %.3f\n", prefix_ticks / 1000.0, tail_ticks / 1000.0, record_ticks / 1000.0, diag_gpu_ticks / 1000.0));
     if (actors)
         fclose(actors);
     if (world)
@@ -987,7 +1005,7 @@ static int run_loaded_game(int sequence, uint32 limit, const char *output)
         if (error)
             return 8;
     }
-    printf("gameplay_metrics frames %u vblanks %u seconds %.6f audio_buffers %u nonzero %u overruns %u\n", frame, (uint32)VSync(-1) - vblank_start, (double)(finished - started) / 1000000.0, g_xport_audio_submitted_buffers - audio_start, g_xport_audio_nonzero_buffers - nonzero_start, g_xport_audio_callback_overruns);
+    FF_DIAGNOSTIC(printf("gameplay_metrics frames %u vblanks %u seconds %.6f audio_buffers %u nonzero %u overruns %u\n", frame, (uint32)VSync(-1) - vblank_start, (double)(finished - started) / 1000000.0, g_xport_audio_submitted_buffers - audio_start, g_xport_audio_nonzero_buffers - nonzero_start, g_xport_audio_callback_overruns));
     if (output)
     {
         gpu_save_frame("../status/gameplay/game-frame-900.bgrx");
@@ -1143,7 +1161,7 @@ static int game_loop_preview(int sequence)
     }
     ff_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    printf("game_loop_result %d tick %u\n", result, r_u32(0x80093dd0));
+    FF_DIAGNOSTIC(printf("game_loop_result %d tick %u\n", result, r_u32(0x80093dd0)));
     ff_audit_end();
     return result;
 }
@@ -1179,7 +1197,7 @@ int ff_sequence_preview(int headless)
         result = sequence_run(0, sequence_prepare_frame);
     ff_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    printf("sequence_result %d tick %u stage %u\n", result, r_u32(0x80093dd0), r_u32(0x80093d58));
+    FF_DIAGNOSTIC(printf("sequence_result %d tick %u stage %u\n", result, r_u32(0x80093dd0), r_u32(0x80093d58)));
     ff_audit_end();
     return result == 1 ? 0 : result;
 }
@@ -1204,7 +1222,7 @@ int ff_title_runtime(void)
         result = FUN_80069F78();
     }
     ff_services.frontend_frame = NULL;
-    printf("title_result %u timer %u\n", result, r_u32(0x80093dd0));
+    FF_DIAGNOSTIC(printf("title_result %u timer %u\n", result, r_u32(0x80093dd0)));
     ff_audit_end();
     return 0;
 }
@@ -1232,9 +1250,9 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     FILE *input = NULL, *trace = NULL;
     volatile uint32 frame = 0;
     int result = 0;
-    const char *menu_load = getenv("FF_MENU_CHECKPOINT_LOAD"), *menu_save = getenv("FF_MENU_CHECKPOINT_SAVE");
-    const char *phase_load = getenv("FF_PHASE_CHECKPOINT_LOAD");
-    const char *menu_tick_text = getenv("FF_MENU_CHECKPOINT_TICK");
+    const char *menu_load = FF_DIAGNOSTIC_ENV("FF_MENU_CHECKPOINT_LOAD"), *menu_save = FF_DIAGNOSTIC_ENV("FF_MENU_CHECKPOINT_SAVE");
+    const char *phase_load = FF_DIAGNOSTIC_ENV("FF_PHASE_CHECKPOINT_LOAD");
+    const char *menu_tick_text = FF_DIAGNOSTIC_ENV("FF_MENU_CHECKPOINT_TICK");
     uint32 menu_tick = 520;
     volatile int menu_saved = 0;
     menu_input_published = 0;
@@ -1244,21 +1262,21 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     diag_resume_pc = 0;
     diag_menu_jobs = 0;
     diag_menu_scene_context = 0xffffffff;
-    diag_phase_directory = getenv("FF_PHASE_CHECKPOINT_DIRECTORY");
+    diag_phase_directory = FF_DIAGNOSTIC_ENV("FF_PHASE_CHECKPOINT_DIRECTORY");
     diag_phase_interval = 300;
     if (!diagnostic_init())
         return 14;
     frontend_full_run = startup && !script && !limit && !diag_enabled;
     if ((menu_load || menu_save) && !diag_enabled)
         return 14;
-    if ((phase_load || diag_phase_directory) && (!diag_enabled || !getenv("FF_TRACE_INPUT_CALLS")))
+    if ((phase_load || diag_phase_directory) && (!diag_enabled || !FF_DIAGNOSTIC_ENV("FF_TRACE_INPUT_CALLS")))
         return 14;
-    if (phase_load && (menu_load || getenv("FF_CHECKPOINT_LOAD")))
+    if (phase_load && (menu_load || FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_LOAD")))
         return 14;
-    if (getenv("FF_PHASE_CHECKPOINT_INTERVAL"))
+    if (FF_DIAGNOSTIC_ENV("FF_PHASE_CHECKPOINT_INTERVAL"))
     {
         char *end;
-        const char *value = getenv("FF_PHASE_CHECKPOINT_INTERVAL");
+        const char *value = FF_DIAGNOSTIC_ENV("FF_PHASE_CHECKPOINT_INTERVAL");
         unsigned long count = strtoul(value, &end, 10);
         if (!*value || *end || !count || count > 36000)
             return 14;
@@ -1272,20 +1290,20 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             return 14;
         menu_tick = (uint32)value;
     }
-    if (menu_load && getenv("FF_CHECKPOINT_LOAD"))
+    if (menu_load && FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_LOAD"))
         return 14;
-    if (getenv("FF_MENU_PHASE_COUNT"))
+    if (FF_DIAGNOSTIC_ENV("FF_MENU_PHASE_COUNT"))
     {
         char *end;
-        const char *value = getenv("FF_MENU_PHASE_COUNT");
+        const char *value = FF_DIAGNOSTIC_ENV("FF_MENU_PHASE_COUNT");
         unsigned long count = strtoul(value, &end, 10);
-        if (!*value || *end || !count || count > 36001 || (!menu_load && !phase_load) || !getenv("FF_TRACE_PHASE_PATH"))
+        if (!*value || *end || !count || count > 36001 || (!menu_load && !phase_load) || !FF_DIAGNOSTIC_ENV("FF_TRACE_PHASE_PATH"))
             return 14;
         diag_phase_limit = (uint32)count;
     }
-    if (getenv("FF_TRACE_INPUT_CALLS") && ((!menu_load && !phase_load) || !diag_phase_limit))
+    if (FF_DIAGNOSTIC_ENV("FF_TRACE_INPUT_CALLS") && ((!menu_load && !phase_load) || !diag_phase_limit))
         return 14;
-    if (diag_enabled && (getenv("FF_CHECKPOINT_LOAD") || menu_load || phase_load))
+    if (diag_enabled && (FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_LOAD") || menu_load || phase_load))
     {
     }
     else if (startup == 2)
@@ -1315,10 +1333,10 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
     InitGeom();
     if (!xport_audio_init())
         return 5;
-    if (getenv("FF_TRACE_PHASE_PATH"))
+    if (FF_DIAGNOSTIC_ENV("FF_TRACE_PHASE_PATH"))
     {
         uint32 header[3] = {0x31504646, 3, 2228};
-        diag_phases = xport_fopen(getenv("FF_TRACE_PHASE_PATH"), "wbx");
+        diag_phases = xport_fopen(FF_DIAGNOSTIC_ENV("FF_TRACE_PHASE_PATH"), "wbx");
         diag_phase_failed = 0;
         if (!diag_phases)
             return 14;
@@ -1367,11 +1385,11 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
             result = 9;
             goto done;
     }
-    if (getenv("FF_TRACE_INPUT_CALLS"))
+    if (FF_DIAGNOSTIC_ENV("FF_TRACE_INPUT_CALLS"))
     {
         uint32 magic;
         diag_input_ordinal = 0;
-        diag_input_calls = xport_fopen(getenv("FF_TRACE_INPUT_CALLS"), "rb");
+        diag_input_calls = xport_fopen(FF_DIAGNOSTIC_ENV("FF_TRACE_INPUT_CALLS"), "rb");
         if (!diag_input_calls || fread(&magic, sizeof(magic), 1, diag_input_calls) != 1 || magic != 0x31494646)
         {
             result = 14;
@@ -1426,11 +1444,11 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless, int
         }
         diag_resume_pc = 0;
     }
-    if (diag_enabled && getenv("FF_CHECKPOINT_LOAD"))
+    if (diag_enabled && FF_DIAGNOSTIC_ENV("FF_CHECKPOINT_LOAD"))
     {
         ff_services.frontend_frame = title_host_frame;
         result = run_loaded_game(0, diag_end_tick, diagnostic_output());
-        printf("frontend_game_result %d tick %u\n", result, r_u32(0x80093dd0));
+        FF_DIAGNOSTIC(printf("frontend_game_result %d tick %u\n", result, r_u32(0x80093dd0)));
         goto done;
     }
     if (startup == 2 && !diag_enabled && !script && !limit)
@@ -1527,14 +1545,14 @@ frontend_ready:
             ff_services.frontend_frame = title_host_frame;
             /* 80015E90..80015EBC runs the opening sequence only for a normal stage-zero start */
             result = run_loaded_game(r_u32(0x80093d58) == 0 && r_u32(0x80093d1c) == 0xffffffffu, script ? (diag_enabled ? diag_end_tick : 900) : 0, script || diag_enabled ? diagnostic_output() : NULL);
-            printf("frontend_game_result %d tick %u\n", result, r_u32(0x80093dd0));
+            FF_DIAGNOSTIC(printf("frontend_game_result %d tick %u\n", result, r_u32(0x80093dd0)));
             if (result == 1 || result == 4)
             {
                 result = finish_game_to_menu(result);
                 if (diag_phase_limit && diag_phase_count == diag_phase_limit)
                     break;
-                printf("frontend_menu_return %d stage %u\n", result, r_u32(0x80093d58));
-                fflush(stdout);
+                FF_DIAGNOSTIC(printf("frontend_menu_return %d stage %u\n", result, r_u32(0x80093d58)));
+                FF_DIAGNOSTIC(fflush(stdout));
                 if (result != 0 && result != 1 && result != FRONTEND_GAME_READY)
                     break;
                 continue;
@@ -1549,9 +1567,10 @@ done:
     ff_audit_sound_event = NULL;
     if (diag_phase_limit && diag_phase_count != diag_phase_limit && result == 0)
         result = 14;
+#if !defined(NDEBUG)
     if (diag_input_calls)
     {
-        const char *cursor_text = getenv("FF_TRACE_INPUT_CALLS_END");
+        const char *cursor_text = FF_DIAGNOSTIC_ENV("FF_TRACE_INPUT_CALLS_END");
         if (cursor_text)
         {
             char *end;
@@ -1571,8 +1590,12 @@ done:
         if (fclose(diag_input_calls) && !result)
             result = 14;
         diag_input_calls = NULL;
-        printf("diagnostic_input_calls %u\n", diag_input_ordinal);
+        FF_DIAGNOSTIC(printf("diagnostic_input_calls %u\n", diag_input_ordinal));
     }
+#else
+    if (diag_input_calls)
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+#endif
     if (diag_phases)
     {
         uint32 footer[4] = {5, r_u32(0x80093dd0), 4, (uint32)(!diag_phase_failed && result == 0)};
@@ -1591,7 +1614,7 @@ done:
     if (trace)
         fclose(trace);
     gpu_save_frame("../status/menu/runtime-frame.bgrx");
-    printf("menu_frames %u result %d audio_buffers %u nonzero %u peak %u\n", frame, result, g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak);
+    FF_DIAGNOSTIC(printf("menu_frames %u result %d audio_buffers %u nonzero %u peak %u\n", frame, result, g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak));
     ff_audit_end();
     return result;
 }
@@ -1608,7 +1631,9 @@ int ff_menu_startup_runtime(uint32 limit, int headless)
 
 int ff_menu_cold_runtime(uint32 limit, int headless)
 {
-    return menu_runtime_impl(NULL, limit, headless, 2);
+    int result = menu_runtime_impl(NULL, limit, headless, 2);
+    /* A host quit is not a failed game initialization */
+    return result == 9 && xport_isquit() ? 0 : result;
 }
 
 int ff_menu_cold_script_runtime(const char *script, int headless)

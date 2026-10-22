@@ -31,6 +31,9 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+  </ImportGroup>
   <PropertyGroup>
     <OutDir>$(ProjectDir)..\..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\..\..\_build\x86\$(Configuration)\</IntDir>
@@ -103,7 +106,6 @@
     
     
     
-    <ClCompile Include="..\..\..\..\xport\src\psx_vsync_wait_guest.c" />
     
     <ClCompile Include="..\..\..\..\xport\src\psx.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_gpu.c">
@@ -262,5 +264,19 @@
       <ForcedIncludeFiles />
     </ClCompile>
   </ItemGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <Link>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(IntDir)FF.map</MapFileName>
+    </Link>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <MASM Include="..\..\..\..\xport\src\platform\win\xcrt_x86.asm">
+      <ExcludedFromBuild Condition="'$(XcrtEnabled)'!='true'">true</ExcludedFromBuild>
+    </MASM>
+  </ItemGroup>
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  </ImportGroup>
 </Project>

@@ -441,23 +441,34 @@ GDB_CALL sint32 FUN_SLUS_800113F0(void)
 GDB_CALL uint32 FUN_SLUS_80011894(void)
 {
     FUNCTION_MARKER(0x80011894u, "SLUS_004.33");
-    uint32 offset;
-    if (r_s16(0x80030358) && StCdIntrFlag)
+    uint32 offset, index, left, width, words, buffer;
+    sint32 x, bound_x, bound_width;
+    if ((sint16)r_u16(0x80030358) && StCdIntrFlag)
     {
         StCdInterrupt();
         StCdIntrFlag = 0;
     }
-    offset = (uint32)(sint32)r_s16(0x80030390) << 2;
+    offset = (uint32)(sint32)(sint16)r_u16(0x80030390) << 2;
     ff_load_image(0x80030380, r_u32(0x8003039c + offset));
-    w_u16(0x80030390, (uint16)r_s16(0x80030390) ^ 1);
-    w_u16(0x80030380, (uint16)((uint16)r_s16(0x80030380) + (uint16)r_s16(0x80030384)));
-    offset = (uint32)(sint32)r_s16(0x8003038c) << 3;
-    if (r_s16(0x80030380) >= r_s16(0x80030370 + offset) + r_s16(0x80030374 + offset))
+    index = r_u16(0x80030390);
+    w_u16(0x80030390, (uint16)(index ^ 1));
+    left = r_u16(0x80030380);
+    width = r_u16(0x80030384);
+    w_u16(0x80030380, (uint16)(left + width));
+    x = r_s16(0x80030380);
+    offset = (uint32)(sint32)(sint16)r_u16(0x8003038c) << 3;
+    bound_x = r_s16(0x80030370 + offset);
+    offset = (uint32)(sint32)(sint16)r_u16(0x8003038c) << 3;
+    bound_width = r_s16(0x80030374 + offset);
+    if (x >= bound_x + bound_width)
     {
         w_u16(0x8003038a, 1);
         return 1;
     }
-    DecDCTout((uint32 *)psx_addr(r_u32(0x8003039c + 4u * (uint32)(sint32)r_s16(0x80030390)), 4), FUN_SLUS_800124E0());
+    words = FUN_SLUS_800124E0();
+    offset = (uint32)(sint32)(sint16)r_u16(0x80030390) << 2;
+    buffer = r_u32(0x8003039c + offset);
+    DecDCTout((uint32 *)psx_addr(buffer, words * sizeof(uint32)), (sint32)words);
     return r_u32(0x8001f26c); /* Original return carrier is unused by the native callback */
 }
 
@@ -562,7 +573,7 @@ GDB_CALL uint32 FUN_8006F60C(uint32 table, uint32 count, uint32 entry_v0)
 {
     FUNCTION_MARKER(0x8006f60cu, "GAME.EXE");
     if (entry_v0 >= 2)
-        fprintf(stderr, "ClearOTag(%08x,%d)...\n", table, (sint32)count);
+        FF_DIAGNOSTIC(fprintf(stderr, "ClearOTag(%08x,%d)...\n", table, (sint32)count));
     return sdk_clear_ot(table, count, 0x800873a8, 0);
 }
 
@@ -570,7 +581,7 @@ GDB_CALL uint32 FUN_8006F6C4(uint32 table, uint32 count, uint32 entry_v0)
 {
     FUNCTION_MARKER(0x8006f6c4u, "GAME.EXE");
     if (entry_v0 >= 2)
-        fprintf(stderr, "ClearOTagR(%08x,%d)...\n", table, (sint32)count);
+        FF_DIAGNOSTIC(fprintf(stderr, "ClearOTagR(%08x,%d)...\n", table, (sint32)count));
     return sdk_clear_ot(table, count, 0x800873a8, 1);
 }
 
@@ -578,7 +589,7 @@ GDB_CALL uint32 FUN_SLUS_80014F70(uint32 table, uint32 count, uint32 entry_v0)
 {
     FUNCTION_MARKER(0x80014f70u, "SLUS_004.33");
     if (entry_v0 >= 2)
-        fprintf(stderr, "ClearOTag(%08x,%d)...\n", table, (sint32)count);
+        FF_DIAGNOSTIC(fprintf(stderr, "ClearOTag(%08x,%d)...\n", table, (sint32)count));
     return sdk_clear_ot(table, count, 0x8001ec28, 0);
 }
 
@@ -586,7 +597,7 @@ GDB_CALL uint32 FUN_SLUS_80015028(uint32 table, uint32 count, uint32 entry_v0)
 {
     FUNCTION_MARKER(0x80015028u, "SLUS_004.33");
     if (entry_v0 >= 2)
-        fprintf(stderr, "ClearOTagR(%08x,%d)...\n", table, (sint32)count);
+        FF_DIAGNOSTIC(fprintf(stderr, "ClearOTagR(%08x,%d)...\n", table, (sint32)count));
     return sdk_clear_ot(table, count, 0x8001ec28, 1);
 }
 
@@ -604,7 +615,7 @@ static uint32 sdk_graph_reverse(uint32 reverse, uint32 debug, int slus)
 {
     uint32 flags = slus ? 0x8001eb6c : 0x800872ec, shadow = slus ? 0x800304bc : 0x80094ed4, old = r_u8(flags + 3), command;
     if (debug >= 2)
-        fprintf(stderr, "SetGraphReverse(%d)...\n", (sint32)reverse);
+        FF_DIAGNOSTIC(fprintf(stderr, "SetGraphReverse(%d)...\n", (sint32)reverse));
     w_u8(flags + 3, (uint8)reverse);
     command = r_u8(shadow + 8);
     command |= r_u8(flags + 3) ? 0x08000080 : 0x08000000;
@@ -631,7 +642,7 @@ static uint32 sdk_graph_queue(uint32 mode, uint32 debug, int slus)
     uint32 flag = slus ? 0x8001eb6d : 0x800872ed, old = r_u8(flag), queue = slus ? 0x8001ec70 : 0x800873f0, callback = slus ? 0x8001eaf0 : 0x8008cafc;
     uint32 address, value, gpu = slus ? 0x8001ec40 : 0x800873c0;
     if (debug >= 2)
-        fprintf(stderr, "SetGrapQue(%d)...\n", (sint32)mode);
+        FF_DIAGNOSTIC(fprintf(stderr, "SetGrapQue(%d)...\n", (sint32)mode));
     if (mode != r_u8(flag))
     {
         address = r_u32(slus ? 0x8001eab0 : 0x8008cabc);
@@ -680,7 +691,7 @@ GDB_CALL sint32 FUN_SLUS_80015120(uint32 table, uint32 entry_v0)
 {
     FUNCTION_MARKER(0x80015120u, "SLUS_004.33");
     if (entry_v0 >= 2)
-        fprintf(stderr, "DrawOTag(%08x)...\n", table);
+        FF_DIAGNOSTIC(fprintf(stderr, "DrawOTag(%08x)...\n", table));
     DrawOTag((uint32 *)psx_addr(table, sizeof(uint32)));
     return 0;
 }
@@ -690,7 +701,7 @@ GDB_CALL uint32 FUN_SLUS_80014A28(uint32 callback, uint32 entry_v0)
     FUNCTION_MARKER(0x80014a28u, "SLUS_004.33");
     uint32 old;
     if (entry_v0 >= 2)
-        fprintf(stderr, "DrawSyncCallback(%08x)...\n", callback);
+        FF_DIAGNOSTIC(fprintf(stderr, "DrawSyncCallback(%08x)...\n", callback));
     old = r_u32(0x8001eb78);
     w_u32(0x8001eb78, callback);
     return old;
@@ -824,7 +835,8 @@ GDB_CALL sint32 FUN_8006CB10(void)
     FUNCTION_MARKER(0x8006cb10u, "GAME.EXE");
     sint32 value;
     sdk_counter_mask(0);
-    value = (sint32)sdk_counter_read() >> ((uint32)(sint32)r_s16(0x80093fa4) & 31);
+    value = (sint32)sdk_counter_read();
+    value >>= ((uint32)(sint32)r_s16(0x80093fa4) & 31);
     w_u16(0x80093fa8, (uint16)value);
     return (sint16)value;
 }
@@ -832,7 +844,8 @@ GDB_CALL sint32 FUN_8006CB10(void)
 GDB_CALL sint32 FUN_8006CB60(void)
 {
     FUNCTION_MARKER(0x8006cb60u, "GAME.EXE");
-    sint32 value = (sint32)sdk_counter_read() >> ((uint32)(sint32)r_s16(0x80093fa4) & 31);
+    sint32 value = (sint32)sdk_counter_read();
+    value >>= ((uint32)(sint32)r_s16(0x80093fa4) & 31);
     w_u16(0x80093fa8, (uint16)value);
     return (sint16)value;
 }
@@ -840,7 +853,8 @@ GDB_CALL sint32 FUN_8006CB60(void)
 GDB_CALL sint32 FUN_8006C748(void)
 {
     FUNCTION_MARKER(0x8006c748u, "GAME.EXE");
-    sint32 value = (sint32)sdk_counter_read() >> ((uint32)(sint32)r_s16(0x80093fa4) & 31);
+    sint32 value = (sint32)sdk_counter_read();
+    value >>= ((uint32)(sint32)r_s16(0x80093fa4) & 31);
     w_u16(0x80093fac, (uint16)value);
     return value;
 }
@@ -848,11 +862,12 @@ GDB_CALL sint32 FUN_8006C748(void)
 GDB_CALL sint32 FUN_8006C784(uint32 mode)
 {
     FUNCTION_MARKER(0x8006c784u, "GAME.EXE");
-    uint32 table = 0x80087264 + (mode << 2), i = 0, p, q, x, address, j;
-    sint32 spacing;
+    uint32 table = 0x80087264 + (mode << 2), i = 0, p, q, x, address, j, shift;
+    sint32 spacing, limit;
     w_u16(0x80093fa6, r_u8(table + 3));
-    w_u16(0x80093fa4, r_u8(table + 2));
+    shift = r_u8(table + 2);
     spacing = r_s16(table);
+    w_u16(0x80093fa4, shift);
     FUN_8006CE80();
     /* Native timer event, separate from the dummy memory-card event namespace. */
     w_u32(0x80093fa0, 0xf1000100);
@@ -892,26 +907,37 @@ GDB_CALL sint32 FUN_8006C784(uint32 mode)
             w_u8(q + 4, 50);
             w_u8(q + 5, 50);
             w_u8(q + 6, 150);
+            limit = r_s16(0x80093fa6);
             w_u16(q + 18, 45);
             w_u16(q + 8, (uint16)(x + 21));
             w_u16(q + 10, 55);
             w_u16(q + 12, (uint16)(x + 29));
             w_u16(q + 14, 55);
             w_u16(q + 16, (uint16)(x + 25));
-        } while ((sint32)(i & 255) < r_s16(0x80093fa6));
+        } while ((sint32)(i & 255) < limit);
     for (i = 0; i < 2; ++i)
     {
         p = 0x80094cd8 + 36 * i;
         w_u8(p + 3, 8);
         w_u8(p + 7, 0x38);
+        if (i)
+        {
+            w_u16(p + 10, 40);
+            w_u16(p + 18, 40);
+        }
         for (j = 0; j < 4; ++j)
         {
             q = p + 8 * j;
             w_u8(q + 4, j & 1 ? 200 : 0);
             w_u8(q + 5, j & 1 ? 0 : 200);
             w_u8(q + 6, 0);
+        }
+        for (j = 0; j < 4; ++j)
+        {
+            q = p + 8 * j;
             w_u16(q + 8, j & 1 ? 100 : 25);
-            w_u16(q + 10, (uint16)(25 + 15 * i + (j >= 2 ? 10 : 0)));
+            if (!i || j >= 2)
+                w_u16(q + 10, (uint16)(25 + 15 * i + (j >= 2 ? 10 : 0)));
         }
     }
     return 50;
@@ -994,7 +1020,12 @@ GDB_CALL sint32 FUN_8007A0B4(uint32 unused, uint32 handle, uint32 bytes, uint32 
         return -1;
     file = sdk_pc_files[handle - 1];
     written = fwrite(psx_addr(source, bytes), 1, bytes, file);
+#if defined(XPORT_XCRT)
+    /* XCRT writes synchronously and returns the actual native byte count */
+    return written == bytes ? (sint32)written : -1;
+#else
     return ferror(file) ? -1 : (sint32)written;
+#endif
 }
 
 GDB_CALL uint32 FUN_80079FF4(uint32 handle, uint32 source, uint32 bytes)

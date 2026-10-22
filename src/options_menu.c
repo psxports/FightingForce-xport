@@ -376,7 +376,7 @@ sint32 ff_card_status_dialog_80068180(uint32 retained_status_address, uint32 ret
     /* Stop before consuming the original unwritten status local */
     if (!FUN_8006BDBC(retained_status_address))
     {
-        fprintf(stderr, "Card status poll returned no result in 80068180: output=%08X context=%08X\n", retained_status_address, retained_s3);
+        FF_DIAGNOSTIC(fprintf(stderr, "Card status poll returned no result in 80068180: output=%08X context=%08X\n", retained_status_address, retained_s3));
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     }
     prior_status = r_u32(retained_status_address);
@@ -1057,23 +1057,32 @@ GDB_CALL sint32 FUN_8006A968(void)
 /* 80052624: draw before input; use existing controller count without refresh. */
 GDB_CALL sint32 FUN_80052624(void)
 {
-    int i, result;
+    uint32 i = 0, raw, edge, previous, pressed;
+    sint32 result;
     FUN_8006A968();
     result = (sint32)r_u32(0x800940b0);
-    for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
+    if (result <= 0)
+        return result;
+    for (;;)
     {
-        uint32 raw = (uint32)FUN_8005F5AC((sint32)r_u32(0x80094288 + 4u * i)), edge = (raw ^ r_u32(0x80092790 + 4u * i)) & raw;
-        w_u32(0x80092798 + 4u * i, edge);
-        w_u32(0x80092790 + 4u * i, raw);
+        raw = (uint32)FUN_8005F5AC((sint32)r_u32(0x80094288 + 4 * i));
+        previous = 0x80092790 + 4 * i;
+        pressed = 0x80092798 + 4 * i;
+        edge = (raw ^ r_u32(previous)) & raw;
+        w_u32(pressed, edge);
+        w_u32(previous, raw);
+        edge = r_u32(pressed);
         w_u32(0x800927a0, raw);
+        ++i;
         if (edge & 0x1000)
         {
             w_u32(0x800927ec, 0x80050d98);
             return FUN_8004F490();
         }
-        result = i + 1 < (sint32)r_u32(0x800940b0);
+        result = (sint32)i < (sint32)r_u32(0x800940b0);
+        if (!result)
+            return result;
     }
-    return result;
 }
 
 /* 800519D4: display both player headings, then each connected player's scheme.
@@ -1158,9 +1167,10 @@ GDB_CALL sint32 FUN_800519D4(void)
 /* 800575F8: copy screen origin to both display environments. Return LHU Y. */
 GDB_CALL uint32 FUN_800575F8(void)
 {
-    uint16 x = (uint16)r_s16(0x80093d38), y = (uint16)r_s16(0x80093d3a);
+    uint16 x = r_u16(0x80093d38), y;
     w_u16(0x800947a8, x);
     w_u16(0x800947bc, x);
+    y = r_u16(0x80093d3a);
     w_u16(0x800947aa, y);
     w_u16(0x800947be, y);
     return y;
@@ -1170,23 +1180,41 @@ GDB_CALL uint32 FUN_800575F8(void)
  * The inclusive left guard permits -10 -> -11, as in actual MIPS. */
 GDB_CALL sint32 FUN_80051C98(void)
 {
-    uint32 edge;
+    uint32 edge, players;
+    sint32 offset;
     FUN_8005EC90();
-    w_u32(0x800940b0, r_u32(0x8009400c));
-    if (!r_u32(0x8009400c))
+    players = r_u32(0x8009400c);
+    w_u32(0x800940b0, players);
+    if (!players)
         return FUN_8004F4F8(98);
     FUN_80061ADC(r_u32(0x8009250c), 20);
     edge = FUN_80068114(0);
     if (r_u32(0x800940b0) == 2)
         edge |= FUN_80068114(1);
-    if ((edge & 0x80) && r_s16(0x80093d38) >= -10)
-        w_u16(0x80093d38, (uint16)(r_s16(0x80093d38) - 1));
-    if ((edge & 0x20) && r_s16(0x80093d38) < 16)
-        w_u16(0x80093d38, (uint16)(r_s16(0x80093d38) + 1));
-    if ((edge & 0x10) && r_s16(0x80093d3a) > 0)
-        w_u16(0x80093d3a, (uint16)(r_s16(0x80093d3a) - 1));
-    if ((edge & 0x40) && r_s16(0x80093d3a) < 16)
-        w_u16(0x80093d3a, (uint16)(r_s16(0x80093d3a) + 1));
+    if (edge & 0x80)
+    {
+        offset = r_s16(0x80093d38);
+        if (offset >= -10)
+            w_u16(0x80093d38, (uint16)(offset - 1));
+    }
+    if (edge & 0x20)
+    {
+        offset = r_s16(0x80093d38);
+        if (offset < 16)
+            w_u16(0x80093d38, (uint16)(offset + 1));
+    }
+    if (edge & 0x10)
+    {
+        offset = r_s16(0x80093d3a);
+        if (offset > 0)
+            w_u16(0x80093d3a, (uint16)(offset - 1));
+    }
+    if (edge & 0x40)
+    {
+        offset = r_s16(0x80093d3a);
+        if (offset < 16)
+            w_u16(0x80093d3a, (uint16)(offset + 1));
+    }
     FUN_800575F8();
     if (edge & 0x1000)
     {

@@ -225,7 +225,9 @@ static uint32 spu_dma_read_entry(uint32 destination, uint32 address_units, uint3
         /* CHCR bit0=0 is SPU-to-main-RAM. This is SpuRead, not an upload. */
         source = (ff_spu_dma_state[0] << 3) & 0x7ffff;
         target = ff_spu_dma_state[2] & 0x1ffffc;
-        remaining = (ff_spu_dma_state[3] >> 16) * (ff_spu_dma_state[3] & 65535u) * 4;
+        remaining = ff_spu_dma_state[3] >> 16;
+        /* Zero in the DMA block-count field represents 65536 blocks */
+        remaining = (remaining ? remaining : 65536) * (ff_spu_dma_state[3] & 65535u) * 4;
         if (!audio_initialized)
         {
             SpuInit();
@@ -484,11 +486,12 @@ sint32 ff_spu_reverb_enable(sint32 enabled)
     return (sint32)result;
 }
 
-/* 7676C/7678C mode0 and76900 reset. Host scheduling replaces BIOS event
- * installation and MMIO waits; reverb processing remains WIP. */
+/* 7676C/7678C mode0 and76900 reset use the existing shared SPU
+ * Host scheduling replaces BIOS event installation and MMIO waits */
 uint32 ff_spu_reset_startup(void)
 {
     static const uint32 clear[] = {0x8008cfac, 0x8008cfb0, 0x8008cfc8, 0x8008cfcc, 0x8008cb30, 0x8008cb34, 0x8008cb40, 0x8008cb44, 0x8008cb48, 0x8008cb4c, 0x8008cfec, 0x8008cff0, 0x8008cff4, 0x8008cb2c, 0x8008cb28, 0x8008cb54, 0x8008cb50, 0x8008cf88};
+    static const uint32 reset_registers[] = {0x1f801d84, 0x1f801d86, 0x1f801d98, 0x1f801d9a, 0x1f801d90, 0x1f801d92, 0x1f801d94, 0x1f801d96, 0x1f801db4, 0x1f801db6};
     uint32 i;
     SpuVoiceAttr attr;
     SpuCommonAttr common;
@@ -513,6 +516,12 @@ uint32 ff_spu_reset_startup(void)
     ff_spu_reverb_state[2] = (uint16)r_u32(0x8008cff8);
     ff_spu_reverb_channels_state[0] = ff_spu_reverb_channels_state[1] = 0;
     xport_audio_lock();
+    if (!spu_mmio_write(NULL, 0x1f801dac, 2, 4, 3))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    /* Reset live effects and external inputs, not only their guest shadows */
+    for (i = 0; i < sizeof(reset_registers) / sizeof(reset_registers[0]); i++)
+        if (!spu_mmio_write(NULL, reset_registers[i], 2, 0, 3))
+            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     if (!spu_upload(0x1000, psx_addr(0x8008cfd0, 16), 16))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     for (i = 0; i < 24; i++)
@@ -527,12 +536,14 @@ uint32 ff_spu_reset_startup(void)
     SpuSetKey(SPU_ON, SPU_ALLCH);
     SpuSetKey(SPU_OFF, SPU_ALLCH);
     memset(&common, 0, sizeof(common));
-    common.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR;
+    common.mask = SPU_COMMON_MVOLL | SPU_COMMON_MVOLR | SPU_COMMON_CDVOLL | SPU_COMMON_CDVOLR;
     SpuSetCommonAttr(&common);
     ff_spu_common_state[0] = ff_spu_common_state[1] = 0;
     ff_spu_common_state[2] = ff_spu_common_state[3] = 0;
     ff_spu_common_state[4] = 0xc000;
     if (!spu_mmio_write(NULL, 0x1f801daa, 2, 0xc000, 3))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    if (!spu_mmio_write(NULL, 0x1f801da2, 2, ff_spu_reverb_state[2], 3))
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
     xport_audio_unlock();
     /* 7726C returns the guest register address, not the written value. */
@@ -796,12 +807,13 @@ uint32 ff_spu_transfer_address(uint32 address)
 
 uint32 ff_spu_transfer_write(uint32 source, uint32 bytes)
 {
-    uint32 units, address, count, chunk;
+    uint32 units, address, count, chunk, dma;
     if (bytes > 0x7eff0)
         bytes = 0x7eff0;
     if (!audio_initialized)
         ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (!r_u32(0x8008cfac))
+    dma = !r_u32(0x8008cfac);
+    if (dma)
     {
         uint32 shift;
         units = r_u16(0x8008cfa8);
@@ -812,10 +824,8 @@ uint32 ff_spu_transfer_write(uint32 source, uint32 bytes)
         w_u32(0x8008cfe4, source);
         count = (bytes + 63) >> 6;
         w_u32(0x8008cfe8, count);
-        /* A zero DMA block count has a separate hardware contract */
-        if (!count)
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-        count <<= 6;
+        /* Zero in the DMA block-count field represents 65536 blocks */
+        count = (count ? count : 65536) << 6;
     }
     else
     {
@@ -824,19 +834,24 @@ uint32 ff_spu_transfer_write(uint32 source, uint32 bytes)
     }
     /* Native synchronous transport retains DMA64 and PIO2 guest reads */
     address = units << 3;
-    xport_audio_lock();
-    while (count)
+    if (dma)
+        slus_spu_upload(source & 0x1ffffc, count, address);
+    else
     {
-        chunk = 0x80000 - address;
-        if (chunk > count)
-            chunk = count;
-        if (!spu_upload(address, psx_addr(source, chunk), chunk))
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-        source += chunk;
-        count -= chunk;
-        address = 0;
+        xport_audio_lock();
+        while (count)
+        {
+            chunk = 0x80000 - address;
+            if (chunk > count)
+                chunk = count;
+            if (!spu_upload(address, psx_addr(source, chunk), chunk))
+                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+            source += chunk;
+            count -= chunk;
+            address = 0;
+        }
+        xport_audio_unlock();
     }
-    xport_audio_unlock();
     if (!r_u32(0x8008cfc8))
         w_u32(0x8008cfc4, 0);
     return bytes;

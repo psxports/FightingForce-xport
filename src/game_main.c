@@ -114,8 +114,8 @@ static sint32 hit_spu_on(uint32 a)
 
 static int game_main(int argc, char **argv)
 {
-#if defined(__EMSCRIPTEN__)
-    /* Keep the native audit dispatcher out of the browser's Asyncify entry */
+#if defined(__EMSCRIPTEN__) || defined(NDEBUG)
+    /* Keep the native audit dispatcher in Debug builds only */
     if (!ff_wip_options(&argc, argv))
         return 2;
     return ff_menu_cold_runtime(0, 0);
@@ -449,7 +449,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("character_visible_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("character_visible_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -480,7 +480,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("prepare_scene_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("prepare_scene_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -511,7 +511,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("stage_tick_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("stage_tick_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -544,7 +544,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("drop_items_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("drop_items_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -591,7 +591,7 @@ static int game_main(int argc, char **argv)
             return 7;
         fwrite(hit_spu_trace, 256, 1, f);
         fclose(f);
-        printf("traffic_hit_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("traffic_hit_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -823,7 +823,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_create_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_create_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -856,7 +856,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_entrance_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_entrance_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -890,7 +890,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_expiry_call_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_expiry_call_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -924,7 +924,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_handler_first_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_handler_first_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -958,7 +958,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_handler_live_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_handler_live_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1022,7 +1022,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_target_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_target_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1050,7 +1050,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("sprint_effect871_lifetime_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("sprint_effect871_lifetime_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1077,7 +1077,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("sprint_effect871_render_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("sprint_effect871_render_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1116,7 +1116,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("impact_sprite_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("impact_sprite_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1154,7 +1154,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("particle_lifetime_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("particle_lifetime_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1184,7 +1184,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("hit_particles_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("hit_particles_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1212,7 +1212,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("stationary_items_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("stationary_items_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1245,7 +1245,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("camera_target_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("camera_target_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1273,7 +1273,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("hit_effects_prefix_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("hit_effects_prefix_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1307,7 +1307,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("camera_chain_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("camera_chain_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1340,7 +1340,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_move_call_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_move_call_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1367,9 +1367,9 @@ static int game_main(int argc, char **argv)
         SetGeomOffset(setup[0], setup[1]);
         SetGeomScreen(setup[2]);
         result = FUN_80019718(0x013e3200, 0xf7123700);
-        printf("navigation_query %08X\n", result);
+        FF_DIAGNOSTIC(printf("navigation_query %08X\n", result));
         result = FUN_80019718(0x01c1ce00, 0xf7123700);
-        printf("navigation_query %08X\n", result);
+        FF_DIAGNOSTIC(printf("navigation_query %08X\n", result));
         result = FUN_800483BC(2, 0xf8680000, 0xf1f00000);
         f = xport_fopen("../status/gameplay/npc-navigation-native.bin", "wb");
         if (!f)
@@ -1377,7 +1377,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_navigation_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_navigation_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1404,7 +1404,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_walk_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_walk_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1431,7 +1431,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_state152_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_state152_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1458,7 +1458,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_state152_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_state152_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1485,7 +1485,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_cross_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_cross_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1513,7 +1513,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_hit_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_hit_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1538,7 +1538,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("pause_flow_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("pause_flow_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1567,7 +1567,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("pause_audio_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("pause_audio_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1595,7 +1595,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1623,7 +1623,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_event_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_event_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1651,7 +1651,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1679,7 +1679,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_circle_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_circle_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1707,7 +1707,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1735,7 +1735,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_backward_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_backward_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1763,7 +1763,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_backward_held_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_backward_held_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1791,7 +1791,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_backward_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_backward_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1819,7 +1819,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_chain_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_chain_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1919,7 +1919,7 @@ static int game_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        printf("batch19_call_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("batch19_call_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1955,7 +1955,7 @@ static int game_main(int argc, char **argv)
             return 6;
         }
         fclose(f);
-        printf("player_fixture_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_fixture_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -1983,7 +1983,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_chain_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_chain_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2011,7 +2011,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_chain_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_chain_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2039,7 +2039,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_chain_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_chain_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2067,7 +2067,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_third_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_third_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2095,7 +2095,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_fourth_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_fourth_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2123,7 +2123,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2151,7 +2151,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_cross_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_cross_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2179,7 +2179,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_cross_held_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_cross_held_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2207,7 +2207,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_cross_effect_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_cross_effect_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2235,7 +2235,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_held_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_held_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2263,7 +2263,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_square_held_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_square_held_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2291,7 +2291,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_square_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_square_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2319,7 +2319,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_engage_cross_hurt_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_engage_cross_hurt_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2347,7 +2347,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_ground_attack_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_ground_attack_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2375,7 +2375,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_ground_attack_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_ground_attack_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2403,7 +2403,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_ground_attack_lethal_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_ground_attack_lethal_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2431,7 +2431,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("mace_hit_reaction_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("mace_hit_reaction_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2459,7 +2459,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_engage_contact_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_engage_contact_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2487,7 +2487,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_square_entry_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_square_entry_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2515,7 +2515,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_cross_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_cross_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2543,7 +2543,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_cycle_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_cycle_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2571,7 +2571,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_sprint_release_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_sprint_release_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2599,7 +2599,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_death_impact_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_death_impact_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2627,7 +2627,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_death_remove_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_death_remove_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2655,7 +2655,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_ground_lethal_update_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_ground_lethal_update_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2683,7 +2683,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_engage_stagger_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_engage_stagger_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2711,7 +2711,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_engage_defense_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_engage_defense_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2739,7 +2739,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_sprint_recover_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_sprint_recover_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2767,7 +2767,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_sprint_caller_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_sprint_caller_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2795,7 +2795,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_sprint_lethal_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_sprint_lethal_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2823,7 +2823,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_cross_third_reaction_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_cross_third_reaction_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2851,7 +2851,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("npc_cross_third_reaction_next_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("npc_cross_third_reaction_next_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2879,7 +2879,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_third_trail_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_third_trail_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2907,7 +2907,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_third_trail_shift_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_third_trail_shift_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2935,7 +2935,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_third_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_third_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2963,7 +2963,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_third_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_third_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -2991,7 +2991,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_chain_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_chain_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3019,7 +3019,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_chain_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_chain_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3047,7 +3047,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_chain_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_chain_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3075,7 +3075,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_chain_hit_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_chain_hit_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3103,7 +3103,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_chain_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_chain_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3131,7 +3131,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_chain_hit_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_chain_hit_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3159,7 +3159,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_chain_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_chain_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3187,7 +3187,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3215,7 +3215,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_triangle_hit_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_triangle_hit_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3243,7 +3243,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_circle_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_circle_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3271,7 +3271,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("circle_effect_render_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("circle_effect_render_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3299,7 +3299,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_circle_land_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_circle_land_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3327,7 +3327,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_circle_motion_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_circle_motion_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3355,7 +3355,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_circle_motion_right_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_circle_motion_right_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3383,7 +3383,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_circle_event_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_circle_event_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3411,7 +3411,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_end_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_end_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3439,7 +3439,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_square_hit_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_square_hit_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3466,7 +3466,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_cross_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_cross_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3493,7 +3493,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_walk_first_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_walk_first_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3520,7 +3520,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_hit186_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_hit186_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3547,7 +3547,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("player_first_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_first_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3578,7 +3578,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("ground_items_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("ground_items_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3609,7 +3609,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("stage0_update_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("stage0_update_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3640,7 +3640,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("traffic_update_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("traffic_update_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3671,7 +3671,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("traffic_collision_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("traffic_collision_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3702,7 +3702,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("hud_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("hud_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3733,7 +3733,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("character_render_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("character_render_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3764,7 +3764,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x80080000, 0x170000), 0x170000, 1, f) != 1 || fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 6;
         fclose(f);
-        printf("sequence_render_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("sequence_render_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3793,7 +3793,7 @@ static int game_main(int argc, char **argv)
         if (fwrite(psx_addr(0x1f800000, 1024), 1024, 1, f) != 1)
             return 8;
         fclose(f);
-        printf("sequence_update_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("sequence_update_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3925,7 +3925,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("stage_scripts_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("stage_scripts_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -3963,7 +3963,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("initial_placement_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("initial_placement_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4004,7 +4004,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("level_ready_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("level_ready_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4044,7 +4044,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("level_prefix_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("level_prefix_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4094,7 +4094,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("stage0_mpd_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("stage0_mpd_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4132,7 +4132,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("game_input_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("game_input_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4170,7 +4170,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("object_regions_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("object_regions_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4208,7 +4208,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("player_resources_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_resources_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4246,7 +4246,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("player_resources_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_resources_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4284,7 +4284,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("player_resources_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("player_resources_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4322,7 +4322,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("enemy_resources_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("enemy_resources_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4360,7 +4360,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("level_models_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("level_models_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4398,7 +4398,7 @@ static int game_main(int argc, char **argv)
             return 8;
         }
         fclose(f);
-        printf("sequence_init_result %08X\n", result);
+        FF_DIAGNOSTIC(printf("sequence_init_result %08X\n", result));
         ff_audit_end();
         return 0;
     }
@@ -4437,7 +4437,7 @@ static int game_main(int argc, char **argv)
             w_u32(0x8008d4c0, h[2]);
             memset(psx_addr(h[3], 40), 0xa5, 40);
             FUN_80011D50(0x801cb000);
-            result = ff_model_packets_80010CA0(1, 0x801c8000, 0x801c8100, 0x801c8200, (sint32)h[0]);
+            result = ff_model_packets_80010CA0(1, 0x801c8000, 0x801c8100, 0x801c8200, (sint32)h[0], 0);
             fwrite(psx_addr(0x801cb000, 8192), 8192, 1, out);
             fwrite(psx_addr(h[3], 40), 40, 1, out);
             fwrite(psx_addr(0x8008d4b0, 4), 4, 1, out);
@@ -7653,7 +7653,7 @@ static int game_main(int argc, char **argv)
         f = xport_fopen("../status/menu/sound-output-counters.txt", "w");
         if (!f)
             return 4;
-        fprintf(f, "buffers %u nonzero %u peak %u overruns %u\n", g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak, g_xport_audio_callback_overruns);
+        FF_DIAGNOSTIC(fprintf(f, "buffers %u nonzero %u peak %u overruns %u\n", g_xport_audio_submitted_buffers, g_xport_audio_nonzero_buffers, g_xport_audio_peak, g_xport_audio_callback_overruns));
         fclose(f);
         ff_audit_end();
         return 0;
@@ -7747,13 +7747,13 @@ static int game_main(int argc, char **argv)
         if (!ff_load_ram(argc > 2 ? argv[2] : "FF-menu.ram"))
             return 2;
         for (i = -128; i < 256; i++)
-            printf("glyph %d %d\n", i, FUN_80018670(i));
+            FF_DIAGNOSTIC(printf("glyph %d %d\n", i, FUN_80018670(i)));
         for (i = 3; i < argc; i++)
         {
             uint32 a = (uint32)strtoul(argv[i], 0, 16);
-            printf("width %08X %d\n", a, FUN_8005EFB8(a));
+            FF_DIAGNOSTIC(printf("width %08X %d\n", a, FUN_8005EFB8(a)));
         }
-        fflush(stdout);
+        FF_DIAGNOSTIC(fflush(stdout));
         ff_audit_end();
         return 0;
     }
@@ -7772,7 +7772,7 @@ static int game_main(int argc, char **argv)
     }
     else
     {
-        fprintf(stderr, "Menu translation is WIP. Use --platform-smoke to test the imported host layer.\n");
+        FF_DIAGNOSTIC(fprintf(stderr, "Menu translation is WIP. Use --platform-smoke to test the imported host layer.\n"));
         return 3;
     }
     xport_set_headless(headless);
@@ -7805,7 +7805,7 @@ static int game_main(int argc, char **argv)
         VSync(0);
         ++frame;
     }
-    printf("platform_frames %u pad %08X\n", frame, PadRead(0));
+    FF_DIAGNOSTIC(printf("platform_frames %u pad %08X\n", frame, PadRead(0)));
     if (headless && !gpu_save_frame(preview ? "../status/menu/text-frame.bgrx" : "../status/menu/platform-frame.bgrx"))
         return 8;
     return 0;
@@ -7816,7 +7816,7 @@ static int game_main(int argc, char **argv)
 void xport_main(void)
 {
     gpu_set_frame_skip(0);
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(NDEBUG)
     int index, count = 0, result;
     char **arguments = malloc(((size_t)__argc + 1) * sizeof(*arguments));
     if (!arguments)

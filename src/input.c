@@ -172,7 +172,8 @@ GDB_CALL sint32 FUN_SLUS_80013A9C(uint32 type, uint32 buffer)
 uint32 FUN_8005FB00(sint32 player)
 {
     uint32 address = 0x80094100 + 6u * (uint32)player;
-    memset(psx_addr(address, 6), 0, 6);
+    if (address)
+        memset(psx_addr(address, 6), 0, 6);
     return address;
 }
 

@@ -8,7 +8,7 @@ static int continue_wip = 1;
 
 __declspec(noreturn) void ff_wip_stop(const char *function, const char *file, int line)
 {
-    fprintf(stderr, "Fatal guard or unclassified WIP: %s (%s:%d)\n", function, file, line);
+    FF_DIAGNOSTIC(fprintf(stderr, "Fatal guard or unclassified WIP: %s (%s:%d)\n", function, file, line));
     abort();
 }
 
@@ -20,7 +20,7 @@ int ff_wip_options(int *argc, char **argv)
         if (!strcmp(argv[i], "--debug"))
         {
             continue_wip = 0;
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(NDEBUG)
             _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
         }
@@ -36,6 +36,6 @@ int ff_wip_visit(unsigned int pc, const char *subsystem, const char *function, c
 {
     int resume = continue_wip && recoverable;
     if (!resume)
-        fprintf(stderr, "Fatal guard or unclassified WIP: %s pc %08X (%s:%d), subsystem %s, fallback %s\n", function, pc, file, line, subsystem, fallback);
+        FF_DIAGNOSTIC(fprintf(stderr, "Fatal guard or unclassified WIP: %s pc %08X (%s:%d), subsystem %s, fallback %s\n", function, pc, file, line, subsystem, fallback));
     return resume;
 }

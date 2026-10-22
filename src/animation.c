@@ -729,17 +729,31 @@ GDB_CALL sint32 FUN_8001B2C4(sint32 index)
 
 GDB_CALL sint32 FUN_80023C80(sint32 index)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, angle;
-    sint32 frame = (sint32)r_u32(actor + 4), length = r_s16(actor + 96), phase, distance;
-    if (frame < 0 || frame >= length)
+    uint32 actor = 0x800b4318 + 244u * (uint32)index, angle, center;
+    sint32 frame = r_s32(actor + 4), length, phase, distance, amplitude, trig;
+    if (frame < 0)
         return 0;
-    phase = 1040 * frame / length;
+    length = r_s16(actor + 96);
+    if (frame >= length)
+        return 0;
+    phase = 1040 * frame;
+    length = r_s16(actor + 96);
+    if (!length || (length == -1 && (uint32)phase == 0x80000000))
+        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+    phase /= length;
     if (phase > 1024)
         phase = 1024;
-    distance = collision_product(r_s16(actor + 94), r_s16(0x800806d0 + 2u * (uint32)phase)) >> 15;
+    amplitude = r_s16(actor + 94);
+    trig = r_s16(0x800806d0 + 2 * (uint32)phase);
+    distance = collision_product(amplitude, trig) >> 15;
+    center = (uint32)(sint32)r_s16(actor + 90) << 16;
     angle = 2u * (uint32)(sint32)r_s16(actor + 56);
-    w_u32(actor + 40, ((uint32)(sint32)r_s16(actor + 90) << 16) - (uint32)r_s16(0x800802d0 + angle) * (uint32)distance);
-    w_u32(actor + 48, ((uint32)(sint32)r_s16(actor + 92) << 16) + (uint32)r_s16(0x800806d0 + angle) * (uint32)distance);
+    trig = r_s16(0x800802d0 + angle);
+    w_u32(actor + 40, center - (uint32)collision_product(trig, distance));
+    center = (uint32)(sint32)r_s16(actor + 92) << 16;
+    angle = 2u * (uint32)(sint32)r_s16(actor + 56);
+    trig = r_s16(0x800806d0 + angle);
+    w_u32(actor + 48, center + (uint32)collision_product(trig, distance));
     return 1;
 }
 
