@@ -1,1085 +1,53 @@
-#include "ff.h"
-#include <stdio.h>
-
-GDB_CALL uint32 FUN_80069554(void)
-{
-    FUNCTION_MARKER(0x80069554u, "GAME.EXE");
-    uint32 saved[65], buttons, text, result;
-    int i;
-    for (i = 0; i < 65; ++i)
-        saved[i] = r_u32(0x801fd300 + 4 * i);
-    DrawSync(0);
-    FUN_80056CCC(197);
-    FUN_80061448(3, 0x116000);
-    FUN_80060394(0);
-    FUN_800645E8();
-    FUN_80011CCC(-256, -256, -256);
-    ff_wrapped_dialog_800687E8(r_u32(0x80092474), 2);
-    for (;;)
-    {
-        ff_menu_dialog_frame_80067E20(2);
-        buttons = FUN_80068114(0);
-        if (r_u32(0x800940b0) == 2)
-            buttons |= FUN_80068114(1);
-        FUN_8006BB44();
-        FUN_8006B998();
-        if (!FUN_8006BD9C(0x80093c00))
-        {
-            text = r_u32(0x800924c4);
-            goto prompt;
-        }
-        if ((r_u32(0x80093c00) & 3) == 2)
-        {
-            FUN_80061800(r_u32(0x800924bc), 0x801fd300);
-            FUN_800619E8(-1);
-            FUN_80061ADC(r_u32(0x8009467c), 214);
-            if (buttons & 0x4000)
-                break;
-        }
-        if ((r_u32(0x80093c00) & 3) != 1)
-            goto present;
-        if (FUN_8006B77C(0, 0x80093c04, 0x000e2d40) == 1)
-        {
-            FUN_80067BAC();
-            break;
-        }
-        if ((r_u32(0x80093c00) & 3) != 1 || FUN_8006B1C8(0, 0x80093c04) == 1)
-            goto present;
-        FUN_8006BFFC(0, 0x116000, 0x126000);
-        FUN_8006BB44();
-        FUN_8006B998();
-        if (!FUN_8006BD9C(0x80093c00))
-            w_u32(0x80093ca0, 0);
-        if (r_u32(0x80093ca0))
-            break;
-        text = r_u32(0x800924c0);
-    prompt:
-        FUN_80061800(text, 0x801fd300);
-        FUN_800619E8(-1);
-        FUN_80061ADC(r_u32(0x8009467c), 214);
-        if (buttons & 0x4000)
-            break;
-    present:
-        FUN_80067358();
-    }
-    result = FUN_8005ED78();
-    for (i = 0; i < 65; ++i)
-        w_u32(0x801fd300 + 4 * i, saved[i]);
-    return result;
-}
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-GDB_CALL uint32 FUN_8006ADF8(uint32 player, uint32 score, uint32 name)
-{
-    FUNCTION_MARKER(0x8006adf8u, "GAME.EXE");
-    sint32 position = 0, character = 2, fade;
-    uint32 buttons, tick, result, shift;
-    FUN_80011CCC(-256, -256, -256);
-    w_u32(0x80093dd0, 0);
-    for (;;)
-    {
-        tick = r_u32(0x80093dd0);
-        if ((sint32)tick < 33)
-            FUN_8005EE58((sint32)(tick << 3));
-        w_u32(0x80093dd0, r_u32(0x80093dd0) + 1);
-        w_u8(name + (uint32)position, r_u8(0x80093c70 + (uint32)character));
-        w_u8(name + (uint32)position + 1, 0);
-        FUN_8006A5B8();
-        FUN_8006A870(player, score, name);
-        buttons = FUN_80068114(player == 2);
-        if (buttons & 0x80)
-        {
-            --character;
-            FUN_8004F468();
-        }
-        if (buttons & 0x20)
-        {
-            ++character;
-            FUN_8004F468();
-        }
-        if (position < 3)
-        {
-            if (character < 0)
-                character += 40;
-            else if (character >= 40)
-                character -= 40;
-        }
-        else
-        {
-            if (character < 0)
-                character += 2;
-            else if (character >= 2)
-                character -= 2;
-        }
-        if (buttons & 0x4000)
-        {
-            if (!character)
-            {
-                if (position > 0)
-                {
-                    --position;
-                    FUN_8004F490();
-                }
-                else
-                    FUN_80056670(5, 223, 7936);
-            }
-            else if (character == 1)
-                break;
-            else
-            {
-                ++position;
-                if (position == 3)
-                    character = 1;
-                FUN_8004F490();
-            }
-        }
-        FUN_80067358();
-    }
-    FUN_8004F490();
-    FUN_80067358();
-    for (fade = 256; fade > 0; fade -= 8)
-    {
-        w_u32(0x80093dd0, r_u32(0x80093dd0) + 1);
-        FUN_8005EE58(fade);
-        FUN_8006A5B8();
-        FUN_8006A870(player, score, name);
-        FUN_80067358();
-    }
-    result = name + (uint32)position;
-    if (position)
-        w_u8(result, 0);
-    else
-    {
-        /* Aligned ULW still performs both full-mask reads */
-        r_masked_u32(0x80093c6c, 15);
-        result = r_masked_u32(0x80093c6c, 15);
-        shift = (name + 3) & 3;
-        w_masked_u32((name + 3) & ~3, result >> ((3 - shift) * 8), (1 << (shift + 1)) - 1);
-        shift = name & 3;
-        w_masked_u32(name & ~3, result << (shift * 8), (15 << shift) & 15);
-    }
-    return result;
-}
+#include "game.h"
 
-GDB_CALL uint32 FUN_8006AB80(uint32 first, uint32 second)
-{
-    FUNCTION_MARKER(0x8006ab80u, "GAME.EXE");
-    uint8 saved[8];
-    uint32 player = 0, temp, name_word, destination;
-    sint32 index;
-    memcpy(saved, psx_addr(0x801fce00, 8), 8);
-    DrawSync(0);
-    w_u32(0x80094844, r_u32(0x80093cfc));
-    FUN_80056CCC(197);
-    FUN_80061448(3, 0x116000);
-    FUN_80063870(24);
-    FUN_80060394(0);
-    FUN_800645E8();
-    if (r_u32(0x80093d5c))
-    {
-        if ((sint32)second < (sint32)first)
-            player = 1;
-        else
-        {
-            temp = first;
-            first = second;
-            second = temp;
-            player = 2;
-        }
-        index = FUN_8006AA70(first);
-        if (index != -1)
-        {
-            FUN_8006ADF8(player, first, 0x801fce00);
-            destination = 0x80093e2c + 12 * (uint32)index;
-            r_masked_u32(0x801fce00, 15);
-            name_word = r_masked_u32(0x801fce00, 15);
-            w_masked_u32(destination, name_word, 15);
-            w_masked_u32(destination, name_word, 15);
-        }
-        index = FUN_8006AA70(second);
-        if (index != -1)
-        {
-            FUN_8006ADF8(3 - player, second, 0x801fce00);
-            destination = 0x80093e2c + 12 * (uint32)index;
-            r_masked_u32(0x801fce00, 15);
-            name_word = r_masked_u32(0x801fce00, 15);
-            w_masked_u32(destination, name_word, 15);
-            w_masked_u32(destination, name_word, 15);
-        }
-    }
-    else
-    {
-        index = FUN_8006AA70(first);
-        if (index != -1)
-        {
-            FUN_8006ADF8(0, first, 0x801fce00);
-            destination = 0x80093e2c + 12 * (uint32)index;
-            r_masked_u32(0x801fce00, 15);
-            name_word = r_masked_u32(0x801fce00, 15);
-            w_masked_u32(destination, name_word, 15);
-            w_masked_u32(destination, name_word, 15);
-        }
-    }
-    FUN_80011CCC(-256, -256, -256);
-    w_u32(0x80093dd0, 0);
-    ff_audit_highscore_context(saved);
-    return ff_highscore_resume_8006ACF4(saved);
-}
+static const sint32 effects_preview_voice = 19;
 
-GDB_CALL uint32 ff_highscore_resume_8006ACF4(const uint8 *saved)
-{
-    uint32 buttons, tick, result;
-    sint32 fade;
-    for (;;)
-    {
-        if (ff_audit_phase_boundary(0x8006acf4))
-            return 0;
-        tick = r_u32(0x80093dd0);
-        if ((sint32)tick < 33)
-            FUN_8005EE58((sint32)(tick << 3));
-        w_u32(0x80093dd0, r_u32(0x80093dd0) + 1);
-        FUN_8006A5B8();
-        FUN_8006A968();
-        buttons = FUN_80068114(0);
-        if ((sint32)r_u32(0x800940b0) >= 2)
-            buttons |= FUN_80068114(1);
-        if (buttons & 0x1000)
-            break;
-        FUN_80067358();
-    }
-    FUN_8004F490();
-    FUN_80067358();
-    for (fade = 256; fade > 0; fade -= 8)
-    {
-        w_u32(0x80093dd0, r_u32(0x80093dd0) + 1);
-        FUN_8005EE58(fade);
-        FUN_8006A5B8();
-        FUN_8006A968();
-        result = FUN_80067358();
-    }
-    memcpy(psx_addr(0x801fce00, 8), saved, 8);
-    return result;
-}
+static const char invulnerability_on[] = "INVULNERABILITY ON";
+static const char invulnerability_off[] = "INVULNERABILITY OFF";
+static const char difficulty_format[] = "%s %s";
+static const char numbered_label_format[] = "%s %d";
+static const char action_label_format[] = "%c%s";
+static const char back_fist_german[] = "HINTEN";
+static const char back_fist_french[] = "RETOURNE";
+static const char stereo_text[] = "STEREO";
+static const char mono_text[] = "MONO";
+static const sint8 pad_glyph[] = {93, 91, 125, 123, 40, 41};
 
-GDB_CALL sint32 FUN_8006A870(uint32 rank, uint32 score, uint32 name)
-{
-    FUNCTION_MARKER(0x8006a870u, "GAME.EXE");
-    uint8 saved[129];
-    sint32 width, result;
-    uint32 text = r_u32(rank == 0 ? 0x8009252c : (rank == 1 ? 0x80092530 : 0x80092534));
-    memcpy(saved, psx_addr(0x801fcd00, 129), 129);
-    FUN_80061800(text, 0x801fcd01);
-    FUN_800619E8(32);
-    FUN_80061800(r_u32(0x80092538), 0x801fcd01);
-    FUN_800619E8(64);
-    FUN_80061ADC(r_u32(0x8009253c), 112);
-    FUN_80061ADC(r_u32(0x80094694), 214);
-    sprintf(psx_addr(0x801fcd01, 128), psx_addr(0x80093c64, 1), score);
-    FUN_80061ADC(0x801fcd01, 88);
-    width = FUN_8005EFB8(name);
-    result = FUN_80062C0C(name, (sint32)(160u - (uint32)(width >> 1)), 144, 0x80093be4);
-    memcpy(psx_addr(0x801fcd00, 129), saved, 129);
-    return result;
-}
-
-GDB_CALL sint32 FUN_8006AA70(uint32 score)
-{
-    FUNCTION_MARKER(0x8006aa70u, "GAME.EXE");
-    uint32 index = 0, i, a, b, c, offset;
-    while (index < 10 && r_u32(0x80093e28 + 12 * index) >= score)
-        ++index;
-    if (index == 10)
-        return -1;
-    for (i = 9; i > index; --i)
-    {
-        offset = 12 * i;
-        a = r_u32(0x80093e1c + offset);
-        b = r_u32(0x80093e20 + offset);
-        c = r_u32(0x80093e24 + offset);
-        w_u32(0x80093e28 + offset, a);
-        w_u32(0x80093e2c + offset, b);
-        w_u32(0x80093e30 + offset, c);
-    }
-    offset = 12 * index;
-    w_u32(0x80093e28 + offset, score);
-    w_u32(0x80093e30 + offset, r_u32(0x80093d68) != 0);
-    /* Aligned ULW and USW retain both original bus transactions */
-    r_masked_u32(0x80093c6c, 15);
-    a = r_masked_u32(0x80093c6c, 15);
-    w_masked_u32(0x80093e2c + offset, a, 15);
-    w_masked_u32(0x80093e2c + offset, a, 15);
-    return (sint32)index;
-}
-
-static uint32 card_copy_scores(uint32 destination, uint32 source)
-{
-    uint32 i, a, b, c, d;
-    for (i = 0; i < 112; i += 16)
-    {
-        a = r_u32(source + i);
-        b = r_u32(source + i + 4);
-        c = r_u32(source + i + 8);
-        d = r_u32(source + i + 12);
-        w_u32(destination + i, a);
-        w_u32(destination + i + 4, b);
-        w_u32(destination + i + 8, c);
-        w_u32(destination + i + 12, d);
-    }
-    a = r_u32(source + 112);
-    b = r_u32(source + 116);
-    w_u32(destination + 112, a);
-    w_u32(destination + 116, b);
-    return a;
-}
-
-GDB_CALL uint32 FUN_80067BAC(void)
-{
-    FUNCTION_MARKER(0x80067bacu, "GAME.EXE");
-    w_u32(0x80093d6c, r_u32(0xe2f60));
-    w_u8(0x80093d74, r_u8(0xe2f65));
-    w_u8(0x80094480, r_u8(0xe2f66));
-    w_u8(0x80094481, r_u8(0xe2f67));
-    w_u16(0x80093d38, (uint16)(sint16)(sint8)r_u8(0xe2f68));
-    w_u16(0x80093d3a, (uint16)(sint16)(sint8)r_u8(0xe2f69));
-    return card_copy_scores(0x80093e28, 0xe2f6c);
-}
-
-GDB_CALL uint32 FUN_80067C84(void)
-{
-    FUNCTION_MARKER(0x80067c84u, "GAME.EXE");
-    w_u32(0xe2f60, r_u32(0x80093d6c));
-    w_u8(0xe2f65, r_u8(0x80093d74));
-    w_u8(0xe2f66, r_u8(0x80094480));
-    w_u8(0xe2f67, r_u8(0x80094481));
-    w_u8(0xe2f68, r_u8(0x80093d38));
-    w_u8(0xe2f69, r_u8(0x80093d3a));
-    return card_copy_scores(0xe2f6c, 0x80093e28);
-}
-
-static uint32 card_dialog_buttons(void)
-{
-    uint32 buttons = FUN_80068114(0);
-    if (r_u32(0x800940b0) == 2)
-        buttons |= FUN_80068114(1);
-    return buttons;
-}
-
-sint32 ff_card_status_dialog_80068180(uint32 retained_status_address, uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x80068180u, "GAME.EXE");
-    uint8 saved[257];
-    uint32 buttons, prior_status, current_status;
-    ff_wrapped_dialog_800687E8(r_u32(0x80092474), retained_s3);
-    /* Stop before consuming the original unwritten status local */
-    if (!FUN_8006BDBC(retained_status_address))
-    {
-        FF_DIAGNOSTIC(fprintf(stderr, "Card status poll returned no result in 80068180: output=%08X context=%08X\n", retained_status_address, retained_s3));
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    prior_status = r_u32(retained_status_address);
-    current_status = r_u32(0x80093c00);
-    if (prior_status == current_status)
-        return 0;
-    memcpy(saved, psx_addr(0x801fd480, 257), 257);
-    w_u32(0x80093c14, 1);
-    do
-    {
-        ff_menu_dialog_frame_80067E20(retained_s3);
-        FUN_80061800(r_u32(0x80092450), 0x801fd480);
-        FUN_800619E8(-1);
-        FUN_80067358();
-        buttons = card_dialog_buttons();
-    } while (!(buttons & 0xf000));
-    FUN_8004F490();
-    ff_menu_dialog_end_800680CC(retained_s3);
-    memcpy(psx_addr(0x801fd480, 257), saved, 257);
-    return 1;
-}
-
-GDB_CALL sint32 FUN_80068180(uint32 retained_status_address)
-{
-    return ff_card_status_dialog_80068180(retained_status_address, 0xffffffff);
-}
-
-/* The retained status cell is still a WIP adapter, independent of caller S3 */
-static sint32 card_status_changed_with_context(uint32 retained_s3)
-{
-    return ff_card_status_dialog_80068180(0x801fd440, retained_s3);
-}
-
-sint32 ff_load_card_dialog_800690D8(uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x800690d8u, "GAME.EXE");
-    uint8 saved[513], ch;
-    uint32 text, buttons, i = 0, status;
-    sint32 connected, result;
-    memcpy(saved, psx_addr(0x801fd800, 513), 513);
-    text = r_u32(r_u32(0x80093d3c) ? 0x800924c8 : 0x8009245c);
-    if (text)
-    {
-        do
-        {
-            ch = r_u8(text + i);
-            w_u8(0x80094628 + i, ch);
-            ++i;
-        } while (ch);
-    }
-    w_u32(0x80093ba4, 1);
-    DrawSync(0);
-    ff_menu_dialog_end_800680CC(retained_s3);
-    do
-    {
-        ff_pause_refresh_pad();
-        buttons = card_dialog_buttons();
-    } while (buttons);
-    ff_wrapped_dialog_800687E8(r_u32(0x80092474), retained_s3);
-    w_u8(0x80093cf0, 255);
-    retained_s3 = 3;
-    FUN_8006BB44();
-    FUN_8006B998();
-    w_u32(0x80093c14, 0xffffffffu);
-    for (;;)
-    {
-    reload_card:
-        ff_menu_dialog_frame_80067E20(retained_s3);
-        FUN_8005EC90();
-        FUN_8006BB44();
-        status = FUN_8006BD9C(0x80093c00);
-        buttons = card_dialog_buttons();
-        if (!status || r_u32(0x80093c00) == 2)
-        {
-            text = r_u32(!status ? 0x800924a8 : 0x800924ac);
-            FUN_80061800(text, 0x801fd800);
-            FUN_800619E8(-1);
-            w_u32(0x80093c14, 3);
-        }
-        else
-        {
-            FUN_8006BA58(0x801fd900);
-            FUN_80061800(0x801fd900, 0x801fd800);
-            FUN_800619E8(-1);
-            connected = (sint32)r_u32(0x8009400c);
-            if (!connected)
-                connected = 1;
-            if ((r_u32(0x80093c00) & 3) == 1 && r_s8(0x80093cf0) >= 0 && connected >= r_s8(0x80093cf1))
-                w_u32(0x80093c14, 4);
-            else
-                w_u32(0x80093c14, 3);
-            if ((buttons & 0x4000) && r_u32(0x80093c14) == 4)
-            {
-                FUN_8006B998();
-                if (FUN_8006B1C8(0, 0x80093c04))
-                {
-                    FUN_8004F490();
-                    ff_menu_dialog_end_800680CC(retained_s3);
-                    for (;;)
-                    {
-                        if (card_status_changed_with_context(retained_s3))
-                            goto reload_card;
-                        ff_wrapped_dialog_800687E8(r_u32(0x800924b0), retained_s3);
-                        if (FUN_8006B77C(0, 0x80093c04, 0xe2d40) == 1)
-                            break;
-                        if (card_status_changed_with_context(retained_s3) || FUN_80068520(r_u32(0x800924b4), 0, 1))
-                            goto reload_card;
-                    }
-                    FUN_80067BAC();
-                    if (!r_u32(0x80093d3c))
-                    {
-                        w_u8(0x800947d4, r_u8(0xe2f40));
-                        w_u8(0x80094816, r_u8(0xe2f41));
-                        ch = r_u8(0xe2f42);
-                        w_u16(0x800b434c, (uint16)(sint16)(sint8)ch);
-                        ch = r_u8(0xe2f43);
-                        w_u16(0x800b4440, (uint16)(sint16)(sint8)ch);
-                        w_u16(0x800b435a, r_u16(0xe2f44));
-                        w_u16(0x800b444e, r_u16(0xe2f46));
-                        w_u32(0x80094030, r_u32(0xe2f48));
-                        w_u32(0x80094034, r_u32(0xe2f4c));
-                        w_u32(0x800941b0, r_u32(0xe2f50));
-                        w_u32(0x800941b4, r_u32(0xe2f54));
-                        w_u32(0x80093d50, r_u32(0xe2f58));
-                        w_u8(0x80093de0, r_u8(0xe2f5c));
-                        w_u8(0x80094000, 1);
-                    }
-                    w_u32(0x80093c14, 1);
-                    do
-                    {
-                        ff_menu_dialog_frame_80067E20(retained_s3);
-                        FUN_80061ADC(r_u32(0x800924b8), 120);
-                        FUN_80067358();
-                        buttons = card_dialog_buttons();
-                    } while (!(buttons & 0xf000));
-                    break;
-                }
-            }
-        }
-        if (buttons & 0x1000)
-            break;
-        FUN_80067358();
-    }
-    FUN_8004F490();
-    result = ff_menu_dialog_end_800680CC(retained_s3);
-    memcpy(psx_addr(0x801fd800, 513), saved, 513);
-    return result;
-}
-
-GDB_CALL sint32 FUN_800690D8(void)
-{
-    return ff_load_card_dialog_800690D8(0xffffffff);
-}
-
-sint32 ff_save_card_dialog_80068850(uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x80068850u, "GAME.EXE");
-    uint8 saved[257];
-    uint32 buttons, palette, name, p;
-    sint32 count, selected = 0, scroll = 0, i, y, last, result = 2;
-    if (card_status_changed_with_context(retained_s3))
-        return 2;
-    count = (sint32)FUN_8006BFFC(0, 0x116000, 0x126000);
-    if (FUN_8006B1C8(0, 0x80093c04))
-        w_u32(0x80093ca0, r_u32(0x80093ca0) + 1);
-    if (r_u32(0x80093ca0))
-    {
-        if (card_status_changed_with_context(retained_s3))
-            return 2;
-        if (FUN_8006B1C8(0, 0x80093c04))
-        {
-            if (FUN_80068520(r_u32(0x80092490), 1, 1))
-                return 2;
-            if (card_status_changed_with_context(retained_s3))
-                return 2;
-        }
-        if (r_u32(0x80093d3c) == 1)
-            FUN_80067C84();
-        else
-        {
-            FUN_80067C84();
-            w_u8(0xe2f40, r_u8(0x80093d58));
-            w_u8(0xe2f41, r_u8(0x800940b0));
-            w_u8(0xe2f42, r_u8(0x800b434c));
-            w_u8(0xe2f43, r_u8(0x800b4440));
-            w_u16(0xe2f44, r_u16(0x800b435a));
-            w_u16(0xe2f46, r_u16(0x800b444e));
-            w_u32(0xe2f48, r_u32(0x80094030));
-            w_u32(0xe2f4c, r_u32(0x80094034));
-            w_u32(0xe2f50, r_u32(0x800941b0));
-            w_u32(0xe2f54, r_u32(0x800941b4));
-            w_u32(0xe2f58, r_u32(0x80093d50));
-            w_u8(0xe2f5c, r_u8(0x80093de0));
-        }
-        result = FUN_8006B22C(0, 0x80093c04, 0x80093c1c, 0xe2d40);
-        if (result != 1)
-            return result;
-        for (i = 0; i < 8192; i++)
-            w_u8(0xe0d40 + (uint32)i, 255);
-        result = FUN_8006B77C(0, 0x80093c04, 0xe0d40);
-        if (result != 1)
-            return result;
-        for (i = 0; i < 164; i++)
-        {
-            uint8 first = r_u8(0xe2f40 + (uint32)i);
-            uint8 second = r_u8(0xe0f40 + (uint32)i);
-            if (first != second)
-            {
-                first = r_u8(0xe2f40 + (uint32)i);
-                second = r_u8(0xe0f40 + (uint32)i);
-                return first == second;
-            }
-        }
-        return 1;
-    }
-    if (FUN_80068520(r_u32(0x80092488), 1, 1))
-        return 2;
-    if (card_status_changed_with_context(retained_s3))
-        return 2;
-    w_u32(0x80093c14, 14);
-    last = (sint32)((uint32)count - 1);
-    memcpy(saved, psx_addr(0x801fd600, 257), 257);
-    for (;;)
-    {
-        FUN_8006BB44();
-        if (!FUN_8006BD9C(0x80093c00))
-        {
-            ff_menu_dialog_end_800680CC(retained_s3);
-            break;
-        }
-        buttons = card_dialog_buttons();
-        ff_menu_dialog_frame_80067E20(retained_s3);
-        FUN_80061800(r_u32(0x8009248c), 0x801fd600);
-        FUN_800619E8(70);
-        y = (sint32)(12 * r_u32(0x80094330) + 80);
-        name = 0x116000 + ((uint32)scroll << 6);
-        for (i = 0; i < 10 && (sint32)((uint32)i + (uint32)scroll) < count; ++i, name += 64, y = (sint32)((uint32)y + 10))
-        {
-            palette = selected == i ? 0x80093be4 : 0x80093bf0;
-            w_u8(name + 23, 0);
-            snprintf((char *)psx_addr(0x801fd600, 257), 257, (const char *)psx_addr(0x80093c18, 1), (sint32)((uint32)i + (uint32)scroll + 1));
-            FUN_80062C0C(0x801fd600, 50 - FUN_8005EFB8(0x801fd600), y, palette);
-            FUN_80062C0C(name, 40, y, palette);
-        }
-        retained_s3 = (uint32)y;
-        FUN_80067358();
-        if (buttons & 0x40)
-        {
-            if (selected < 9 && (sint32)((uint32)scroll + (uint32)selected) < last)
-            {
-                ++selected;
-                FUN_8004F468();
-            }
-            else if (selected == 9 && (sint32)((uint32)scroll + 9) < last)
-            {
-                ++scroll;
-                FUN_8004F468();
-            }
-        }
-        if (buttons & 0x10)
-        {
-            if (selected > 0)
-            {
-                --selected;
-                FUN_8004F468();
-            }
-            else if (!selected && scroll > 0)
-            {
-                --scroll;
-                FUN_8004F468();
-            }
-        }
-        if (buttons & 0x1000)
-        {
-            FUN_8004F490();
-            ff_menu_dialog_end_800680CC(retained_s3);
-            break;
-        }
-        if (!(buttons & 0x4000))
-            continue;
-        FUN_8004F490();
-        if (FUN_80068520(r_u32(0x80092460), 1, 1))
-            break;
-        ff_menu_dialog_end_800680CC(retained_s3);
-        p = 0x126000 + 40u * ((uint32)scroll + (uint32)selected);
-        if (!card_status_changed_with_context(retained_s3))
-            FUN_8006B710(0, p);
-        break;
-    }
-    memcpy(psx_addr(0x801fd600, 257), saved, 257);
-    return 2;
-}
-
-GDB_CALL sint32 FUN_80068850(void)
-{
-    return ff_save_card_dialog_80068850(0xffffffff);
-}
-
-GDB_CALL sint32 FUN_80068D68(void)
-{
-    FUNCTION_MARKER(0x80068d68u, "GAME.EXE");
-    uint8 saved[513], ch;
-    uint32 buttons, text, i;
-    sint32 state, result;
-    memcpy(saved, psx_addr(0x801fca00, 513), 513);
-    if (r_u32(0x80093d3c) == 1)
-    {
-        text = r_u32(0x800924cc);
-        if (text)
-        {
-            i = 0;
-            do
-            {
-                ch = r_u8(text + i);
-                w_u8(0x80094628 + i, ch);
-                ++i;
-            } while (ch);
-        }
-        w_u32(0x80093ba4, 1);
-    }
-    else
-    {
-        text = r_u32(0x80092458);
-        if (text)
-        {
-            i = 0;
-            do
-            {
-                ch = r_u8(text + i);
-                w_u8(0x80094628 + i, ch);
-                ++i;
-            } while (ch);
-        }
-        w_u32(0x80093ba4, 0);
-        DrawSync(0);
-        w_u32(0x80094844, r_u32(0x80093cfc));
-        FUN_80056CCC(197);
-        FUN_80061448(3, 0x116000);
-        FUN_80060394(0);
-        FUN_800645E8();
-        FUN_80011CCC(-256, -256, -256);
-        if (FUN_80068520(r_u32(0x80092494), 1, 0))
-        {
-            result = -1;
-            goto finished_save_dialog;
-        }
-    }
-    w_u8(0x80093cf0, 255);
-    if (r_u32(0x80093d3c) == 1)
-    {
-        for (i = 0; i < 164; i++)
-            w_u8(0xe2f40 + i, 0);
-        w_u8(0xe2f41, 1);
-        w_u16(0xe2f44, 380);
-    }
-    w_u32(0x80093c14, 0xffffffff);
-    for (;;)
-    {
-        buttons = card_dialog_buttons();
-        FUN_8006BB44();
-        state = (sint32)FUN_8006BD9C(0x80093c00);
-        ff_menu_dialog_frame_80067E20(2);
-        if (!state)
-        {
-            FUN_80061800(r_u32(0x80092498), 0x801fca01);
-            FUN_800619E8(-1);
-            w_u32(0x80093c14, 3);
-        }
-        else
-        {
-            if (r_u32(0x80093c00) == 2)
-            {
-                FUN_80061800(r_u32(0x8009249c), 0x801fca01);
-                FUN_800619E8(-1);
-                w_u32(0x80093c14, 5);
-            }
-            else
-            {
-                w_u32(0x80093c14, 6);
-                FUN_8006BA58(0x801fcb01);
-                FUN_80061800(0x801fcb01, 0x801fca01);
-                FUN_800619E8(-1);
-            }
-            if (buttons & 0x4000)
-            {
-                FUN_8004F490();
-                FUN_8004F490();
-                ff_menu_dialog_end_800680CC(2);
-                if ((r_u32(0x80093c00) & 3) != 1)
-                {
-                    ff_format_card_dialog_80068258(2);
-                    continue;
-                }
-                for (;;)
-                {
-                    state = ff_save_card_dialog_80068850(2);
-                    if (state > 0)
-                        break;
-                    if (FUN_80068520(r_u32(0x800924a0), 0, 1))
-                    {
-                        state = 2;
-                        break;
-                    }
-                }
-                if (state != 1)
-                    continue;
-                w_u32(0x80093c14, 1);
-                do
-                {
-                    ff_menu_dialog_frame_80067E20(2);
-                    FUN_80061ADC(r_u32(0x800924a4), 120);
-                    FUN_80067358();
-                } while (!(card_dialog_buttons() & 0xf000));
-                FUN_8004F490();
-                result = ff_menu_dialog_end_800680CC(2);
-                break;
-            }
-        }
-        FUN_80067358();
-        if (buttons & 0x1000)
-        {
-            FUN_8004F490();
-            if (r_u32(0x80093d3c) == 1)
-            {
-                result = 1;
-                break;
-            }
-            result = FUN_80068520(r_u32(0x80092494), 1, 0);
-            if (result)
-                break;
-        }
-    }
-finished_save_dialog:
-    memcpy(psx_addr(0x801fca00, 513), saved, 513);
-    return result;
-}
-
-static void card_dialog_choices(sint32 choice)
-{
-    FUN_80062C0C(r_u32(0x800924d8), 110, 170, choice ? 0x80093bf0 : 0x80093be4);
-    FUN_80062C0C(r_u32(0x800924dc), 170, 170, choice ? 0x80093be4 : 0x80093bf0);
-}
-
-GDB_CALL sint32 FUN_80068520(uint32 text, sint32 choice, sint32 monitor_card)
-{
-    FUNCTION_MARKER(0x80068520u, "GAME.EXE");
-    uint8 saved[257];
-    uint32 buttons;
-    sint32 result;
-    memcpy(saved, psx_addr(0x801fc800, 257), 257);
-    w_u32(0x80093c14, 0);
-    for (;;)
-    {
-        buttons = card_dialog_buttons();
-        FUN_8006BB44();
-        result = (sint32)FUN_8006BD9C(0x80093c00);
-        if (monitor_card == 1 && !result)
-        {
-            ff_menu_dialog_end_800680CC(text);
-            result = 1;
-            break;
-        }
-        ff_menu_dialog_frame_80067E20(text);
-        FUN_80061800(text, 0x801fc801);
-        FUN_800619E8(-1);
-        card_dialog_choices(choice);
-        FUN_80067358();
-        if (buttons & 0x80)
-        {
-            choice = 0;
-            FUN_8004F468();
-        }
-        if (buttons & 0x20)
-        {
-            choice = 1;
-            FUN_8004F468();
-        }
-        if (buttons & 0x4000)
-        {
-            FUN_8004F490();
-            ff_menu_dialog_end_800680CC(text);
-            result = choice;
-            break;
-        }
-        if (buttons & 0x1000)
-        {
-            FUN_8004F490();
-            ff_menu_dialog_end_800680CC(text);
-            result = 1;
-            break;
-        }
-    }
-    memcpy(psx_addr(0x801fc800, 257), saved, 257);
-    return result;
-}
-
-sint32 ff_format_card_dialog_80068258(uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x80068258u, "GAME.EXE");
-    uint8 saved[257];
-    uint32 buttons, prior, timer;
-    sint32 choice = 1, result = -1;
-    memcpy(saved, psx_addr(0x801fc800, 257), 257);
-    for (;;)
-    {
-        w_u32(0x80093c14, 0);
-        buttons = card_dialog_buttons();
-        ff_menu_dialog_frame_80067E20(retained_s3);
-        FUN_80061800(r_u32(0x80092454), 0x801fc801);
-        FUN_800619E8(-1);
-        card_dialog_choices(choice);
-        FUN_80067358();
-        if (buttons & 0x80)
-        {
-            choice = 0;
-            FUN_8004F468();
-        }
-        if (buttons & 0x20)
-        {
-            choice = 1;
-            FUN_8004F468();
-        }
-        if (buttons & 0x4000)
-            break;
-        if (buttons & 0x1000)
-        {
-            FUN_8004F490();
-            ff_menu_dialog_end_800680CC(retained_s3);
-            goto finished;
-        }
-    }
-    FUN_8004F490();
-    ff_menu_dialog_end_800680CC(retained_s3);
-    if (choice == 1)
-        goto finished;
-    prior = r_u32(0x80093c00);
-    w_u32(0x80093c14, 0xffffffff);
-    ff_wrapped_dialog_800687E8(r_u32(0x80092474), retained_s3);
-    FUN_8006BDBC(0x80093c00);
-    if (prior != r_u32(0x80093c00))
-        goto finished;
-    ff_wrapped_dialog_800687E8(r_u32(0x80092478), retained_s3);
-    FUN_8006B6CC(0);
-    FUN_8006BDBC(0x80093c00);
-    prior = r_u32(0x80093c00);
-    w_u32(0x80093c14, 1);
-    timer = 0;
-    if ((prior & 3) != 1)
-    {
-        do
-        {
-            ff_menu_dialog_frame_80067E20(retained_s3);
-            FUN_80061800(r_u32(0x8009247c), 0x801fc801);
-            FUN_800619E8(-1);
-            FUN_80067358();
-            buttons = card_dialog_buttons();
-            ++timer;
-        } while (!(buttons & 0xf000) && timer < 150);
-        ff_menu_dialog_end_800680CC(retained_s3);
-    }
-    else
-    {
-        do
-        {
-            ff_menu_dialog_frame_80067E20(retained_s3);
-            FUN_80061ADC(r_u32(0x80092480), 120);
-            FUN_80067358();
-            buttons = card_dialog_buttons();
-            if (buttons & 0xf000)
-                break;
-            ++timer;
-        } while (timer < 150);
-        ff_menu_dialog_end_800680CC(retained_s3);
-        result = 0;
-    }
-finished:
-    memcpy(psx_addr(0x801fc800, 257), saved, 257);
-    return result;
-}
-
-GDB_CALL sint32 FUN_80068258(void)
-{
-    return ff_format_card_dialog_80068258(0xffffffff);
-}
-
-sint32 ff_card_message_800686A8(uint32 text, uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x800686a8u, "GAME.EXE");
-    uint32 i, buttons;
-    DrawSync(0);
-    FUN_80061448(3, 0x116000);
-    FUN_80060394(0);
-    FUN_800645E8();
-    FUN_80011CCC(-256, -256, -256);
-    w_u32(0x80093c14, 1);
-    for (i = 0; i < 2; ++i)
-    {
-        ff_menu_dialog_frame_80067E20(retained_s3);
-        FUN_80061ADC(text, 125);
-        FUN_80067358();
-    }
-    do
-    {
-        ff_pause_refresh_pad();
-        buttons = card_dialog_buttons();
-    } while (!(buttons & 0x5000));
-    ff_menu_dialog_end_800680CC(retained_s3);
-    w_u32(0x80093c14, 0xffffffff);
-    return -1;
-}
-
-GDB_CALL sint32 FUN_800686A8(uint32 text)
-{
-    return ff_card_message_800686A8(text, 0xffffffff);
-}
-
-/* WIP native stack adapter for the 256-byte text workspace. The byte before
- * the buffer is addressable because 618DC can terminate an overlong first word. */
-static sint32 draw_wrapped_dialog(uint32 text, int reload_text, uint32 retained_s3)
-{
-    uint8 saved[257];
-    uint32 i;
-    uint8 *workspace = psx_addr(0x801fc440, 257);
-    memcpy(saved, workspace, sizeof(saved));
-    w_u32(0x80093c14, 0xffffffff);
-    for (i = 0; i < 2; ++i)
-    {
-        ff_menu_dialog_frame_80067E20(retained_s3);
-        FUN_80061800(reload_text ? r_u32(0x80092484) : text, 0x801fc441);
-        FUN_800619E8(-1);
-        FUN_80067358();
-    }
-    // TODO Fix workspace lifetime for text pointers published by FUN_80061800
-    memcpy(workspace, saved, sizeof(saved));
-    return 0;
-}
-
-sint32 ff_wrapped_card_notice_80068788(uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x80068788u, "GAME.EXE");
-    return draw_wrapped_dialog(0, 1, retained_s3);
-}
-
-GDB_CALL sint32 FUN_80068788(void)
-{
-    return ff_wrapped_card_notice_80068788(0xffffffff);
-}
-
-sint32 ff_wrapped_dialog_800687E8(uint32 text, uint32 retained_s3)
-{
-    FUNCTION_MARKER(0x800687e8u, "GAME.EXE");
-    return draw_wrapped_dialog(text, 0, retained_s3);
-}
-
-GDB_CALL sint32 FUN_800687E8(uint32 text)
-{
-    return ff_wrapped_dialog_800687E8(text, 0xffffffff);
-}
-
-/* 8006A968: ten 12-byte score records. Width precedes optional '?' suffix. */
-GDB_CALL sint32 FUN_8006A968(void)
-{
-    char buffer[32];
-    int i, width;
-    FUN_80061ADC(r_u32(0x80092528), 32);
-    for (i = 0; i < 10; i++)
-    {
-        FUN_80061B7C(0x80093e2c + 12u * i, 70, 56 + 14 * i);
-        snprintf(buffer, 32, (char *)psx_addr(0x80093c64, 1), r_u32(0x80093e28 + 12u * i));
-        width = text_width_host(buffer);
-        if (r_u32(0x80093e30 + 12u * i) & 1)
-            strcat(buffer, (char *)psx_addr(0x80093c68, 1));
-        text_draw_host(buffer, (sint32)(250 - (uint32)width), 56 + 14 * i);
-    }
-    return FUN_80061ADC(r_u32(0x80094684), 214);
-}
+OPTIONS_MENU options_menu;
+const OPTIONS_MENU options_menu_defaults = {
+    .row = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+    .row_count = OPTION_COUNT,
+};
 
 /* 80052624: draw before input; use existing controller count without refresh. */
-GDB_CALL sint32 FUN_80052624(void)
+GDB_CALL sint32 scores_menu_update(void)
 {
-    uint32 i = 0, raw, edge, previous, pressed;
+    FUNCTION_MARKER(0x80052624, "GAME.EXE");
+    uint32 i = 0, raw, edge;
     sint32 result;
-    FUN_8006A968();
-    result = (sint32)r_u32(0x800940b0);
+    high_scores_draw();
+    result = (sint32)game_session.player_count;
     if (result <= 0)
         return result;
     for (;;)
     {
-        raw = (uint32)FUN_8005F5AC((sint32)r_u32(0x80094288 + 4 * i));
-        previous = 0x80092790 + 4 * i;
-        pressed = 0x80092798 + 4 * i;
-        edge = (raw ^ r_u32(previous)) & raw;
-        w_u32(pressed, edge);
-        w_u32(previous, raw);
-        edge = r_u32(pressed);
-        w_u32(0x800927a0, raw);
+        raw = (uint32)pad_decode_buttons(pad_game.port[i]);
+        edge = (raw ^ pad_menu.prev[i]) & raw;
+        pad_menu.pressed[i] = edge;
+        pad_menu.prev[i] = raw;
+        edge = pad_menu.pressed[i];
+        pad_menu.last_raw = raw;
         ++i;
         if (edge & 0x1000)
         {
-            w_u32(0x800927ec, 0x80050d98);
-            return FUN_8004F490();
+            menu.callback = &menu_callback_options;
+            return menu_play_confirm_sound();
         }
-        result = (sint32)i < (sint32)r_u32(0x800940b0);
+        result = (sint32)i < (sint32)game_session.player_count;
         if (!result)
             return result;
     }
@@ -1087,50 +55,53 @@ GDB_CALL sint32 FUN_80052624(void)
 
 /* 800519D4: display both player headings, then each connected player's scheme.
  * Preserve redundant decoder calls: they update disconnect/reset state. */
-GDB_CALL sint32 FUN_800519D4(void)
+GDB_CALL sint32 pad_menu_update(void)
 {
+    FUNCTION_MARKER(0x800519d4, "GAME.EXE");
     char buffer[256];
     int player, k, x, y;
     uint32 edge, available;
-    FUN_8005EC90();
-    available = r_u32(0x8009400c);
-    w_u32(0x800940b0, available);
+    pad_refresh_ports();
+    available = pad_decode.count;
+    game_session.player_count = available;
     if (!available)
-        return FUN_8004F4F8(98);
-    FUN_80061ADC(r_u32(0x80092500), 20);
+        return menu_draw_primary_pad_notice(98);
+    text_center(localization.text[LOCAL_TEXT_CONTROLLER_SETTINGS], 20);
     for (player = 0, x = 32; player < 2; player++, x += 150)
     {
-        snprintf(buffer, 256, (char *)psx_addr(0x800928dc, 1), (char *)psx_addr(r_u32(0x80092504), 1), player + 1);
-        text_draw_host(buffer, x, 60);
-        FUN_8005F5AC(player);
-        if (r_s8(0x80094114) != -1)
+        snprintf(buffer, 256, numbered_label_format, localization.text[LOCAL_TEXT_PLAYER], player + 1);
+        text_draw(buffer, x, 60);
+        pad_decode_buttons(player);
+        if ((sint8)pad_decode.type != -1)
         {
-            sint32 scheme = r_s8(0x80094480 + player);
-            uint32 label = r_u32(0x80092508);
-            snprintf(buffer, 256, (char *)psx_addr(0x800928dc, 1), (char *)psx_addr(label, 1), scheme + 1);
-            text_draw_host(buffer, x - 10, 70);
+            sint32 scheme = (sint8)pad_action.cfg[player];
+            const char *label = localization.text[LOCAL_TEXT_SETTING];
+            snprintf(buffer, 256, numbered_label_format, label, scheme + 1);
+            text_draw(buffer, x - 10, 70);
             for (k = 0, y = 90; k < 6; k++, y += 16)
             {
                 sint32 action, prefix;
-                scheme = r_s8(0x80094480 + player);
-                action = r_s8(0x80093d78 + 6 * (uint32)scheme + k);
-                prefix = r_s8(0x800928d4 + k);
-                label = r_u32(0x80094458 + 4 * (uint32)action);
-                snprintf(buffer, 256, (char *)psx_addr(0x800928e4, 1), prefix, (char *)psx_addr(label, 1));
-                text_draw_host(buffer, x - 16, y);
+                scheme = (sint8)pad_action.cfg[player];
+                action = pad_bindings[scheme][k];
+                prefix = pad_glyph[k];
+                if (action < 0 || action >= LOCALIZED_ACTION_COUNT)
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                label = localization.action[action];
+                snprintf(buffer, 256, action_label_format, prefix, label);
+                text_draw(buffer, x - 16, y);
                 if (action == 3)
                 {
-                    uint32 language = r_u32(0x80093d70);
+                    uint32 language = game_settings.language;
                     if (language == 2)
                     {
                         y += 10;
-                        FUN_80061B7C(0x800928ec, x + 65, y);
-                        language = r_u32(0x80093d70);
+                        text_draw(back_fist_german, x + 65, y);
+                        language = game_settings.language;
                     }
                     if (language == 1)
                     {
                         y += 10;
-                        FUN_80061B7C(0x800928f4, x + 25, y);
+                        text_draw(back_fist_french, x + 25, y);
                     }
                 }
             }
@@ -1138,324 +109,298 @@ GDB_CALL sint32 FUN_800519D4(void)
     }
     for (player = 0; player < 2; player++)
     {
-        FUN_8005F5AC(player);
-        if (r_s8(0x80094114) != -1)
+        pad_decode_buttons(player);
+        if ((sint8)pad_decode.type != -1)
         {
-            uint32 scheme = 0x80094480 + player;
-            edge = FUN_80068114(player);
+            uint8 *scheme = &pad_action.cfg[player];
+            edge = pad_menu_poll(player);
             if (edge & 0x80)
             {
-                FUN_8004F490();
-                w_u8(scheme, (uint8)(r_u8(scheme) - 1));
+                menu_play_confirm_sound();
+                --*scheme;
             }
             if (edge & 0x20)
             {
-                FUN_8004F490();
-                w_u8(scheme, (uint8)(r_u8(scheme) + 1));
+                menu_play_confirm_sound();
+                ++*scheme;
             }
-            w_u8(scheme, r_u8(scheme) & 7);
+            *scheme &= 7;
             if (edge & 0x1000)
             {
-                FUN_8004F490();
-                w_u32(0x800927ec, 0x80050d98);
+                menu_play_confirm_sound();
+                menu.callback = &menu_callback_options;
             }
         }
     }
-    return FUN_80061ADC(r_u32(0x800946a8), 214);
-}
-
-/* 800575F8: copy screen origin to both display environments. Return LHU Y. */
-GDB_CALL uint32 FUN_800575F8(void)
-{
-    uint16 x = r_u16(0x80093d38), y;
-    w_u16(0x800947a8, x);
-    w_u16(0x800947bc, x);
-    y = r_u16(0x80093d3a);
-    w_u16(0x800947aa, y);
-    w_u16(0x800947be, y);
-    return y;
+    return text_center(localization.hint[TEXT_HINT_CHANGE_EXIT], 214);
 }
 
 /* 80051C98: adjustment edges from either pad, in left/right/up/down order.
  * The inclusive left guard permits -10 -> -11, as in actual MIPS. */
-GDB_CALL sint32 FUN_80051C98(void)
+GDB_CALL sint32 scr_menu_update(void)
 {
+    FUNCTION_MARKER(0x80051c98, "GAME.EXE");
     uint32 edge, players;
     sint32 offset;
-    FUN_8005EC90();
-    players = r_u32(0x8009400c);
-    w_u32(0x800940b0, players);
+    pad_refresh_ports();
+    players = pad_decode.count;
+    game_session.player_count = players;
     if (!players)
-        return FUN_8004F4F8(98);
-    FUN_80061ADC(r_u32(0x8009250c), 20);
-    edge = FUN_80068114(0);
-    if (r_u32(0x800940b0) == 2)
-        edge |= FUN_80068114(1);
+        return menu_draw_primary_pad_notice(98);
+    text_center(localization.text[LOCAL_TEXT_SCREEN_ADJUST], 20);
+    edge = pad_menu_poll(0);
+    if (game_session.player_count == 2)
+        edge |= pad_menu_poll(1);
     if (edge & 0x80)
     {
-        offset = r_s16(0x80093d38);
+        offset = game_settings.scr_offset.x;
         if (offset >= -10)
-            w_u16(0x80093d38, (uint16)(offset - 1));
+            game_settings.scr_offset.x = offset - 1;
     }
     if (edge & 0x20)
     {
-        offset = r_s16(0x80093d38);
+        offset = game_settings.scr_offset.x;
         if (offset < 16)
-            w_u16(0x80093d38, (uint16)(offset + 1));
+            game_settings.scr_offset.x = offset + 1;
     }
     if (edge & 0x10)
     {
-        offset = r_s16(0x80093d3a);
+        offset = game_settings.scr_offset.y;
         if (offset > 0)
-            w_u16(0x80093d3a, (uint16)(offset - 1));
+            game_settings.scr_offset.y = offset - 1;
     }
     if (edge & 0x40)
     {
-        offset = r_s16(0x80093d3a);
+        offset = game_settings.scr_offset.y;
         if (offset < 16)
-            w_u16(0x80093d3a, (uint16)(offset + 1));
+            game_settings.scr_offset.y = offset + 1;
     }
-    FUN_800575F8();
+    disp_apply_offsets();
     if (edge & 0x1000)
     {
-        FUN_8004F490();
-        w_u32(0x800927ec, 0x80050d98);
+        menu_play_confirm_sound();
+        menu.callback = &menu_callback_options;
     }
-    return FUN_80061ADC(r_u32(0x800946ac), 214);
+    return text_center(localization.hint[TEXT_HINT_MOVE_CHANGE_EXIT], 214);
 }
 
 static void home(void)
 {
-    w_u32(0x800927ec, 0x80050270);
-    ff_camera_capture_8004F980(0x80092720, 0, -12032);
+    menu.callback = &menu_callback_main;
+    camera_capture(camera_menu_dst.bits, 0, -12032);
 }
 
 /* Original option text and both palettes remain caller-local */
-GDB_CALL sint32 FUN_80050D98(void)
+GDB_CALL sint32 options_menu_update(void)
 {
     FUNCTION_MARKER(0x80050d98, "GAME.EXE");
     char buffer[256];
-    uint8 active[12], inactive[12];
-    uint32 flags = r_u32(0x80093d68), phase, n, edge, raw, selected, value, a, b, c;
+    TEXT_GRADIENT active = text_gradient_defaults;
+    const TEXT_GRADIENT inactive = text_inactive_gradient;
+    uint32 flags = game_settings.flags, phase, n, edge, raw, sel, val, a, b;
     sint32 count, i, k, y, width = 0, result;
     const uint32 phases[4] = {0, 512, 1024, 1536};
     const uint32 color_offsets[4] = {0, 3, 9, 6};
-    /* Aligned LWL/LWR pairs retain both reads for each palette word */
-    r_masked_u32(0x8009288c, 15);
-    a = r_masked_u32(0x8009288c, 15);
-    r_masked_u32(0x80092890, 15);
-    b = r_masked_u32(0x80092890, 15);
-    r_masked_u32(0x80092894, 15);
-    c = r_masked_u32(0x80092894, 15);
-    for (k = 0; k < 4; ++k)
+    if (flags & GAME_FLAG_EXTENDED_OPTIONS)
     {
-        active[k] = (uint8)(a >> (8 * k));
-        active[k + 4] = (uint8)(b >> (8 * k));
-        active[k + 8] = (uint8)(c >> (8 * k));
-    }
-    r_masked_u32(0x80092898, 15);
-    a = r_masked_u32(0x80092898, 15);
-    r_masked_u32(0x8009289c, 15);
-    b = r_masked_u32(0x8009289c, 15);
-    r_masked_u32(0x800928a0, 15);
-    c = r_masked_u32(0x800928a0, 15);
-    for (k = 0; k < 4; ++k)
-    {
-        inactive[k] = (uint8)(a >> (8 * k));
-        inactive[k + 4] = (uint8)(b >> (8 * k));
-        inactive[k + 8] = (uint8)(c >> (8 * k));
-    }
-    if (flags & 2)
-    {
-        for (i = 1; i < 13; i++)
-            w_u32(0x80092854 + 4 * i, i);
-        w_u32(0x80092854, 0);
-        n = 13;
+        for (i = OPTION_INVULNERABILITY; i < OPTION_COUNT; i++)
+            options_menu.row[i] = i;
+        options_menu.row[OPTION_STAGE] = 0;
+        n = OPTION_COUNT;
     }
     else
     {
-        w_u32(0x80092854, 999);
-        w_u32(0x80092858, 999);
-        for (i = 3; i < 13; i++)
-            w_u32(0x80092854 + 4 * i, i - 2);
-        w_u32(0x8009285c, 0);
-        n = 11;
+        options_menu.row[OPTION_STAGE] = OPTION_ROW_DISABLED;
+        options_menu.row[OPTION_INVULNERABILITY] = OPTION_ROW_DISABLED;
+        for (i = OPTION_MUSIC_VOLUME; i < OPTION_COUNT; i++)
+            options_menu.row[i] = i - 2;
+        options_menu.row[OPTION_DIFFICULTY] = 0;
+        n = OPTION_COUNT - 2;
     }
-    w_u32(0x80092888, n);
-    phase = r_u32(0x8009284c);
+    options_menu.row_count = n;
+    phase = options_menu.phase;
     for (i = 0; i < 4; i++)
     {
         uint32 sample = i ? (phase + phases[i]) & 2047 : phase;
-        uint8 shade = (uint8)((sint16)r_u16(0x800802d0 + 2 * sample) >> 11);
+        uint8 shade = (uint8)(sin_table[sample] >> 11);
         if (i == 3)
-            w_u32(0x8009284c, (phase + 32) & 2047);
+            options_menu.phase = (phase + 32) & 2047;
         for (k = 0; k < 3; k++)
-            active[color_offsets[i] + k] = shade;
+            active.color[color_offsets[i] / 3].v[k] = shade;
     }
-    FUN_8005EC90();
-    value = r_u32(0x8009400c);
-    w_u32(0x800940b0, value);
-    if (!value)
-        return FUN_8004F4F8(98);
-    FUN_80061ADC(r_u32(0x800924f8), 20);
-    selected = r_u32(0x80092850);
-    FUN_80061ADC(r_u32((selected == r_u32(0x80092870) || selected == r_u32(0x80092874) || selected == r_u32(0x80092878) || selected == r_u32(0x8009286c) || selected == r_u32(0x8009287c) || selected == r_u32(0x80092880) || selected == r_u32(0x80092884)) ? 0x800946a0 : 0x800946a4), 214);
-    count = r_s32(0x80092888);
-    y = (sint32)(128 - 6 * (uint32)count);
-    if (r_u32(0x80093d70) == 2)
-        y = (sint32)((uint32)y - 6);
+    pad_refresh_ports();
+    val = pad_decode.count;
+    game_session.player_count = val;
+    if (!val)
+        return menu_draw_primary_pad_notice(98);
+    text_center(localization.text[LOCAL_TEXT_OPTIONS], 20);
+    sel = options_menu.sel_row;
+    text_center((sel == options_menu.row[OPTION_LOAD_GAME] || sel == options_menu.row[OPTION_LOAD_SETTINGS] || sel == options_menu.row[OPTION_SAVE_SETTINGS] || sel == options_menu.row[OPTION_CONTROLLER] || sel == options_menu.row[OPTION_SCREEN] || sel == options_menu.row[OPTION_SCORES] || sel == options_menu.row[OPTION_EXIT]) ? localization.hint[TEXT_HINT_CHOOSE_SELECT_EXIT] : localization.hint[TEXT_HINT_CHOOSE_CHANGE_EXIT], 214);
+    count = (sint32)options_menu.row_count;
+    y = 128 - 6 * (uint32)count;
+    if (game_settings.language == GAME_LANGUAGE_GERMAN)
+        y = (uint32)y - 6;
     for (i = 0; i < count; i++)
     {
-        uint32 text = 0, row = (uint32)i;
+        uint32 row = (uint32)i;
         const char *native_text = NULL;
         int slider = 0, has_label = 1;
-        if (row == r_u32(0x80092854))
-            text = r_u32(0x8007f79c + 4 * r_u32(0x800927b4));
-        else if (row == r_u32(0x80092858))
-            text = r_u32(0x80093d68) & 1 ? 0x800928a4 : 0x800928b8;
-        else if (row == r_u32(0x8009285c))
+        if (row == options_menu.row[OPTION_STAGE])
         {
-            sint32 language = r_s8(0x80093d74);
-            a = r_u32(0x800924fc);
-            b = r_u32(0x800947e0 + 4 * (uint32)language);
-            snprintf(buffer, sizeof(buffer), (char *)psx_addr(0x800928cc, 1), (char *)psx_addr(a, 1), (char *)psx_addr(b, 1));
+            if (game_settings.start_stage >= LEVEL_NAME_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Start stage name outside catalog: %u\n", game_settings.start_stage));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            native_text = level_names[game_settings.start_stage];
+        }
+        else if (row == options_menu.row[OPTION_INVULNERABILITY])
+            native_text = game_settings.flags & GAME_FLAG_INVULNERABILITY ? invulnerability_on : invulnerability_off;
+        else if (row == options_menu.row[OPTION_DIFFICULTY])
+        {
+            sint32 difficulty = game_settings.difficulty;
+            const char *label = localization.text[LOCAL_TEXT_DIFFICULTY];
+            if (difficulty < 0 || difficulty >= GAME_DIFFICULTY_COUNT)
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            const char *name = localization.difficulty[difficulty];
+            snprintf(buffer, sizeof(buffer), difficulty_format, label, name);
             native_text = buffer;
         }
-        else if (row == r_u32(0x80092864))
+        else if (row == options_menu.row[OPTION_EFFECTS_VOLUME])
         {
-            text = r_u32(0x8009251c);
-            width = FUN_8005EFB8(text);
-            a = r_u32(0x80093d70);
-            b = r_u8(0x80093d6e);
-            width = (sint32)((uint32)width + 64);
+            native_text = localization.text[LOCAL_TEXT_EFFECTS_VOLUME];
+            width = text_width(native_text);
+            a = game_settings.language;
+            b = sound_settings.effects_volume;
+            width = (uint32)width + 64;
             slider = 1;
             if (a == 2)
             {
-                FUN_80062AB4(240, (sint32)((uint32)y + 12), b);
-                width = (sint32)((uint32)width - 64);
+                options_draw_slider(240, (uint32)y + 12, b);
+                width = (uint32)width - 64;
             }
             else
-                FUN_80062AB4((sint32)((uint32)(width >> 1) + 96), (sint32)((uint32)y + 1), b);
+                options_draw_slider((uint32)(width >> 1) + 96, (uint32)y + 1, b);
         }
-        else if (row == r_u32(0x80092860))
+        else if (row == options_menu.row[OPTION_MUSIC_VOLUME])
         {
-            text = r_u32(0x80092518);
-            width = (sint32)((uint32)FUN_8005EFB8(text) + 64);
+            native_text = localization.text[LOCAL_TEXT_MUSIC_VOLUME];
+            width = (uint32)text_width(native_text) + 64;
             slider = 1;
-            FUN_80062AB4((sint32)((uint32)(width >> 1) + 96), (sint32)((uint32)y + 2), r_u8(0x80093d6f));
+            options_draw_slider((uint32)(width >> 1) + 96, (uint32)y + 2, sound_settings.music_volume);
         }
-        else if (row == r_u32(0x80092868))
-            text = r_u32(0x80093d6c) & 1 ? 0x80092540 : 0x80092548;
+        else if (row == options_menu.row[OPTION_STEREO])
+            native_text = sound_settings.flags & SOUND_FLAG_STEREO ? stereo_text : mono_text;
         else
         {
-            const uint32 labels[7] = {0x80092500, 0x80092520, 0x800924c8, 0x800924cc, 0x8009250c, 0x80092528, 0x80092524};
+            const LOCALIZED_TEXT_ID labels[7] = {LOCAL_TEXT_CONTROLLER_SETTINGS, LOCAL_TEXT_LOAD_CARD_DATA, LOCAL_TEXT_LOAD_SETTINGS, LOCAL_TEXT_SAVE_SETTINGS, LOCAL_TEXT_SCREEN_ADJUST, LOCAL_TEXT_HIGH_SCORES, LOCAL_TEXT_EXIT};
             has_label = 0;
             for (k = 0; k < 7; k++)
-                if (row == r_u32(0x8009286c + 4u * k))
+                if (row == options_menu.row[OPTION_CONTROLLER + k])
                 {
-                    text = r_u32(labels[k]);
+                    native_text = localization.text[labels[k]];
                     has_label = 1;
                     break;
                 }
         }
         if (!slider && has_label)
-            width = native_text ? text_width_host(native_text) : FUN_8005EFB8(text);
-        ff_stack_text_gradient_80062C0C(text, native_text, (sint32)(160 - (uint32)(width >> 1)), y, r_u32(0x80092850) == row ? active : inactive);
-        y = (sint32)((uint32)y + 12);
-        if (row == r_u32(0x80092864) && r_u32(0x80093d70) == 2)
-            y = (sint32)((uint32)y + 6);
-        count = r_s32(0x80092888);
+            width = text_width(native_text);
+        text_draw_gradient(native_text, 160 - (uint32)(width >> 1), y, options_menu.sel_row == row ? &active : &inactive);
+        y = (uint32)y + 12;
+        if (row == options_menu.row[OPTION_EFFECTS_VOLUME] && game_settings.language == GAME_LANGUAGE_GERMAN)
+            y = (uint32)y + 6;
+        count = (sint32)options_menu.row_count;
     }
-    count = r_s32(0x800940b0);
+    count = (sint32)game_session.player_count;
     result = count;
     for (i = 0; i < count; i++)
     {
-        uint32 edge_address = 0x80092798 + 4 * (uint32)i;
-        uint32 raw_address = 0x80092790 + 4 * (uint32)i;
-        raw = (uint32)FUN_8005F5AC(r_s32(0x80094288 + 4 * (uint32)i));
-        edge = (raw ^ r_u32(raw_address)) & raw;
-        w_u32(edge_address, edge);
-        w_u32(raw_address, raw);
-        edge = r_u32(edge_address);
-        w_u32(0x800927a0, raw);
+        uint32 *pressed = &pad_menu.pressed[i];
+        uint32 *prev = &pad_menu.prev[i];
+        raw = (uint32)pad_decode_buttons(pad_game.port[i]);
+        edge = (raw ^ *prev) & raw;
+        *pressed = edge;
+        *prev = raw;
+        edge = *pressed;
+        pad_menu.last_raw = raw;
         if (edge & 0x1000)
         {
             home();
-            return FUN_8004F490();
+            return menu_play_confirm_sound();
         }
         if (edge & 0x10)
         {
-            FUN_8004F468();
-            value = r_u32(0x80092850) - 1;
-            w_u32(0x80092850, value);
-            if ((sint32)value < 0)
-                w_u32(0x80092850, r_u32(0x80092888) - 1);
+            menu_play_move_sound();
+            val = options_menu.sel_row - 1;
+            options_menu.sel_row = val;
+            if ((sint32)val < 0)
+                options_menu.sel_row = options_menu.row_count - 1;
         }
-        if (r_u32(edge_address) & 0x40)
+        if (*pressed & 0x40)
         {
-            FUN_8004F468();
-            value = r_u32(0x80092850);
-            n = r_u32(0x80092888);
-            value++;
-            w_u32(0x80092850, value);
-            if ((sint32)(n - 1) < (sint32)value)
-                w_u32(0x80092850, 0);
+            menu_play_move_sound();
+            val = options_menu.sel_row;
+            n = options_menu.row_count;
+            val++;
+            options_menu.sel_row = val;
+            if ((sint32)(n - 1) < (sint32)val)
+                options_menu.sel_row = 0;
         }
-        selected = r_u32(0x80092850);
-        if (selected == r_u32(0x80092854))
+        sel = options_menu.sel_row;
+        if (sel == options_menu.row[OPTION_STAGE])
         {
-            if (r_u32(edge_address) & 0x80)
+            if (*pressed & 0x80)
             {
-                value = r_u32(0x800927b4);
-                if ((sint32)value > 0)
-                    w_u32(0x800927b4, value - 1);
+                val = game_settings.start_stage;
+                if ((sint32)val > 0)
+                    game_settings.start_stage = val - 1;
             }
-            if (r_u32(edge_address) & 0x20)
+            if (*pressed & 0x20)
             {
-                value = r_u32(0x800927b4);
-                if ((sint32)value < 25)
-                    w_u32(0x800927b4, value + 1);
-            }
-        }
-        else if (selected == r_u32(0x80092858))
-        {
-            if (r_u32(edge_address) & 0x80)
-            {
-                w_u32(0x80093d68, r_u32(0x80093d68) & ~1u);
-                FUN_8004F490();
-            }
-            if (r_u32(edge_address) & 0x20)
-            {
-                w_u32(0x80093d68, r_u32(0x80093d68) | 1u);
-                FUN_8004F490();
+                val = game_settings.start_stage;
+                if ((sint32)val < LEVEL_NAME_COUNT - 1)
+                    game_settings.start_stage = val + 1;
             }
         }
-        else if (selected == r_u32(0x8009285c))
+        else if (sel == options_menu.row[OPTION_INVULNERABILITY])
         {
-            if (r_u32(edge_address) & 0x80)
+            if (*pressed & 0x80)
             {
-                value = (uint32)(sint32)r_s8(0x80093d74);
-                if ((sint32)value > 0)
+                game_settings.flags &= ~GAME_FLAG_INVULNERABILITY;
+                menu_play_confirm_sound();
+            }
+            if (*pressed & 0x20)
+            {
+                game_settings.flags |= GAME_FLAG_INVULNERABILITY;
+                menu_play_confirm_sound();
+            }
+        }
+        else if (sel == options_menu.row[OPTION_DIFFICULTY])
+        {
+            if (*pressed & 0x80)
+            {
+                val = game_settings.difficulty;
+                if ((sint32)val > 0)
                 {
-                    w_u8(0x80093d74, value - 1);
-                    FUN_8004F490();
+                    game_settings.difficulty_bits = val - 1;
+                    menu_play_confirm_sound();
                 }
             }
-            if (r_u32(edge_address) & 0x20)
+            if (*pressed & 0x20)
             {
-                value = (uint32)(sint32)r_s8(0x80093d74);
-                if ((sint32)value < 2)
+                val = game_settings.difficulty;
+                if ((sint32)val < 2)
                 {
-                    w_u8(0x80093d74, value + 1);
-                    FUN_8004F490();
+                    game_settings.difficulty_bits = val + 1;
+                    menu_play_confirm_sound();
                 }
             }
         }
-        else if (selected == r_u32(0x80092860))
+        else if (sel == options_menu.row[OPTION_MUSIC_VOLUME])
         {
             sint32 v;
-            raw = r_u32(raw_address);
-            v = r_u8(0x80093d6f);
+            raw = *prev;
+            v = sound_settings.music_volume;
             if (raw & 0x80)
                 v -= 2;
             if (raw & 0x20)
@@ -1464,14 +409,14 @@ GDB_CALL sint32 FUN_80050D98(void)
                 v = 0;
             if (v > 255)
                 v = 255;
-            FUN_800569BC(v);
-            w_u32(0x80093d6c, (r_u32(0x80093d6c) & 0xffffff) | ((uint32)v << 24));
+            cd_music_volume(v);
+            sound_settings.music_volume = v;
         }
-        else if (selected == r_u32(0x80092864))
+        else if (sel == options_menu.row[OPTION_EFFECTS_VOLUME])
         {
             sint32 v;
-            raw = r_u32(raw_address);
-            v = r_u8(0x80093d6e);
+            raw = *prev;
+            v = sound_settings.effects_volume;
             if (raw & 0x80)
                 v -= 2;
             if (raw & 0x20)
@@ -1480,94 +425,140 @@ GDB_CALL sint32 FUN_80050D98(void)
                 v = 0;
             if (v > 255)
                 v = 255;
-            value = r_u32(0x80093d6c);
-            a = r_u32(0x80092750);
-            w_u32(0x80093d6c, (value & 0xff00ffff) | ((uint32)v << 16));
-            FUN_80056F08((sint32)a, 128);
+            SOUND_SETTINGS settings = sound_settings;
+            a = effects_preview_voice;
+            settings.effects_volume = v;
+            sound_settings = settings;
+            sound_voice_volume(a, 128);
         }
-        else if (selected == r_u32(0x80092868))
+        else if (sel == options_menu.row[OPTION_STEREO])
         {
-            if (r_u32(edge_address) & 0x80)
+            if (*pressed & 0x80)
             {
-                value = r_u32(0x80093d6c);
-                if (value & 1)
+                SOUND_SETTINGS settings = sound_settings;
+                if (settings.flags & SOUND_FLAG_STEREO)
                 {
-                    w_u32(0x80093d6c, value & ~1);
-                    FUN_8004F490();
+                    settings.flags &= ~SOUND_FLAG_STEREO;
+                    sound_settings = settings;
+                    menu_play_confirm_sound();
                 }
             }
-            if (r_u32(edge_address) & 0x20)
+            if (*pressed & 0x20)
             {
-                value = r_u32(0x80093d6c);
-                if (!(value & 1))
+                SOUND_SETTINGS settings = sound_settings;
+                if (!(settings.flags & SOUND_FLAG_STEREO))
                 {
-                    w_u32(0x80093d6c, value | 1);
-                    FUN_8004F490();
+                    settings.flags |= SOUND_FLAG_STEREO;
+                    sound_settings = settings;
+                    menu_play_confirm_sound();
                 }
             }
         }
-        else if (selected == r_u32(0x8009286c))
+        else if (sel == options_menu.row[OPTION_CONTROLLER])
         {
-            if (r_u32(edge_address) & 0x4000)
+            if (*pressed & 0x4000)
             {
-                FUN_8004F490();
-                w_u32(0x800927ec, 0x800519d4);
+                menu_play_confirm_sound();
+                menu.callback = &menu_callback_pad;
             }
         }
-        else if (selected == r_u32(0x8009287c))
+        else if (sel == options_menu.row[OPTION_SCREEN])
         {
-            if (r_u32(edge_address) & 0x4000)
+            if (*pressed & 0x4000)
             {
-                FUN_8004F490();
-                w_u32(0x800927ec, 0x80051c98);
+                menu_play_confirm_sound();
+                menu.callback = &menu_callback_scr;
             }
         }
-        else if (selected == r_u32(0x80092870))
+        else if (sel == options_menu.row[OPTION_LOAD_GAME])
         {
-            if (r_u32(edge_address) & 0x4000)
+            if (*pressed & 0x4000)
             {
-                FUN_8004F490();
-                ff_menu_load_game_80052428((uint32)i);
+                menu_play_confirm_sound();
+                card_menu_load_game(i);
             }
         }
-        else if (selected == r_u32(0x80092874))
+        else if (sel == options_menu.row[OPTION_LOAD_SETTINGS])
         {
-            if (r_u32(edge_address) & 0x4000)
+            if (*pressed & 0x4000)
             {
-                FUN_8004F490();
-                ff_menu_load_settings_80052458((uint32)i);
+                menu_play_confirm_sound();
+                card_menu_load_settings(i);
             }
         }
         else
         {
-            selected = r_u32(0x80092850);
-            if (selected == r_u32(0x80092878))
+            sel = options_menu.sel_row;
+            if (sel == options_menu.row[OPTION_SAVE_SETTINGS])
             {
-                if (r_u32(edge_address) & 0x4000)
+                if (*pressed & 0x4000)
                 {
-                    FUN_8004F490();
-                    FUN_80052484();
+                    menu_play_confirm_sound();
+                    card_menu_save_settings();
                 }
             }
-            else if (selected == r_u32(0x80092880))
+            else if (sel == options_menu.row[OPTION_SCORES])
             {
-                if (r_u32(edge_address) & 0x4000)
+                if (*pressed & 0x4000)
                 {
-                    w_u32(0x800927ec, 0x80052624);
-                    FUN_8004F490();
+                    menu.callback = &menu_callback_scores;
+                    menu_play_confirm_sound();
                 }
             }
-            else if (selected == r_u32(0x80092884))
+            else if (sel == options_menu.row[OPTION_EXIT])
             {
-                if (r_u32(edge_address) & 0x4000)
+                if (*pressed & 0x4000)
                 {
                     home();
-                    FUN_8004F490();
+                    menu_play_confirm_sound();
                 }
             }
         }
-        count = r_s32(0x800940b0);
+        count = (sint32)game_session.player_count;
         result = i + 1 < count;
     }
     return result;
+}
+
+GDB_CALL uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
+{
+    FUNCTION_MARKER(0x80062ab4u, "GAME.EXE");
+    sint32 width = val >> 2;
+    uint32 a, ux = (uint32)x, uy = y;
+    int i;
+    if (width > 0)
+    {
+        a = render_buffers.packet_addr;
+        render_buffers.packet_addr = a + 36;
+        POLY_G4 *poly = psx_addr(a, sizeof(*poly));
+        setPolyG4(poly);
+        for (i = 0; i < 4; i++)
+        {
+            poly->p[i].rgbc.r = i < 2 ? 0 : 255;
+            poly->p[i].rgbc.g = i < 2 ? 0 : 255;
+            poly->p[i].rgbc.b = i < 2 ? 255 : 0;
+        }
+        poly->p[0].xy.x = (uint16)(ux + 1);
+        poly->p[0].xy.y = (uint16)(uy + 1);
+        poly->p[1].xy.x = (uint16)(ux + 1);
+        poly->p[1].xy.y = (uint16)(uy + 5);
+        poly->p[2].xy.x = (uint16)(ux + (uint32)width + 1);
+        poly->p[2].xy.y = (uint16)(uy + 1);
+        poly->p[3].xy.x = (uint16)(ux + (uint32)width + 1);
+        poly->p[3].xy.y = (uint16)(uy + 5);
+        render_ot_insert(render_buffers.ot_addr + 8188, a);
+    }
+    a = render_buffers.packet_addr;
+    render_buffers.packet_addr = a + 24;
+    POLY_F4 *poly = psx_addr(a, sizeof(*poly));
+    setPolyF4(poly);
+    poly->rgbc.r = 0;
+    poly->rgbc.g = 0;
+    poly->rgbc.b = 0;
+    for (i = 0; i < 4; i++)
+    {
+        poly->p[i].x = (uint16)(ux + (i < 2 ? 66 : 0));
+        poly->p[i].y = (uint16)(uy + (i & 1 ? 6 : 0));
+    }
+    return render_ot_insert(render_buffers.ot_addr + 8188, a);
 }

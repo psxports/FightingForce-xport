@@ -1,455 +1,50 @@
-#include "ff.h"
-#include <stdlib.h>
-void (*ff_audit_sound_event)(uint32 address, uint32 a, uint32 b, uint32 c);
-
-/* 56F94 ignores a1: preserve the original two successive master products. */
-GDB_CALL sint32 FUN_80056F94(sint32 voice, sint32 unused, sint32 right)
-{
-    uint32 master = r_u8(0x80093d6e), attr;
-    sint32 first, second, result;
-    first = (sint32)((uint32)right * master);
-    attr = FUN_80056640();
-    second = (sint32)((uint32)(first >> 8) * master);
-    w_u32(attr + 4, 3);
-    w_u16(attr + 8, (uint16)((uint32)(first >> 8) << 6));
-    w_u32(attr, 1u << ((uint32)voice & 31));
-    w_u16(attr + 10, (uint16)((uint32)(second >> 8) << 6));
-    if (!ff_services.spu_voice_attributes)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    result = ff_services.spu_voice_attributes(attr);
-    w_u8(0x800946c0 + (uint32)voice, (uint8)(first >> 9));
-    w_u8(0x80094720 + (uint32)voice, (uint8)(second >> 9));
-    return result;
-}
-
-GDB_CALL sint32 FUN_8005703C(void)
-{
-    sint32 i, type;
-    uint32 attr;
-    for (i = 0; i < 24; i++)
-    {
-        type = r_s8(0x80094708 + (uint32)i);
-        if (type == 1)
-            FUN_800567F8(i);
-        else if (type == 2)
-        {
-            attr = FUN_80056640();
-            w_u32(attr + 4, 3);
-            w_u32(attr, 1u << i);
-            w_u16(attr + 10, 0);
-            w_u16(attr + 8, 0);
-            if (!ff_services.spu_voice_attributes)
-                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-            ff_services.spu_voice_attributes(attr);
-        }
-    }
-    return 0;
-}
-
-GDB_CALL sint32 FUN_800570F0(void)
-{
-    sint32 i, left, right;
-    for (i = 0; i < 24; i++)
-        if (r_s8(0x80094708 + (uint32)i) == 2)
-        {
-            left = r_s8(0x800946c0 + (uint32)i);
-            right = r_s8(0x80094720 + (uint32)i);
-            FUN_80056F94(i, 2 * left, 2 * right);
-        }
-    return 0;
-}
-
-#include "ff_audio.h"
-#include "platform_dummy.h"
 #include <stdlib.h>
 
-GDB_CALL sint32 FUN_800675FC(void)
-{
-    sint32 count = ff_dummy_cd_get_toc((uint8 *)psx_addr(0x80094948, 112));
-    w_u32(0x80093ba8, (uint32)count);
-    if (count <= 0)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__); /* Original67620 spins forever; fixed disc TOC is positive. */
-    return FUN_80067640(0);
-}
-
-sint32 FUN_80067640(sint32 volume)
-{
-    return ff_dummy_cd_mix((uint8)volume);
-}
-
-sint32 FUN_800569BC(sint32 volume)
-{
-    return FUN_80067640(volume);
-}
-
-sint32 FUN_80067670(sint32 asynchronous, sint32 track)
-{
-    uint8 mode = 7, status = 0;
-    sint32 result;
-    ff_dummy_cd_control(14, &mode, NULL);
-    result = ff_dummy_cd_control(3, (const uint8 *)psx_addr(0x80094948 + 4u * (uint32)track, 4), NULL);
-    w_u32(0x80093bb0, (uint32)asynchronous);
-    w_u32(0x80093bac, (uint32)track);
-    w_u32(0x80093bb4, 0);
-    if (!asynchronous)
-    {
-        do
-        {
-            while (!ff_dummy_cd_control(1, &mode, &status))
-            {
-            };
-        } while (!(status & 0x80) || (status & 0x40));
-        result = status & 0x40;
-    }
-    return result;
-}
-
-sint32 FUN_80063870(sint32 track)
-{
-    FUN_80067640(0);
-    FUN_80067670(1, track);
-    return FUN_800569BC(r_u8(0x80093d6f));
-}
-
-/* WIP dummy for729DC CD hardware reset. Native archives use host files. */
-static void ff_cd_reset_WIP(void)
-{
-}
-
-sint32 FUN_80056CCC(sint32 archive)
-{
-    uint32 i;
-    for (i = 0; i < 246; i++)
-        w_u32(0x800b6e8c - 4 * i, 0xffffffff);
-    FUN_80056BC8();
-    ff_cd_reset_WIP();
-    FUN_80061448(archive, 0x116000);
-    return ff_sound_resources_80056D2C();
-}
-
-sint32 FUN_800569DC(void)
-{
-    const uint32 a[5] = {1, 0, 0, 0, 0};
-    if (!r_u32(0x80093558))
-        return 0;
-    ff_spu_reverb_attributes_host(a);
-    return ff_spu_reverb_enable(0);
-}
-
-sint32 FUN_80056BC8(void)
-{
-    uint32 slot = FUN_80056640();
-    const uint32 common[10] = {0x2c3, 0x3fff3fff, 0, 0, 0x3fff3fff, 0, 1, 0, 0, 0};
-    FUN_800569DC();
-    FUN_8007676C();
-    ff_spu_allocation_init(2, 0x80094820);
-    ff_spu_common_startup_host(common);
-    ff_spu_transfer_mode(0);
-    ff_sound_voice_defaults_80056C30(slot);
-    return FUN_80056A18();
-}
-
-/* GAME56A18: choose stage preset, then configure output/reservation/channels. */
-sint32 FUN_80056A18(void)
-{
-    uint32 stage = r_u32(0x80093d58), table = 0x8007ffd0, a[5] = {0};
-    sint32 enabled;
-    w_u32(0x80093558, 1);
-    if (stage == 1 || stage == 2 || stage == 3 || stage == 7 || stage == 10 || stage == 11 || stage == 17)
-        table = 0x8007ffe8;
-    else if (stage == 16 || stage == 21 || stage == 24)
-        table = 0x80080000;
-    else if (stage == 12 || stage == 13 || stage == 22 || stage == 23)
-        table = 0x80080018;
-    a[0] = 0x19;
-    a[1] = r_u32(table + 12);
-    a[3] = r_u32(table + 16);
-    a[4] = r_u32(table + 20);
-    ff_spu_reverb_attributes_host(a);
-    a[0] = 6;
-    a[2] = (r_u32(table + 4) & 65535) | (r_u32(table + 8) << 16);
-    ff_spu_reverb_attributes_host(a);
-    enabled = (sint32)r_u32(table);
-    ff_spu_reverb_reserve(enabled);
-    ff_spu_reverb_enable(enabled);
-    ff_spu_reverb_channels(enabled, 0xffffff);
-    return r_u32(0x80093d58) == 17 ? FUN_80056BA0() : 17;
-}
-
-GDB_CALL sint32 FUN_80056B78(void)
-{
-    FUNCTION_MARKER(0x80056b78u, "GAME.EXE");
-    return (sint32)ff_spu_reverb_channels(1, 0xffffff);
-}
-
-sint32 FUN_80056BA0(void)
-{
-    return (sint32)ff_spu_reverb_channels(0, 0xffffff);
-}
-
-/* 56BC8:80056C30..80056CA8, after s0=3FFF/s1=1 and slot selection. */
-sint32 ff_sound_voice_defaults_80056C30(uint32 a)
-{
-    uint32 i;
-    w_u32(a + 4, 0xff1f);
-    w_u16(a + 20, 0x1000);
-    w_u32(a, 0xffffff);
-    w_u16(a + 8, 0x3fff);
-    w_u16(a + 10, 0x3fff);
-    w_u16(a + 14, 0);
-    w_u16(a + 12, 0);
-    w_u32(a + 36, 1);
-    w_u32(a + 40, 1);
-    w_u32(a + 44, 3);
-    for (i = 48; i <= 56; i += 2)
-        w_u16(a + i, 0);
-    if (!ff_services.spu_voice_attributes || !ff_services.spu_key)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    ff_services.spu_voice_attributes(a);
-    for (i = 0; i < 24; i++)
-        ff_services.spu_key(0, 1u << i);
-    /* 56C9C slti overwrites v0: the final loop condition is false. */
-    return 0;
-}
-
-/* 56CCC resource loops after voice/CD setup and archive loading */
-sint32 ff_sound_resources_80056D2C(void)
-{
-    uint32 table, name, id, size, total = 0, offset = 0, source, base;
-    sint32 first_byte;
-    for (table = 0x8007f848; r_u32(table + 4) != 0xffffffff; table += 8)
-    {
-        name = r_u32(table);
-        if (!FUN_80061140(name))
-            continue;
-        name = r_u32(table);
-        FUN_800611F8(name);
-        size = (r_u32(0x80094570) + 15) & ~15;
-        total = total - 48 + size;
-        w_u32(0x80094570, size);
-    }
-    w_u32(0x8009354c, (uint32)ff_spu_allocate_startup(total + 1024));
-    ff_spu_transfer_wait();
-    table = 0x8007f848;
-    id = r_u32(table + 4);
-    for (; id != 0xffffffff; table += 8, id = r_u32(table + 4))
-    {
-        name = r_u32(table);
-        if (!FUN_80061140(name))
-            continue;
-        name = r_u32(table);
-        source = FUN_800611F8(name);
-        size = r_u32(0x80094570);
-        base = r_u32(0x8009354c);
-        w_u32(0x800b6ab8 + 4 * id, offset);
-        size = (size + 15) & ~15;
-        w_u32(0x80094570, size);
-        ff_spu_transfer_address(base + offset);
-        size = r_u32(0x80094570);
-        ff_spu_transfer_write(source + 48, size - 48);
-        ff_spu_transfer_wait();
-        name = r_u32(table);
-        size = r_u32(0x80094570);
-        first_byte = r_s8(name);
-        offset = offset - 48 + size;
-        w_u8(0x800b6f68 + id, (first_byte == 'L' && r_s8(name + 1) == '_') ? 2 : 1);
-    }
-    return -1;
-}
-
-/* GAME.EXE:80056640. Return old slot, increment/wrap the signed ring cursor. */
-GDB_CALL uint32 FUN_80056640(void)
-{
-    uint32 old = r_u32(0x80093550), next = old + 1;
-    w_u32(0x80093550, next);
-    if ((sint32)next >= 16)
-        w_u32(0x80093550, 0);
-    return 0x800a79c8 + (old << 6);
-}
-
-/* GAME.EXE:80056F08. Products wrap before signed shifts; volume stores are SH. */
-GDB_CALL sint32 FUN_80056F08(sint32 voice, sint32 volume)
-{
-    if (ff_audit_sound_event)
-        ff_audit_sound_event(0x80056f08u, (uint32)voice, (uint32)volume, 0);
-    sint32 product = (sint32)((uint32)volume * r_u8(0x80093d6e)), result;
-    uint32 attr = FUN_80056640(), level = (uint32)(product >> 8) << 6;
-    w_u32(attr + 4, 3);
-    w_u32(attr, 1u << ((uint32)voice & 31));
-    w_u16(attr + 8, (uint16)level);
-    w_u16(attr + 10, (uint16)level);
-    if (!ff_services.spu_voice_attributes)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    result = ff_services.spu_voice_attributes(attr);
-    w_u8(0x800946c0 + (uint32)voice, (uint8)(product >> 9));
-    w_u8(0x80094720 + (uint32)voice, (uint8)(product >> 9));
-    return result;
-}
-
-/* GAME.EXE:800567F8. Delay slot explicitly passes volume=0 to 80056F08. */
-GDB_CALL sint32 FUN_800567F8(sint32 voice)
-{
-    if (ff_audit_sound_event)
-        ff_audit_sound_event(0x800567f8u, (uint32)voice, 0, 0);
-    w_u8(0x80094708 + (uint32)voice, 0);
-    FUN_80056F08(voice, 0);
-    if (!ff_services.spu_key)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    return ff_services.spu_key(0, 1u << ((uint32)voice & 31));
-}
-
-/* GAME.EXE:80056670. Voice search is the original circular allocator; reserved
- * flag 2 is skipped. The original has no termination when all voices are reserved. */
-GDB_CALL sint32 FUN_80056670(sint32 effect, sint32 volume, sint32 pitch)
-{
-    if (ff_audit_sound_event)
-        ff_audit_sound_event(0x80056670u, (uint32)effect, (uint32)volume, (uint32)pitch);
-    uint32 master = r_u8(0x80093d6e), attr = FUN_80056640(), voice, sample, sample_address;
-    do
-    {
-        voice = r_u32(0x80093554) + 1;
-        w_u32(0x80093554, voice);
-        if ((sint32)voice >= 24)
-            w_u32(0x80093554, 0);
-        voice = r_u32(0x80093554);
-    } while (r_s8(0x80094708 + voice) == 2);
-    sample_address = 0x800b6ab8 + 4u * (uint32)effect;
-    sample = r_u32(sample_address);
-    if (sample == 0xffffffffu)
-        FUN_800567F8((sint32)voice);
-    else
-    {
-        sint32 level = (sint32)((uint32)(volume >> 1) * master) >> 8;
-        sint32 scaled = (sint32)((uint32)pitch * 1536u);
-        uint32 note = (uint32)(scaled / 1024) - 1536u;
-        w_u8(0x80094708 + voice, r_u8(0x800b6f68 + (uint32)effect));
-        voice = r_u32(0x80093554);
-        w_u8(0x80094720 + voice, (uint8)level);
-        w_u8(0x800946c0 + voice, (uint8)level);
-        voice = r_u32(0x80093554);
-        w_u32(attr + 4, 227);
-        w_u16(attr + 8, (uint16)((uint32)level << 7));
-        w_u16(attr + 10, (uint16)((uint32)level << 7));
-        w_u16(attr + 24, 21584);
-        w_u16(attr + 22, (uint16)(((note << 1) & 0xffffff00u) + (note & 127)));
-        w_u32(attr, 1u << (voice & 31));
-        sample = r_u32(0x8009354c);
-        sample += r_u32(sample_address);
-        w_u32(attr + 28, sample);
-        if (!ff_services.spu_key_on_attributes)
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-        ff_services.spu_key_on_attributes(attr);
-    }
-    return (sint32)r_u32(0x80093554);
-}
+#include "game.h"
+#include "sound_device.h"
+#include "platform.h"
 
 /* Camera-relative pan and sine-table distance attenuation */
-static sint32 spatial_sound_80046884(uint32 position, const uint32 native_position[3], uint32 volume_address, uint32 pan_address, uint32 *native_volume, uint32 *native_pan)
+GDB_CALL sint32 sound_spatial(const FIXED_VEC3 *pos, uint32 *volume, uint32 *pan)
 {
+    FUNCTION_MARKER(0x80046884, "GAME.EXE");
+    /* TODO: Investigate missing native spatial-sound arguments */
+    if (!pos || !volume || !pan)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Missing native spatial sound position %p volume %p pan %p stage %u tick %u\n", (const void *)pos, (void *)volume, (void *)pan, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
     sint32 x, z, px, pz, distance, p, v;
     uint32 angle, camera_angle;
-    x = r_s16(0x8008d4a6);
-    z = r_s16(0x8008d4ae);
-    px = native_position ? (sint32)native_position[0] >> 16 : r_s16(position + 2);
-    pz = native_position ? (sint32)native_position[2] >> 16 : r_s16(position + 10);
-    angle = (uint32)FUN_8001614C(x, z, px, pz);
-    camera_angle = r_u16(0x8008d490);
-    x = r_s16(0x8008d4a6);
-    z = r_s16(0x8008d4ae);
-    px = native_position ? (sint32)native_position[0] >> 16 : r_s16(position + 2);
-    pz = native_position ? (sint32)native_position[2] >> 16 : r_s16(position + 10);
+    x = camera.pos.x.whole;
+    z = camera.pos.z.whole;
+    px = pos->x.whole;
+    pz = pos->z.whole;
+    angle = (uint32)math_dir16(x, z, px, pz);
+    camera_angle = camera.angles.yaw_bits;
+    x = camera.pos.x.whole;
+    z = camera.pos.z.whole;
+    px = pos->x.whole;
+    pz = pos->z.whole;
     angle -= camera_angle;
-    distance = FUN_800163F4(x, z, px, pz) >> 5;
+    distance = math_distance_approx(x, z, px, pz) >> 5;
     if (distance >= 512)
         distance = 511;
-    p = 127 - ((sint16)r_u16(0x800802d0 + ((angle >> 4) & 0xffe)) >> 9);
+    p = 127 - (sin_table[((angle >> 4) & 0xffe) >> 1] >> 9);
     if (p < 0)
         p = 0;
     else if ((sint16)p >= 256)
         p = 255;
-    if (native_pan)
-        *native_pan = (uint32)(sint32)(sint16)p;
-    else
-        w_u32(pan_address, (uint32)(sint32)(sint16)p);
-    v = (r_u16(0x800802d0 + 2 * (511 - distance)) >> 7) & 255;
-    if (native_volume)
-        *native_volume = (uint32)v;
-    else
-        w_u32(volume_address, (uint32)v);
+    *pan = (uint32)(sint32)(sint16)p;
+    v = (sin_table[511 - distance] >> 7) & 255;
+    *volume = (uint32)v;
     return v;
 }
 
-GDB_CALL sint32 ff_spatial_sound_80046884(uint32 position, uint32 *volume, uint32 *pan)
-{
-    return spatial_sound_80046884(position, NULL, 0, 0, volume, pan);
-}
-
-GDB_CALL sint32 ff_stack_spatial_sound_80046884(const uint32 position[3], uint32 volume, uint32 pan)
-{
-    return spatial_sound_80046884(0, position, volume, pan, NULL, NULL);
-}
-
-GDB_CALL sint32 FUN_80046884(uint32 position, uint32 volume, uint32 pan)
-{
-    return spatial_sound_80046884(position, NULL, volume, pan, NULL, NULL);
-}
-
-/* 800568C8: wrapped signed products, cached channel levels and SPU attributes. */
-GDB_CALL sint32 FUN_800568C8(sint32 voice, sint32 volume, sint32 pan)
-{
-    if (ff_audit_sound_event)
-        ff_audit_sound_event(0x800568c8u, (uint32)voice, (uint32)volume, (uint32)pan);
-    uint32 master = r_u8(0x80093d6e), attr = FUN_80056640(), index = (uint32)pan << 3;
-    sint32 left = (sint32)((uint32)(sint32)r_s16(0x800802d0 + index) * (uint32)volume) >> 15;
-    sint32 right = (sint32)((uint32)(sint32)r_s16(0x800806d0 + index) * (uint32)volume) >> 15;
-    left = (sint32)((uint32)left * master) >> 8;
-    right = (sint32)((uint32)right * master) >> 8;
-    w_u8(0x800946c0 + (uint32)voice, (uint8)left);
-    w_u8(0x80094720 + (uint32)voice, (uint8)right);
-    w_u32(attr + 4, 3);
-    w_u32(attr, 1u << ((uint32)voice & 31));
-    w_u16(attr + 8, (uint16)((uint32)left << 6));
-    w_u16(attr + 10, (uint16)((uint32)right << 6));
-    if (!ff_services.spu_voice_attributes)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    return ff_services.spu_voice_attributes(attr);
-}
-
-/* Orbiting scene object and its two spatial sound channels */
-GDB_CALL sint32 FUN_80043520(uint32 object)
-{
-    uint32 angle, increment, value, spatial_volume, pan;
-    sint32 volume, voice;
-    angle = r_u16(object + 18);
-    increment = (uint32)(sint32)r_s16(0x800802d0 + 2 * (angle >> 5)) << 8;
-    value = r_u32(object + 8);
-    w_u32(object + 8, value + increment);
-    angle = r_u16(object + 18);
-    increment = (uint32)(sint32)r_s16(0x800802d0 + 2 * ((((sint16)angle >> 5) + 512) & 2047)) << 8;
-    value = r_u32(object + 12);
-    w_u32(object + 12, value - increment);
-    angle = r_u16(object + 18);
-    increment = (uint32)(sint32)r_s16(0x800802d0 + 2 * (angle >> 5)) << 6;
-    value = r_u32(object + 4);
-    w_u32(object + 4, value + increment);
-    angle = r_u16(object + 18);
-    w_u16(object + 18, (uint16)(angle - 128));
-    w_u16(object + 20, 2048);
-    ff_spatial_sound_80046884(object + 4, &spatial_volume, &pan);
-    voice = (sint32)r_u32(0x80092738);
-    FUN_800568C8(voice, (sint32)spatial_volume, (sint32)pan);
-    ff_spatial_sound_80046884(object + 4, &spatial_volume, &pan);
-    volume = (sint32)((spatial_volume - 128) << 1);
-    if (volume < 0)
-        volume = 0;
-    voice = (sint32)r_u32(0x80092744);
-    return FUN_800568C8(voice, volume, (sint32)pan);
-}
-
 /* 293D8 selection prefix. Keep RNG calls separate and ordered before56670. */
-GDB_CALL void ff_pain_sound_parameters_800293D8(sint32 index, sint32 parameters[3])
+GDB_CALL void sound_pain_parameters(sint32 idx, sint32 parameters[3])
 {
-    sint32 type = r_s16(0x800b434c + 244u * (uint32)index), effect;
+    sint32 type = actor_types[(uint32)idx], effect;
     switch (type)
     {
         case 0:
@@ -460,17 +55,17 @@ GDB_CALL void ff_pain_sound_parameters_800293D8(sint32 index, sint32 parameters[
         case 29:
         case 30:
         case 38:
-            effect = 64 + (ff_rand_8006D348() & 1);
+            effect = 64 + (random_next() & 1);
             break;
         case 2:
         case 49:
             effect = 84;
             break;
         case 3:
-            effect = 99 + (ff_rand_8006D348() & 1);
+            effect = 99 + (random_next() & 1);
             break;
         case 48:
-            effect = 190 + (ff_rand_8006D348() & 1);
+            effect = 190 + (random_next() & 1);
             break;
         case 32:
             effect = 159;
@@ -479,31 +74,276 @@ GDB_CALL void ff_pain_sound_parameters_800293D8(sint32 index, sint32 parameters[
             effect = 208;
             break;
         default:
-            effect = (sint32)ff_rand_8006D348() % 3 + 9;
+            effect = (sint32)random_next() % 3 + 9;
             break;
     }
     parameters[0] = effect;
-    parameters[1] = 255 - (ff_rand_8006D348() & 63);
-    parameters[2] = 5952 + (ff_rand_8006D348() & 255);
+    parameters[1] = 255 - (random_next() & 63);
+    parameters[2] = 5952 + (random_next() & 255);
 }
 
-GDB_CALL sint32 FUN_800293D8(sint32 index)
+GDB_CALL sint32 sound_play_pain(sint32 idx)
 {
+    FUNCTION_MARKER(0x800293d8u, "GAME.EXE");
     sint32 p[3];
-    ff_pain_sound_parameters_800293D8(index, p);
-    return FUN_80056670(p[0], p[1], p[2]);
+    sound_pain_parameters(idx, p);
+    return sound_voice_play(p[0], p[1], p[2]);
 }
 
-/* 56840: voice pitch attribute; signed division after wrapped multiply. */
-GDB_CALL sint32 FUN_80056840(sint32 voice, sint32 pitch)
+GDB_CALL uint32 sound_volume_adjust(uint32 val, sint32 delta)
 {
-    FUNCTION_MARKER(0x80056840u, "GAME.EXE");
-    uint32 attr = FUN_80056640();
-    uint32 note = (uint32)((sint32)((uint32)pitch * 1536u) / 1024) - 1536u;
-    w_u32(attr, 1u << ((uint32)voice & 31));
-    w_u32(attr + 4, 32);
-    w_u16(attr + 22, (uint16)(((note << 1) & 0xffffff00u) + (note & 127)));
-    if (!ff_services.spu_voice_attributes)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    return ff_services.spu_voice_attributes(attr);
+    FUNCTION_MARKER(0x80042820u, "GAME.EXE");
+    /* Preserve volume-word wrapping before signed saturation */
+    sint32 sum = val + delta;
+    return sum <= 0 ? 0u : sum < 255 ? (uint32)sum : 255u;
+}
+
+GDB_CALL sint32 sound_play_attack_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x80029944u, "GAME.EXE");
+    sint32 kind = actor_types[(uint32)idx], sound = 51, pitch = 6144;
+    switch (kind)
+    {
+        case 1:
+        case 12:
+        case 48:
+        case 29:
+        case 30:
+        case 38:
+            sound = 66;
+            break;
+        case 2:
+        case 49:
+            sound = 81;
+            break;
+        case 3:
+            sound = 102;
+            break;
+        case 32:
+            sound = 164;
+            break;
+        case 14:
+            sound = 81;
+            pitch = 5888;
+            break;
+    }
+    return sound_voice_play(sound, 255, pitch - (sint32)(random_next() & 255u));
+}
+
+GDB_CALL sint32 sound_play_heavy_hit_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x80029a40u, "GAME.EXE");
+    sint32 kind = actor_types[(uint32)idx], sample, pitch = 6144;
+    switch (kind)
+    {
+        case 32:
+        case 50:
+            sample = 163;
+            break;
+        case 48:
+            sample = 194;
+            break;
+        case 49:
+            sample = 175;
+            break;
+        case 14:
+            sample = 207;
+            pitch = 5632;
+            break;
+        default:
+            return 14;
+    }
+    return sound_voice_play(sample, 255, pitch - (sint32)(random_next() & 255u));
+}
+
+GDB_CALL sint32 sound_play_chord(void)
+{
+    FUNCTION_MARKER(0x800149ecu, "GAME.EXE");
+    sound_voice_play(46, 255, 7168);
+    sound_voice_play(46, 255, 6912);
+    return sound_voice_play(46, 255, 6656);
+}
+
+GDB_CALL sint32 sound_play_action_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x8002976cu, "GAME.EXE");
+    sint32 type = actor_types[(uint32)idx], sample = 38;
+    switch (type)
+    {
+        case 1:
+        case 12:
+        case 29:
+        case 30:
+        case 38:
+            sample = 62;
+            break;
+        case 2:
+        case 14:
+        case 32:
+        case 49:
+            sample = 79;
+            break;
+        case 3:
+            sample = 98;
+            break;
+        case 48:
+            sample = 189;
+            break;
+    }
+    return sound_voice_play(sample, 255, 6144 - (sint32)(random_next() & 255u));
+}
+
+GDB_CALL sint32 sound_play_strike_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x80052878u, "GAME.EXE");
+    sint32 type = actor_types[(uint32)idx], sample;
+    if (type == 49)
+        sample = 177;
+    else if (type == 14)
+        sample = 210;
+    else
+        sample = (type == 32 ? 76 : 33) + (sint32)random_next() % 3;
+    return sound_voice_play(sample, 255, 6144);
+}
+
+GDB_CALL uint32 sound_play_death_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x80029530u, "GAME.EXE");
+    sint32 type = actor_types[(uint32)idx], sound, pitch = 5952;
+    sint32 volume = 192 - (sint32)(random_next() & 63u);
+    switch (type)
+    {
+        case 0:
+            sound = 42;
+            break;
+        case 1:
+            sound = 69;
+            break;
+        case 2:
+            sound = 82;
+            break;
+        case 3:
+            sound = 104;
+            break;
+        case 48:
+            sound = 193;
+            break;
+        case 12:
+        case 29:
+        case 30:
+        case 38:
+            sound = 14;
+            break;
+        case 49:
+        case 50:
+            sound = 174;
+            volume = 255;
+            break;
+        case 32:
+            sound = 160;
+            volume = 255;
+            break;
+        case 14:
+            sound = 174;
+            volume = 255;
+            pitch = 5696;
+            break;
+        default:
+            sound = (sint32)(random_next() & 1u) + 12;
+            break;
+    }
+    pitch += (sint32)(random_next() & 255u);
+    return sound_voice_play(sound, volume, pitch);
+}
+
+GDB_CALL uint32 sound_play_hit_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x80029684u, "GAME.EXE");
+    sint32 type = actor_types[(uint32)idx], sound = 50;
+    switch (type)
+    {
+        case 1:
+        case 12:
+        case 48:
+        case 29:
+        case 30:
+        case 38:
+            sound = 68;
+            break;
+        case 3:
+            sound = 101;
+            break;
+        case 49:
+            sound = 168;
+            break;
+        case 14:
+            sound = 209;
+            break;
+    }
+    return sound_voice_play(sound, 255, 6144 - (sint32)(random_next() & 255u));
+}
+
+GDB_CALL sint32 sound_play_effort_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x800292f8u, "GAME.EXE");
+    sint32 type = actor_types[(uint32)idx], sound = 47, pitch = 6144;
+    switch (type)
+    {
+        case 1:
+        case 12:
+        case 29:
+        case 30:
+        case 38:
+            sound = 67;
+            break;
+        case 2:
+        case 32:
+            sound = 83;
+            break;
+        case 3:
+            sound = 103;
+            break;
+        case 48:
+            sound = 195;
+            break;
+        case 49:
+            sound = 176;
+            break;
+        case 14:
+            sound = 83;
+            pitch = 5888;
+            break;
+    }
+    return sound_voice_play(sound, 255, pitch);
+}
+
+GDB_CALL sint32 sound_play_ground_voice(sint32 idx)
+{
+    FUNCTION_MARKER(0x80029854u, "GAME.EXE");
+    sint32 type = actor_types[(uint32)idx], sample = 39;
+    switch (type)
+    {
+        case 1:
+        case 3:
+        case 12:
+        case 29:
+        case 30:
+        case 38:
+            sample = 63;
+            break;
+        case 2:
+        case 14:
+            sample = 80;
+            break;
+        case 48:
+            sample = 197;
+            break;
+        case 32:
+            sample = 165;
+            break;
+        case 49:
+            sample = 173;
+            break;
+    }
+    return sound_voice_play(sample, 255, 6144 - (sint32)(random_next() & 255u));
 }

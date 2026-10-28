@@ -1,147 +1,313 @@
-#include "ff.h"
 #include <stdio.h>
-#include <string.h>
 
-/* GAME.EXE:8004F4B8. Return one only if the candidate is absent. */
-GDB_CALL sint32 FUN_8004F4B8(sint32 candidate, uint32 selected, sint32 count)
+#include "game.h"
+
+static const char pair_names_french[] = "%s ET %s";
+static const char pair_names_german[] = "%s UND %s";
+static const char pair_names_english[] = "%s AND %s";
+
+CHARACTER_MENU character_menu;
+const CHARACTER_MENU character_menu_defaults = {{1, 2}, 0, 0, 0, 0, 0, 0};
+const uint32 character_menu_types[CHARACTER_MENU_ACTOR_COUNT] = {3, 0, 1, 2};
+
+/* Return one only if the candidate is absent */
+static sint32 character_menu_available(sint32 candidate, const uint32 *sel, sint32 count)
 {
+    FUNCTION_MARKER(0x8004f4b8, "GAME.EXE");
     sint32 i;
     for (i = 0; i < count; i++)
-        if (r_u32(selected + 4u * i) == (uint32)candidate)
+        if (sel[i] == (uint32)candidate)
             return 0;
     return 1;
 }
 
-static uint32 actor_name(uint32 selection)
-{
-    return r_u32(0x800b6e90u + 4u * (uint32)(sint32)r_s16(0x800b434c + 244u * selection));
-}
-
 /* Original stack-local name string stays local through packet emission */
-static void draw_pair_names(uint32 format, uint32 first, uint32 second)
+static void draw_pair_names(const char *format, const char *name0, const char *name1)
 {
     char buffer[72];
-    snprintf(buffer, 72, (const char *)psx_addr(format, 1), (const char *)psx_addr(first, 1), (const char *)psx_addr(second, 1));
-    text_center_host(buffer, 50);
+    snprintf(buffer, 72, format, name0, name1);
+    text_center(buffer, 50);
 }
 
-/* GAME.EXE:80050798. Character selection callback. Cancel resets ready bits but
- * intentionally does not return early: further same-frame input still executes. */
-GDB_CALL sint32 FUN_80050798(void)
+/* Cancel clears ready bits but keeps processing same-frame input */
+GDB_CALL sint32 character_menu_update(void)
 {
+    FUNCTION_MARKER(0x80050798, "GAME.EXE");
     sint32 i;
-    uint32 second, first, available, players, ready;
-    second = r_u32(0x80092780);
-    first = r_u32(0x8009277c);
-    if (second == first)
-        w_u32(0x80092780, (second + 1) & 3);
-    FUN_80061ADC(r_u32(0x8009469c), 214);
-    FUN_8005EC90();
-    available = r_u32(0x8009400c);
-    players = r_u32(0x80092784);
-    w_u32(0x800940b0, available);
+    uint32 actor1, actor0, available, players, ready;
+    actor1 = character_menu.sel[1];
+    actor0 = character_menu.sel[0];
+    if (actor1 == actor0)
+        character_menu.sel[1] = (actor1 + 1) & 3;
+    text_center(localization.hint[TEXT_HINT_MOVE_CHOOSE_BACK], 214);
+    pad_refresh_ports();
+    available = pad_decode.count;
+    players = character_menu.player_count;
+    game_session.player_count = available;
     if ((sint32)available < (sint32)players)
     {
-        w_u32(0x800927ec, 0x80050270);
-        FUN_8004F980((uint32 *)psx_addr(0x80092720, 12), 0, -12032);
-        return FUN_8004F490();
+        menu.callback = &menu_callback_main;
+        camera_capture(camera_menu_dst.bits, 0, -12032);
+        return menu_play_confirm_sound();
     }
     if (players == 1)
     {
-        FUN_80061ADC(r_u32(0x80092510), 28);
-        FUN_80061ADC(actor_name(r_u32(0x8009277c)), 50);
+        text_center(localization.text[LOCAL_TEXT_SELECT_FIGHTER], 28);
+        uint32 sel_idx = character_menu.sel[0];
+        sint32 type = actor_types[sel_idx];
+        if (type < 0 || type >= CHARACTER_NAME_TYPE_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        text_center(character_name_text(character_name_types[type]), 50);
     }
     else
     {
-        uint32 language, format, first_type, second_type, first_name, second_name;
-        FUN_80061ADC(r_u32(0x80092514), 28);
-        language = r_u32(0x80093d70);
-        format = language == 1 ? 0x80092828 : language == 2 ? 0x80092834 : 0x80092840;
-        first = r_u32(0x8009277c);
-        second = r_u32(0x80092780);
-        first_type = (uint32)(sint32)r_s16(0x800b434c + 244 * first);
-        second_type = (uint32)(sint32)r_s16(0x800b434c + 244 * second);
-        first_name = r_u32(0x800b6e90 + 4 * first_type);
-        second_name = r_u32(0x800b6e90 + 4 * second_type);
-        draw_pair_names(format, first_name, second_name);
+        uint32 language, type0, type1;
+        const char *format, *name0, *name1;
+        text_center(localization.text[LOCAL_TEXT_SELECT_FIGHTERS], 28);
+        language = game_settings.language;
+        format = language == 1 ? pair_names_french : language == 2 ? pair_names_german : pair_names_english;
+        actor0 = character_menu.sel[0];
+        actor1 = character_menu.sel[1];
+        type0 = (uint32)actor_types[actor0];
+        type1 = (uint32)actor_types[actor1];
+        if (type0 >= CHARACTER_NAME_TYPE_COUNT || type1 >= CHARACTER_NAME_TYPE_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        name0 = character_name_text(character_name_types[type0]);
+        name1 = character_name_text(character_name_types[type1]);
+        draw_pair_names(format, name0, name1);
     }
-    for (i = 0; i < (sint32)r_u32(0x80092784); i++)
+    for (i = 0; i < (sint32)character_menu.player_count; i++)
     {
-        uint32 raw = (uint32)FUN_8005F5AC((sint32)r_u32(0x80094288 + 4u * i)), edge = 0x80092798 + 4u * i, selected = 0x8009277c + 4u * i, cancel;
-        w_u32(edge, (raw ^ r_u32(0x80092790 + 4u * i)) & raw);
-        w_u32(0x80092790 + 4u * i, raw);
-        cancel = r_u32(edge);
-        w_u32(0x800927a0, raw);
+        uint32 raw = (uint32)pad_decode_buttons(pad_game.port[i]), cancel;
+        uint32 *sel = character_menu.sel + i;
+        uint32 *edge = &pad_menu.pressed[i];
+        *edge = (raw ^ pad_menu.prev[i]) & raw;
+        pad_menu.prev[i] = raw;
+        cancel = *edge;
+        pad_menu.last_raw = raw;
         if (cancel & 0x1000)
         {
-            w_u32(0x800927ec, 0x80050270);
-            w_u32(0x8009272c, 0);
-            FUN_8004F980((uint32 *)psx_addr(0x80092720, 12), 0, -12032);
-            FUN_8004F490();
+            menu.callback = &menu_callback_main;
+            character_menu.ready_mask = 0;
+            camera_capture(camera_menu_dst.bits, 0, -12032);
+            menu_play_confirm_sound();
         }
-        if (!((r_u32(0x8009272c) >> ((uint32)i & 31)) & 1))
+        if (!((character_menu.ready_mask >> ((uint32)i & 31)) & 1))
         {
-            if (r_u32(edge) & 0x80)
+            if (*edge & 0x80)
             {
-                sint32 selected_value = r_s32(selected);
-                sint32 candidate = (sint32)((uint32)selected_value - 1);
-                if (selected_value <= 0)
+                sint32 sel_val = (sint32)*sel;
+                sint32 candidate = (sint32)((uint32)sel_val - 1);
+                if (sel_val <= 0)
                     goto select_next;
                 for (; candidate >= 0; candidate--)
-                    if (FUN_8004F4B8(candidate, 0x8009277c, (sint32)r_u32(0x80092784)))
+                    if (character_menu_available(candidate, character_menu.sel, (sint32)character_menu.player_count))
                     {
-                        w_u32(selected, (uint32)candidate);
-                        FUN_8004FA10();
-                        FUN_8004F468();
+                        *sel = (uint32)candidate;
+                        camera_orbit();
+                        menu_play_move_sound();
                         break;
                     }
                 if (candidate == -1)
-                    ff_menu_effect(5, 223);
+                    menu_play_effect(5, 223);
             }
         select_next:
-            if (r_u32(edge) & 0x20)
+            if (*edge & 0x20)
             {
-                sint32 selected_value = r_s32(selected);
-                sint32 candidate = (sint32)((uint32)selected_value + 1);
-                if (selected_value >= 3)
+                sint32 sel_val = (sint32)*sel;
+                sint32 candidate = (sint32)((uint32)sel_val + 1);
+                if (sel_val >= 3)
                     goto select_confirm;
                 for (; candidate < 4; candidate++)
-                    if (FUN_8004F4B8(candidate, 0x8009277c, (sint32)r_u32(0x80092784)))
+                    if (character_menu_available(candidate, character_menu.sel, (sint32)character_menu.player_count))
                     {
-                        w_u32(selected, (uint32)candidate);
-                        FUN_8004FA10();
-                        FUN_8004F468();
+                        *sel = (uint32)candidate;
+                        camera_orbit();
+                        menu_play_move_sound();
                         break;
                     }
                 if (candidate == 4)
-                    ff_menu_effect(5, 223);
+                    menu_play_effect(5, 223);
             }
         select_confirm:
-            if (r_u32(edge) & 0x4000)
+            if (*edge & 0x4000)
             {
-                FUN_8004F490();
-                players = r_u32(0x80092784);
-                ready = r_u32(0x8009272c);
-                w_u32(0x800940b0, players);
-                w_u32(0x8009272c, ready | (1u << ((uint32)i & 31)));
+                menu_play_confirm_sound();
+                players = character_menu.player_count;
+                ready = character_menu.ready_mask;
+                game_session.player_count = players;
+                character_menu.ready_mask = ready | (1u << ((uint32)i & 31));
             }
         }
     }
-    players = r_u32(0x80092784);
+    players = character_menu.player_count;
     if (players == 1)
     {
-        ready = r_u32(0x8009272c);
+        ready = character_menu.ready_mask;
         if (ready == players)
         {
-            w_u32(0x80092788, ready);
-            players = r_u32(0x80092784);
+            character_menu.confirmed = ready;
+            players = character_menu.player_count;
         }
     }
     if (players == 2)
     {
-        if (r_u32(0x8009272c) == 3)
-            w_u32(0x80092788, 1);
+        if (character_menu.ready_mask == 3)
+            character_menu.confirmed = 1;
         return 1;
     }
     return 3;
+}
+
+/* Draw four menu actors, their shadows and selected-player rings */
+GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
+{
+    FUNCTION_MARKER(0x80058e24, "GAME.EXE");
+    uint32 i, phase, fade, actor_x, actor_y, actor_z;
+    uint32 camera_x, camera_y, camera_z, height, b, g;
+    int slot, changed;
+    sint32 r, val, type;
+    if (camera.angles.pitch >= 4097)
+        return 0;
+    transform_identity();
+    transform_pitch(camera.angles.pitch);
+    transform_yaw(camera.angles.yaw);
+    character_menu.pulse_phase = (character_menu.pulse_phase + 64) & 2047;
+    for (i = 0; i < 4; i++)
+    {
+        ACTOR_LIGHTING *light = actor_lighting + i;
+        ACTOR_FRAME_MOTION *motion = &actor_animations[i].motion;
+        const FIXED_VEC3 *pos = actor_positions + i;
+        const ACTOR_ORIENTATION *orientation = actor_orientation + i;
+        changed = 0;
+        slot = players > 0 && i == sel[0] ? 0 : players >= 2 && i == sel[1] ? 1 : -1;
+        if (slot >= 0)
+        {
+            if (!(character_menu.ready_mask & (1u << slot)))
+            {
+                phase = character_menu.pulse_phase;
+                val = sin_table[phase] >> 10;
+                changed = 1;
+                light->b = val;
+                light->g = val;
+                light->r = val;
+            }
+            else
+            {
+                r = light->r;
+                if (r < 32)
+                {
+                    val = (sint8)(r + 4);
+                    light->r = val;
+                    if (val > 32)
+                        light->r = 32;
+                    val = (uint8)light->r;
+                    light->b = val;
+                    light->g = val;
+                    changed = 1;
+                }
+            }
+        }
+        else
+        {
+            fade = character_menu.fade_tick;
+            if (fade)
+            {
+                fade <<= 2;
+                val = (sint32)fade >= 129 ? -128 : (sint32)(0u - fade);
+                light->b = val;
+                light->g = val;
+                light->r = val;
+                changed = 1;
+            }
+            else
+            {
+                r = light->r;
+                if (r > 0)
+                {
+                    light->r = r - 1;
+                    --light->g;
+                    --light->b;
+                    light->flags |= 1;
+                    r = light->r;
+                }
+                if (r < 0)
+                {
+                    light->r = r + 1;
+                    ++light->g;
+                    ++light->b;
+                    changed = 1;
+                }
+            }
+        }
+        if (changed)
+            light->flags |= 1;
+        transform_push();
+        actor_x = pos->x.bits;
+        camera_x = camera.pos.x.bits;
+        type = actor_types[i];
+        actor_y = pos->y.bits;
+        height = model_height[(uint32)type];
+        camera_y = camera.pos.y.bits;
+        actor_z = pos->z.bits;
+        camera_z = camera.pos.z.bits;
+        transform_translate(actor_x - camera_x, actor_y + height - camera_y, actor_z - camera_z);
+        transform_yaw((sint16)(0u - 32u * (uint32)(sint32)orientation->yaw) + 32768);
+        actor_y = motion->bits[0];
+        actor_z = motion->forward_offset_bits;
+        transform_translate(0, actor_y, actor_z);
+        b = light->b + 128;
+        g = light->g + 128;
+        r = light->r;
+        render_style.color.rgbc = 0x2c000000u + (uint32)(r + 128) + (g << 8) + (b << 16);
+        render_style.blend_mode = 0;
+        model_draw_pose(model_refs[(sint32)actor_types[i]], &actor_poses[i]);
+        transform_pop();
+        transform_push();
+        actor_x = pos->x.bits;
+        camera_x = camera.pos.x.bits;
+        camera_y = camera.pos.y.bits;
+        actor_z = pos->z.bits;
+        camera_z = camera.pos.z.bits;
+        transform_translate(actor_x - camera_x, 0u - camera_y, actor_z - camera_z);
+        transform_pitch(32768);
+        transform_yaw((sint16)(32u * (uint32)(sint32)orientation->yaw));
+        model_draw_menu(model_refs[860], 0, 0);
+        transform_pop();
+        character_menu.ring_phase = (character_menu.ring_phase + 8) & 2047;
+        slot = players > 0 && i == sel[0] ? 0 : players >= 2 && i == sel[1] ? 1 : -1;
+        if (slot >= 0)
+        {
+            transform_push();
+            actor_x = pos->x.bits;
+            camera_x = camera.pos.x.bits;
+            camera_y = camera.pos.y.bits;
+            actor_z = pos->z.bits;
+            camera_z = camera.pos.z.bits;
+            transform_translate(actor_x - camera_x, 0u - camera_y, actor_z - camera_z);
+            transform_pitch(32768);
+            transform_yaw((sint16)(32u * character_menu.ring_phase));
+            model_draw_menu(model_refs[slot == 0 ? 887 : 888], 0, 0);
+            transform_pop();
+        }
+    }
+    return 0;
+}
+
+/* Advance all four menu actors independently of the selected player count */
+GDB_CALL sint32 character_menu_advance_actors(void)
+{
+    FUNCTION_MARKER(0x80050cc8, "GAME.EXE");
+    sint32 i;
+    for (i = 0; i < CHARACTER_MENU_ACTOR_COUNT; i++)
+    {
+        ACTOR_ANIMATION *playback = actor_animations + i;
+        if (playback->src.kind == ACTOR_ANIMATION_SOURCE_NONE)
+            playback->frame = 0xffffffffu;
+        if (playback->frame == 0xffffffffu)
+            animation_start(i, animation_type_banks[(uint32)actor_types[i]], 69);
+        if (playback->frame != 0xffffffffu)
+            animation_update_motion(i);
+    }
+    return 0;
 }

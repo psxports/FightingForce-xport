@@ -1,340 +1,437 @@
-#include "ff.h"
-#include "psx.h"
+#include <stdlib.h>
 #include <string.h>
 
-/* 5F558: raw gameplay buttons; the first mapping wins if both IDs match. */
-GDB_CALL uint32 FUN_8005F558(uint32 controller)
+#include "game.h"
+#include "psx.h"
+
+PAD_GAME_STATE pad_game;
+PAD_STREAM_STATE pad_stream;
+
+DEMO_STATE demo;
+RESOURCE_FILE demo_file;
+const DEMO_STATE demo_defaults = {0, 0xffffffffu, DEMO_COUNT};
+
+const DEMO_CONFIG demo_config[DEMO_COUNT] = {
+    {0, 0, {0, 0xffffffffu}, 110},
+    {0, 2, {1, 0xffffffffu}, 111},
+    {0, 9, {3, 0xffffffffu}, 112},
+    {0, 10, {2, 0xffffffffu}, 113},
+};
+
+typedef char PAD_INPUT_LAYOUT_CHECK[sizeof(PAD_INPUT_STREAM) == 8 && offsetof(PAD_INPUT_STREAM, frame) == 8 && sizeof(PAD_INPUT_FRAME) == 8 ? 1 : -1];
+
+GDB_CALL uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len)
 {
-    uint32 value;
-    if (controller == r_u32(0x80094288))
-        value = r_u32(0x80093a10);
-    else if (controller == r_u32(0x8009428c))
-        value = r_u32(0x80093a14);
+    FUNCTION_MARKER(0x8005f058, "GAME.EXE");
+    if (!data || ((uintptr_t)data & 3u) || byte_len < sizeof(*data))
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    pad_stream.mode = PAD_STREAM_PLAY;
+    pad_stream.data = data;
+    pad_stream.capacity = (byte_len - sizeof(*data)) / sizeof(PAD_INPUT_FRAME);
+    random_seed = data->seed;
+    if (pad_stream.data->count > pad_stream.capacity + 1)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    pad_stream.count = pad_stream.data->count;
+    pad_stream.cursor = 1;
+    return pad_stream.count;
+}
+
+GDB_CALL void pad_stream_disable(void)
+{
+    FUNCTION_MARKER(0x8005f0c8, "GAME.EXE");
+    pad_stream.mode = PAD_STREAM_LIVE;
+}
+
+GDB_CALL uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len)
+{
+    FUNCTION_MARKER(0x8005f0d8, "GAME.EXE");
+    uint32 random;
+    if (!data || ((uintptr_t)data & 3u) || byte_len < sizeof(*data))
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    pad_stream.mode = PAD_STREAM_RECORD;
+    pad_stream.data = data;
+    pad_stream.capacity = (byte_len - sizeof(*data)) / sizeof(PAD_INPUT_FRAME);
+    data->count = 0;
+    do
+    {
+        random = random_next() & 65535u;
+        pad_stream.data->seed = random;
+    } while (!pad_stream.data->seed);
+    random_seed = pad_stream.data->seed;
+    pad_stream.count = 1;
+    pad_stream.cursor = 1;
+    return 1;
+}
+
+GDB_CALL void pad_stream_reset(void)
+{
+    FUNCTION_MARKER(0x8005f214, "GAME.EXE");
+    pad_stream.mode = PAD_STREAM_LIVE;
+    pad_stream.cursor = 0;
+    pad_stream.count = 0;
+}
+
+/* 5F558: raw gameplay buttons; the first mapping wins if both IDs match. */
+GDB_CALL uint32 pad_game_buttons(uint32 pad)
+{
+    FUNCTION_MARKER(0x8005f558, "GAME.EXE");
+    uint32 val;
+    if (pad == pad_game.port[0])
+        val = pad_game.sample[0];
+    else if (pad == pad_game.port[1])
+        val = pad_game.sample[1];
     else
         return 0;
-    w_u8(0x80094114, (uint8)(value >> 16));
-    return value & 65535;
+    pad_decode.type = (uint8)(val >> 16);
+    return val & 65535;
 }
 
-static uint32 gameplay_action_address(uint32 player, uint32 mapping)
+/* Original normal, recording and playback input paths */
+GDB_CALL uint32 pad_game_poll(void)
 {
-    sint32 config = r_s8(0x80094480 + player);
-    sint32 action = r_s8(mapping + 6u * (uint32)config);
-    return 0x80094100 + 6u * player + (uint32)action;
-}
-
-/* 5F8F0: decay six action bytes, then latch new face-button edges for12 ticks.
- * Preserve write order and the original address-or-zero return register. */
-GDB_CALL uint32 FUN_8005F8F0(uint32 player, uint32 buttons)
-{
-    uint32 base = 0x80094100 + 6u * player, i, address;
-    uint8 value;
-    for (i = 0; i < 6; i++)
+    FUNCTION_MARKER(0x8005f23c, "GAME.EXE");
+    if (game_services.audit_input_event)
+        game_services.audit_input_event(1);
+    uint32 val, mode, idx, count;
+    mode = pad_stream.mode;
+    if (mode == PAD_STREAM_RECORD)
     {
-        value = r_u8(base + i);
-        if (value)
-            w_u8(base + i, (uint8)(value - 1));
+        val = (uint16)pad_decode_buttons(pad_game.port[0]);
+        pad_game.sample[0] = val;
+        pad_game.sample[0] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+        val = (uint16)pad_decode_buttons(pad_game.port[1]);
+        pad_game.sample[1] = val;
+        pad_game.sample[1] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+        idx = pad_stream.count;
+        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        val = pad_game.sample[0];
+        pad_stream.data->frame[idx - 1].sample[0] = val;
+        idx = pad_stream.count;
+        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        val = pad_game.sample[1];
+        pad_stream.data->frame[idx - 1].sample[1] = val;
+        val = pad_stream.count + 1;
+        pad_stream.count = val;
+        return val;
+    }
+    if (mode == PAD_STREAM_PLAY)
+    {
+        count = pad_stream.count;
+        idx = pad_stream.cursor;
+        if ((sint32)idx >= (sint32)(count - 1))
+        {
+            pad_game.sample[0] = 0;
+            pad_game.sample[1] = 0;
+            goto playback_exit;
+        }
+        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        val = pad_stream.data->frame[idx - 1].sample[0];
+        pad_game.sample[0] = val;
+        idx = pad_stream.cursor;
+        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        val = pad_stream.data->frame[idx - 1].sample[1];
+        pad_game.sample[1] = val;
+        pad_stream.cursor = pad_stream.cursor + 1;
+        if ((uint16)pad_decode_buttons(pad_game.port[0]))
+            goto playback_exit;
+        val = (uint16)pad_decode_buttons(pad_game.port[1]);
+        if (val)
+            goto playback_exit;
+        return val;
+    }
+    pad_decode.reset_blocked = (uint8)(actor_types[0] == ACTOR_TYPE_NONE || actor_health[0].hp <= 0);
+    val = (uint16)pad_decode_buttons(pad_game.port[0]);
+    pad_game.sample[0] = val;
+    pad_game.sample[0] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+    pad_decode.reset_blocked = (uint8)((sint32)game_session.player_count < 2 || actor_types[1] == ACTOR_TYPE_NONE || actor_health[1].hp <= 0);
+    val = (uint16)pad_decode_buttons(pad_game.port[1]);
+    pad_game.sample[1] = val;
+    pad_game.sample[1] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+    pad_decode.reset_blocked = 0;
+    return val;
+playback_exit:
+    sound_voices_stop_all();
+    text_hint = TEXT_HINT_NONE;
+    pad_decode.reset_blocked = 1;
+    if (!game_services.return_to_frontend)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    game_services.return_to_frontend();
+    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    return 0;
+}
+
+PAD_ACTION_STATE pad_action;
+
+const uint8 pad_bindings[PAD_SCHEME_COUNT][PAD_BIND_COUNT] = {{0, 1, 2, 3, 4, 5}, {2, 0, 3, 1, 4, 5}, {0, 2, 3, 1, 4, 5}, {2, 0, 1, 3, 4, 5}, {0, 1, 2, 3, 5, 4}, {2, 0, 3, 1, 5, 4}, {0, 2, 3, 1, 5, 4}, {2, 0, 1, 3, 5, 4}};
+
+static uint8 *pad_action_slot(uint32 player, PAD_BIND binding)
+{
+    sint32 cfg = (sint8)pad_action.cfg[player];
+    uint32 action = pad_bindings[cfg][binding];
+    return &pad_action.latch[player][action];
+}
+
+/* Decay action latches, then retain new face-button edges for twelve ticks */
+GDB_CALL uint8 *pad_action_press(uint32 player, uint32 buttons)
+{
+    FUNCTION_MARKER(0x8005f8f0, "GAME.EXE");
+    uint32 i;
+    uint8 *latch = pad_action.latch[player], *slot;
+    uint8 val;
+    for (i = 0; i < PAD_ACTION_COUNT; i++)
+    {
+        val = latch[i];
+        if (val)
+            latch[i] = val - 1;
     }
     if (buttons & 0x8000)
     {
-        address = gameplay_action_address(player, 0x80093d7a);
-        w_u8(address, 12);
+        slot = pad_action_slot(player, PAD_BIND_SQUARE);
+        *slot = 12;
     }
     if (buttons & 0x4000)
     {
-        address = gameplay_action_address(player, 0x80093d78);
-        w_u8(address, 12);
+        slot = pad_action_slot(player, PAD_BIND_CROSS);
+        *slot = 12;
     }
     if (buttons & 0x2000)
     {
-        address = gameplay_action_address(player, 0x80093d79);
-        w_u8(address, 12);
+        slot = pad_action_slot(player, PAD_BIND_CIRCLE);
+        *slot = 12;
     }
     if (buttons & 0x1000)
     {
-        address = gameplay_action_address(player, 0x80093d7b);
-        w_u8(address, 12);
-        return address;
+        slot = pad_action_slot(player, PAD_BIND_TRIANGLE);
+        *slot = 12;
+        return slot;
     }
     return 0;
 }
 
-GDB_CALL uint32 FUN_8005FA58(uint32 player, uint32 buttons)
+GDB_CALL uint8 *pad_action_hold(uint32 player, uint32 buttons)
 {
-    uint32 address;
+    FUNCTION_MARKER(0x8005fa58, "GAME.EXE");
+    uint8 *slot;
     if (buttons & 0x400)
     {
-        address = gameplay_action_address(player, 0x80093d7c);
-        w_u8(address, 1);
+        slot = pad_action_slot(player, PAD_BIND_L1);
+        *slot = 1;
     }
     if (buttons & 0x800)
     {
-        address = gameplay_action_address(player, 0x80093d7d);
-        w_u8(address, 1);
-        return address;
+        slot = pad_action_slot(player, PAD_BIND_R1);
+        *slot = 1;
+        return slot;
     }
     return 0;
 }
 
-uint32 ff_host_pad_state[6] = {0x80094748, 34, 0x80094770, 34, 1, 0};
+PAD_HOST_STATE pad_host = {1};
+PAD_REPORT pad_reports[PAD_PLAYER_COUNT];
+PAD_DECODE_STATE pad_decode;
+
+typedef char PAD_REPORT_LAYOUT_CHECK[sizeof(PAD_REPORT) == 34 && offsetof(PAD_REPORT, buttons) == 2 && offsetof(PAD_REPORT, left_x) == 6 && offsetof(PAD_REPORT, left_y) == 7 ? 1 : -1];
+PAD_MENU_STATE pad_menu;
 
 /* InitPAD host boundary: register neutral disconnected buffers; host frame
  * polling supplies actual digital input before any game input decoder runs. */
-void ff_host_pad_init(uint32 first, uint32 first_size, uint32 second, uint32 second_size)
+void pad_host_init(void)
 {
     PadInit(0);
-    PadInitDirect(first_size >= 8 ? psx_addr(first, 8) : 0, second_size >= 8 ? psx_addr(second, 8) : 0);
-    ff_host_pad_state[0] = first;
-    ff_host_pad_state[1] = first_size;
-    ff_host_pad_state[2] = second;
-    ff_host_pad_state[3] = second_size;
-    ff_host_pad_state[4] = 1;
-    ff_host_pad_state[5] = 0;
+    PadInitDirect((uint8 *)&pad_reports[0], (uint8 *)&pad_reports[1]);
+    pad_host.enabled = 1;
 }
 
-void ff_host_pad_publish(uint32 connected, uint32 first, uint32 second)
+void pad_host_publish(uint32 connected, uint32 buttons0, uint32 buttons1)
 {
-    uint32 i, buttons[2] = {first, second}, packed = 0xffffffffu;
-    if (!ff_host_pad_state[4])
+    uint32 i, buttons[PAD_PLAYER_COUNT] = {buttons0, buttons1};
+    if (!pad_host.enabled)
         return;
     for (i = 0; i < 2; ++i)
     {
-        pad_publish((sint32)i, connected > i, (uint16)~buttons[i]);
-        if (connected > i)
-        {
-            uint32 bits = (~(((buttons[i] & 255) << 8) | ((buttons[i] >> 8) & 255))) & 65535;
-            packed = (packed & ~(65535u << (16 * i))) | (bits << (16 * i));
-        }
+        pad_publish(i, connected > i, ~buttons[i]);
     }
-    if (ff_host_pad_state[5])
-        w_u32(ff_host_pad_state[5], packed);
 }
 
-static sint32 host_pad_high_init(uint32 type, uint32 buffer)
+GDB_CALL uint8 *pad_action_clear(sint32 player)
 {
-    if (type != 0x20000000 && type != 0x20000001)
-        return 0;
-    ff_host_pad_init(0x801fd000, 34, 0x801fd040, 34);
-    ff_host_pad_state[5] = buffer;
-    return 2;
+    FUNCTION_MARKER(0x8005fb00, "GAME.EXE");
+    return memset(pad_action.latch[player], 0, sizeof(pad_action.latch[player]));
 }
 
-GDB_CALL void FUN_8006CE70(void)
-{
-    FUNCTION_MARKER(0x8006ce70u, "GAME.EXE");
-    ff_host_pad_state[4] = 0;
-}
-
-GDB_CALL sint32 FUN_8006D1A0(uint32 first, uint32 first_size, uint32 second, uint32 second_size)
-{
-    FUNCTION_MARKER(0x8006d1a0u, "GAME.EXE");
-    ff_host_pad_init(first, first_size, second, second_size);
-    return 1;
-}
-
-GDB_CALL void FUN_8006D1B0(void)
-{
-    FUNCTION_MARKER(0x8006d1b0u, "GAME.EXE");
-    ff_host_pad_state[4] = 1;
-}
-
-GDB_CALL sint32 FUN_8006D1C0(uint32 type, uint32 buffer)
-{
-    FUNCTION_MARKER(0x8006d1c0u, "GAME.EXE");
-    return host_pad_high_init(type, buffer);
-}
-
-GDB_CALL sint32 FUN_SLUS_80013A6C(uint32 first, uint32 first_size, uint32 second, uint32 second_size)
-{
-    FUNCTION_MARKER(0x80013a6cu, "SLUS_004.33");
-    ff_host_pad_init(first, first_size, second, second_size);
-    return 1;
-}
-
-GDB_CALL void FUN_SLUS_80013A7C(void)
-{
-    FUNCTION_MARKER(0x80013a7cu, "SLUS_004.33");
-    ff_host_pad_state[4] = 1;
-}
-
-GDB_CALL void FUN_SLUS_80013A8C(void)
-{
-    FUNCTION_MARKER(0x80013a8cu, "SLUS_004.33");
-    ff_host_pad_state[4] = 0;
-}
-
-GDB_CALL sint32 FUN_SLUS_80013A9C(uint32 type, uint32 buffer)
-{
-    FUNCTION_MARKER(0x80013a9cu, "SLUS_004.33");
-    return host_pad_high_init(type, buffer);
-}
-
-uint32 FUN_8005FB00(sint32 player)
-{
-    uint32 address = 0x80094100 + 6u * (uint32)player;
-    if (address)
-        memset(psx_addr(address, 6), 0, 6);
-    return address;
-}
-
-/* 80068114: mapped controller edges, deliberately does not write 800927A0. */
-GDB_CALL uint32 FUN_80068114(sint32 player)
+/* Poll mapped menu edges without changing the last raw menu sample */
+GDB_CALL uint32 pad_menu_poll(sint32 player)
 {
     FUNCTION_MARKER(0x80068114, "GAME.EXE");
-    if (ff_services.audit_input_event)
-        ff_services.audit_input_event(2);
-    uint32 offset = (uint32)player * 4, raw = (uint32)FUN_8005F5AC((sint32)r_u32(0x80094288 + offset));
-    uint32 edge = (raw ^ r_u32(0x80092790 + offset)) & raw;
-    w_u32(0x80092798 + offset, edge);
-    w_u32(0x80092790 + offset, raw);
-    return r_u32(0x80092798 + offset);
+    if (game_services.audit_input_event)
+        game_services.audit_input_event(2);
+    uint32 raw = (uint32)pad_decode_buttons(pad_game.port[player]);
+    pad_menu.pressed[player] = (raw ^ pad_menu.prev[player]) & raw;
+    pad_menu.prev[player] = raw;
+    return pad_menu.pressed[player];
 }
 
-#include <stdlib.h>
-#include <string.h>
-FF_SERVICES ff_services;
+GAME_SERVICES game_services;
 
 /* GAME.EXE:800573A8. The second pad is counted only if the first is valid. */
-GDB_CALL sint32 FUN_800573A8(void)
+GDB_CALL sint32 pad_count_devices(void)
 {
     FUNCTION_MARKER(0x800573a8, "GAME.EXE");
-    uint32 pad = r_u32(0x8009355c);
-    if (((r_u8(pad + 1) >> 4) != 4 && (r_u8(pad + 1) >> 4) != 7 && (r_u8(pad + 1) >> 4) != 5) || r_u8(r_u32(0x8009355c)) == 255)
+    const PAD_REPORT *pad = &pad_reports[0];
+    if (((pad->id >> 4) != 4 && (pad->id >> 4) != 7 && (pad->id >> 4) != 5) || pad_reports[0].status == 255)
         return 0;
-    pad = r_u32(0x80093560);
-    return (((r_u8(pad + 1) >> 4) == 4 || (r_u8(pad + 1) >> 4) == 7 || (r_u8(pad + 1) >> 4) == 5) && r_u8(r_u32(0x80093560)) != 255) ? 2 : 1;
+    pad = &pad_reports[1];
+    return (((pad->id >> 4) == 4 || (pad->id >> 4) == 7 || (pad->id >> 4) == 5) && pad_reports[1].status != 255) ? 2 : 1;
 }
 
 /* GAME.EXE:8005EC90. Return is always one, not the controller count. */
-GDB_CALL sint32 FUN_8005EC90(void)
+GDB_CALL sint32 pad_refresh_ports(void)
 {
-    w_u32(0x8009400c, (uint32)FUN_800573A8());
-    w_u32(0x80094288, 0);
-    w_u32(0x8009428c, 1);
+    FUNCTION_MARKER(0x8005ec90, "GAME.EXE");
+    pad_decode.count = pad_count_devices();
+    pad_game.port[0] = 0;
+    pad_game.port[1] = 1;
     return 1;
-}
-
-/* GAME.EXE:80056ECC. SDK SpuSetKey(0, all voices), then memset of voice flags.
- * Runtime SPU binding is WIP; no sound dummy is installed. */
-GDB_CALL uint32 FUN_80056ECC(void)
-{
-    FUNCTION_MARKER(0x80056ecc, "GAME.EXE");
-    uint32 i;
-    if (!ff_services.spu_key)
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    ff_services.spu_key(0, 0xffffffu);
-    for (i = 0; i < 24; i++)
-        w_u8(0x80094708 + i, 0);
-    return 0x80094708;
 }
 
 /* GAME.EXE:8005F5AC. Complete input decoder including grace counters and reset.
  * The reset path does not return: IDA's post-longjmp store is unreachable. */
-GDB_CALL sint32 FUN_8005F5AC(sint32 controller)
+GDB_CALL sint16 pad_decode_buttons(sint32 port)
 {
     FUNCTION_MARKER(0x8005f5ac, "GAME.EXE");
-    ff_audit_input_packet(controller);
     /* Apply recorded buttons at the original decode-time load */
-    if (ff_services.audit_input_event)
-        ff_services.audit_input_event(0);
-    uint32 index = (uint32)controller, pad = controller ? 0x80094770 : 0x80094748;
-    uint32 disconnect = 0x80093a1c + index, unsupported = 0x80093a20 + index;
+    if (game_services.audit_input_event)
+        game_services.audit_input_event(0);
+    uint32 idx = port;
+    const PAD_REPORT *pad = &pad_reports[port != 0];
     sint16 buttons;
     sint32 decoded_type;
-    uint8 type = r_u8(pad + 1) >> 4;
-    w_u8(0x80094114, type);
-    buttons = (sint16)~r_u16(pad + 2);
+    uint8 type = pad->id >> 4;
+    pad_decode.type = type;
+    buttons = (sint16)~pad->buttons;
     if (buttons == -1)
         buttons = 0;
-    if (r_u8(pad) == 255)
+    if (pad->status == 255)
     {
         type = 255;
-        if (r_s8(disconnect) < 0)
+        if ((sint8)pad_decode.disconnect[idx] < 0)
         {
-            w_u8(disconnect, (uint8)(r_u8(disconnect) + 1));
+            ++pad_decode.disconnect[idx];
             type = 4;
         }
-        w_u8(0x80094114, type);
+        pad_decode.type = type;
         buttons = 0;
     }
     else
-        w_u8(disconnect, 0);
-    decoded_type = r_s8(0x80094114);
+        pad_decode.disconnect[idx] = 0;
+    decoded_type = (sint8)pad_decode.type;
     if (decoded_type == 4)
-        w_u8(unsupported, 0);
+        pad_decode.unsupported[idx] = 0;
     else if (decoded_type == 7 || decoded_type == 5)
     {
         sint32 raw_x, x, y;
-        w_u8(unsupported, 0);
-        w_u8(0x80094114, 22);
-        raw_x = r_u8(pad + 6);
+        pad_decode.unsupported[idx] = 0;
+        pad_decode.type = 22;
+        raw_x = pad->left_x;
         x = raw_x - 128;
-        w_u32(0x800945d4, (uint32)x);
-        y = (sint32)r_u8(pad + 7) - 128;
-        w_u32(0x800945f8, (uint32)y);
+        pad_decode.x = x;
+        y = pad->left_y - 128;
+        pad_decode.y = y;
         if (x > 0)
         {
             x = raw_x - 160;
-            w_u32(0x800945d4, (uint32)x);
+            pad_decode.x = x;
             if (x < 0)
-                w_u32(0x800945d4, 0);
+                pad_decode.x = 0;
         }
         else
         {
-            x = (sint32)(r_u32(0x800945d4) + 32);
-            w_u32(0x800945d4, (uint32)x);
+            x = (sint32)((uint32)pad_decode.x + 32);
+            pad_decode.x = x;
             if (x > 0)
-                w_u32(0x800945d4, 0);
+                pad_decode.x = 0;
         }
-        y = r_s32(0x800945f8);
+        y = pad_decode.y;
         if (y > 0)
         {
             y = (sint32)((uint32)y - 32);
-            w_u32(0x800945f8, (uint32)y);
+            pad_decode.y = y;
             if (y < 0)
-                w_u32(0x800945f8, 0);
+                pad_decode.y = 0;
         }
         else
         {
-            y = (sint32)(r_u32(0x800945f8) + 32);
-            w_u32(0x800945f8, (uint32)y);
+            y = (sint32)((uint32)pad_decode.y + 32);
+            pad_decode.y = y;
             if (y > 0)
-                w_u32(0x800945f8, 0);
+                pad_decode.y = 0;
         }
-        x = (sint32)(r_u32(0x800945d4) * 341) >> 8;
-        w_u32(0x800945d4, (uint32)x);
-        y = (sint32)(r_u32(0x800945f8) * 341) >> 8;
-        w_u32(0x800945f8, (uint32)y);
+        x = (sint32)((uint32)pad_decode.x * 341) >> 8;
+        pad_decode.x = x;
+        y = (sint32)((uint32)pad_decode.y * 341) >> 8;
+        pad_decode.y = y;
     }
     else
     {
         type = 255;
-        if (r_s8(unsupported) < 15)
+        if ((sint8)pad_decode.unsupported[idx] < 15)
         {
-            w_u8(unsupported, (uint8)(r_u8(unsupported) + 1));
+            ++pad_decode.unsupported[idx];
             type = 4;
         }
-        w_u8(0x80094114, type);
+        pad_decode.type = type;
         buttons = 0;
     }
-    if ((buttons & 9) == 9 && !r_s8(0x80093cf8))
+    if ((buttons & 9) == 9 && !pad_decode.reset_blocked)
     {
-        sint16 count = (sint16)(r_u16(0x80093a18 + 2 * index) + 1);
-        w_u16(0x80093a18 + 2u * index, (uint16)count);
+        sint16 count = (sint16)(pad_decode.reset_count[idx] + 1);
+        pad_decode.reset_count[idx] = count;
         if (count >= 31)
         {
-            w_u16(0x80093a1a, 0);
-            w_u16(0x80093a18, 0);
-            FUN_80056ECC();
-            w_u32(0x80093c14, 0xffffffffu);
-            w_u8(0x80093cf8, 1);
-            if (!ff_services.game_longjmp)
-                ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-            ff_services.game_longjmp(0x80094298, 0);
-            ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
+            pad_decode.reset_count[1] = 0;
+            pad_decode.reset_count[0] = 0;
+            sound_voices_stop_all();
+            text_hint = TEXT_HINT_NONE;
+            pad_decode.reset_blocked = 1;
+            if (!game_services.return_to_frontend)
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            game_services.return_to_frontend();
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
         }
     }
     else
-        w_u16(0x80093a18 + 2u * index, 0);
+        pad_decode.reset_count[idx] = 0;
     return buttons;
+}
+
+/* Existing selection phase of original15C6C, not a new original function */
+GDB_CALL void demo_select_next(void)
+{
+    uint32 idx = demo.next_idx;
+    sint32 divisor = demo.count;
+    sint32 numerator = idx + 1;
+    uint32 type1, type0, level, stage;
+    if (divisor == 0 || (divisor == -1 && numerator == (sint32)0x80000000))
+    {
+        /* Original division raises BREAK7 or BREAK6 before any table access */
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        return;
+    }
+    type1 = demo_config[idx].player_type[1];
+    demo.cur_idx = idx;
+    demo.next_idx = (uint32)(numerator % divisor);
+    game_session.player_count = type1 == 0xffffffff ? 1 : 2;
+    const DEMO_CONFIG *entry = demo_config + demo.cur_idx;
+    type0 = entry->player_type[0];
+    level = entry->mode;
+    stage = entry->stage;
+    actor_types[0] = (uint16)type0;
+    type1 = entry->player_type[1];
+    game_session.mode = level;
+    game_session.stage = stage;
+    actor_types[1] = (uint16)type1;
 }

@@ -9,6 +9,14 @@
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -17,13 +25,13 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -35,15 +43,17 @@
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <PropertyGroup>
+    <NativeArch Condition="'$(Platform)'=='Win32'">x86</NativeArch>
+    <NativeArch Condition="'$(Platform)'=='x64'">x64</NativeArch>
     <OutDir>$(ProjectDir)..\..\..\bin\</OutDir>
-    <IntDir>$(ProjectDir)..\..\..\_build\x86\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)..\..\..\_build\$(NativeArch)\$(Configuration)\</IntDir>
     <TargetName>FF</TargetName>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <DisableSpecificWarnings>4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -51,6 +61,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WND_TITLE="Fighting Force (xport)";WND_WIDTH=960;WND_HEIGHT=720;FIELD_RATE=60;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..;$(ProjectDir)..\..\..\..\xport\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -65,7 +76,7 @@
       <AdditionalDependencies>user32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <DisableSpecificWarnings>4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -73,6 +84,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WND_TITLE="Fighting Force (xport)";WND_WIDTH=960;WND_HEIGHT=720;FIELD_RATE=60;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..;$(ProjectDir)..\..\..\..\xport\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <Optimization>MaxSpeed</Optimization>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -89,19 +101,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\game_entry.c" />
     <ClCompile Include="..\..\game_main.c" />
-    <ClCompile Include="..\..\game_data.c" />
-    <ClCompile Include="..\..\wip.c" />
-    <ClCompile Include="..\..\sdk_entries.c" />
-    <ClCompile Include="..\..\menu_runtime.c" />
+    <ClCompile Include="..\..\diagnostics.c" />
+    <ClCompile Include="..\..\game_runtime.c" />
     <ClCompile Include="..\..\..\..\xport\src\platform\win\main.c">
       <PreprocessorDefinitions>SHORT_NAME="FF";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)xport_main.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\audit\audit_input.c" />
-    <ClCompile Include="..\..\audit\audit_menu.c" />
     <ClCompile Include="..\..\audit\audit_sound.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_spu.c" />
+    <ClCompile Include="..\..\..\..\xport\src\xport_fmv.c" />
     
     
     
@@ -113,39 +124,101 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <ClCompile Include="..\..\..\..\xport\src\xport_trace.c" />
-    <ClCompile Include="..\..\ff_memory.c" />
+    <ClCompile Include="..\..\game_state.c" />
     <ClCompile Include="..\..\text.c" />
     <ClCompile Include="..\..\hud.c" />
     <ClCompile Include="..\..\input.c" />
+    <ClCompile Include="..\..\action_history.c" />
+    <ClCompile Include="..\..\random.c" />
+    <ClCompile Include="..\..\resources.c" />
+    <ClCompile Include="..\..\loading.c" />
+    <ClCompile Include="..\..\resource_loaders.c" />
+    <ClCompile Include="..\..\character_resources.c" />
+    <ClCompile Include="..\..\level_start.c" />
+    <ClCompile Include="..\..\lab_tank.c" />
+    <ClCompile Include="..\..\stage_audio.c" />
+    <ClCompile Include="..\..\lift.c" />
+    <ClCompile Include="..\..\stage_animation.c" />
+    <ClCompile Include="..\..\item_pickup.c" />
+    <ClCompile Include="..\..\actor_items.c" />
+    <ClCompile Include="..\..\texture.c" />
+    <ClCompile Include="..\..\terrain.c" />
+    <ClInclude Include="..\..\model_object.h" />
+    <ClCompile Include="..\..\world_objects.c" />
+    <ClCompile Include="..\..\regions.c" />
+    <ClCompile Include="..\..\actors.c" />
+    <ClCompile Include="..\..\actor_collision.c" />
+    <ClCompile Include="..\..\effects.c" />
+    <ClCompile Include="..\..\background.c" />
+    <ClCompile Include="..\..\dynamic_objects.c" />
+    <ClCompile Include="..\..\projectile.c" />
+    <ClCompile Include="..\..\air_bike.c" />
+    <ClCompile Include="..\..\scene_vehicle.c" />
     <ClCompile Include="..\..\menu.c" />
+    <ClCompile Include="..\..\game_tables.c" />
+    <ClCompile Include="..\..\screenshot.c" />
+    <ClCompile Include="..\..\credits.c" />
     <ClCompile Include="..\..\geometry.c" />
+    <ClCompile Include="..\..\depth_table.c" />
+    <ClCompile Include="..\..\projection.c" />
+    <ClCompile Include="..\..\sprite.c" />
+    <ClCompile Include="..\..\render_buffers.c" />
+    <ClCompile Include="..\..\particle.c" />
+    <ClCompile Include="..\..\transform.c" />
     <ClCompile Include="..\..\animation.c" />
-    <ClCompile Include="..\..\sequence.c" />
+    <ClCompile Include="..\..\stage.c" />
+    <ClCompile Include="..\..\helicopter.c" />
+    <ClCompile Include="..\..\suspended.c" />
+    <ClCompile Include="..\..\vehicle_steering.c" />
+    <ClCompile Include="..\..\train.c" />
+    <ClCompile Include="..\..\scene_playback.c" />
     <ClCompile Include="..\..\player.c" />
     <ClCompile Include="..\..\level_script.c" />
+    <ClCompile Include="..\..\level_transition.c" />
+    <ClCompile Include="..\..\game_pause.c" />
+    <ClCompile Include="..\..\cd_music.c" />
+    <ClCompile Include="..\..\sound_voice.c" />
+    <ClCompile Include="..\..\sound_samples.c" />
+    <ClCompile Include="..\..\sound_output.c" />
+    <ClCompile Include="..\..\character_names.c" />
     <ClCompile Include="..\..\npc.c" />
+    <ClCompile Include="..\..\npc_actions.c" />
+    <ClCompile Include="..\..\npc_behavior.c" />
+    <ClCompile Include="..\..\npc_targeting.c" />
+    <ClCompile Include="..\..\object_callbacks.c" />
+    <ClCompile Include="..\..\collision.c" />
+    <ClCompile Include="..\..\actor_events.c" />
+    <ClCompile Include="..\..\actor_pose.c" />
+    <ClCompile Include="..\..\camera.c" />
+    <ClCompile Include="..\..\geometry_math.c" />
     <ClCompile Include="..\..\level_models.c" />
     <ClCompile Include="..\..\character_render.c" />
+    <ClCompile Include="..\..\high_scores.c" />
+    <ClCompile Include="..\..\localization.c" />
+    <ClCompile Include="..\..\card_dialog.c" />
+    <ClCompile Include="..\..\card_storage.c" />
+    <ClCompile Include="..\..\game_settings.c" />
+    <ClCompile Include="..\..\display.c" />
     <ClCompile Include="..\..\options_menu.c" />
     <ClCompile Include="..\..\character_menu.c" />
     <ClCompile Include="..\..\sound.c" />
-    <ClCompile Include="..\..\ff_audio.c" />
-    <ClCompile Include="..\..\platform_dummy.c" />
+    <ClCompile Include="..\..\sound_device.c" />
+    <ClCompile Include="..\..\platform.c" />
   </ItemGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\ff_video.c" />
+    <ClCompile Include="..\..\movies.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_xa.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_mdec.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_press.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_vlc.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_stream.c" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <TargetName>FF_debug</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -162,18 +235,18 @@
   <PropertyGroup Label="XportTemplateSync">
     <UseXcrt Condition="'$(UseXcrt)'==''">true</UseXcrt>
     <XcrtEnabled>false</XcrtEnabled>
-    <XcrtEnabled Condition="'$(Configuration)|$(Platform)'=='Release|Win32' and '$(UseXcrt)'=='true' and '$(LockstepDebug)'!='true'">true</XcrtEnabled>
+    <XcrtEnabled Condition="'$(Configuration)'=='Release' and '$(UseXcrt)'=='true'">true</XcrtEnabled>
     <OutDir>$(ProjectDir)..\..\..\bin\</OutDir>
-    <IntDir>$(ProjectDir)..\..\..\_build\x86\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)..\..\..\_build\$(NativeArch)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="XportTemplateSync">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="XportTemplateSync">
     <TargetName>FF_debug</TargetName>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="XportTemplateSync">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'" Label="XportTemplateSync">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -194,12 +267,12 @@
       <AdditionalDependencies>opengl32.lib;user32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="XportTemplateSync">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="XportTemplateSync">
     <TargetName>FF</TargetName>
     <GenerateManifest>false</GenerateManifest>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="XportTemplateSync">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'" Label="XportTemplateSync">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -228,13 +301,13 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <FixedBaseAddress>true</FixedBaseAddress>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ImageHasSafeExceptionHandlers Condition="'$(Platform)'=='Win32'">false</ImageHasSafeExceptionHandlers>
       <GenerateManifest>false</GenerateManifest>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <AdditionalDependencies>opengl32.lib;user32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32' and '$(LockstepDebug)'!='true'" Label="XportTemplateSync">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'" Label="XportTemplateSync">
     <ClCompile>
       <PreprocessorDefinitions>XPORT_DISABLE_FUNCTION_MARKERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -273,10 +346,22 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <MASM Include="..\..\..\..\xport\src\platform\win\xcrt_x86.asm">
-      <ExcludedFromBuild Condition="'$(XcrtEnabled)'!='true'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(XcrtEnabled)'!='true' or '$(Platform)'!='Win32'">true</ExcludedFromBuild>
+    </MASM>
+    <MASM Include="..\..\..\..\xport\src\platform\win\xcrt_x64.asm">
+      <ExcludedFromBuild Condition="'$(XcrtEnabled)'!='true' or '$(Platform)'!='x64'">true</ExcludedFromBuild>
     </MASM>
   </ItemGroup>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
+  <Target Name="XportSelectNativeArch" BeforeTargets="PrepareForBuild">
+    <ReadLinesFromFile File="$(ProjectDir)..\..\..\_build\native-$(Configuration).arch" Condition="Exists('$(ProjectDir)..\..\..\_build\native-$(Configuration).arch')">
+      <Output TaskParameter="Lines" PropertyName="PreviousNativeArch" />
+    </ReadLinesFromFile>
+    <Delete Files="$(TargetPath)" Condition="'$(PreviousNativeArch)'!='$(NativeArch)' And Exists('$(TargetPath)')" />
+  </Target>
+  <Target Name="XportRecordNativeArch" AfterTargets="Link">
+    <WriteLinesToFile File="$(ProjectDir)..\..\..\_build\native-$(Configuration).arch" Lines="$(NativeArch)" Overwrite="true" />
+  </Target>
 </Project>

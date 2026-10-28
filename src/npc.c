@@ -1,234 +1,324 @@
-#include "ff.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-static uint32 bike_partner(uint32 actor)
+#include "game.h"
+
+const NPC_ATTACK_GEOMETRY npc_attack_geometry_defaults = {
+    .origin = {.x = {.val = -1179648}, .y = {.val = 1114112}, .z = {.val = -2424832}},
+    .offset = {.x = {.val = -524288}, .y = {.val = 5832704}, .z = {.val = -786432}},
+};
+
+NPC_ATTACK_GEOMETRY npc_attack_geometry;
+const sint32 npc_fall_speed_limit_default = 64;
+sint32 npc_fall_speed_limit;
+uint16 npc_drop_phase;
+uint32 npc_update_idx;
+
+static const sint8 drop_pattern[8] = {0, 0, 1, 0, 0, 1, 0, 1};
+
+enum
 {
-    return 0x800b4318 + 244u * (uint32)(sint32)r_s16(actor + 88);
+    NPC_PROFILE_NONE = 0xffff
+};
+
+static const uint16 profile_first[NPC_BEHAVIOR_TYPE_COUNT] = {
+    NPC_PROFILE_NONE, NPC_PROFILE_NONE, NPC_PROFILE_NONE, NPC_PROFILE_NONE, NPC_PROFILE_NONE, 0, 10, 20, 5, 15, 25, 40, 30, 35, 105, 110, 115, 0, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 0, 95, 100, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210, 215, 0, 220, 225,
+};
+
+enum
+{
+    NPC_BEAM_COUNT = 3
+};
+
+static const FIXED_VEC3 beam_points[NPC_BEAM_COUNT][2] = {
+    {
+        {.x = {.val = 0}, .y = {.val = -6291456}, .z = {.val = 917504}},
+        {.x = {.val = 0}, .y = {.val = -12582912}, .z = {.val = 917504}},
+    },
+    {
+        {.x = {.val = -851968}, .y = {.val = -6291456}, .z = {.val = -458752}},
+        {.x = {.val = -851968}, .y = {.val = -12582912}, .z = {.val = -458752}},
+    },
+    {
+        {.x = {.val = 851968}, .y = {.val = -6291456}, .z = {.val = -458752}},
+        {.x = {.val = 851968}, .y = {.val = -12582912}, .z = {.val = -458752}},
+    },
+};
+
+typedef struct NPC_BASE_ANIMATION
+{
+    uint32 idle;
+    uint32 move;
+} NPC_BASE_ANIMATION;
+
+static const NPC_BASE_ANIMATION base_animations[NPC_BEHAVIOR_TYPE_COUNT] = {
+    {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {211, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {69, 82}, {277, 82}, {285, 82}, {69, 82},
+};
+
+static sint32 bike_partner_idx(sint32 idx)
+{
+    sint32 partner = actor_companions[idx];
+    /* TODO: Investigate the original post-detach companion access */
+    if (partner < 0 || partner >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid bike companion %d for actor slot %d\n", partner, idx));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    return partner;
 }
 
-static void bike_partner_state(uint32 actor, uint32 state)
+static void bike_partner_state(sint32 idx, uint32 state)
 {
-    uint32 partner = bike_partner(actor);
-    FUN_80019F00(partner, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(partner + 52)), state);
+    sint32 partner_idx = bike_partner_idx(idx);
+    animation_start(partner_idx, animation_type_banks[(uint32)actor_types[partner_idx]], state);
 }
 
-GDB_CALL sint32 FUN_80055C30(sint32 index)
+GDB_CALL intptr npc_update_bike(sint32 idx)
 {
     FUNCTION_MARKER(0x80055c30u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table, angle, speed, pitch, target, state, partner, point[3], x, y, z, result;
+    NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
+    uint32 table, angle, speed, pitch, target, state, partner, x, y, z, result;
+    FIXED_VEC3 point;
     uint32 spatial_volume, pan, candidate_x, candidate_z, random_offset;
-    sint32 volume, delta;
+    sint32 volume, delta, yaw;
     int i;
-    angle = 2u * (uint32)(sint32)r_s16(actor + 56);
-    x = (uint32)(sint32)r_s16(0x800802d0 + angle);
-    speed = r_u32(actor + 216);
-    target = (uint32)(sint32)r_s16(actor + 52);
-    angle = 2 * (uint32)(sint32)r_s16(actor + 56);
-    table = r_u32(0x800b3be8 + 4 * target);
-    x = r_u32(actor + 40) + x * speed;
-    w_u32(actor + 40, x);
-    z = (uint32)(sint32)r_s16(0x800806d0 + angle);
-    speed = r_u32(actor + 216);
-    pitch = r_u32(actor + 216) << 2;
-    z = r_u32(actor + 48) - z * speed;
-    w_u32(actor + 48, z);
-    random_offset = (ff_rand_8006D348() & 15) ? 6144 : 4096;
-    FUN_80056840(r_u32(actor + 220) - 1, pitch + random_offset);
-    FUN_80056840(r_u32(actor + 224) - 1, pitch + 5120);
-    ff_spatial_sound_80046884(actor + 40, &spatial_volume, &pan);
-    volume = (sint32)(spatial_volume * (96u - (uint32)((sint32)r_u32(actor + 216) >> 1))) / 176;
-    volume = FUN_80042820(volume, 60);
-    FUN_800568C8(r_u32(actor + 220) - 1, volume, pan);
-    volume = (sint32)(spatial_volume * (r_u32(actor + 216) - 64u)) / 48;
-    volume = FUN_80042820(volume, 0);
-    FUN_800568C8(r_u32(actor + 224) - 1, volume, pan);
-    if (r_s16(actor + 88) != -1)
+    yaw = actor_orientation[idx].yaw;
+    if (yaw < 0 || yaw >= MATH_SIN_COUNT)
     {
-        FUN_80049B78(index);
-        target = r_u32(0x800942e0);
-        x = (uint32)(sint32)r_s16(actor + 42);
-        z = (uint32)(sint32)r_s16(actor + 50);
-        w_u32(actor + 168, target);
-        partner = 0x800b4318 + 244 * target;
-        candidate_x = (uint32)(sint32)r_s16(partner + 42);
-        candidate_z = (uint32)(sint32)r_s16(partner + 50);
-        angle = FUN_8001614C((sint32)x, (sint32)z, (sint32)candidate_x, (sint32)candidate_z);
-        delta = (sint16)(angle - ((uint32)r_u16(actor + 56) << 5));
-        state = r_u32(actor + 12);
+        /* TODO: Investigate bike headings outside the original sine table */
+        DIAGNOSTIC(fprintf(stderr, "Invalid bike sine heading %d actor %d stage %u tick %u\n", yaw, idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    x = (uint32)(sint32)sin_table[yaw];
+    speed = special->bike.speed;
+    target = (uint32)actor_types[idx];
+    yaw = actor_orientation[idx].yaw;
+    if (target >= ANIMATION_TYPE_COUNT)
+    {
+        /* TODO: Investigate a bike type outside the animation bank table */
+        DIAGNOSTIC(fprintf(stderr, "Invalid bike type %d actor %d stage %u tick %u\n", (sint32)target, idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    table = animation_type_banks[target];
+    x = actor_positions[idx].x.bits + x * speed;
+    actor_positions[idx].x.bits = x;
+    if (yaw < -MATH_QUARTER_TURN || yaw >= MATH_ANGLE_COUNT)
+    {
+        /* TODO: Investigate bike headings outside the original cosine view */
+        DIAGNOSTIC(fprintf(stderr, "Invalid bike cosine heading %d actor %d stage %u tick %u\n", yaw, idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    z = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw];
+    speed = special->bike.speed;
+    pitch = special->bike.speed << 2;
+    z = actor_positions[idx].z.bits - z * speed;
+    actor_positions[idx].z.bits = z;
+    random_offset = (random_next() & 15) ? 6144 : 4096;
+    sound_voice_pitch(special->bike.voice[0] - 1, pitch + random_offset);
+    sound_voice_pitch(special->bike.voice[1] - 1, pitch + 5120);
+    sound_spatial(actor_positions + idx, &spatial_volume, &pan);
+    volume = (sint32)(spatial_volume * (96u - (uint32)((sint32)special->bike.speed >> 1))) / 176;
+    volume = sound_volume_adjust(volume, 60);
+    sound_voice_pan(special->bike.voice[0] - 1, volume, pan);
+    volume = (sint32)(spatial_volume * (special->bike.speed - 64u)) / 48;
+    volume = sound_volume_adjust(volume, 0);
+    sound_voice_pan(special->bike.voice[1] - 1, volume, pan);
+    if (actor_companions[idx] != -1)
+    {
+        actors_find_nearest_targets(idx);
+        target = actor_targeting.player_idx;
+        x = (uint32)(sint32)actor_positions[idx].x.whole;
+        z = (uint32)(sint32)actor_positions[idx].z.whole;
+        npc_targets[idx].idx = target;
+        if (target >= ACTOR_COUNT)
+        {
+            /* TODO: Investigate bike targeting without an available live player */
+            DIAGNOSTIC(fprintf(stderr, "Invalid bike target %d actor %d player count %u stage %u tick %u\n", (sint32)target, idx, game_session.player_count, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        candidate_x = (uint32)(sint32)actor_positions[target].x.whole;
+        candidate_z = (uint32)(sint32)actor_positions[target].z.whole;
+        angle = math_dir16(x, z, candidate_x, candidate_z);
+        delta = (sint16)(angle - ((uint32)((uint16)actor_orientation[idx].yaw) << 5));
+        state = actor_animations[idx].id;
         if (state == 278)
         {
-            speed = r_u32(actor + 216);
+            speed = special->bike.speed;
             if ((sint32)speed > 0)
-                w_u32(actor + 216, speed - 4);
-            if (r_u32(actor + 4) == 0xffffffffu)
+                special->bike.speed = speed - 4;
+            if (actor_animations[idx].frame == 0xffffffffu)
             {
-                speed = r_u32(actor + 216);
-                angle = r_u16(actor + 56);
-                w_u32(actor + 216, 0u - speed);
-                w_u16(actor + 56, (uint16)angle ^ 1024);
-                FUN_80019F00(actor, table, 277);
-                FUN_800567F8(r_u32(actor + 228) - 1);
-                w_u32(actor + 228, 0);
-                FUN_80056670(142, 159, 5888);
-                bike_partner_state(actor, 279);
+                speed = special->bike.speed;
+                angle = (uint16)actor_orientation[idx].yaw;
+                special->bike.speed = 0u - speed;
+                actor_orientation[idx].yaw = (uint16)angle ^ 1024;
+                animation_start(idx, table, 277);
+                sound_voice_stop(special->bike.voice[2] - 1);
+                special->bike.voice[2] = 0;
+                sound_voice_play(142, 159, 5888);
+                bike_partner_state(idx, 279);
             }
         }
         else if (state == 277)
         {
-            speed = r_u32(actor + 216);
+            speed = special->bike.speed;
             if ((sint32)speed < 0)
-                w_u32(actor + 216, speed + 4);
+                special->bike.speed = speed + 4;
             else if ((sint32)speed < 96)
-                w_u32(actor + 216, speed + 1);
+                special->bike.speed = speed + 1;
             if ((uint16)(delta + 16384) <= 32768)
             {
                 if (delta < -256)
                     delta = -256;
                 if (delta > 256)
                     delta = 256;
-                w_u16(actor + 56, (uint16)((r_u16(actor + 56) + (delta >> 5)) & 2047));
+                actor_orientation[idx].yaw = (uint16)((((uint16)actor_orientation[idx].yaw) + (delta >> 5)) & 2047);
             }
             else
             {
-                FUN_80019F00(actor, table, 278);
-                pitch = (ff_rand_8006D348() & 255) + 5504;
-                FUN_80056670(230, 95, pitch);
-                pitch = (ff_rand_8006D348() & 255) | 5888;
-                FUN_80056670(230, 127, pitch);
-                bike_partner_state(actor, 280);
+                animation_start(idx, table, 278);
+                pitch = (random_next() & 255) + 5504;
+                sound_voice_play(230, 95, pitch);
+                pitch = (random_next() & 255) | 5888;
+                sound_voice_play(230, 127, pitch);
+                bike_partner_state(idx, 280);
             }
-            if (r_u32(actor + 4) == 0xffffffffu)
-                FUN_80019F00(actor, table, 277);
+            if (actor_animations[idx].frame == 0xffffffffu)
+                animation_start(idx, table, 277);
         }
-        FUN_8001B9F4(index, 1, point);
-        x = point[0];
-        z = point[2];
+        actor_attachment_pos(idx, 1, point.bits);
+        x = point.x.bits;
+        z = point.z.bits;
         candidate_x = x;
         candidate_z = z;
-        ff_collision_candidate(bike_partner(actor), &candidate_x, &candidate_z);
+        actor_correct_obstacles(bike_partner_idx(idx), &candidate_x, &candidate_z);
         if (candidate_x == x && candidate_z == z)
         {
-            w_u32(bike_partner(actor) + 40, x);
-            w_u32(bike_partner(actor) + 44, 0x680000);
-            w_u32(bike_partner(actor) + 48, candidate_z);
+            actor_positions[bike_partner_idx(idx)].x.bits = x;
+            actor_positions[bike_partner_idx(idx)].y.bits = 0x680000;
+            actor_positions[bike_partner_idx(idx)].z.bits = candidate_z;
         }
         else
         {
-            bike_partner_state(actor, 281);
-            w_u16(bike_partner(actor) + 88, 65535);
-            w_u16(actor + 88, 65535);
+            bike_partner_state(idx, 281);
+            actor_companions[bike_partner_idx(idx)] = ACTOR_SLOT_NONE;
+            actor_companions[idx] = ACTOR_SLOT_NONE;
         }
-        state = r_u32(actor + 12);
+        state = actor_animations[idx].id;
         result = 277;
-        /* Preserve the original post-detach signed -1 partner indexing */
+        /* The companion lookup diagnoses the original post-detach invalid index */
         if (state == 278 || state == 277)
         {
-            partner = bike_partner(actor);
-            angle = r_u16(actor + 56);
-            w_u16(partner + 56, (uint16)angle ^ (state == 278 ? 1024 : 0));
-            point[0] = 0;
-            point[1] = state == 278 ? 0x400000 : 0x100000;
-            point[2] = state == 278 ? 0xff780000 : 0x1000000;
-            ff_transform_stack_vector_800234E8(0x800ba214 + 504 * (uint32)index, point);
+            partner = bike_partner_idx(idx);
+            angle = (uint16)actor_orientation[idx].yaw;
+            actor_orientation[partner].yaw = (uint16)angle ^ (state == 278 ? 1024 : 0);
+            point.x.bits = 0;
+            point.y.bits = state == 278 ? 0x400000 : 0x100000;
+            point.z.bits = state == 278 ? 0xff780000 : 0x1000000;
+            actor_transform_point(&actor_poses[idx].matrix[0], point.bits);
             if (state == 278)
-                result = FUN_80031B20(871, point[0], point[1], point[2], 0, 0, 0);
+                return (intptr)effect_spawn_timed(871, point.x.bits, point.y.bits, point.z.bits, 0, 0, 0);
             else
             {
-                FUN_80055964(index, point[0], point[2]);
-                result = FUN_80055B68(point[0], point[2]);
+                actors_apply_nearby_contact(idx, point.x.bits, point.z.bits);
+                result = item_pickup_find_for_npc(point.x.bits, point.z.bits);
                 if (result != 0xffffffffu)
                 {
-                    bike_partner_state(actor, 281);
-                    result = 244u * (uint32)(sint32)r_s16(actor + 88);
-                    w_u16(0x800b4370 + result, 65535);
-                    w_u16(actor + 88, 65535);
+                    bike_partner_state(idx, 281);
+                    partner = bike_partner_idx(idx);
+                    result = 244u * partner;
+                    actor_companions[partner] = ACTOR_SLOT_NONE;
+                    actor_companions[idx] = ACTOR_SLOT_NONE;
                 }
             }
         }
     }
     else
     {
-        FUN_800567F8(r_u32(actor + 220) - 1);
-        FUN_800567F8(r_u32(actor + 224) - 1);
-        target = r_u32(actor + 228);
+        sound_voice_stop(special->bike.voice[0] - 1);
+        sound_voice_stop(special->bike.voice[1] - 1);
+        target = special->bike.voice[2];
         if (target)
-            FUN_800567F8(target - 1);
-        FUN_80056670(19, 255, 6144);
-        x = r_u32(actor + 40);
-        y = r_u32(actor + 44);
-        z = r_u32(actor + 48);
-        angle = r_u16(actor + 56);
-        FUN_80031C50(893, x, y, z);
+            sound_voice_stop(target - 1);
+        sound_voice_play(19, 255, 6144);
+        x = actor_positions[idx].x.bits;
+        y = actor_positions[idx].y.bits;
+        z = actor_positions[idx].z.bits;
+        angle = (uint16)actor_orientation[idx].yaw;
+        effect_spawn(893, x, y, z);
         for (i = 0; i < 2; ++i)
         {
-            random_offset = ff_rand_8006D348() << 8;
-            x = r_u32(actor + 40) + random_offset - 0x40000;
-            random_offset = ff_rand_8006D348() << 8;
-            z = r_u32(actor + 48);
-            y = r_u32(actor + 44);
+            random_offset = random_next() << 8;
+            x = actor_positions[idx].x.bits + random_offset - 0x40000;
+            random_offset = random_next() << 8;
+            z = actor_positions[idx].z.bits;
+            y = actor_positions[idx].y.bits;
             z += random_offset - 0x40000;
-            FUN_80031C50(893, x, y, z);
+            effect_spawn(893, x, y, z);
         }
         angle = (uint32)(sint32)(sint16)(angle << 5);
-        x = r_u32(actor + 40);
-        z = r_u32(actor + 48);
-        FUN_800168BC(580, x, 0, z, angle);
-        x = r_u32(actor + 40);
-        z = r_u32(actor + 48);
-        FUN_800167C4(532, x, 0xffb00000, z, angle + 16384);
-        x = r_u32(actor + 40);
-        z = r_u32(actor + 48);
-        FUN_80016748(520, x, 0xffb00000, z, angle + 32768);
-        x = r_u32(actor + 40);
-        z = r_u32(actor + 48);
-        FUN_80016748(531, x, 0xffb00000, z, angle);
-        x = r_u32(actor + 40);
-        z = r_u32(actor + 48);
-        FUN_80016748(531, x, 0xffb00000, z, angle + 32768);
+        x = actor_positions[idx].x.bits;
+        z = actor_positions[idx].z.bits;
+        dynamic_objects_spawn_oriented(580, x, 0, z, angle);
+        x = actor_positions[idx].x.bits;
+        z = actor_positions[idx].z.bits;
+        dynamic_objects_spawn_item(532, x, 0xffb00000, z, angle + 16384);
+        x = actor_positions[idx].x.bits;
+        z = actor_positions[idx].z.bits;
+        dynamic_objects_spawn_randomized(520, x, 0xffb00000, z, angle + 32768);
+        x = actor_positions[idx].x.bits;
+        z = actor_positions[idx].z.bits;
+        dynamic_objects_spawn_randomized(531, x, 0xffb00000, z, angle);
+        x = actor_positions[idx].x.bits;
+        z = actor_positions[idx].z.bits;
+        dynamic_objects_spawn_randomized(531, x, 0xffb00000, z, angle + 32768);
         for (i = 0; i < 16; ++i)
         {
-            target = (ff_rand_8006D348() & 3) + 902;
-            x = r_u32(actor + 40);
-            y = r_u32(actor + 44);
-            z = r_u32(actor + 48);
-            FUN_80031CD8(target, x, y, z);
+            target = (random_next() & 3) + 902;
+            x = actor_positions[idx].x.bits;
+            y = actor_positions[idx].y.bits;
+            z = actor_positions[idx].z.bits;
+            effect_spawn_debris(target, x, y, z);
         }
-        w_u32(0x800941a8, 16);
-        w_u32(0x80094190, 4);
-        w_u32(actor, 0);
-        w_u16(actor + 52, 65535);
+        disp_buffers.shake_ticks = 16;
+        disp_buffers.flash_ticks = 4;
+        actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
+        actor_types[idx] = ACTOR_TYPE_NONE;
         result = 0xffffffffu;
     }
     return (sint32)result;
 }
 
-GDB_CALL sint32 FUN_8004D2D4(sint32 index)
+GDB_CALL sint32 npc_update_attack_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d2d4u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52)), state, next = 0, result;
+    NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
+    uint32 table = animation_type_banks[(uint32)actor_types[idx]], state, next = 0, result;
     sint32 drive;
-    if (FUN_8004CFE4(index) < 0)
-        return FUN_80053558(index);
-    drive = (sint32)r_u32(actor + 220);
+    if (npc_move_oscillating(idx) < 0)
+        return npc_update_combat(idx);
+    drive = (sint32)special->attack.phase;
     if (drive >= 257)
     {
-        state = r_u32(actor + 12);
-        w_u32(actor + 228, 0x590000);
-        if (state == 255 && r_u32(actor + 4) == 0xffffffff)
-            FUN_8004C4D8(actor, table, 254);
-        state = r_u32(actor + 12); /* 4D38C reload after the first transition. */
+        state = actor_animations[idx].id;
+        special->attack.effect_height = 0x590000;
+        if (state == 255 && actor_animations[idx].frame == 0xffffffff)
+            npc_start_animation(idx, table, 254);
+        state = actor_animations[idx].id; /* 4D38C reload after the first transition. */
         if (state == 254)
         {
-            if (r_u32(actor + 4) == 0xffffffff)
+            if (actor_animations[idx].frame == 0xffffffff)
                 next = 254;
         }
         else if (state == 257 || state == 258)
         {
-            if (r_u32(actor + 4) == 0xffffffff)
+            if (actor_animations[idx].frame == 0xffffffff)
                 next = 259;
         }
         else if (state == 256 || state == 259)
         {
-            if (r_u32(actor + 4) == 0xffffffff)
+            if (actor_animations[idx].frame == 0xffffffff)
                 next = 255;
         }
         else if (state == 266)
@@ -236,21 +326,21 @@ GDB_CALL sint32 FUN_8004D2D4(sint32 index)
     }
     else if (drive < -320)
     {
-        state = r_u32(actor + 12);
-        w_u32(actor + 228, 0x290000);
+        state = actor_animations[idx].id;
+        special->attack.effect_height = 0x290000;
         if (state == 255 || state == 254)
         {
-            if (r_u32(actor + 4) == 0xffffffff)
+            if (actor_animations[idx].frame == 0xffffffff)
                 next = 256;
         }
         else if (state == 258 || state == 257)
         {
-            if (r_u32(actor + 4) == 0xffffffff)
+            if (actor_animations[idx].frame == 0xffffffff)
                 next = 257;
         }
         else if (state == 256 || state == 259)
         {
-            if (r_u32(actor + 4) == 0xffffffff)
+            if (actor_animations[idx].frame == 0xffffffff)
                 next = 258;
         }
         else if (state == 266)
@@ -258,139 +348,70 @@ GDB_CALL sint32 FUN_8004D2D4(sint32 index)
     }
     else
     {
-        state = r_u32(actor + 12);
-        w_u32(actor + 228, 0x90000);
+        state = actor_animations[idx].id;
+        special->attack.effect_height = 0x90000;
         if (state == 254 || state == 255)
         {
-            if (r_u32(actor + 4) != 0xffffffff)
+            if (actor_animations[idx].frame != 0xffffffff)
                 return -1;
             next = 256;
         }
         else if (state == 257 || state == 258)
         {
-            if (r_u32(actor + 4) != 0xffffffff)
+            if (actor_animations[idx].frame != 0xffffffff)
                 return -1;
             next = 259;
         }
         else if (state == 256 || state == 259)
         {
-            if (r_u32(actor + 4) != 0xffffffff)
+            if (actor_animations[idx].frame != 0xffffffff)
                 return -1;
             next = 266;
         }
         else if (state == 266)
         {
-            sint32 deadline = r_s32(actor + 224);
-            sint32 tick = r_s32(0x80093dd0);
+            sint32 deadline = ((sint32)special->attack.rest_until);
+            sint32 tick = (sint32)game_session.tick;
             if (tick >= deadline)
                 next = 268;
             else
             {
-                if (r_u32(actor + 4) != 0xffffffff)
+                if (actor_animations[idx].frame != 0xffffffff)
                     return -1;
                 next = 266;
             }
         }
         else
             return 266;
-        return FUN_8004C4D8(actor, table, next);
+        return npc_start_animation(idx, table, next);
     }
     if (next)
-        FUN_8004C4D8(actor, table, next);
-    result = r_u32(0x80093dd0) + 20;
-    w_u32(actor + 224, result);
-    return (sint32)result;
+        npc_start_animation(idx, table, next);
+    result = game_session.tick + 20;
+    special->attack.rest_until = result;
+    return result;
 }
 
-GDB_CALL sint32 FUN_8004930C(sint32 index)
-{
-    FUNCTION_MARKER(0x8004930cu, "GAME.EXE");
-    uint32 source = 0x800b4318 + 244u * (uint32)index, item = 0x8009a3c8 + 36u * (uint32)(sint32)r_s8(source + 126);
-    sint32 source_type = r_s16(source + 52), type, angle, direction, distance, victim_index;
-    uint32 kind = r_u32(item), position[3], victim, debris;
-    int i, detach;
-    FUN_8001CF08(index, 0, position);
-    detach = source_type == 32 || (uint32)source_type - 49u < 2u || source_type == 48 || source_type == 14;
-    for (victim_index = 0; victim_index < (sint32)r_u32(0x800940b0); ++victim_index)
-    {
-        victim = 0x800b4318 + 244u * (uint32)victim_index;
-        if (((r_s16(source + 82) >> (victim_index & 31)) & 1) || FUN_80048CFC(r_u32(victim + 12)))
-            continue;
-        type = r_s16(victim + 52);
-        distance = FUN_800163F4((sint32)position[0] >> 16, (sint32)position[2] >> 16, r_s16(victim + 42), r_s16(victim + 50));
-        angle = r_s16(0x80094120 + 2u * (uint32)(sint32)r_s16(victim + 52));
-        w_u32(0x800941a0, (uint32)distance);
-        if (distance >= angle)
-            continue;
-        angle = (sint16)FUN_8001614C(r_s16(victim + 42), r_s16(victim + 50), r_s16(source + 42), r_s16(source + 50));
-        direction = (sint16)(((uint32)(uint16)r_s16(victim + 56) << 5) - (uint32)angle - 16384u);
-        angle = r_s16(victim + 56);
-        FUN_8001697C(865, position[0], position[1], position[2]);
-        FUN_80017C78(victim_index);
-        FUN_800293D8(victim_index);
-        angle ^= 1024;
-        if (kind == 478 || kind == 480 || kind == 482)
-        {
-            w_u32(item, kind + 1);
-            FUN_80056670(113, 255, 6400);
-            debris = 599 + (kind - 478) / 2;
-            for (i = 0; i < 12; ++i)
-                FUN_800315A4(debris, position[0], position[1], position[2], (uint32)angle - 512);
-        }
-        w_u8(victim + 129, (uint8)index);
-        for (i = 0; i < 8; ++i)
-            FUN_800310B8(position[0], position[1], position[2], (uint32)angle);
-        for (i = 0; i < 32; ++i)
-            FUN_8003100C(position[0], position[1], position[2], (uint32)angle);
-        FUN_8001F468(r_s8(victim + 129), victim_index, r_u32(item));
-        if (r_s16(victim + 66) <= 0)
-        {
-            if (detach)
-                FUN_80029A40(index);
-            FUN_80017E30(victim_index);
-            FUN_8001B8DC(victim_index);
-            FUN_80019F00(victim, r_u32(0x800b3be8 + 4u * (uint32)type), 147);
-            w_u16(victim + 66, 0);
-        }
-        else
-        {
-            w_u16(source + 82, (uint16)((uint16)r_s16(source + 82) | (1u << (victim_index & 31))));
-            if (r_s16(victim + 74) < 49)
-                FUN_80019F00(victim, r_u32(0x800b3be8 + 4u * (uint32)type), direction < 0 ? 133 : 152);
-            else
-            {
-                if (detach)
-                    FUN_80029A40(index);
-                FUN_80019F00(victim, r_u32(0x800b3be8 + 4u * (uint32)type), direction < 0 ? 147 : 154);
-                FUN_80017E30(victim_index);
-                w_u16(victim + 74, 0);
-            }
-        }
-        return 1;
-    }
-    return 0;
-}
+static intptr npc_action_call(NPC_ACTION_REFERENCE callback, sint32 idx);
 
-static sint32 npc_action_call(uint32 callback, sint32 index);
-
-GDB_CALL sint32 FUN_8004DF2C(sint32 index)
+GDB_CALL intptr npc_update_vulkan(sint32 idx)
 {
     FUNCTION_MARKER(0x8004df2cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, events, level, volume = 0, result, state, table, handle;
+    uint32 events, level, volume = 0, result, state, handle;
     sint32 timer, partner;
     int bit, change = 0;
-    timer = r_s16(actor + 66);
-    w_u32(0x800947ec, (uint32)index);
+    timer = actor_health[idx].hp;
+    npc_update_idx = (uint32)idx;
     if (timer > 0)
-        FUN_8004DB94(index);
-    if (r_u32(0x800944b8) == 0xffffffff)
+        npc_attack_electric(idx);
+    if (stage_audio_slots[0].voice == -1)
     {
-        w_u32(0x800944b8, (uint32)FUN_80056670(181, 0, 5632));
-        w_u32(0x800944c0, (uint32)FUN_80056670(184, 255, 6144));
-        w_u32(0x800944c4, (uint32)FUN_80056670(188, 0, 6400));
+        stage_audio_slots[0].voice = sound_voice_play(181, 0, 5632);
+        stage_audio_slots[2].voice = sound_voice_play(184, 255, 6144);
+        stage_audio_slots[3].voice = sound_voice_play(188, 0, 6400);
     }
-    state = r_u32(actor + 12);
-    level = r_u32(0x800944bc);
+    state = actor_animations[idx].id;
+    level = stage_audio_slots[1].level;
     if (state - 270u < 2u)
     {
         if ((sint32)level < 248)
@@ -406,1520 +427,1599 @@ GDB_CALL sint32 FUN_8004DF2C(sint32 index)
     }
     if (change)
     {
-        handle = r_u32(0x800944b8);
-        w_u32(0x800944bc, level);
-        FUN_80056840((sint32)handle, (sint32)((level << 2) + 5120));
-        handle = r_u32(0x800944b8);
-        level = r_u32(0x800944bc);
-        FUN_80056F08(handle, level);
+        handle = stage_audio_slots[0].voice;
+        stage_audio_slots[1].level = level;
+        sound_voice_pitch(handle, (level << 2) + 5120);
+        handle = stage_audio_slots[0].voice;
+        level = stage_audio_slots[1].level;
+        sound_voice_volume(handle, level);
     }
-    if (r_u32(actor + 232) & 1)
+    if (actor_status[idx].flags & ACTOR_ELECTRIC)
     {
-        FUN_80040CF4(index);
+        actors_emit_arc(idx);
         volume = 255;
-        w_u32(actor + 232, r_u32(actor + 232) & ~1u);
+        actor_status[idx].flags = actor_status[idx].flags & ~ACTOR_ELECTRIC;
     }
-    FUN_80056F08(r_u32(0x800944c0), volume);
-    timer = r_s8(actor + 119);
+    sound_voice_volume(stage_audio_slots[2].voice, volume);
+    timer = (sint8)actor_lifecycle[idx].death_ticks;
     if (timer)
     {
         timer = (sint8)(timer + 1);
-        w_u8(actor + 119, (uint8)timer);
+        actor_lifecycle[idx].death_ticks = (uint8)timer;
         if (timer >= 61)
         {
-            w_u32(actor, 0);
-            w_u16(actor + 52, 65535);
+            actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
+            actor_types[idx] = ACTOR_TYPE_NONE;
         }
         return -1;
     }
-    if (r_s16(actor + 66) <= 0)
+    if (actor_health[idx].hp <= 0)
     {
-        partner = r_s8(actor + 122);
+        partner = actor_contacts[idx].captive;
         if (partner != -1)
         {
-            w_u8(0x800b4390 + 244u * (uint32)partner, 255);
-            w_u8(actor + 122, 255);
+            actor_contacts[(uint32)partner].captor = ACTOR_SLOT_NONE;
+            actor_contacts[idx].captive = ACTOR_SLOT_NONE;
         }
-        return FUN_8001B8DC(index);
+        return actors_rec_death(idx);
     }
-    if (r_s16(actor + 80) > 0)
-        return FUN_8004E3D8(index);
-    events = r_u32(actor + 28);
+    if (actor_lifecycle[idx].delay > 0)
+        return npc_update_delay(idx);
+    events = actor_animations[idx].motion.events;
     if (events & 0x800)
-        w_u16(actor + 82, 0);
+        actor_animations[idx].hit_flags = 0;
     for (bit = 0; bit < 9; ++bit)
         if (events & (1u << bit))
-            if (FUN_80048DBC(index, bit + 1))
-                FUN_80052878(index);
-    if ((events & 0x400) && FUN_8004930C(index))
+            if (npc_attack_players(idx, bit + 1))
+                sound_play_strike_voice(idx);
+    if ((events & 0x400) && npc_process_weapon_hits(idx))
     {
-        result = (ff_rand_8006D348() & 1) + 33;
-        FUN_80056670(result, 255, 6144);
+        result = (random_next() & 1) + 33;
+        sound_voice_play(result, 255, 6144);
     }
     if (events & 0x1000)
     {
-        ff_actor_event_call(r_u32(0x800bb9b0 + 4u * r_u32(actor + 12)), index);
-        w_u16(actor + 84, (uint16)(r_u16(actor + 84) + 1));
+        uint32 event_state = actor_animations[idx].id & 0x3fffffff;
+        if (event_state >= ACTOR_EVENT_SLOT_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        actor_event_call(actor_events[event_state], idx);
+        actor_animations[idx].event_step = (uint16)(actor_animations[idx].event_step + 1);
     }
-    result = (uint32)FUN_80054C90(index);
+    result = (uint32)npc_react_to_target(idx);
     if (result)
         return (sint32)result;
-    state = r_u32(actor + 12);
-    table = r_u32(actor + 160);
-    return npc_action_call(r_u32(table + 4 * state), index);
+    state = actor_animations[idx].id;
+    if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    NPC_ACTION_BANK_REFERENCE bank = npc_action_actors[idx];
+    uint32 action_idx = (bank.first + state) & 0x3fffffff;
+    if (!bank.actions || action_idx >= NPC_ACTION_SLOT_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    return npc_action_call(bank.actions[action_idx], idx);
 }
 
-GDB_CALL sint32 FUN_8004E7E8(sint32 index)
+GDB_CALL sint32 npc_attack_beams(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e7e8u, "GAME.EXE");
-    static const uint32 styles[3] = {108, 106, 107};
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 flags = r_u32(actor + 28);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    uint32 points[8], source, matrix, target, x, z, delta, result, state = 272;
-    int i, j;
-    for (i = 0; i < 3; ++i)
+    static const uint32 styles[NPC_BEAM_COUNT] = {108, 106, 107};
+    NPC_BEHAVIOR_ACTOR *behavior = npc_behavior_actors + idx;
+    sint32 type = actor_types[idx];
+    uint32 flags = actor_animations[idx].motion.events;
+    uint32 table = animation_type_banks[(uint32)type];
+    FIXED_VEC3 points[2];
+    uint32 target, x, z, delta, result, state = 272;
+    const POSE_MATRIX *matrix;
+    int i;
+    for (i = 0; i < NPC_BEAM_COUNT; ++i)
     {
         if (i)
-            flags = r_u32(actor + 28);
+            flags = actor_animations[idx].motion.events;
         if (flags & (0x2000 << i))
         {
-            if (!(r_u32(actor + 232) & 2))
+            if (!(actor_status[idx].flags & ACTOR_CULLED))
             {
-                source = 0x800923b4 + 32 * i;
-                for (j = 0; j < 8; ++j)
-                    points[j] = r_u32(source + 4 * j);
-                matrix = 0x800ba254 + 504 * (uint32)index;
-                ff_transform_stack_vector_800234E8(matrix, points);
-                ff_transform_stack_vector_800234E8(matrix, points + 4);
-                FUN_8004150C(styles[i], points[4], points[5], points[6], points[0], points[1], points[2], 0x01000080, 0x00c0c0c0);
+                points[0] = beam_points[i][0];
+                points[1] = beam_points[i][1];
+                matrix = &actor_poses[idx].matrix[2];
+                actor_transform_point(matrix, points[0].bits);
+                actor_transform_point(matrix, points[1].bits);
+                effect_spawn_line(styles[i], points[1].x.bits, points[1].y.bits, points[1].z.bits, points[0].x.bits, points[0].y.bits, points[0].z.bits, 0x01000080, 0x00c0c0c0);
             }
-            FUN_80056670(24, 128, 6144);
-            result = (uint32)FUN_8004E6AC(index);
-            w_u32(actor + 172, r_u32(actor + 172) + result);
+            sound_voice_play(24, 128, 6144);
+            result = (uint32)npc_fire_fan(idx);
+            behavior->progress.projectile_hits += result;
         }
     }
-    if ((sint32)r_u32(actor + 172) >= 6)
-        w_u32(actor + 172, 0);
+    if ((sint32)behavior->progress.projectile_hits >= 6)
+        behavior->progress.projectile_hits = 0;
     else
     {
-        if (r_u32(actor + 4) != 0xffffffff)
+        if (actor_animations[idx].frame != 0xffffffff)
             return -1;
-        ff_rand_8006D348(); /* Advance the original unused RNG draw */
-        if (r_u32(actor + 164) == 1)
+        random_next(); /* Advance the original unused RNG draw */
+        if (npc_targets[idx].role == 1)
         {
-            target = r_u32(actor + 168);
+            target = npc_targets[idx].idx;
             if (target != 0xffffffff)
             {
-                x = r_u32(0x800b4340 + 244 * target);
-                z = r_u32(0x800b4348 + 244 * target);
-                delta = (uint32)FUN_800483BC(index, x, z);
+                x = actor_positions[target].x.bits;
+                z = actor_positions[target].z.bits;
+                delta = (uint32)npc_turn_to_point(idx, x, z);
                 if ((uint16)(delta + 2047) < 4095)
                     state = 271;
             }
         }
     }
-    return FUN_8004C4D8(actor, table, state);
+    return npc_start_animation(idx, table, state);
 }
 
-GDB_CALL uint32 FUN_8004D64C(sint32 index, uint32 scale, uint32 output[16])
+GDB_CALL uint32 npc_build_attack_vectors(sint32 idx, uint32 scale, uint32 output[16])
 {
     FUNCTION_MARKER(0x8004d64cu, "GAME.EXE");
     int i;
     if (scale)
     {
-        w_u32(0x80092390, 0u - 8u * scale);
-        w_u32(0x80092394, 89u * scale);
-        w_u32(0x80092398, 0u - 12u * scale);
+        npc_attack_geometry.offset.x.bits = 0u - 8u * scale;
+        npc_attack_geometry.offset.y.bits = 89u * scale;
+        npc_attack_geometry.offset.z.bits = 0u - 12u * scale;
     }
     else
     {
-        w_u32(0x80092390, 0xfff80000);
-        w_u32(0x80092398, 0xfff40000);
-        w_u32(0x80092394, r_u32(0x800b43fc + 244u * index));
+        npc_attack_geometry.offset.x.bits = 0xfff80000;
+        npc_attack_geometry.offset.z.bits = 0xfff40000;
+        npc_attack_geometry.offset.y.bits = npc_behavior_actors[idx].special.attack.effect_height;
     }
-    FUN_80010040();
-    FUN_80011F74(0x800ba254 + 504u * index);
-    FUN_800614F4(r_u32(0x80092384), r_u32(0x80092388), r_u32(0x8009238c), output);
-    FUN_800614F4(r_u32(0x80092384) + r_u32(0x80092390), r_u32(0x80092388) + r_u32(0x80092394), r_u32(0x8009238c) + r_u32(0x80092398), output + 4);
-    FUN_800614F4(0u - r_u32(0x80092384), r_u32(0x80092388), r_u32(0x8009238c), output + 8);
-    FUN_800614F4(0u - (r_u32(0x80092384) + r_u32(0x80092390)), r_u32(0x80092388) + r_u32(0x80092394), r_u32(0x8009238c) + r_u32(0x80092398), output + 12);
-    FUN_80011D20();
-    FUN_8001033C(-r_s16(0x8008d490));
-    FUN_800101CC(-r_s16(0x8008d492));
+    transform_push();
+    transform_load(&actor_poses[idx].matrix[2]);
+    transform_point(npc_attack_geometry.origin.x.bits, npc_attack_geometry.origin.y.bits, npc_attack_geometry.origin.z.bits, output);
+    transform_point(npc_attack_geometry.origin.x.bits + npc_attack_geometry.offset.x.bits, npc_attack_geometry.origin.y.bits + npc_attack_geometry.offset.y.bits, npc_attack_geometry.origin.z.bits + npc_attack_geometry.offset.z.bits, output + 4);
+    transform_point(0u - npc_attack_geometry.origin.x.bits, npc_attack_geometry.origin.y.bits, npc_attack_geometry.origin.z.bits, output + 8);
+    transform_point(0u - (npc_attack_geometry.origin.x.bits + npc_attack_geometry.offset.x.bits), npc_attack_geometry.origin.y.bits + npc_attack_geometry.offset.y.bits, npc_attack_geometry.origin.z.bits + npc_attack_geometry.offset.z.bits, output + 12);
+    transform_identity();
+    transform_yaw(-camera.angles.yaw);
+    transform_pitch(-camera.angles.pitch);
     for (i = 0; i < 16; i += 4)
-        FUN_800614F4(output[i], output[i + 1], output[i + 2], output + i);
-    FUN_80010028();
+        transform_point(output[i], output[i + 1], output[i + 2], output + i);
+    transform_pop();
     output[4] -= output[0];
     output[5] -= output[1];
     output[6] -= output[2];
-    output[0] += r_u32(0x8008d4a4);
-    output[1] += r_u32(0x8008d4a8);
+    output[0] += camera.pos.x.bits;
+    output[1] += camera.pos.y.bits;
     output[12] -= output[8];
     output[14] -= output[10];
     output[13] -= output[9];
-    output[2] += r_u32(0x8008d4ac);
-    output[8] += r_u32(0x8008d4a4);
-    output[9] += r_u32(0x8008d4a8);
-    output[10] += r_u32(0x8008d4ac);
+    output[2] += camera.pos.z.bits;
+    output[8] += camera.pos.x.bits;
+    output[9] += camera.pos.y.bits;
+    output[10] += camera.pos.z.bits;
     return output[10];
 }
 
-GDB_CALL sint32 FUN_8004D914(sint32 index)
+GDB_CALL sint32 npc_emit_attack_effects(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d914u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * index, flags = r_u32(actor + 28), point[16];
+    NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
+    uint32 flags = actor_animations[idx].motion.events, point[16];
     int i;
     if (flags & 0x1000u)
     {
         if (flags & 0x800u)
-            FUN_80032EE0(index);
+            actor_emit_ground_effect(idx);
         else
-            FUN_80056670(187, 255, 6144);
+            sound_voice_play(187, 255, 6144);
     }
     if (flags & 0xe000u)
     {
-        uint32 control = r_u32(actor + 232);
-        w_u32(actor + 228, 0x00c90000);
+        uint32 control = actor_status[idx].flags;
+        special->attack.effect_height = 0x00c90000;
         if (!(control & 2u))
         {
-            FUN_8004D64C(index, 0x28000, point);
+            npc_build_attack_vectors(idx, 0x28000, point);
             for (i = 0; i < 2; i++)
                 if (flags & (0x2000u << i))
                 {
                     uint32 *p = point + 8 * i;
-                    FUN_8004141C(876, p[0], p[1], p[2], p[4], p[5], p[6]);
-                    FUN_8004141C(876, p[0], p[1], p[2], p[4] << 1, p[5], p[6] << 1);
+                    effect_spawn_motion(876, p[0], p[1], p[2], p[4], p[5], p[6]);
+                    effect_spawn_motion(876, p[0], p[1], p[2], p[4] << 1, p[5], p[6] << 1);
                 }
             if (flags & 0x8000u)
             {
-                FUN_8004D64C(index, 0x18000, point);
+                npc_build_attack_vectors(idx, 0x18000, point);
                 for (i = 0; i < 2; i++)
                 {
                     uint32 *p = point + 8 * i;
-                    FUN_8004141C(877, p[0], p[1], p[2], p[4], p[5], p[6]);
+                    effect_spawn_motion(877, p[0], p[1], p[2], p[4], p[5], p[6]);
                 }
             }
         }
     }
     else
-        w_u32(actor + 228, 0x00590000);
-    if (r_u32(actor + 4) == 0xffffffffu)
+        special->attack.effect_height = 0x00590000;
+    if (actor_animations[idx].frame == 0xffffffffu)
     {
-        w_u32(actor + 228, 0x00090000);
-        return FUN_80053558(index);
+        special->attack.effect_height = 0x00090000;
+        return npc_update_combat(idx);
     }
     return 0x00090000;
 }
 
-GDB_CALL sint32 FUN_8003B8E4(sint32 index)
+GDB_CALL intptr npc_update_stage4_departure(sint32 idx)
 {
     FUNCTION_MARKER(0x8003b8e4u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * index, yaw, result;
+    uint32 yaw, result;
     sint32 tick, target, delta, x, z, action = -1;
-    if (r_u32(0x80093d58) != 4)
-        return FUN_80052944(index);
-    w_u16(actor + 80, 1);
-    tick = (sint32)r_u32(0x80093dd0);
+    if (game_session.stage != 4)
+        return npc_update_actor(idx);
+    actor_lifecycle[idx].delay = 1;
+    tick = (sint32)game_session.tick;
     if (tick >= 301)
     {
         target = tick >= 571 ? 5200 : 4800;
-        x = r_s16(actor + 42);
-        z = r_s16(actor + 50);
-        if (FUN_800163F4(-128, target, x, z) >= 257)
+        x = actor_positions[idx].x.whole;
+        z = actor_positions[idx].z.whole;
+        if (math_distance_approx(-128, target, x, z) >= 257)
         {
-            yaw = (uint32)(uint16)r_s16(actor + 56) << 5;
-            x = r_s16(actor + 42);
-            z = r_s16(actor + 50);
-            delta = (sint16)((uint32)FUN_8001614C(x, z, -128, target) - yaw + 2u);
+            yaw = (uint32)(uint16)actor_orientation[idx].yaw << 5;
+            x = actor_positions[idx].x.whole;
+            z = actor_positions[idx].z.whole;
+            delta = (sint16)((uint32)math_dir16(x, z, -128, target) - yaw + 2u);
             delta >>= 2;
             if (delta > 512)
                 delta = 512;
             else if (delta < -512)
                 delta = -512;
-            w_u16(actor + 56, (uint16)(yaw + (uint32)delta) >> 5);
-            if (r_u32(actor + 4) != 0xffffffffu && r_u32(actor + 12) != 69)
+            actor_orientation[idx].yaw = (uint16)(yaw + (uint32)delta) >> 5;
+            if (actor_animations[idx].frame != 0xffffffffu && actor_animations[idx].id != 69)
                 goto finish;
-            if ((uint32)(uint16)r_s16(actor + 56) - 961u < 127u && (sint32)r_u32(0x800941a0) >= 513)
+            if ((uint32)(uint16)actor_orientation[idx].yaw - 961u < 127u && dir_distance >= 513)
                 action = 87;
-            else if (r_s16(actor + 56) < 1536)
+            else if (actor_orientation[idx].yaw < 1536)
                 action = 82;
         }
     }
-    if (action == -1 && r_u32(actor + 4) == 0xffffffffu)
+    if (action == -1 && actor_animations[idx].frame == 0xffffffffu)
         action = 69;
     if (action != -1)
-        FUN_80019F00(actor, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52)), action);
+        animation_start(idx, animation_type_banks[(uint32)actor_types[idx]], action);
 finish:
-    if (r_u32(0x80093dd0) != 630)
+    if (game_session.tick != 630)
         return -1;
-    w_u16(actor + 52, 65535);
-    result = r_u32(0x80093dbc) - 1u;
-    w_u32(0x80093dbc, result);
+    actor_types[idx] = ACTOR_TYPE_NONE;
+    result = level_wave.remaining_enemies - 1u;
+    level_wave.remaining_enemies = result;
     return (sint32)result;
 }
 
-GDB_CALL sint32 FUN_8004DB94(sint32 index)
+GDB_CALL sint32 npc_attack_electric(sint32 idx)
 {
     FUNCTION_MARKER(0x8004db94u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * index, other, state;
+    uint32 state;
     sint32 i, heading;
     int hit = 0;
-    if ((sint32)(r_u32(actor + 44) + r_u32(actor + 16)) < (sint32)0xff000000u)
+    /* TODO: Investigate an electric attack outside the native actor pool */
+    if ((uint32)idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid electric attacker %d players %u stage %u tick %u\n", idx, game_session.player_count, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    if ((sint32)(actor_positions[idx].y.bits + actor_animations[idx].motion.bits[0]) < (sint32)0xff000000u)
         return 1;
-    state = r_u32(actor + 12);
+    state = actor_animations[idx].id;
     if (state - 274u < 2u || state == 276)
         return 276;
-    for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
+    ACTOR_STATUS *status = actor_status + idx;
+    for (i = 0; i < (sint32)game_session.player_count; i++)
     {
-        other = 0x800b4318 + 244u * i;
-        if (r_s16(other + 52) == -1 || r_s16(other + 66) <= 0)
+        /* TODO: Investigate an electric target beyond the native actor pool */
+        if ((uint32)i >= ACTOR_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid electric target %d attacker %d players %u stage %u tick %u\n", i, idx, game_session.player_count, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        if (actor_types[i] == ACTOR_TYPE_NONE || actor_health[i].hp <= 0)
             continue;
-        heading = (sint16)FUN_8001614C(r_s16(actor + 42), r_s16(actor + 50), r_s16(other + 42), r_s16(other + 50));
+        heading = (sint16)math_dir16(actor_positions[idx].x.whole, actor_positions[idx].z.whole, actor_positions[i].x.whole, actor_positions[i].z.whole);
         heading >>= 5;
-        if ((sint32)r_u32(0x800941a0) < 1280 && (sint32)r_u32(actor + 176) < (sint32)(r_u32(0x80093dd0) + 20u))
-            w_u32(actor + 232, r_u32(actor + 232) | 1u);
-        if ((sint32)r_u32(0x800941a0) >= 448)
+        if (dir_distance < 1280 && (sint32)status->deadline < (sint32)(game_session.tick + 20u))
+            status->flags = status->flags | ACTOR_ELECTRIC;
+        if (dir_distance >= 448)
             continue;
-        state = r_u32(other + 12);
-        if (state == 147 || state == 148 || state == 252 || state == 251 || (sint32)r_u32(0x80093dd0) < (sint32)r_u32(actor + 176))
+        state = actor_animations[i].id;
+        if (state == 147 || state == 148 || state == 252 || state == 251 || (sint32)game_session.tick < (sint32)status->deadline)
             continue;
-        FUN_80040E14(index, i);
-        FUN_80019F00(other, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(other + 52)), 251);
-        w_u16(other + 56, (uint16)(heading ^ 1024));
-        FUN_8001F230(index, i, 20);
-        FUN_80056670(185, 255, 6144);
+        actors_emit_link(idx, i);
+        sint32 type = actor_types[i];
+        /* TODO: Investigate a changed electric target type after link creation */
+        if ((uint32)type >= ANIMATION_TYPE_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid electric target type %d target %d attacker %d stage %u tick %u\n", type, i, idx, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        animation_start(i, animation_type_banks[(uint32)type], 251);
+        actor_orientation[i].yaw = (uint16)(heading ^ 1024);
+        actor_apply_damage(idx, i, 20);
+        sound_voice_play(185, 255, 6144);
         hit = 1;
-        w_u32(other + 232, r_u32(other + 232) | 1u);
-        w_u32(other + 176, r_u32(0x80093dd0) + 20u);
+        actor_status[i].flags = actor_status[i].flags | ACTOR_ELECTRIC;
+        actor_status[i].deadline = game_session.tick + 20u;
     }
     if (hit)
     {
-        w_u32(actor + 176, r_u32(0x80093dd0) + 80u);
-        return FUN_800532B8(index);
+        status->deadline = game_session.tick + 80u;
+        return npc_update_ranged_attack(idx);
     }
     return 0;
 }
 
-GDB_CALL sint32 FUN_8004CFE4(sint32 index)
+GDB_CALL sint32 npc_move_oscillating(sint32 idx)
 {
     FUNCTION_MARKER(0x8004cfe4u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * index, target, x, z, yaw, phase, offset;
+    NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
+    uint32 x, z, yaw, phase, offset;
     sint32 slot, delta, reach, speed;
-    slot = (sint32)r_u32(actor + 168);
-    if (r_u32(actor + 164) == 1 && slot != -1)
+    slot = (sint32)npc_targets[idx].idx;
+    if (npc_targets[idx].role == 1 && slot != -1)
     {
-        target = 0x800b4318 + 244u * slot;
-        x = r_u32(target + 40);
-        z = r_u32(target + 48);
+        /* TODO: Investigate an oscillating NPC with an invalid actor target */
+        if ((uint32)slot >= ACTOR_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid oscillating NPC actor %d target %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        x = actor_positions[slot].x.bits;
+        z = actor_positions[slot].z.bits;
     }
     else
     {
-        if (r_u32(actor + 164) != 4 || slot == -1)
+        if (npc_targets[idx].role != 4 || slot == -1)
             return -1;
-        target = 0x8009a3c8 + 36u * slot;
-        x = r_u32(target + 4);
-        z = r_u32(target + 12);
+        /* TODO: Investigate an oscillating NPC with an invalid item target */
+        if ((uint32)slot >= DYNAMIC_OBJECT_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid oscillating NPC actor %d item %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        const MODEL_OBJECT *model = dynamic_objects + slot;
+        x = model->pos.x.bits;
+        z = model->pos.z.bits;
     }
-    delta = FUN_8001614C(r_s16(actor + 42), r_s16(actor + 50), (sint32)x >> 16, (sint32)z >> 16);
-    yaw = (uint16)r_s16(actor + 56);
+    delta = math_dir16(actor_positions[idx].x.whole, actor_positions[idx].z.whole, (sint32)x >> 16, (sint32)z >> 16);
+    yaw = (uint16)actor_orientation[idx].yaw;
     delta = (sint16)((uint32)delta - (yaw << 5));
     yaw += delta < -1024 ? (uint32)-32 : delta > 1024 ? 32u : (uint32)(delta >> 5);
-    w_u16(actor + 56, (uint16)yaw);
-    reach = (sint32)(r_u32(0x800941a0) - 384u);
-    w_u16(actor + 56, (uint16)(yaw & 2047));
+    actor_orientation[idx].yaw = (uint16)yaw;
+    reach = (uint32)dir_distance - 384u;
+    actor_orientation[idx].yaw = (uint16)(yaw & 2047);
     if (reach > 384)
         reach = 384;
-    phase = r_u32(actor + 220);
+    phase = special->attack.phase;
     phase += (uint32)((sint32)(((uint32)reach << 2) - phase) >> 3);
-    w_u32(actor + 220, phase);
-    offset = ((uint32)((sint32)phase >> 5) & 2047u);
-    w_u32(actor + 216, offset);
-    speed = r_s16(0x800802d0 + offset * 2u) >> 6;
-    w_u32(actor + 216, (uint32)speed);
+    special->attack.phase = phase;
+    offset = (uint32)((sint32)phase >> 5) & 2047u;
+    special->attack.speed = offset;
+    speed = sin_table[offset] >> 6;
+    special->attack.speed = (uint32)speed;
     if (speed > 48)
         speed = 48;
     else if (speed < -48)
         speed = -48;
-    w_u32(actor + 216, (uint32)speed);
-    offset = 2u * (uint32)(sint32)r_s16(actor + 56);
-    w_u32(actor + 40, r_u32(actor + 40) + (uint32)(speed * r_s16(0x800802d0 + offset)));
-    w_u32(actor + 48, r_u32(actor + 48) - (uint32)(speed * r_s16(0x800806d0 + offset)));
-    return (sint32)r_u32(0x800941a0);
+    special->attack.speed = (uint32)speed;
+    offset = 2u * (uint32)(sint32)actor_orientation[idx].yaw;
+    actor_positions[idx].x.bits = actor_positions[idx].x.bits + (uint32)(speed * sin_table[offset >> 1]);
+    actor_positions[idx].z.bits = actor_positions[idx].z.bits - (uint32)(speed * sin_table[MATH_QUARTER_TURN + (offset >> 1)]);
+    return dir_distance;
 }
 
-GDB_CALL sint32 FUN_80054598(sint32 index)
+GDB_CALL sint32 npc_release_captive(sint32 idx)
 {
     FUNCTION_MARKER(0x80054598u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, other, random, other_table;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    uint32 random, other_table;
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     sint32 slot, action, other_type;
     if (frame != 0xffffffffu)
         return -1;
-    slot = r_s8(actor + 122);
+    slot = actor_contacts[idx].captive;
     if (slot == -1)
-        return FUN_800532B8(index);
-    other = 0x800b4318 + 244u * (uint32)slot;
-    if (table == 0x800849a4 || table == 0x80082e8c || table == 0x80083794 || table == 0x80082a08)
+        return npc_update_ranged_attack(idx);
+    if (table == ANIMATION_BANK_SHARED8 || table == ANIMATION_BANK_SHARED2 || table == ANIMATION_BANK_SHARED4 || table == ANIMATION_BANK_SHARED1)
         action = 181;
     else
     {
-        random = ff_rand_8006D348() & 3u;
+        random = random_next() & 3u;
         if (!random)
-            return FUN_8004C4D8(actor, table, 10);
+            return npc_start_animation(idx, table, 10);
         if (random == 1)
-            return FUN_8004C4D8(actor, table, 40);
+            return npc_start_animation(idx, table, 40);
         /* The MIPS fallback at54764 is unreachable after ANDI3 and the 0/1 gates. */
-        action = table == 0x80084520 ? 182 : 180;
+        action = table == ANIMATION_BANK_SHARED7 ? 182 : 180;
     }
-    w_u8(actor + 122, 255);
+    actor_contacts[idx].captive = ACTOR_SLOT_NONE;
     if (action == 181)
     {
-        other_type = r_s16(other + 52);
-        w_u8(other + 120, 255);
-        w_u8(other + 129, (uint8)index);
+        other_type = actor_types[slot];
+        actor_contacts[slot].captor = ACTOR_SLOT_NONE;
+        actor_contacts[slot].last_attacker = (uint8)idx;
     }
     else
     {
-        w_u8(other + 120, 255);
-        w_u8(other + 129, (uint8)index);
-        other_type = r_s16(other + 52);
+        actor_contacts[slot].captor = ACTOR_SLOT_NONE;
+        actor_contacts[slot].last_attacker = (uint8)idx;
+        other_type = actor_types[slot];
     }
-    other_table = r_u32(0x800b3be8 + 4 * (uint32)other_type);
-    FUN_800237CC(other, other_table, action);
-    return FUN_8004C4D8(actor, table, 177);
+    other_table = animation_type_banks[(uint32)other_type];
+    animation_start_held(slot, other_table, action);
+    return npc_start_animation(idx, table, 177);
 }
 
-GDB_CALL sint32 FUN_80055964(sint32 attacker, uint32 world_x, uint32 world_z)
-{
-    FUNCTION_MARKER(0x80055964u, "GAME.EXE");
-    sint32 x = (sint32)world_x >> 16, z = (sint32)world_z >> 16, index, type, slot;
-    uint32 actor, state, other, source = 0x800b4318 + 244u * (uint32)attacker, angle;
-    for (index = 0; index < 8; index++)
-    {
-        actor = 0x800b4318 + 244u * (uint32)index;
-        if (r_s16(actor + 80) || r_s8(actor + 120) != -1)
-            continue;
-        type = r_s16(actor + 52);
-        if (type == -1 || type == 17 || type == 51)
-            continue;
-        state = r_u32(actor + 12);
-        if (state == 147 || state == 167 || state == 148 || r_s16(actor + 66) <= 0)
-            continue;
-        if (FUN_800163F4(x, z, r_s16(actor + 42), r_s16(actor + 50)) >= 64)
-            continue;
-        FUN_8001F230(-1, index, -100);
-        FUN_8001B850(attacker, index);
-        angle = (uint32)FUN_8001627C(r_s16(source + 42), r_s16(source + 50), r_s16(actor + 42), r_s16(actor + 50)) ^ 512u;
-        w_u16(actor + 56, (uint16)angle);
-        FUN_80017E30(index);
-        slot = r_s8(actor + 122);
-        if (slot != -1)
-        {
-            other = 0x800b4318 + 244u * (uint32)slot;
-            w_u8(actor + 122, 255);
-            w_u8(other + 120, 255);
-            if (state == 169)
-                FUN_80019F00(other, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(other + 52)), 148);
-        }
-        FUN_80019F00(actor, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52)), 147);
-    }
-    return 0;
-}
-
-GDB_CALL sint32 FUN_8004CB88(sint32 index)
+GDB_CALL sint32 npc_finish_grapple(sint32 idx)
 {
     FUNCTION_MARKER(0x8004cb88u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, table, state, other, angle, pair, heading, action;
-    sint32 type, slot, random, divisor, x, z, distance;
-    type = r_s16(actor + 52);
-    state = r_u32(actor + 4);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
+
+    enum
+    {
+        NPC_GRAPPLE_PAIR_COUNT = 3
+    };
+
+    static const struct NPC_GRAPPLE_PAIR
+    {
+        uint32 actor_animation;
+        uint32 captive_animation;
+    } pairs[NPC_GRAPPLE_PAIR_COUNT] = {{177, 181}, {3, 141}, {4, 142}};
+    const struct NPC_GRAPPLE_PAIR *pair;
+    uint32 table, state, angle, heading, action;
+    sint32 type, slot, random, x, z, distance;
+    type = actor_types[idx];
+    state = actor_animations[idx].frame;
+    table = animation_type_banks[(uint32)type];
     if (state != 0xffffffff)
         return -1;
-    slot = r_s8(actor + 122);
+    slot = actor_contacts[idx].captive;
     if (slot == -1)
-        return FUN_800532B8(index);
-    other = 0x800b4318 + 244u * (uint32)slot;
-    x = r_s16(actor + 42);
-    z = r_s16(actor + 50);
-    angle = (uint32)FUN_8001614C(x, z, -1216, 432);
-    heading = r_u16(actor + 56);
-    distance = r_s32(0x800941a0);
+        return npc_update_ranged_attack(idx);
+    x = actor_positions[idx].x.whole;
+    z = actor_positions[idx].z.whole;
+    angle = (uint32)math_dir16(x, z, -1216, 432);
+    heading = (uint16)actor_orientation[idx].yaw;
+    distance = dir_distance;
     angle -= heading << 5;
     if (distance >= 513 && (uint16)(angle + 4096) >= 8193)
     {
-        FUN_80019F00(actor, table, 167);
-        w_u8(0x800b4391, 1);
-        type = r_s16(other + 52);
-        table = r_u32(0x800b3be8 + 4 * (uint32)type);
-        return FUN_800237CC(other, table, 172);
+        animation_start(idx, table, 167);
+        actor_contacts[0].grapple_mode = 1;
+        type = actor_types[slot];
+        table = animation_type_banks[(uint32)type];
+        return animation_start_held(slot, table, 172);
     }
-    w_u8(actor + 122, 255);
-    w_u8(other + 120, 255);
-    w_u8(other + 129, (uint8)index);
-    random = (sint32)ff_rand_8006D348();
-    divisor = (sint32)r_u32(0x80092380);
-    if (!divisor || (divisor == -1 && (uint32)random == 0x80000000))
-        ff_wip_stop(__FUNCTION__, __FILE__, __LINE__);
-    pair = 0x8007f784 + 8 * (uint32)(random % divisor);
-    action = r_u32(pair);
-    FUN_80019F00(actor, table, action);
-    type = r_s16(other + 52);
-    action = r_u32(pair + 4);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    return FUN_800237CC(other, table, action);
+    actor_contacts[idx].captive = ACTOR_SLOT_NONE;
+    actor_contacts[slot].captor = ACTOR_SLOT_NONE;
+    actor_contacts[slot].last_attacker = (uint8)idx;
+    random = (sint32)random_next();
+    pair = pairs + random % NPC_GRAPPLE_PAIR_COUNT;
+    action = pair->actor_animation;
+    animation_start(idx, table, action);
+    type = actor_types[slot];
+    action = pair->captive_animation;
+    table = animation_type_banks[(uint32)type];
+    return animation_start_held(slot, table, action);
 }
 
-GDB_CALL sint32 FUN_8004E6AC(sint32 index)
+GDB_CALL sint32 npc_fire_fan(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e6acu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, position[3], angle;
+    FIXED_VEC3 pos;
+    uint32 angle;
     int ray;
     sint32 hit = 0;
     for (ray = 0; ray < 3; ray++)
     {
-        position[0] = r_u32(actor + 40);
-        position[1] = r_u32(actor + 44) - 0x400000;
-        position[2] = r_u32(actor + 48);
-        angle = r_u16(actor + 56);
+        pos.x.bits = actor_positions[idx].x.bits;
+        pos.y.bits = actor_positions[idx].y.bits - 0x400000;
+        pos.z.bits = actor_positions[idx].z.bits;
+        angle = (uint16)actor_orientation[idx].yaw;
         if (ray == 1)
             angle -= 384;
         else if (ray == 2)
             angle += 384;
-        hit = ff_npc_projectile_ray(position, (uint16)(angle << 5), index);
+        hit = projectile_trace_npc(pos.bits, angle << 5, idx);
         if (hit)
             break;
     }
     return hit != 0;
 }
 
-GDB_CALL sint32 FUN_8004CE48(sint32 index)
+GDB_CALL sint32 npc_carry_captive_to_point(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ce48u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, table, other, frame, angle, heading;
+    uint32 table, frame, angle, heading;
     sint32 type, slot, x, z, distance;
-    type = r_s16(actor + 52);
-    slot = r_s8(actor + 122);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    other = 0x800b4318 + 244 * (uint32)slot;
+    type = actor_types[idx];
+    slot = actor_contacts[idx].captive;
+    table = animation_type_banks[(uint32)type];
     if (slot == -1)
-        return FUN_800532B8(index);
-    FUN_800483BC(index, 0xfb400000, 0x01b00000);
-    FUN_80023664(actor, other);
-    frame = r_u32(actor + 4);
+        return npc_update_ranged_attack(idx);
+    npc_turn_to_point(idx, 0xfb400000, 0x01b00000);
+    actors_apply_pair_offset(idx, slot);
+    frame = actor_animations[idx].frame;
     if (frame != 0xffffffff)
-        return (sint32)frame;
-    x = r_s16(actor + 42);
-    z = r_s16(actor + 50);
-    angle = (uint32)FUN_8001614C(x, z, -1216, 432);
-    heading = r_u16(actor + 56);
-    distance = r_s32(0x800941a0);
+        return frame;
+    x = actor_positions[idx].x.whole;
+    z = actor_positions[idx].z.whole;
+    angle = (uint32)math_dir16(x, z, -1216, 432);
+    heading = (uint16)actor_orientation[idx].yaw;
+    distance = dir_distance;
     angle -= heading << 5;
     if (distance >= 257 && (uint16)(angle + 2048) >= 4097)
     {
-        FUN_800237CC(actor, table, 169);
-        type = r_s16(other + 52);
-        table = r_u32(0x800b3be8 + 4 * (uint32)type);
-        return FUN_800237CC(other, table, 77);
+        animation_start_held(idx, table, 169);
+        type = actor_types[slot];
+        table = animation_type_banks[(uint32)type];
+        return animation_start_held(slot, table, 77);
     }
-    w_u8(actor + 122, 255);
-    w_u8(other + 120, 255);
-    w_u8(other + 129, (uint8)index);
-    FUN_80019F00(actor, table, 178);
-    type = r_s16(other + 52);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    return FUN_800237CC(other, table, 184);
+    actor_contacts[idx].captive = ACTOR_SLOT_NONE;
+    actor_contacts[slot].captor = ACTOR_SLOT_NONE;
+    actor_contacts[slot].last_attacker = (uint8)idx;
+    animation_start(idx, table, 178);
+    type = actor_types[slot];
+    table = animation_type_banks[(uint32)type];
+    return animation_start_held(slot, table, 184);
 }
 
-GDB_CALL sint32 FUN_800555DC(sint32 index)
+GDB_CALL sint32 npc_throw_items(sint32 idx)
 {
     FUNCTION_MARKER(0x800555dcu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, item, point[3];
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    FIXED_VEC3 point;
+    /* TODO: Investigate NPC item actions outside the native actor pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    ANIMATION_BANK_ID bank = animation_type_banks[(uint32)type];
     sint32 slot;
     if (frame != 0xffffffffu)
         return -1;
-    FUN_8004C4D8(actor, table, 160);
-    slot = r_s8(actor + 126);
+    npc_start_animation(idx, bank, 160);
+    slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     if (slot != -1)
     {
-        w_u8(actor + 126, 255);
-        item = 0x8009a3c8 + 36u * (uint32)slot;
-        w_u16(item + 24, 128);
-        w_u16(item + 32, 64);
-        w_u16(item + 26, 6528);
-        w_u16(item + 16, (uint16)((uint32)r_u16(actor + 56) << 5));
-        FUN_8001B9F4(index, 3, point);
-        w_u32(item + 4, point[0]);
-        w_u32(item + 8, point[1]);
-        w_u16(item + 28, (uint16)index);
-        w_u32(item + 12, point[2]);
+        actor_items[idx].slot[ACTOR_ITEM_RIGHT] = -1;
+        /* TODO: Investigate the original right-hand item slot before its first payload write */
+        if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid NPC throw actor %d right-hand source slot %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        MODEL_OBJECT *item = dynamic_objects + slot;
+        /* TODO: Investigate an NPC item access with a foreign native owner */
+        if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase throw-motion stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        item->physics.speed = 128;
+        item->physics.vertical_speed = 64;
+        item->physics.spin = 6528;
+        item->angles.yaw_bits = (uint16)((uint32)((uint16)actor_orientation[idx].yaw) << 5);
+        actor_attachment_pos(idx, 3, point.bits);
+        item->pos.x.bits = point.x.bits;
+        item->pos.y.bits = point.y.bits;
+        /* TODO: Investigate an NPC item access with a foreign native owner */
+        if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase throw-after-attachment stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        item->physics.actor_idx = idx;
+        item->pos.z.bits = point.z.bits;
     }
-    if (r_s8(actor + 125) == -1)
+    if (actor_items[idx].slot[ACTOR_ITEM_LEFT] == -1)
         return -1;
     /* Original 800556D8 reloads slot 126, even after clearing it above. */
-    slot = r_s8(actor + 126);
-    w_u8(actor + 125, 255);
-    item = 0x8009a3c8 + 36u * (uint32)slot;
-    w_u16(item + 24, 128);
-    w_u16(item + 32, 64);
-    w_u16(item + 26, 6528);
-    w_u16(item + 16, (uint16)((uint32)r_u16(actor + 56) << 5));
-    FUN_8001B9F4(index, 2, point);
-    w_u32(item + 4, point[0]);
-    w_u32(item + 8, point[1]);
-    w_u16(item + 28, (uint16)index);
-    w_u32(item + 12, point[2]);
-    return (sint32)point[2];
+    slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
+    actor_items[idx].slot[ACTOR_ITEM_LEFT] = -1;
+    /* TODO: Investigate the original left-hand item slot before its first payload write */
+    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC throw actor %d left-hand source slot %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    MODEL_OBJECT *item = dynamic_objects + slot;
+    /* TODO: Investigate an NPC item access with a foreign native owner */
+    if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase throw-motion stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    item->physics.speed = 128;
+    item->physics.vertical_speed = 64;
+    item->physics.spin = 6528;
+    item->angles.yaw_bits = (uint16)((uint32)((uint16)actor_orientation[idx].yaw) << 5);
+    actor_attachment_pos(idx, 2, point.bits);
+    item->pos.x.bits = point.x.bits;
+    item->pos.y.bits = point.y.bits;
+    /* TODO: Investigate an NPC item access with a foreign native owner */
+    if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase throw-after-attachment stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    item->physics.actor_idx = idx;
+    item->pos.z.bits = point.z.bits;
+    return (sint32)point.z.bits;
 }
 
-GDB_CALL sint32 FUN_8004EDB8(sint32 index)
+GDB_CALL sint32 npc_advance_charge(sint32 idx)
 {
     FUNCTION_MARKER(0x8004edb8u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 role = r_u32(actor + 164);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 role = npc_targets[idx].role;
+    uint32 table = animation_type_banks[(uint32)type];
     uint32 slot = 0xffffffff, x, z, heading_x, heading_z, dx, dz, frame;
     if (role == 1)
-        slot = r_u32(actor + 168);
+        slot = npc_targets[idx].idx;
     if (slot == 0xffffffff)
     {
-        if (r_u32(actor + 4) != 0xffffffffu)
+        if (actor_animations[idx].frame != 0xffffffffu)
             return -1;
-        return FUN_8004C4D8(actor, table, 276);
+        return npc_start_animation(idx, table, 276);
     }
-    x = r_u32(0x800b4340 + 244 * slot);
-    z = r_u32(0x800b4348 + 244 * slot);
-    FUN_800483BC(index, x, z);
-    heading_x = (uint32)(sint32)r_s16(actor + 56);
-    heading_z = (uint32)(sint32)r_s16(actor + 56);
-    dx = (uint32)(sint32)r_s16(0x800802d0 + 2 * heading_x) << 5;
-    x = r_u32(actor + 40);
-    w_u32(actor + 40, x + dx);
-    dz = (uint32)(sint32)r_s16(0x800806d0 + 2 * heading_z) << 5;
-    z = r_u32(actor + 48);
-    frame = r_u32(actor + 4);
-    w_u32(actor + 48, z - dz);
+    x = actor_positions[slot].x.bits;
+    z = actor_positions[slot].z.bits;
+    npc_turn_to_point(idx, x, z);
+    heading_x = (uint32)(sint32)actor_orientation[idx].yaw;
+    heading_z = (uint32)(sint32)actor_orientation[idx].yaw;
+    dx = (uint32)(sint32)sin_table[heading_x] << 5;
+    x = actor_positions[idx].x.bits;
+    actor_positions[idx].x.bits = x + dx;
+    dz = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + heading_z] << 5;
+    z = actor_positions[idx].z.bits;
+    frame = actor_animations[idx].frame;
+    actor_positions[idx].z.bits = z - dz;
     if (frame != 0xffffffff)
-        return (sint32)dz;
-    if ((sint32)r_u32(0x800941a0) < 448)
+        return dz;
+    if (dir_distance < 448)
     {
-        FUN_80056F08(r_u32(0x800944c4), 0);
-        return FUN_8004C4D8(actor, table, 276);
+        sound_voice_volume(stage_audio_slots[3].voice, 0);
+        return npc_start_animation(idx, table, 276);
     }
-    return FUN_8004C4D8(actor, table, 275);
+    return npc_start_animation(idx, table, 275);
 }
 
-GDB_CALL sint32 FUN_8004DDEC(sint32 index)
+GDB_CALL intptr npc_update_jetpack_sound(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ddecu, "GAME.EXE");
-    uint32 state = r_u32(0x800b4324 + 244u * (uint32)index), volume, pan;
+    uint32 state = actor_animations[idx].id, volume, pan;
     sint32 level;
     level = (state - 257u < 2u || state - 254u < 2u || state - 266u < 2u || state == 31 || state == 3) ? 16 : -16;
-    level = (sint32)((uint32)level + r_u32(0x800944bc));
+    level = (uint32)level + stage_audio_slots[1].level;
     if (level < 64)
         level = 64;
     if (level > 192)
         level = 192;
-    w_u32(0x800944bc, (uint32)level);
-    ff_spatial_sound_80046884(0x800b4340 + 244u * (uint32)index, &volume, &pan);
-    volume *= r_u32(0x800944bc);
-    FUN_800568C8((sint32)r_u32(0x800944b8), (sint32)volume >> 8, (sint32)pan);
-    FUN_80056840((sint32)r_u32(0x800944b8), level * 8 + 5120);
-    return FUN_80052944(index);
+    stage_audio_slots[1].level = level;
+    sound_spatial(actor_positions + idx, &volume, &pan);
+    volume *= stage_audio_slots[1].level;
+    sound_voice_pan(stage_audio_slots[0].voice, (sint32)volume >> 8, pan);
+    sound_voice_pitch(stage_audio_slots[0].voice, level * 8 + 5120);
+    return npc_update_actor(idx);
 }
 
-GDB_CALL sint32 FUN_8004E574(sint32 index)
+GDB_CALL sint32 npc_finish_aimed_charge(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e574u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    sint32 deadline = r_s32(actor + 176);
-    sint32 tick = r_s32(0x80093dd0);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type), slot, frame, x, z;
+    sint32 type = actor_types[idx];
+    sint32 deadline = ((sint32)actor_status[idx].deadline);
+    sint32 tick = (sint32)game_session.tick;
+    uint32 table = animation_type_banks[(uint32)type], slot, frame, x, z;
     int attack = 0;
-    if (tick >= deadline && r_u32(actor + 164) == 1)
+    if (tick >= deadline && npc_targets[idx].role == 1)
     {
-        slot = r_u32(actor + 168);
+        slot = npc_targets[idx].idx;
         if (slot != 0xffffffff)
         {
-            x = r_u32(0x800b4340 + 244 * slot);
-            z = r_u32(0x800b4348 + 244 * slot);
-            if ((uint16)((uint32)FUN_800483BC(index, x, z) + 2047) < 4095 && r_s32(0x800941a0) < 1281)
+            x = actor_positions[slot].x.bits;
+            z = actor_positions[slot].z.bits;
+            if ((uint16)((uint32)npc_turn_to_point(idx, x, z) + 2047) < 4095 && dir_distance < 1281)
                 attack = 1;
         }
     }
-    frame = r_u32(actor + 4);
+    frame = actor_animations[idx].frame;
     if (frame != 0xffffffffu)
         return attack ? (sint32)frame : -1;
-    return FUN_8004C4D8(actor, table, attack ? 271 : 272);
+    return npc_start_animation(idx, table, attack ? 271 : 272);
 }
 
-GDB_CALL sint32 FUN_800553F0(sint32 index)
+GDB_CALL sint32 npc_update_fall(sint32 idx)
 {
     FUNCTION_MARKER(0x800553f0u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, slot, height;
-    sint32 type = r_s16(actor + 52);
-    sint32 speed = r_s8(actor + 130), limit, next_speed;
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    next_speed = r_u8(actor + 130) + 4;
-    height = r_u32(actor + 44);
-    w_u8(actor + 130, (uint8)next_speed);
-    limit = r_s32(0x80092934);
+    uint32 slot, height;
+    NPC_BEHAVIOR_ACTOR *behavior = npc_behavior_actors + idx;
+    sint32 type = actor_types[idx];
+    sint32 speed = behavior->fall_speed, limit, next_speed;
+    ANIMATION_BANK_ID table = animation_type_banks[(uint32)type];
+    next_speed = (uint8)behavior->fall_speed + 4;
+    height = actor_positions[idx].y.bits;
+    behavior->fall_speed = (sint8)(uint8)next_speed;
+    limit = npc_fall_speed_limit;
     next_speed = (sint8)(uint8)next_speed;
-    w_u32(actor + 44, height + ((uint32)speed << 16));
+    actor_positions[idx].y.bits = height + ((uint32)speed << 16);
     if (limit < next_speed)
-        w_u8(actor + 130, (uint8)limit);
-    if ((sint32)r_u32(actor + 44) >= 0)
+        behavior->fall_speed = (sint8)(uint8)limit;
+    if ((sint32)actor_positions[idx].y.bits >= 0)
     {
-        slot = r_u32(actor + 172);
-        w_u32(actor + 44, 0);
+        slot = behavior->progress.landing_item_idx;
+        actor_positions[idx].y.bits = 0;
         if (slot != 0xffffffffu)
-            w_u16(0x8009a3e2 + 36u * slot, 1);
-        FUN_8004C4D8(actor, table, r_u32(actor + 12) == 203 ? 204 : 206);
-        if (r_u32(0x80093d58) == 8)
-            FUN_80056670(229, 255, 6144);
+        {
+            /* TODO: Investigate a landing item index outside the original pool */
+            if (slot >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid landing item actor %d slot %u type %d state %u stage %u tick %u\n", idx, slot, type, actor_animations[idx].id, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *item = dynamic_objects + slot;
+            /* TODO: Investigate the shared progress word selecting a foreign owner */
+            if (item->payload_kind != MODEL_PAYLOAD_PHYSICS && item->payload_kind != MODEL_PAYLOAD_UNMIGRATED)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid landing item owner actor %d slot %u kind %u owner %u stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            if (item->payload_kind == MODEL_PAYLOAD_PHYSICS)
+                item->physics.spin = 1;
+            else
+                item->pending_motion.pitch_speed = 1;
+        }
+        npc_start_animation(idx, table, actor_animations[idx].id == 203 ? 204 : 206);
+        if (game_session.stage == 8)
+            sound_voice_play(229, 255, 6144);
     }
-    if (r_u32(actor + 4) == 0xffffffffu)
-        return FUN_8004C4D8(actor, table, (sint32)r_u32(actor + 12));
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_start_animation(idx, table, actor_animations[idx].id);
     return -1;
 }
 
-GDB_CALL sint32 FUN_800551F0(sint32 index)
+GDB_CALL sint32 npc_wait_target_animation(sint32 idx)
 {
     FUNCTION_MARKER(0x800551f0u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, slot;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    uint32 slot;
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     sint32 state;
     if (frame != 0xffffffffu)
         return -1;
-    state = FUN_8004C9B0(actor);
+    state = npc_base_animation(idx);
     if (state == 208)
-        return FUN_8004C4D8(actor, table, 210);
+        return npc_start_animation(idx, table, 210);
     if (state == 210)
     {
-        slot = r_u32(actor + 168);
-        if (slot != 0xffffffffu && r_u32(actor + 164) != 4 && r_u32(0x800b4324 + 244u * slot) == 67)
-            return FUN_8004C4D8(actor, table, 210);
-        return FUN_8004C4D8(actor, table, 209);
+        slot = npc_targets[idx].idx;
+        if (slot != 0xffffffffu && npc_targets[idx].role != 4 && actor_animations[slot].id == 67)
+            return npc_start_animation(idx, table, 210);
+        return npc_start_animation(idx, table, 209);
     }
     if (state == 209)
-        return FUN_80053558(index);
+        return npc_update_combat(idx);
     return 209;
 }
 
-GDB_CALL sint32 FUN_80053CEC(sint32 index)
+GDB_CALL sint32 npc_claim_ranged_item(sint32 idx)
 {
     FUNCTION_MARKER(0x80053cecu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    /* TODO: Investigate NPC item actions outside the native actor pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     if (frame != 0xffffffffu)
         return 4;
-    if (r_u32(actor + 164) == 4)
+    if (npc_targets[idx].role == 4)
     {
-        uint32 slot = r_u32(actor + 168);
+        uint32 slot = npc_targets[idx].idx;
         if (slot != 0xffffffffu)
         {
-            uint32 object = 0x8009a3c8 + 36u * slot;
-            if (!r_u32(object + 8))
+            /* TODO: Investigate NPC pickup targets outside the native item pool */
+            if (slot >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC pickup actor %d target slot %u stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *model = dynamic_objects + slot;
+            if (!model->pos.y.bits)
             {
                 uint32 kind;
-                w_u8(actor + 126, (uint8)slot);
-                kind = r_u32(object);
+                actor_items[idx].slot[ACTOR_ITEM_RIGHT] = (sint8)slot;
+                kind = model->kind;
                 if (kind == 522)
                 {
-                    w_u32(object, 523);
-                    kind = r_u32(object);
+                    model->kind = 523;
+                    kind = model->kind;
                 }
                 if (kind == 524)
-                    w_u32(object, 525);
-                w_u32(object + 8, 1);
+                    model->kind = 525;
+                model->pos.y.bits = 1;
             }
         }
     }
-    return FUN_8004C4D8(actor, table, 122);
+    return npc_start_animation(idx, table, 122);
 }
 
-GDB_CALL sint32 FUN_8004CD5C(sint32 index)
+GDB_CALL sint32 npc_begin_captive_carry(sint32 idx)
 {
     FUNCTION_MARKER(0x8004cd5cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, other;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     sint32 slot;
     if (frame != 0xffffffffu)
         return -1;
-    slot = r_s8(actor + 122);
+    slot = actor_contacts[idx].captive;
     if (slot == -1)
-        return FUN_800532B8(index);
-    other = 0x800b4318 + 244u * (uint32)slot;
-    FUN_800237CC(other, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(other + 52)), 77);
-    FUN_800237CC(actor, table, 169);
-    return FUN_800235C4(actor, other);
+        return npc_update_ranged_attack(idx);
+    animation_start_held(slot, animation_type_banks[(uint32)actor_types[slot]], 77);
+    animation_start_held(idx, table, 169);
+    return actors_capture_pair_offset(idx, slot);
 }
 
-GDB_CALL sint32 FUN_8004E484(sint32 index)
+GDB_CALL sint32 npc_finish_vulkan_combo(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e484u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     sint32 state;
     if (frame != 0xffffffffu)
         return -1;
-    state = FUN_8004C9B0(actor);
+    state = npc_base_animation(idx);
     if (state == 57)
     {
-        w_u32(actor + 4, 0xffffffffu);
-        return FUN_8004C4D8(actor, table, 60);
+        actor_animations[idx].frame = 0xffffffffu;
+        return npc_start_animation(idx, table, 60);
     }
     if (state == 60)
-        return FUN_8004C4D8(actor, table, 58);
+        return npc_start_animation(idx, table, 58);
     if (state == 59)
-        return FUN_8004C4D8(actor, table, 60);
+        return npc_start_animation(idx, table, 60);
     if (state == 58)
-        return FUN_8004F000(index);
+        return npc_continue_alternate_combat(idx);
     return 58;
 }
 
-GDB_CALL sint32 FUN_8003B83C(sint32 index)
+GDB_CALL intptr npc_update_stage4_idle(sint32 idx)
 {
     FUNCTION_MARKER(0x8003b83cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
     sint32 type, action;
     uint32 table;
-    if (r_u32(0x80093d58) != 4 || (sint32)r_u32(0x80093dd0) >= 660)
-        return FUN_80052944(index);
-    if (r_u32(actor + 4) != 0xffffffffu)
+    if (game_session.stage != 4 || (sint32)game_session.tick >= 660)
+        return npc_update_actor(idx);
+    if (actor_animations[idx].frame != 0xffffffffu)
         return -1;
-    type = r_s16(actor + 52);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    action = r_s32(actor + 200);
-    return FUN_8004C4D8(actor, table, action);
+    type = actor_types[idx];
+    table = animation_type_banks[(uint32)type];
+    action = (sint32)npc_behavior_actors[idx].idle_animation;
+    return npc_start_animation(idx, table, action);
 }
 
-GDB_CALL sint32 FUN_80054988(sint32 index)
+GDB_CALL sint32 npc_finish_turn(sint32 idx)
 {
     FUNCTION_MARKER(0x80054988u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table;
-    if (r_u32(actor + 4) != 0xffffffffu)
+    uint32 table;
+    if (actor_animations[idx].frame != 0xffffffffu)
         return -1;
-    table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52));
-    if (table != 0x800849a4 && table != 0x80083794 && table != 0x80082a08 && table != 0x80082e8c)
-        w_u16(actor + 56, r_u16(actor + 56) ^ 1024);
-    return FUN_800532B8(index);
+    table = animation_type_banks[(uint32)actor_types[idx]];
+    if (table != ANIMATION_BANK_SHARED8 && table != ANIMATION_BANK_SHARED4 && table != ANIMATION_BANK_SHARED1 && table != ANIMATION_BANK_SHARED2)
+        actor_orientation[idx].yaw = ((uint16)actor_orientation[idx].yaw) ^ 1024;
+    return npc_update_ranged_attack(idx);
 }
 
-GDB_CALL sint32 FUN_80054840(sint32 index)
+GDB_CALL sint32 npc_finish_captive_strike(sint32 idx)
 {
     FUNCTION_MARKER(0x80054840u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     if (frame != 0xffffffffu)
         return -1;
-    if (r_s8(actor + 122) == -1)
-        return FUN_800532B8(index);
-    return FUN_8004C4D8(actor, table, ff_rand_8006D348() & 1u ? 12 : 13);
+    if (actor_contacts[idx].captive == -1)
+        return npc_update_ranged_attack(idx);
+    return npc_start_animation(idx, table, random_next() & 1u ? 12 : 13);
 }
 
-GDB_CALL sint32 FUN_80053A70(sint32 index)
+GDB_CALL sint32 npc_choose_held_item_action(sint32 idx)
 {
     FUNCTION_MARKER(0x80053a70u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    /* TODO: Investigate the original out-of-pool NPC operation */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     sint32 slot;
     if (frame != 0xffffffffu)
         return -1;
-    slot = r_s8(actor + 126);
-    if (slot == -1 || r_u32(0x8009a3c8 + 36u * (uint32)slot) - 499u >= 5u)
-        return FUN_80053558(index);
-    return FUN_8004C4D8(actor, table, (sint32)(ff_rand_8006D348() & 1u) + 247);
-}
-
-GDB_CALL sint32 FUN_80055B68(sint32 x, sint32 z)
-{
-    FUNCTION_MARKER(0x80055b68u, "GAME.EXE");
-    uint32 i, object;
-    sint32 kind;
-    x >>= 16;
-    z >>= 16;
-    for (i = 0; i < 64; i++)
+    slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
+    if (slot == -1)
+        return npc_update_combat(idx);
+    /* TODO: Investigate the original out-of-pool NPC operation */
+    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
     {
-        object = 0x8009a3c8 + 36u * i;
-        kind = (sint32)r_u32(object);
-        if (kind >= 522 && kind < 563 && !r_s16(object + 24) && r_u32(object + 8) != 1 && FUN_800163F4(x, z, r_s16(object + 6), r_s16(object + 14)) < 64)
-            return (sint32)i;
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC action item actor %d slot %d in %s stage %u tick %u\n", idx, slot, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
     }
-    return -1;
+    if (dynamic_objects[slot].kind - 499u >= 5u)
+        return npc_update_combat(idx);
+    return npc_start_animation(idx, table, (sint32)(random_next() & 1u) + 247);
 }
 
-static sint32 npc_claim_object(sint32 index, uint32 slot_offset, sint32 action)
+GDB_CALL sint32 npc_claim_right_item0(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    uint32 type = (uint32)(sint32)r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * type);
+    FUNCTION_MARKER(0x800539c0u, "GAME.EXE");
+    /* TODO: Investigate NPC item operations outside the native actor pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    uint32 type = (uint32)actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[type];
     if (frame != 0xffffffffu)
         return 4;
-    if (r_u32(actor + 164) == 4)
+    if (npc_targets[idx].role == 4)
     {
-        uint32 slot = r_u32(actor + 168);
+        uint32 slot = npc_targets[idx].idx;
         if (slot != 0xffffffffu)
         {
-            uint32 object = 0x8009a3c8 + 36u * slot;
-            if (!r_u32(object + 8))
+            /* TODO: Investigate an NPC claim outside the item pool */
+            if (slot >= DYNAMIC_OBJECT_COUNT)
             {
-                w_u8(actor + slot_offset, (uint8)slot);
-                w_u32(object + 8, 1);
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC claim actor %d hand %u slot %u action %d stage %u tick %u\n", idx, (uint32)ACTOR_ITEM_RIGHT, slot, 119, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *model = dynamic_objects + slot;
+            if (!model->pos.y.bits)
+            {
+                actor_items[idx].slot[ACTOR_ITEM_RIGHT] = (sint8)slot;
+                model->pos.y.bits = 1;
             }
         }
     }
-    return FUN_8004C4D8(actor, table, action);
+    return npc_start_animation(idx, table, 119);
 }
 
-GDB_CALL sint32 FUN_800539C0(sint32 index)
-{
-    FUNCTION_MARKER(0x800539c0u, "GAME.EXE");
-    return npc_claim_object(index, 126, 119);
-}
-
-GDB_CALL sint32 FUN_80053B40(sint32 index)
+GDB_CALL sint32 npc_claim_right_item1(sint32 idx)
 {
     FUNCTION_MARKER(0x80053b40u, "GAME.EXE");
-    return npc_claim_object(index, 126, 124);
+    /* TODO: Investigate NPC item operations outside the native actor pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    uint32 type = (uint32)actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[type];
+    if (frame != 0xffffffffu)
+        return 4;
+    if (npc_targets[idx].role == 4)
+    {
+        uint32 slot = npc_targets[idx].idx;
+        if (slot != 0xffffffffu)
+        {
+            /* TODO: Investigate an NPC claim outside the item pool */
+            if (slot >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC claim actor %d hand %u slot %u action %d stage %u tick %u\n", idx, (uint32)ACTOR_ITEM_RIGHT, slot, 124, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *model = dynamic_objects + slot;
+            if (!model->pos.y.bits)
+            {
+                actor_items[idx].slot[ACTOR_ITEM_RIGHT] = (sint8)slot;
+                model->pos.y.bits = 1;
+            }
+        }
+    }
+    return npc_start_animation(idx, table, 124);
 }
 
-GDB_CALL sint32 FUN_80053BF0(sint32 index)
+GDB_CALL sint32 npc_claim_left_item(sint32 idx)
 {
     FUNCTION_MARKER(0x80053bf0u, "GAME.EXE");
-    return npc_claim_object(index, 125, 127);
+    /* TODO: Investigate NPC item operations outside the native actor pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    uint32 type = (uint32)actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[type];
+    if (frame != 0xffffffffu)
+        return 4;
+    if (npc_targets[idx].role == 4)
+    {
+        uint32 slot = npc_targets[idx].idx;
+        if (slot != 0xffffffffu)
+        {
+            /* TODO: Investigate an NPC claim outside the item pool */
+            if (slot >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC claim actor %d hand %u slot %u action %d stage %u tick %u\n", idx, (uint32)ACTOR_ITEM_LEFT, slot, 127, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *model = dynamic_objects + slot;
+            if (!model->pos.y.bits)
+            {
+                actor_items[idx].slot[ACTOR_ITEM_LEFT] = (sint8)slot;
+                model->pos.y.bits = 1;
+            }
+        }
+    }
+    return npc_start_animation(idx, table, 127);
 }
 
-GDB_CALL sint32 FUN_80052F70(sint32 index)
+GDB_CALL sint32 npc_wait_captor_release(sint32 idx)
 {
     FUNCTION_MARKER(0x80052f70u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 state = r_u32(actor + 12);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    if (state == 171 && r_s8(actor + 120) == -1)
-        return FUN_8004C4D8(actor, table, (sint32)r_u32(actor + 200));
+    sint32 type = actor_types[idx];
+    uint32 state = actor_animations[idx].id;
+    uint32 table = animation_type_banks[(uint32)type];
+    if (state == 171 && actor_contacts[idx].captor == -1)
+        return npc_start_animation(idx, table, npc_behavior_actors[idx].idle_animation);
     return -1;
 }
 
-static sint32 npc_action_call(uint32 callback, sint32 index);
-
-GDB_CALL sint32 FUN_8004BE84(sint32 index)
+GDB_CALL intptr npc_update_action(sint32 idx)
 {
     FUNCTION_MARKER(0x8004be84u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, state, table, callback;
+    uint32 state;
     sint32 age;
-    w_u32(0x800947ec, (uint32)index);
-    age = r_s8(actor + 119);
+    npc_update_idx = (uint32)idx;
+    age = (sint8)actor_lifecycle[idx].death_ticks;
     if (age)
     {
         age = (sint8)(age + 1);
-        w_u8(actor + 119, (uint8)age);
+        actor_lifecycle[idx].death_ticks = (uint8)age;
         if (age >= 61)
         {
-            w_u32(actor, 0);
-            w_u16(actor + 52, 0xffff);
+            actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
+            actor_types[idx] = ACTOR_TYPE_NONE;
             return -1;
         }
     }
-    else if (r_s16(actor + 66) <= 0)
-        return FUN_8001B8DC(index);
-    state = r_u32(actor + 12);
-    table = r_u32(actor + 160);
-    callback = r_u32(table + 4 * state);
-    return npc_action_call(callback, index);
+    else if (actor_health[idx].hp <= 0)
+        return actors_rec_death(idx);
+    state = actor_animations[idx].id;
+    if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    NPC_ACTION_BANK_REFERENCE bank = npc_action_actors[idx];
+    uint32 action_idx = (bank.first + state) & 0x3fffffff;
+    if (!bank.actions || action_idx >= NPC_ACTION_SLOT_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    return npc_action_call(bank.actions[action_idx], idx);
 }
 
-static sint32 npc_finished_to(sint32 index, sint32 action)
+static sint32 npc_finished_to(sint32 idx, sint32 action)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    uint32 type = (uint32)(sint32)r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * type);
+    uint32 type = (uint32)actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[type];
     if (frame != 0xffffffffu)
         return -1;
-    return FUN_8004C4D8(actor, table, action);
+    return npc_start_animation(idx, table, action);
 }
 
-GDB_CALL sint32 FUN_8004BF3C(sint32 index)
+GDB_CALL sint32 npc_finish_to_idle(sint32 idx)
 {
     FUNCTION_MARKER(0x8004bf3cu, "GAME.EXE");
-    return npc_finished_to(index, 69);
+    return npc_finished_to(idx, 69);
 }
 
-GDB_CALL sint32 FUN_8004ED54(sint32 index)
+GDB_CALL sint32 npc_finish_charge_start(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ed54u, "GAME.EXE");
-    return npc_finished_to(index, 275);
+    return npc_finished_to(idx, 275);
 }
 
-GDB_CALL sint32 FUN_8004D20C(sint32 index)
+GDB_CALL sint32 npc_begin_attack_wait(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d20cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    w_u32(actor + 228, 0x390000);
+    NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
+    special->attack.effect_height = 0x390000;
     if (frame != 0xffffffffu)
         return -1;
-    w_u32(actor + 224, r_u32(0x80093dd0) + 20u);
-    return FUN_8004C4D8(actor, table, 266);
+    special->attack.rest_until = game_session.tick + 20u;
+    return npc_start_animation(idx, table, 266);
 }
 
-GDB_CALL sint32 FUN_8004E3D8(sint32 index)
+GDB_CALL sint32 npc_update_delay(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e3d8u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52)), result;
-    if (r_s16(actor + 80) <= 0)
-        return FUN_8004F000(index);
-    if (r_u32(actor + 4) == 0xffffffffu)
-        FUN_8004C4D8(actor, table, (sint32)r_u32(actor + 12));
-    result = (uint16)r_s16(actor + 80) - 1u;
-    w_u16(actor + 80, (uint16)result);
+    uint32 table = animation_type_banks[(uint32)actor_types[idx]], result;
+    if (actor_lifecycle[idx].delay <= 0)
+        return npc_continue_alternate_combat(idx);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        npc_start_animation(idx, table, actor_animations[idx].id);
+    result = (uint16)actor_lifecycle[idx].delay - 1u;
+    actor_lifecycle[idx].delay = (uint16)result;
     result <<= 16;
-    return result ? (sint32)result : FUN_8004F000(index);
+    return result ? (sint32)result : npc_continue_alternate_combat(idx);
 }
 
-GDB_CALL sint32 FUN_8004ECE0(sint32 index)
+GDB_CALL sint32 npc_begin_charge_loop(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ece0u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     if (frame != 0xffffffff)
         return -1;
-    FUN_8004C4D8(actor, table, 274);
-    return FUN_80056670(187, 255, 4096);
+    npc_start_animation(idx, table, 274);
+    return sound_voice_play(187, 255, 4096);
 }
 
-GDB_CALL sint32 FUN_80053F4C(sint32 index)
+GDB_CALL sint32 npc_update_knockdown_pose(sint32 idx)
 {
     FUNCTION_MARKER(0x80053f4cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     if (frame != 0xffffffffu)
         return 156;
-    return FUN_8004C4D8(actor, table, r_u32(actor + 12) == 156 ? 253 : 252);
+    return npc_start_animation(idx, table, actor_animations[idx].id == 156 ? 253 : 252);
 }
 
-static sint32 npc_after_hold(sint32 index)
+static sint32 npc_after_hold(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    uint32 type = (uint32)(sint32)r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * type);
+    uint32 type = (uint32)actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[type];
     if (frame != 0xffffffffu)
         return -1;
-    if (r_s8(actor + 122) == -1)
-        return FUN_800532B8(index);
-    return FUN_8004C4D8(actor, table, 11);
+    if (actor_contacts[idx].captive == -1)
+        return npc_update_ranged_attack(idx);
+    return npc_start_animation(idx, table, 11);
 }
 
-GDB_CALL sint32 FUN_800547B8(sint32 index)
+GDB_CALL sint32 npc_finish_captive_hold0(sint32 idx)
 {
     FUNCTION_MARKER(0x800547b8u, "GAME.EXE");
-    return npc_after_hold(index);
+    return npc_after_hold(idx);
 }
 
-GDB_CALL sint32 FUN_80054900(sint32 index)
+GDB_CALL sint32 npc_finish_captive_hold1(sint32 idx)
 {
     FUNCTION_MARKER(0x80054900u, "GAME.EXE");
-    return npc_after_hold(index);
+    return npc_after_hold(idx);
 }
 
-GDB_CALL sint32 FUN_8005531C(sint32 index)
+GDB_CALL sint32 npc_choose_animation_variant(sint32 idx)
 {
     FUNCTION_MARKER(0x8005531cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     if (frame != 0xffffffffu)
         return -1;
-    return FUN_8004C4D8(actor, table, (sint32)(ff_rand_8006D348() & 3u) + 243);
+    return npc_start_animation(idx, table, (sint32)(random_next() & 3u) + 243);
 }
 
-GDB_CALL sint32 FUN_80055574(sint32 index)
+GDB_CALL sint32 npc_set_stun_recovery_deadline(sint32 idx)
 {
     FUNCTION_MARKER(0x80055574u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
-    if (r_u32(actor + 4) != 0xffffffffu)
+    if (actor_animations[idx].frame != 0xffffffffu)
         return -1;
-    uint32 duration = r_u16(actor + 74);
-    uint32 tick = r_u32(0x80093dd0);
+    uint32 duration = ((uint16)actor_health[idx].stun);
+    uint32 tick = game_session.tick;
     sint32 delay = (sint32)(duration << 16) >> 18;
-    w_u32(actor + 176, tick + (uint32)delay);
-    return FUN_80053558(index);
+    actor_status[idx].deadline = tick + (uint32)delay;
+    return npc_update_combat(idx);
 }
 
-GDB_CALL sint32 FUN_80056530(sint32 index)
+GDB_CALL intptr npc_update_companion_wait(sint32 idx)
 {
     FUNCTION_MARKER(0x80056530u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
-    sint32 count = r_s16(actor + 80);
+    sint32 count = actor_lifecycle[idx].delay;
     if (count)
-        w_u16(actor + 80, (uint16)(count - 1));
-    if (r_s16(actor + 88) == -1)
-        return FUN_80052944(index);
+        actor_lifecycle[idx].delay = (uint16)(count - 1);
+    if (actor_companions[idx] == -1)
+        return npc_update_actor(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_800565A4(sint32 index)
-{
-    FUNCTION_MARKER(0x800565a4u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    sint32 limit = r_s32(0x80094338);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    if (limit < 17)
-    {
-        FUN_8004C4D8(actor, table, (sint32)r_u32(actor + 200));
-        w_u16(actor + 80, 60);
-        return 60;
-    }
-    if (r_u32(actor + 4) == 0xffffffffu)
-        return FUN_80019F00(actor, table, (sint32)r_u32(actor + 12));
-    return -1;
-}
-
-GDB_CALL sint32 FUN_8004C134(sint32 index)
+GDB_CALL sint32 npc_resume_approach0(sint32 idx)
 {
     FUNCTION_MARKER(0x8004c134u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004BFA0(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_approach_target(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004C180(sint32 index)
+GDB_CALL sint32 npc_resume_approach1(sint32 idx)
 {
     FUNCTION_MARKER(0x8004c180u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004BFA0(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_approach_target(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004D288(sint32 index)
+GDB_CALL sint32 npc_resume_combat0(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d288u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004E38C(sint32 index)
+GDB_CALL sint32 npc_resume_alternate_combat5(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e38cu, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004F000(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_continue_alternate_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004EC48(sint32 index)
+GDB_CALL sint32 npc_resume_alternate_combat0(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ec48u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004F084(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_alternate_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004EC94(sint32 index)
+GDB_CALL sint32 npc_resume_alternate_combat1(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ec94u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004F084(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_alternate_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004EF18(sint32 index)
+GDB_CALL sint32 npc_resume_alternate_combat2(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ef18u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004F084(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_alternate_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004EF6C(sint32 index)
+GDB_CALL sint32 npc_resume_alternate_combat3(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ef6cu, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004F084(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_alternate_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_8004F038(sint32 index)
+GDB_CALL sint32 npc_resume_alternate_combat4(sint32 idx)
 {
     FUNCTION_MARKER(0x8004f038u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_8004F084(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_alternate_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_80053CA0(sint32 index)
+GDB_CALL sint32 npc_resume_combat1(sint32 idx)
 {
     FUNCTION_MARKER(0x80053ca0u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_80053DD0(sint32 index)
+GDB_CALL sint32 npc_resume_combat2(sint32 idx)
 {
     FUNCTION_MARKER(0x80053dd0u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_800553A4(sint32 index)
+GDB_CALL sint32 npc_resume_combat3(sint32 idx)
 {
     FUNCTION_MARKER(0x800553a4u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_80055528(sint32 index)
+GDB_CALL sint32 npc_resume_combat4(sint32 idx)
 {
     FUNCTION_MARKER(0x80055528u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
-GDB_CALL sint32 FUN_80055918(sint32 index)
+GDB_CALL sint32 npc_resume_combat5(sint32 idx)
 {
     FUNCTION_MARKER(0x80055918u, "GAME.EXE");
-    if (r_u32(0x800b431c + 244u * (uint32)index) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
-GDB_CALL uint32 FUN_8002AEB8(uint32 object)
-{
-    FUNCTION_MARKER(0x8002aeb8u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 36)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_8002AEE8(uint32 object)
-{
-    FUNCTION_MARKER(0x8002aee8u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 18)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_8002AF18(uint32 object)
-{
-    FUNCTION_MARKER(0x8002af18u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 32)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_8002AF48(uint32 object)
-{
-    FUNCTION_MARKER(0x8002af48u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 16)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_8002B2B4(uint32 object)
-{
-    FUNCTION_MARKER(0x8002b2b4u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 17)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_80041974(uint32 object)
-{
-    FUNCTION_MARKER(0x80041974u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 4)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_800419A4(uint32 object)
-{
-    FUNCTION_MARKER(0x800419a4u, "GAME.EXE");
-    uint16 age = (uint16)((uint16)r_s16(object + 22) + 1u);
-    w_u16(object + 22, age);
-    if ((sint16)age >= 32)
-        w_u32(object, 0xffffffffu);
-    return 0xffffffffu;
-}
-
-GDB_CALL uint32 FUN_8004C4A4(uint32 actor)
+static uint32 approach_can_stop(sint32 idx)
 {
     FUNCTION_MARKER(0x8004c4a4u, "GAME.EXE");
     uint32 action;
-    if (r_u32(actor + 4) == 0xffffffffu)
+    if (actor_animations[idx].frame == 0xffffffffu)
         return 1;
-    action = r_u32(actor + 12);
+    action = actor_animations[idx].id;
     return action == 82u || action == 87u;
 }
 
 /* 4BFA0: approach thresholds depend on current action (216 / 264). */
-GDB_CALL sint32 FUN_8004BFA0(sint32 index)
+GDB_CALL sint32 npc_approach_target(sint32 idx)
 {
     FUNCTION_MARKER(0x8004bfa0u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, target, table, other;
+    uint32 target, table;
     sint32 type, x0, z0, x1, z1, distance, result;
-    type = r_s16(actor + 52);
-    target = r_u32(actor + 168);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    type = actor_types[idx];
+    target = npc_targets[idx].idx;
+    table = animation_type_banks[(uint32)type];
     if (target == 0xffffffffu)
     {
-        result = (sint32)FUN_8004C4A4(actor);
+        result = approach_can_stop(idx);
         if (!result)
             return result;
-        return FUN_8004C4D8(actor, table, 69);
+        return npc_start_animation(idx, table, 69);
     }
-    other = 0x800b4318 + 244u * target;
-    x0 = r_s32(actor + 40);
-    z0 = r_s32(actor + 48);
-    x1 = r_s32(other + 40);
-    z1 = r_s32(other + 48);
-    distance = (sint32)FUN_800163F4(x0, z0, x1, z1) >> 16;
-    x1 = r_s32(other + 40);
-    z1 = r_s32(other + 48);
-    FUN_800483BC(index, (uint32)x1, (uint32)z1);
-    if (distance < (r_u32(actor + 12) ? 216 : 264))
+    const FIXED_VEC3 *target_pos = actor_positions + target;
+    x0 = actor_positions[idx].x.val;
+    z0 = actor_positions[idx].z.val;
+    x1 = target_pos->x.val;
+    z1 = target_pos->z.val;
+    distance = (sint32)math_distance_approx(x0, z0, x1, z1) >> 16;
+    x1 = target_pos->x.val;
+    z1 = target_pos->z.val;
+    npc_turn_to_point(idx, x1, z1);
+    if (distance < (actor_animations[idx].id ? 216 : 264))
     {
-        w_u32(actor + 188, 0);
-        w_u32(actor + 164, 3);
-        return FUN_8004C4D8(actor, table, 0);
+        if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        npc_behavior_actors[idx].command = 0;
+        npc_targets[idx].role = 3;
+        return npc_start_animation(idx, table, 0);
     }
     if (distance < 640)
     {
-        if (r_u32(actor + 4) != 0xffffffffu && !FUN_8004C464(actor, 69))
+        if (actor_animations[idx].frame != 0xffffffffu && !animation_matches_stream(idx, 69))
             return 0;
-        return FUN_8004C4D8(actor, table, 82);
+        return npc_start_animation(idx, table, 82);
     }
-    if (r_u32(actor + 4) != 0xffffffffu)
+    if (actor_animations[idx].frame != 0xffffffffu)
         return -1;
-    return FUN_8004C4D8(actor, table, FUN_8001A068(table, 87) ? 87 : 82);
+    return npc_start_animation(idx, table, (animation_stream(table, 87).kind != ACTOR_ANIMATION_SOURCE_NONE) ? 87 : 82);
 }
 
 /* 4F084: preserve v0 after distance tests, not just the movement status. */
-GDB_CALL sint32 FUN_8004F084(sint32 index)
+GDB_CALL sint32 npc_update_alternate_combat(sint32 idx)
 {
+    /* TODO: Investigate target owner outside its native pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC target owner value %u actor %d stage %u tick %u\n", (uint32)idx, idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
     FUNCTION_MARKER(0x8004f084u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 flags = r_u32(actor + 28);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    uint32 target, mode, other, desired, x, z;
+    sint32 type = actor_types[idx];
+    uint32 flags = actor_animations[idx].motion.events;
+    uint32 table = animation_type_banks[(uint32)type];
+    uint32 target, mode, other_idx, desired, x, z;
     sint32 old, result, slot, item, moved, distance, x0, z0, x1, z1;
+    const FIXED_VEC3 *other_pos;
     if (flags & 0x4000)
-        FUN_80056670(17, 240, 6144);
-    old = FUN_8004C9B0(actor);
-    FUN_800531C4(index);
-    target = r_u32(actor + 168);
+        sound_voice_play(17, 240, 6144);
+    old = npc_base_animation(idx);
+    npc_update_target(idx);
+    target = npc_targets[idx].idx;
     if (target != 0xffffffffu)
     {
-        mode = r_u32(actor + 164);
+        mode = npc_targets[idx].role;
         if (mode == 2)
         {
-            other = 0x800b4318 + 244u * target;
-            x = r_u32(other + 40);
-            z = r_u32(other + 48);
-            result = FUN_80047CE4(index, x, z, 262);
+            other_idx = target;
+            /* TODO: Investigate actor target outside its native pool */
+            if (other_idx >= ACTOR_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = actor_positions + other_idx;
+            x = other_pos->x.bits;
+            z = other_pos->z.bits;
+            result = npc_steer_to_point(idx, x, z, 262);
             if (result)
                 return result;
         }
         else if (mode == 1)
         {
-            slot = r_s8(actor + 126);
-            item = slot == -1 ? -1 : (sint32)r_u32(0x8009a3c8 + 36u * (uint32)slot);
-            if (item == -1)
+            slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
+            if (slot != -1)
             {
-                slot = r_s8(actor + 125);
-                if (slot != -1)
-                    item = (sint32)r_u32(0x8009a3c8 + 36u * (uint32)slot);
+                /* TODO: Investigate held item outside its native pool */
+                if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC held item value %u actor %d stage %u tick %u\n", (uint32)slot, idx, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
             }
-            other = 0x800b4318 + 244u * r_u32(actor + 168);
+            item = slot == -1 ? -1 : (sint32)dynamic_objects[slot].kind;
             if (item == -1)
             {
-                x = r_u32(other + 40);
-                z = r_u32(other + 48);
-                moved = FUN_80047CE4(index, x, z, 257);
-                other = 0x800b4318 + 244u * r_u32(actor + 168);
-                x0 = r_s16(actor + 42);
-                z0 = r_s16(actor + 50);
-                x1 = r_s16(other + 42);
-                z1 = r_s16(other + 50);
-                distance = FUN_800163F4(x0, z0, x1, z1);
+                slot = actor_items[idx].slot[ACTOR_ITEM_LEFT];
+                if (slot != -1)
+                {
+                    /* TODO: Investigate held item outside its native pool */
+                    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+                    {
+                        DIAGNOSTIC(fprintf(stderr, "Invalid NPC held item value %u actor %d stage %u tick %u\n", (uint32)slot, idx, game_session.stage, game_session.tick));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                }
+                if (slot != -1)
+                    item = (sint32)dynamic_objects[slot].kind;
+            }
+            other_idx = npc_targets[idx].idx;
+            /* TODO: Investigate actor target outside its native pool */
+            if (other_idx >= ACTOR_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = actor_positions + other_idx;
+            if (item == -1)
+            {
+                x = other_pos->x.bits;
+                z = other_pos->z.bits;
+                moved = npc_steer_to_point(idx, x, z, 257);
+                other_idx = npc_targets[idx].idx;
+                x0 = actor_positions[idx].x.whole;
+                z0 = actor_positions[idx].z.whole;
+                /* TODO: Investigate late actor target outside its native pool */
+                if (other_idx >= ACTOR_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC late actor target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                other_pos = actor_positions + other_idx;
+                x1 = other_pos->x.whole;
+                z1 = other_pos->z.whole;
+                distance = math_distance_approx(x0, z0, x1, z1);
                 result = distance < 641;
                 if (distance >= 1281)
                 {
-                    result = FUN_8004C4D8(actor, table, 273);
+                    result = npc_start_animation(idx, table, 273);
                     moved = 4;
                 }
                 else if (distance >= 641)
                 {
-                    FUN_8004C4D8(actor, table, 270);
-                    result = FUN_80056670(179, 192, 6144);
+                    npc_start_animation(idx, table, 270);
+                    result = sound_voice_play(179, 192, 6144);
                     moved = 4;
                 }
             }
             else
             {
-                x = r_u32(other + 40);
-                z = r_u32(other + 48);
-                result = FUN_80047CE4(index, x, z, 261);
+                x = other_pos->x.bits;
+                z = other_pos->z.bits;
+                result = npc_steer_to_point(idx, x, z, 261);
                 moved = result;
             }
             if (!moved)
-                return FUN_800532B8(index);
+                return npc_update_ranged_attack(idx);
             return result;
         }
         else if (mode == 4)
         {
-            other = 0x8009a3c8 + 36u * target;
-            x = r_u32(other + 4);
-            z = r_u32(other + 12);
-            result = FUN_80047CE4(index, x, z, 256);
+            other_idx = target;
+            /* TODO: Investigate item target outside its native pool */
+            if (other_idx >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC item target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = &dynamic_objects[other_idx].pos;
+            x = other_pos->x.bits;
+            z = other_pos->z.bits;
+            result = npc_steer_to_point(idx, x, z, 256);
             if (result)
                 return result;
-            item = (sint32)r_u32(0x8009a3c8 + 36u * r_u32(actor + 168));
+            other_idx = npc_targets[idx].idx;
+            /* TODO: Investigate late item target outside its native pool */
+            if (other_idx >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC late item target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            item = (sint32)dynamic_objects[other_idx].kind;
             if (item >= 522)
-                return FUN_8004C4D8(actor, table, 121);
+                return npc_start_animation(idx, table, 121);
             if (item == 509 || (uint32)item - 507u < 2u || item == 506)
-                return FUN_8004C4D8(actor, table, 123);
-            return FUN_8004C4D8(actor, table, item == 515 || item == 504 ? 126 : 118);
+                return npc_start_animation(idx, table, 123);
+            return npc_start_animation(idx, table, item == 515 || item == 504 ? 126 : 118);
         }
     }
-    desired = r_u32(actor + 200);
+    desired = npc_behavior_actors[idx].idle_animation;
     if ((uint32)old == desired)
     {
-        result = (sint32)r_u32(actor + 4);
+        result = (sint32)actor_animations[idx].frame;
         if (result != -1)
             return result;
     }
-    return FUN_8004C4D8(actor, table, (sint32)desired);
+    return npc_start_animation(idx, table, desired);
 }
 
 /* IDA misses forwarded a0 in this call-only entry. */
-GDB_CALL sint32 FUN_8004F000(sint32 index)
+GDB_CALL sint32 npc_continue_alternate_combat(sint32 idx)
 {
     FUNCTION_MARKER(0x8004f000u, "GAME.EXE");
-    return FUN_8004F084(index);
+    return npc_update_alternate_combat(idx);
 }
 
-#include "wip.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #define npc_wip_fatal(pc) \
     do \
     { \
-        ff_wip_visit((pc), "npc", __FUNCTION__, __FILE__, __LINE__, 0, "abort"); \
+        diagnostic_branch((pc), "npc", __FUNCTION__, __FILE__, __LINE__, 0, "abort"); \
         npc_wip_abort(pc); \
     } while (0)
 
 static void npc_wip_abort(uint32 pc)
 {
-    FF_DIAGNOSTIC(fprintf(stderr, "WIP NPC branch %08X\n", pc));
-    if (FF_DIAGNOSTIC_ENV("FF_CAPTURE_WIP"))
-    {
-        FILE *f = xport_fopen("../status/gameplay/game-loop-abort.ram", "wb");
-        if (f)
-        {
-            fwrite(DRAM, 1, sizeof(DRAM), f);
-            fclose(f);
-        }
-        f = xport_fopen("../status/gameplay/game-loop-abort.scratch", "wb");
-        if (f)
-        {
-            fwrite(psx_addr(0x1f800000, 1024), 1, 1024, f);
-            fclose(f);
-        }
-    }
+    DIAGNOSTIC(fprintf(stderr, "WIP NPC branch %08X\n", pc));
     abort();
 }
 
 /* 54474: completed recovery150 turns around, then resumes normal NPC logic. */
-GDB_CALL sint32 FUN_80054474(sint32 index)
+GDB_CALL sint32 npc_finish_recovery_turn(sint32 idx)
 {
     FUNCTION_MARKER(0x80054474u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
-    if (r_u32(actor + 4) != 0xffffffffu)
+    if (actor_animations[idx].frame != 0xffffffffu)
         return 150;
-    if (r_u32(actor + 12) == 150)
-        w_u16(actor + 56, r_u16(actor + 56) ^ 1024);
-    return FUN_80053558(index);
+    if (actor_animations[idx].id == 150)
+        actor_orientation[idx].yaw = ((uint16)actor_orientation[idx].yaw) ^ 1024;
+    return npc_update_combat(idx);
 }
 
 /* 54398: signed deadline; loop animation while waiting, then recover. */
-GDB_CALL sint32 FUN_80054398(sint32 index)
+GDB_CALL sint32 npc_wait_recovery_deadline(sint32 idx)
 {
     FUNCTION_MARKER(0x80054398u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52));
-    sint32 state = FUN_8004C9B0(actor);
-    sint32 deadline = r_s32(actor + 176);
-    sint32 tick = r_s32(0x80093dd0);
+    uint32 table = animation_type_banks[(uint32)actor_types[idx]];
+    sint32 state = npc_base_animation(idx);
+    sint32 deadline = ((sint32)actor_status[idx].deadline);
+    sint32 tick = (sint32)game_session.tick;
     if (tick < deadline)
     {
-        if (r_u32(actor + 4) == 0xffffffffu)
-            return FUN_80019F00(actor, table, state);
+        if (actor_animations[idx].frame == 0xffffffffu)
+            return animation_start(idx, table, state);
         return -1;
     }
-    return FUN_8004C4D8(actor, table, state == 253 ? 150 : (sint32)((ff_rand_8006D348() & 2u) | 149u));
+    return npc_start_animation(idx, table, state == 253 ? 150 : (sint32)((random_next() & 2u) | 149u));
 }
 
-GDB_CALL uint32 FUN_80048964(sint32 index)
+GDB_CALL sint32 npc_base_animation(sint32 idx)
 {
-    uint32 p = 0x800bf238 + 264u * (uint32)index, i;
-    for (i = 0; i < 66; i++)
-        w_u32(p + 4u * i, 0xffffffffu);
-    return p + 264;
-}
-
-GDB_CALL sint32 FUN_8004C9B0(uint32 actor)
-{
-    sint32 state = (sint32)r_u32(actor + 12);
+    FUNCTION_MARKER(0x8004c9b0, "GAME.EXE");
+    const NPC_BEHAVIOR_ACTOR *behavior = npc_behavior_actors + idx;
+    sint32 state = (sint32)actor_animations[idx].id;
     switch (state)
     {
         case 79:
@@ -1929,10 +2029,10 @@ GDB_CALL sint32 FUN_8004C9B0(uint32 actor)
         case 73:
         case 74:
         case 76:
-            return (sint32)r_u32(actor + 200);
+            return (sint32)behavior->idle_animation;
         case 85:
         case 83:
-            return (sint32)r_u32(actor + 204);
+            return (sint32)behavior->move_animation;
         case 100:
         case 102:
             return 98;
@@ -1964,1121 +2064,1058 @@ GDB_CALL sint32 FUN_8004C9B0(uint32 actor)
     }
 }
 
-static sint32 npc_remap(uint32 table, sint32 state, sint32 from, sint32 to)
+GDB_CALL sint32 npc_start_animation(sint32 idx, ANIMATION_BANK_ID table, sint32 state)
 {
-    return state == from && FUN_8001A068(table, to) ? to : state;
-}
-
-GDB_CALL sint32 FUN_8004C4D8(uint32 actor, uint32 table, sint32 state)
-{
+    FUNCTION_MARKER(0x8004c4d8, "GAME.EXE");
+    /* TODO: Investigate NPC item operations outside the native actor pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC item actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    NPC_BEHAVIOR_ACTOR *behavior = npc_behavior_actors + idx;
     sint32 slot, deadline, base_state;
     uint32 type, tick;
-    if ((state == 113 || state == 117) && r_u32(actor + 212) == 108)
+    if ((state == 113 || state == 117) && behavior->transition_state == 108)
     {
-        deadline = (sint32)r_u32(actor + 208);
-        tick = r_u32(0x80093dd0);
+        deadline = (sint32)behavior->transition_until;
+        tick = game_session.tick;
         if ((sint32)tick < deadline)
-            state = (sint32)r_u32(actor + 200);
+            state = (sint32)behavior->idle_animation;
     }
-    if ((state == 108 || state == 112) && r_u32(actor + 212) == 113)
+    if ((state == 108 || state == 112) && behavior->transition_state == 113)
     {
-        deadline = (sint32)r_u32(actor + 208);
-        tick = r_u32(0x80093dd0);
+        deadline = (sint32)behavior->transition_until;
+        tick = game_session.tick;
         if ((sint32)tick < deadline)
-            state = (sint32)r_u32(actor + 200);
+            state = (sint32)behavior->idle_animation;
     }
-    if (r_s16(actor + 52) == 12 && state == 36)
+    if (actor_types[idx] == 12 && state == 36)
         state = 49;
-    slot = r_s8(actor + 126);
+    slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     if (slot != -1)
     {
-        type = r_u32(0x8009a3c8 + 36u * (uint32)slot);
+        /* TODO: Investigate a held NPC item outside the native object pool */
+        if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid NPC animation item actor %d slot %d state %d stage %u tick %u\n", idx, slot, state, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        type = dynamic_objects[slot].kind;
         if (type - 499u < 5u)
-            state = npc_remap(table, state, (sint32)r_u32(actor + 200), 79);
+        {
+            if (state == (sint32)behavior->idle_animation && animation_stream(table, 79).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 79;
+        }
         else if (type == 477 || type == 491 || type == 493)
-            state = npc_remap(table, state, (sint32)r_u32(actor + 200), 80);
+        {
+            if (state == (sint32)behavior->idle_animation && animation_stream(table, 80).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 80;
+        }
         else if (type == 490)
-            state = npc_remap(table, state, (sint32)r_u32(actor + 200), 81);
+        {
+            if (state == (sint32)behavior->idle_animation && animation_stream(table, 81).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 81;
+        }
         else if (type == 509 || type - 507u < 2u || type == 506)
-            state = npc_remap(table, state, (sint32)r_u32(actor + 200), 76);
+        {
+            if (state == (sint32)behavior->idle_animation && animation_stream(table, 76).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 76;
+        }
         else if ((sint32)type >= 522)
         {
-            state = npc_remap(table, state, (sint32)r_u32(actor + 200), 70);
-            state = npc_remap(table, state, (sint32)r_u32(actor + 204), 85);
-            state = npc_remap(table, state, 87, 85);
-            state = npc_remap(table, state, 98, 102);
-            state = npc_remap(table, state, 103, 107);
-            state = npc_remap(table, state, 113, 117);
-            state = npc_remap(table, state, 108, 112);
-            state = npc_remap(table, state, 159, 161);
-            state = npc_remap(table, state, 160, 162);
+            if (state == (sint32)behavior->idle_animation && animation_stream(table, 70).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 70;
+            if (state == (sint32)behavior->move_animation && animation_stream(table, 85).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 85;
+            if (state == 87 && animation_stream(table, 85).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 85;
+            if (state == 98 && animation_stream(table, 102).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 102;
+            if (state == 103 && animation_stream(table, 107).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 107;
+            if (state == 113 && animation_stream(table, 117).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 117;
+            if (state == 108 && animation_stream(table, 112).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 112;
+            if (state == 159 && animation_stream(table, 161).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 161;
+            if (state == 160 && animation_stream(table, 162).kind != ACTOR_ANIMATION_SOURCE_NONE)
+                state = 162;
         }
     }
-    if (r_s8(actor + 125) != -1)
+    if (actor_items[idx].slot[ACTOR_ITEM_LEFT] != -1)
     {
-        state = npc_remap(table, state, (sint32)r_u32(actor + 200), 73);
-        state = npc_remap(table, state, (sint32)r_u32(actor + 204), 83);
-        state = npc_remap(table, state, 87, 83);
-        state = npc_remap(table, state, 98, 100);
-        state = npc_remap(table, state, 103, 105);
-        state = npc_remap(table, state, 113, 115);
-        state = npc_remap(table, state, 108, 110);
+        if (state == (sint32)behavior->idle_animation && animation_stream(table, 73).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 73;
+        if (state == (sint32)behavior->move_animation && animation_stream(table, 83).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 83;
+        if (state == 87 && animation_stream(table, 83).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 83;
+        if (state == 98 && animation_stream(table, 100).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 100;
+        if (state == 103 && animation_stream(table, 105).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 105;
+        if (state == 113 && animation_stream(table, 115).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 115;
+        if (state == 108 && animation_stream(table, 110).kind != ACTOR_ANIMATION_SOURCE_NONE)
+            state = 110;
     }
-    if (state == 87 && !FUN_8001A068(table, 87))
-        state = (sint32)r_u32(actor + 204);
+    if (state == 87 && !(animation_stream(table, 87).kind != ACTOR_ANIMATION_SOURCE_NONE))
+        state = (sint32)behavior->move_animation;
     if (state == 113 || state == 117)
     {
-        tick = r_u32(0x80093dd0);
-        w_u32(actor + 212, 113);
-        w_u32(actor + 208, tick + 120);
+        tick = game_session.tick;
+        behavior->transition_state = 113;
+        behavior->transition_until = tick + 120;
     }
     if (state == 108 || state == 112)
     {
-        tick = r_u32(0x80093dd0);
-        w_u32(actor + 212, 108);
-        w_u32(actor + 208, tick + 120);
+        tick = game_session.tick;
+        behavior->transition_state = 108;
+        behavior->transition_until = tick + 120;
     }
-    if (r_u32(actor + 12) == (uint32)state)
+    if (actor_animations[idx].id == (uint32)state)
     {
-        base_state = FUN_8004C9B0(actor);
-        if (base_state == (sint32)r_u32(actor + 200) && r_u32(actor + 4) != 0xffffffffu)
+        base_state = npc_base_animation(idx);
+        if (base_state == (sint32)behavior->idle_animation && actor_animations[idx].frame != 0xffffffffu)
             return -1;
     }
-    return FUN_80019F00(actor, table, state);
+    return animation_start(idx, table, state);
 }
 
 /* 4AF18 consumes seven arguments; IDA's eleven-argument draft is incorrect.
  * Stack slots +10/+14/+18 are flag117, timer80 and field8 respectively. */
-GDB_CALL sint32 FUN_8004AF18(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint32 timer, uint32 extra)
+GDB_CALL sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint32 timer, uint32 extra)
 {
     FUNCTION_MARKER(0x8004af18, "GAME.EXE");
-    uint32 actor = 0, index, stats, hp, table, name, bank, cursor, color, byte, prior_state;
+    uint32 idx, hp, table, move_animation, color, idle_animation;
     sint32 stored_type;
-    for (index = 2; index < 8; index++)
+    for (idx = 2; idx < ACTOR_COUNT; idx++)
     {
-        actor = 0x800b4318 + 244u * index;
-        if (r_s16(actor + 52) == -1)
+        if (actor_types[idx] == ACTOR_TYPE_NONE)
             break;
     }
-    if (index == 8)
+    if (idx == ACTOR_COUNT)
         return -1;
-    for (byte = 0; byte < 244; byte++)
-        w_u8(actor + byte, 0);
-    w_u16(actor + 52, (uint16)type);
-    stored_type = r_s16(actor + 52);
-    w_u8(actor + 122, 255);
-    w_u8(actor + 120, 255);
-    w_u8(actor + 125, 255);
-    w_u8(actor + 126, 255);
-    w_u32(actor + 232, 0);
-    w_u32(actor + 188, 0);
-    stats = r_u32(0x8007f380 + 4 * (uint32)stored_type);
-    w_u32(actor + 180, stats);
-    stats = r_u32(actor + 180);
-    w_u32(actor + 172, 0xffffffffu);
-    hp = 8u * r_u8(stats + 6);
-    w_u8(actor + 117, (uint8)flag);
-    w_u8(actor + 119, 0);
-    w_u16(actor + 80, (uint16)timer);
-    w_u32(actor + 8, extra);
-    w_u16(actor + 66, (uint16)(hp - 4u));
-    w_u16(actor + 76, 0);
-    w_u16(actor + 68, (uint16)hp);
-    w_u16(actor + 72, (uint16)hp);
-    table = r_u32(0x800b3be8 + 4u * (uint32)type);
-    w_u16(actor + 56, (uint16)yaw);
-    w_u32(actor + 40, x);
-    w_u32(actor + 44, 0);
-    w_u32(actor + 48, z);
-    w_u16(actor + 88, 65535);
+    actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
+    actor_animations[idx].frame = 0;
+    actor_animations[idx].selector = 0;
+    actor_animations[idx].id = 0;
+    actor_animations[idx].motion = (ACTOR_FRAME_MOTION){0};
+    actor_movement[idx] = (ACTOR_MOVEMENT){0};
+    actor_positions[idx] = (FIXED_VEC3){0};
+    actor_types[idx] = 0;
+    actor_orientation[idx] = (ACTOR_ORIENTATION){0};
+    actor_health[idx] = (ACTOR_HEALTH){0};
+    actor_lifecycle[idx] = (ACTOR_LIFECYCLE){0};
+    actor_animations[idx].hit_flags = 0;
+    actor_animations[idx].event_step = 0;
+    actor_combat[idx] = (ACTOR_COMBAT){0};
+    actor_companions[idx] = 0;
+    actor_pair_motion[idx] = (ACTOR_PAIR_MOTION){0};
+    actor_trails[idx] = (ACTOR_TRAIL){0};
+    col_regions.actor[idx] = (ACTOR_REGION_CONTACT){0};
+    actor_contacts[idx] = (ACTOR_CONTACT){0};
+    actor_items[idx].slot[ACTOR_ITEM_LEFT] = 0;
+    actor_items[idx].slot[ACTOR_ITEM_RIGHT] = 0;
+    item_pickup.pending[idx] = 0;
+    actor_bonus_counts[idx] = 0;
+    actor_bonus_totals[idx] = 0;
+    npc_targets[idx] = (NPC_TARGET){0};
+    actor_status[idx] = (ACTOR_STATUS){0};
+    actor_lighting[idx].bits = 0;
+    col_regions.actor[idx].region = NULL;
+    character_actor_names[idx] = CHARACTER_NAME_NONE;
+    npc_behavior_actors[idx] = (NPC_BEHAVIOR_ACTOR){0};
+    npc_action_actors[idx] = (NPC_ACTION_BANK_REFERENCE){0};
+    actor_types[idx] = (uint16)type;
+    stored_type = actor_types[idx];
+    actor_contacts[idx].captive = ACTOR_SLOT_NONE;
+    actor_contacts[idx].captor = ACTOR_SLOT_NONE;
+    actor_items[idx].slot[ACTOR_ITEM_LEFT] = -1;
+    actor_items[idx].slot[ACTOR_ITEM_RIGHT] = -1;
+    actor_status[idx].flags = 0;
+    npc_behavior_actors[idx].command = 0;
+    if (stored_type < 0 || stored_type >= NPC_BEHAVIOR_TYPE_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    uint32 first = profile_first[stored_type];
+    npc_behavior_actors[idx].profile = first == NPC_PROFILE_NONE ? (NPC_BEHAVIOR_REFERENCE){NULL, 0, 0} : (NPC_BEHAVIOR_REFERENCE){npc_behavior_rows, NPC_BEHAVIOR_ROW_COUNT, first};
+    NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[idx].profile;
+    npc_behavior_actors[idx].progress.landing_item_idx = 0xffffffffu;
+    if (!profile.rows || profile.first >= profile.row_count)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    hp = 8u * profile.rows[profile.first].health_units;
+    actor_lifecycle[idx].spawn_flag = flag;
+    actor_lifecycle[idx].death_ticks = 0;
+    actor_lifecycle[idx].delay = (uint16)timer;
+    actor_animations[idx].selector = extra;
+    actor_health[idx].hp = (uint16)(hp - 4u);
+    actor_movement[idx].van_speed = 0;
+    actor_health[idx].shown = (uint16)hp;
+    actor_health[idx].max = (uint16)hp;
+    table = animation_type_banks[(uint32)type];
+    actor_orientation[idx].yaw = (uint16)yaw;
+    actor_positions[idx].x.bits = x;
+    actor_positions[idx].y.bits = 0;
+    actor_positions[idx].z.bits = z;
+    actor_companions[idx] = ACTOR_SLOT_NONE;
     if (type == 17)
     {
-        w_u32(actor, 0);
-        w_u32(actor + 12, 0xffffffffu);
-        w_u32(actor + 4, 0xffffffffu);
-        w_u32(actor + 216, 0);
-        w_u8(actor + 130, 0);
+        actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
+        actor_animations[idx].id = 0xffffffffu;
+        actor_animations[idx].frame = 0xffffffffu;
+        npc_behavior_actors[idx].special.van_voice = 0;
+        npc_behavior_actors[idx].fall_speed = 0;
     }
     else if (type == 51)
     {
-        FUN_8004C4D8(actor, table, 277);
-        w_u32(actor + 216, 0);
-        w_u8(actor + 130, 0);
-        w_u32(actor + 220, (uint32)FUN_80056670(143, 0, 6144) + 1u);
-        w_u32(actor + 224, (uint32)FUN_80056670(144, 0, 6144) + 1u);
+        npc_start_animation(idx, table, 277);
+        npc_behavior_actors[idx].special.bike.speed = 0;
+        npc_behavior_actors[idx].fall_speed = 0;
+        npc_behavior_actors[idx].special.bike.voice[0] = (uint32)sound_voice_play(143, 0, 6144) + 1u;
+        npc_behavior_actors[idx].special.bike.voice[1] = (uint32)sound_voice_play(144, 0, 6144) + 1u;
     }
     else
-        FUN_8004C4D8(actor, table, 69);
-    FUN_80048964((sint32)index);
-    type = r_s16(actor + 52);
-    prior_state = r_u32(0x8007f458 + 8 * (uint32)type);
-    type = r_s16(actor + 52);
-    w_u32(actor + 200, prior_state);
-    name = r_u32(0x8007f45c + 8u * (uint32)type);
-    color = r_u8(0x800941bc);
-    w_u8(actor + 159, (uint8)color);
-    w_u8(actor + 158, (uint8)color);
-    w_u8(actor + 157, (uint8)color);
-    w_u32(actor + 204, name);
-    FUN_80019CA4((sint32)index);
-    name = r_u32(0x800b6e90 + 4u * (uint32)(sint32)r_s16(actor + 52));
-    if (name == 1 || name == 2)
+        npc_start_animation(idx, table, 69);
+    npc_reset_target_priorities(idx);
+    type = actor_types[idx];
+    idle_animation = base_animations[type].idle;
+    type = actor_types[idx];
+    npc_behavior_actors[idx].idle_animation = idle_animation;
+    move_animation = base_animations[type].move;
+    color = (uint8)actor_ambient_shade;
+    actor_lighting[idx].b = color;
+    actor_lighting[idx].g = color;
+    actor_lighting[idx].r = color;
+    npc_behavior_actors[idx].move_animation = move_animation;
+    regions_apply_actor(idx);
+    type = actor_types[idx];
+    if (type < 0 || type >= CHARACTER_NAME_TYPE_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    CHARACTER_NAME_ID name_ref = character_name_types[type];
+    if (name_ref == CHARACTER_NAME_POOL0 || name_ref == CHARACTER_NAME_POOL1)
     {
-        bank = name == 1 ? 0x8008720c : 0x80087248;
-        cursor = name == 1 ? 0x80093f38 : 0x80093f3c;
-        name = r_u32(cursor);
-        w_u32(actor + 240, r_u32(bank + 4u * name));
-        ++name;
-        table = r_u32(bank + 4u * name);
-        w_u32(cursor, name);
-        if (!table)
-            w_u32(cursor, 0);
+        uint32 pool = name_ref == CHARACTER_NAME_POOL0 ? 0 : 1;
+        uint32 start = pool ? CHARACTER_NAME_POOL1_START : 0;
+        uint32 pos = character_name_cursor[pool];
+        if (pos >= CHARACTER_NAME_POOL_WORD_COUNT - start)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        character_actor_names[idx] = character_name_pools[start + pos];
+        ++pos;
+        if (pos >= CHARACTER_NAME_POOL_WORD_COUNT - start)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        CHARACTER_NAME_ID next = character_name_pools[start + pos];
+        character_name_cursor[pool] = pos;
+        if (next == CHARACTER_NAME_NONE)
+            character_name_cursor[pool] = 0;
     }
     else
-        w_u32(actor + 240, name);
-    return (sint32)index;
+        character_actor_names[idx] = name_ref;
+    return idx;
 }
 
 /* Actual MIPS53034, including real expiry dispatch53278->53558. */
-GDB_CALL sint32 FUN_80053034(sint32 index)
+GDB_CALL sint32 npc_update_entry_delay(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52));
-    uint32 state = r_u32(actor + 12), y, timer;
+    FUNCTION_MARKER(0x80053034, "GAME.EXE");
+    uint32 table = animation_type_banks[(uint32)actor_types[idx]];
+    uint32 state = actor_animations[idx].id, y, timer;
     sint32 yaw;
     if (state == 287)
     {
-        y = r_u32(actor + 44) + (r_u32(0x80093dac) << 16);
-        w_u32(actor + 44, y);
+        y = actor_positions[idx].y.bits + (lift.speed << 16);
+        actor_positions[idx].y.bits = y;
         if ((sint32)y >= 0)
         {
-            w_u16(actor + 80, 28);
-            w_u32(actor + 44, 0);
-            return FUN_8004C4D8(actor, table, 288);
+            actor_lifecycle[idx].delay = 28;
+            actor_positions[idx].y.bits = 0;
+            return npc_start_animation(idx, table, 288);
         }
-        w_u16(actor + 80, 2);
+        actor_lifecycle[idx].delay = 2;
     }
     else if (state == 288)
     {
-        yaw = r_s16(actor + 56);
-        w_u32(actor + 40, r_u32(actor + 40) + ((uint32)(sint32)r_s16(0x800802d0 + 2u * (uint32)yaw) << 5));
-        w_u32(actor + 48, r_u32(actor + 48) - ((uint32)(sint32)r_s16(0x800806d0 + 2u * (uint32)yaw) << 5));
+        yaw = actor_orientation[idx].yaw;
+        if (yaw < 0 || yaw >= MATH_SIN_COUNT)
+        {
+            /* TODO: Investigate entry motion headings outside the sine table */
+            DIAGNOSTIC(fprintf(stderr, "Invalid NPC entry sine heading %d actor %d stage %u tick %u\n", yaw, idx, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        actor_positions[idx].x.bits += (uint32)(sint32)sin_table[yaw] << 5;
+        if (yaw < -MATH_QUARTER_TURN || yaw >= MATH_ANGLE_COUNT)
+        {
+            /* TODO: Investigate entry motion headings outside the cosine view */
+            DIAGNOSTIC(fprintf(stderr, "Invalid NPC entry cosine heading %d actor %d stage %u tick %u\n", yaw, idx, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        actor_positions[idx].z.bits -= (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw] << 5;
     }
-    if (!r_s16(actor + 80))
-        return FUN_80053278(index);
-    if (r_u32(actor + 4) == 0xffffffffu)
+    if (!actor_lifecycle[idx].delay)
+        return npc_continue_combat(idx);
+    if (actor_animations[idx].frame == 0xffffffffu)
     {
-        state = r_u32(actor + 12);
+        state = actor_animations[idx].id;
         if (state == 282)
             state = 283;
         else if (state == 283)
             state = 284;
         else if (state == 284)
-            state = r_u32(actor + 200);
-        FUN_8004C4D8(actor, table, (sint32)state);
+            state = npc_behavior_actors[idx].idle_animation;
+        npc_start_animation(idx, table, state);
     }
-    timer = (uint32)(uint16)r_s16(actor + 80) - 1u;
-    w_u16(actor + 80, (uint16)timer);
+    timer = (uint32)(uint16)actor_lifecycle[idx].delay - 1u;
+    actor_lifecycle[idx].delay = (uint16)timer;
     timer <<= 16;
     if (!timer)
-        return FUN_80053278(index);
-    return (sint32)timer;
+        return npc_continue_combat(idx);
+    return timer;
 }
 
-GDB_CALL sint32 FUN_80048844(sint32 index, sint32 target)
-{
-    sint32 i, count = 0, role;
-    uint32 actor, wanted = (uint32)target - 2u;
-    for (i = 2; i < 8; i++)
-    {
-        actor = 0x800b4318 + 244u * (uint32)i;
-        if (i == index || r_s16(actor + 52) == -1 || r_s16(actor + 66) <= 0)
-            continue;
-        if (target < 2)
-        {
-            role = (sint32)r_u32(actor + 164);
-            if ((role == 1 || role == 3) && r_u32(actor + 168) == (uint32)target)
-                ++count;
-            if (count >= (sint32)r_u32(0x80093e18))
-                return i;
-        }
-        else
-        {
-            if ((uint32)(sint32)r_s8(actor + 126) == wanted)
-                return i;
-            role = (sint32)r_u32(actor + 164);
-            if (role == 4 && r_u32(actor + 168) == wanted)
-                return i;
-        }
-    }
-    return -1;
-}
-
-GDB_CALL sint32 FUN_8004899C(sint32 index)
-{
-    uint32 p = 0x800bf238 + 264u * (uint32)index;
-    sint32 i, best = 0, result = -1, value;
-    for (i = 0; i < 66; i++)
-    {
-        value = (sint32)r_u32(p + 4u * (uint32)i);
-        if (best < value)
-        {
-            best = value;
-            result = i;
-        }
-    }
-    return result;
-}
-
-GDB_CALL sint32 FUN_800489F4(sint32 index)
-{
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, rank = 0x800bf238 + 264u * (uint32)index;
-    uint32 other, config, capability, bias, item, bits, angle, numerator;
-    sint32 i, type, denominator, actor_x, actor_z, other_x, other_z;
-    for (i = 0; i < (sint32)r_u32(0x800940b0); i++)
-    {
-        other = 0x800b4318 + 244u * (uint32)i;
-        if (r_s16(other + 52) == -1 || r_s16(other + 66) <= 0)
-            w_u32(rank + 4u * (uint32)i, 0xffffffffu);
-        else
-        {
-            actor_x = r_s16(actor + 42);
-            actor_z = r_s16(actor + 50);
-            other_x = r_s16(other + 42);
-            other_z = r_s16(other + 50);
-            FUN_8001614C(actor_x, actor_z, other_x, other_z);
-            w_u32(rank + 4u * (uint32)i, 0x7fffu - r_u32(0x800941a0));
-        }
-    }
-    config = r_u32(actor + 184);
-    config = 8u * config + r_u32(actor + 180);
-    capability = 0x80084f84 + 16u * (uint32)r_u8(config);
-    bias = 8u * (uint32)r_u8(config + 4) - 1024u;
-    for (i = 0; i < 64; i++)
-    {
-        item = 0x8009a3c8 + 36u * (uint32)i;
-        if (r_s8(actor + 126) != -1 || r_s8(actor + 125) != -1)
-            goto ineligible;
-        type = (sint32)r_u32(item);
-        if (type < 477 || type >= 563 || r_s16(item + 24) || r_u32(item + 8) == 1 || r_s16(item + 22) < 0)
-            goto ineligible;
-        bits = r_u32(0x800846b8 + 4u * (uint32)type);
-        if ((bits & r_u32(capability + 12)) != (bits & 65535u) || FUN_80048844(index, i + 2) != -1)
-            goto ineligible;
-        actor_x = r_s16(actor + 42);
-        actor_z = r_s16(actor + 50);
-        other_x = r_s16(item + 6);
-        other_z = r_s16(item + 14);
-        angle = (uint32)FUN_8001614C(actor_x, actor_z, other_x, other_z);
-        angle -= (uint32)r_u16(actor + 56) << 5;
-        if (angle & 0x8000u)
-            angle = 0u - angle;
-        numerator = (0x7fffu - r_u32(0x800941a0)) << 13;
-        denominator = ((sint32)(angle << 16) >> 20) + 8192;
-        /* Signed16 angular fold bounds the denominator to 6144..10239 */
-        w_u32(rank + 8u + 4u * (uint32)i, (uint32)((sint32)numerator / denominator) + bias);
-        if ((sint32)r_u32(0x800941a0) < 769)
-            continue;
-    ineligible:
-        w_u32(rank + 8u + 4u * (uint32)i, 0xffffffffu);
-    }
-    return 0;
-}
-
-GDB_CALL sint32 FUN_800531C4(sint32 index)
-{
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
-    sint32 target, role;
-    FUN_800489F4(index);
-    target = FUN_8004899C(index);
-    if (target == -1)
-    {
-        w_u32(actor + 168, 0xffffffffu);
-        return 1;
-    }
-    if (target >= 2)
-    {
-        w_u32(actor + 168, (uint32)target - 2u);
-        w_u32(actor + 164, 4);
-        return 4;
-    }
-    w_u32(actor + 168, (uint32)target);
-    role = FUN_80048844(index, target) == -1 ? 1 : 2;
-    w_u32(actor + 164, (uint32)role);
-    return role;
-}
-
-GDB_CALL sint32 FUN_800483BC(sint32 index, uint32 x, uint32 z)
+GDB_CALL sint32 npc_turn_to_point(sint32 idx, uint32 x, uint32 z)
 {
     FUNCTION_MARKER(0x800483bc, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, yaw, difference;
+    uint32 yaw, difference;
     sint32 delta, step, actor_x, actor_z;
-    FUN_8004C9B0(actor);
-    actor_x = r_s16(actor + 42);
-    actor_z = r_s16(actor + 50);
-    difference = (uint32)FUN_8001614C(actor_x, actor_z, (sint32)x >> 16, (sint32)z >> 16);
-    yaw = r_u16(actor + 56);
+    npc_base_animation(idx);
+    actor_x = actor_positions[idx].x.whole;
+    actor_z = actor_positions[idx].z.whole;
+    difference = (uint32)math_dir16(actor_x, actor_z, (sint32)x >> 16, (sint32)z >> 16);
+    yaw = (uint16)actor_orientation[idx].yaw;
     difference -= yaw << 5;
     delta = (sint16)(uint16)difference;
     step = delta < -1024 ? -32 : delta > 1024 ? 32 : (delta >> 5);
-    w_u16(actor + 56, (uint16)(yaw + (uint32)step));
-    yaw = r_u16(actor + 56);
-    w_u16(actor + 56, (uint16)(yaw & 2047));
+    actor_orientation[idx].yaw = (uint16)(yaw + (uint32)step);
+    yaw = (uint16)actor_orientation[idx].yaw;
+    actor_orientation[idx].yaw = (uint16)(yaw & 2047);
     return delta;
 }
 
-/* First matching region, strict boundaries. Miss preserves hit globals. */
-GDB_CALL sint32 FUN_80019718(uint32 x, uint32 z)
+/* Steer toward a Q16 point with obstacle probes and neighboring NPC avoidance */
+/* Original6A0F8 calls have no effect: JR RA / NOP */
+GDB_CALL sint32 npc_steer_to_point(sint32 idx, uint32 x, uint32 z, uint32 flags)
 {
-    sint32 count = (sint32)r_u32(0x8009479c), px = (sint32)x >> 16, pz = (sint32)z >> 16;
-    uint32 region = 0x8009ec70, object, angle, dx, dz, cs, sn;
-    sint32 kind, lx, lz, hx, hz, a, b, side;
-    for (; count > 0; --count, region += 24)
+    FUNCTION_MARKER(0x80047CE4, "GAME.EXE");
+    /* TODO: Investigate steering requested outside the native actor pool */
+    if ((uint32)idx >= ACTOR_COUNT)
     {
-        if (r_s16(region + 12) < 2)
-            continue;
-        kind = r_s16(region + 10);
-        if (!kind)
-        {
-            if (!(r_s16(region) < px && px < r_s16(region + 4) && r_s16(region + 2) < pz && pz < r_s16(region + 6)))
-                continue;
-        }
-        else if (kind == 1)
-        {
-            object = r_u32(region + 20);
-            angle = (uint32)r_u16(object + 16) >> 5;
-            dx = (uint32)px - (uint32)(sint32)r_s16(object + 6);
-            cs = (uint32)(sint32)r_s16(0x800806d0 + 2u * angle);
-            dz = (uint32)pz - (uint32)(sint32)r_s16(object + 14);
-            sn = (uint32)(sint32)r_s16(0x800802d0 + 2u * angle);
-            lx = (sint32)(dx * cs + dz * sn) >> 15;
-            lz = (sint32)(dz * cs - dx * sn) >> 15;
-            hx = r_s16(region);
-            if (!(-hx < lx && lx < hx))
-                continue;
-            hz = r_s16(region + 2);
-            if (!(-hz < lz && lz < hz))
-                continue;
-            a = (sint16)(uint16)FUN_8001627C(lx, lz, 0, 0);
-            hz = r_s16(region + 2);
-            hx = r_s16(region);
-            b = (sint16)(uint16)FUN_8001627C(0, 0, hx, -hz);
-            if (a < b || a > 2048 - b)
-                side = 0;
-            else if (a < 1024 - b)
-                side = 1;
-            else
-                side = a < b + 1024 ? 2 : 3;
-            w_u32(0x8009411c, (uint32)side);
-        }
-        else
-        {
-            sint32 center_x = r_s16(region + 4);
-            sint32 center_z = r_s16(region + 6);
-            sint32 distance = FUN_800163F4(px, pz, center_x, center_z);
-            if (distance >= r_s16(region))
-                continue;
-        }
-        w_u32(0x80093d04, region);
-        return 1;
+        DIAGNOSTIC(fprintf(stderr, "Invalid steering actor %d flags %08X stage %u tick %u\n", idx, flags, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
     }
-    return 0;
-}
-
-/* 47CE4 actual MIPS. Calls to6A0F8 omitted: original body is JR RA / NOP. */
-GDB_CALL sint32 FUN_80047CE4(sint32 index, uint32 x, uint32 z, uint32 flags)
-{
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52));
-    uint32 angle, dx0, dz0, dx1, dz1, mask, other, diff, weight, sum = 0, threshold;
-    sint32 state, distance, nearby, base, i, fold, product;
-    state = FUN_8004C9B0(actor);
-    if ((state == 113 || state == 108 || state == 98 || state == 103 || r_u32(actor + 12) == 91) && r_u32(actor + 4) != 0xffffffffu)
+    sint32 type = actor_types[idx];
+    /* TODO: Investigate steering without a valid animation type */
+    if ((uint32)type >= ANIMATION_TYPE_COUNT)
     {
-        FUN_800483BC(index, x, z);
+        DIAGNOSTIC(fprintf(stderr, "Invalid steering type %d actor %d flags %08X stage %u tick %u\n", type, idx, flags, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    uint32 table = animation_type_banks[(uint32)type];
+    uint32 angle, dx0, dz0, dx1, dz1, mask, diff, weight, sum = 0, threshold;
+    sint32 state, distance, nearby, base, i, fold, product;
+    state = npc_base_animation(idx);
+    if ((state == 113 || state == 108 || state == 98 || state == 103 || actor_animations[idx].id == 91) && actor_animations[idx].frame != 0xffffffffu)
+    {
+        npc_turn_to_point(idx, x, z);
         return 4;
     }
-    distance = FUN_800163F4(r_s16(actor + 42), r_s16(actor + 50), (sint32)x >> 16, (sint32)z >> 16);
+    distance = math_distance_approx(actor_positions[idx].x.whole, actor_positions[idx].z.whole, (sint32)x >> 16, (sint32)z >> 16);
     if (!distance)
         distance = 1;
     if (distance >= 129)
     {
-        angle = ((uint32)(sint32)r_s16(actor + 56) - 176u) & 2047u;
-        dx0 = (uint32)(sint32)r_s16(0x800802d0 + 2u * angle) << 8;
-        dz0 = 0u - ((uint32)(sint32)r_s16(0x800806d0 + 2u * angle) << 8);
-        mask = FUN_80019718(r_u32(actor + 40) + dx0, r_u32(actor + 48) + dz0) ? 2u : 0u;
-        angle = ((uint32)(sint32)r_s16(actor + 56) + 176u) & 2047u;
-        dx1 = (uint32)(sint32)r_s16(0x800802d0 + 2u * angle) << 8;
-        dz1 = 0u - ((uint32)(sint32)r_s16(0x800806d0 + 2u * angle) << 8);
-        if (FUN_80019718(r_u32(actor + 40) + dx1, r_u32(actor + 48) + dz1))
+        angle = ((uint32)(sint32)actor_orientation[idx].yaw - 176u) & 2047u;
+        dx0 = (uint32)(sint32)sin_table[angle] << 8;
+        dz0 = 0u - ((uint32)(sint32)sin_table[MATH_QUARTER_TURN + angle] << 8);
+        mask = regions_find_obstacle(actor_positions[idx].x.bits + dx0, actor_positions[idx].z.bits + dz0) ? 2u : 0u;
+        angle = ((uint32)(sint32)actor_orientation[idx].yaw + 176u) & 2047u;
+        dx1 = (uint32)(sint32)sin_table[angle] << 8;
+        dz1 = 0u - ((uint32)(sint32)sin_table[MATH_QUARTER_TURN + angle] << 8);
+        if (regions_find_obstacle(actor_positions[idx].x.bits + dx1, actor_positions[idx].z.bits + dz1))
             mask |= 4u;
         if (mask)
         {
             flags &= ~4u;
             if (mask == 4 || mask == 5 || mask == 6)
             {
-                x = r_u32(actor + 40) + dx0;
-                z = r_u32(actor + 48) + dz0;
+                x = actor_positions[idx].x.bits + dx0;
+                z = actor_positions[idx].z.bits + dz0;
             }
             else
             {
-                x = r_u32(actor + 40) + dx1;
-                z = r_u32(actor + 48) + dz1;
+                x = actor_positions[idx].x.bits + dx1;
+                z = actor_positions[idx].z.bits + dz1;
             }
-            FUN_800483BC(index, x, z);
+            npc_turn_to_point(idx, x, z);
         }
     }
-    FUN_800483BC(index, x, z);
-    if (!(flags & 256u) && (r_u32(actor + 212) != 32768u || (sint32)r_u32(0x80093dd0) >= (sint32)r_u32(actor + 208)))
+    npc_turn_to_point(idx, x, z);
+    if (!(flags & 256u) && (npc_behavior_actors[idx].transition_state != 32768u || (sint32)game_session.tick >= (sint32)npc_behavior_actors[idx].transition_until))
     {
-        angle = (uint32)FUN_8001614C(r_s16(actor + 42), r_s16(actor + 50), (sint32)x >> 16, (sint32)z >> 16);
-        nearby = (sint32)r_u32(0x800941a0);
-        if (nearby < 640 && r_u32(actor + 164) != 4 && r_u32(actor + 168) != 0xffffffffu)
+        angle = (uint32)math_dir16(actor_positions[idx].x.whole, actor_positions[idx].z.whole, (sint32)x >> 16, (sint32)z >> 16);
+        nearby = dir_distance;
+        if (nearby < 640 && npc_targets[idx].role != 4 && npc_targets[idx].idx != 0xffffffffu)
         {
             base = nearby ? nearby : 1;
             for (i = 2; i < 8; i++)
             {
-                other = 0x800b4318 + 244u * (uint32)i;
-                if (i == index || r_s16(other + 52) == -1 || r_s16(other + 66) <= 0 || r_u32(other + 164) == 4 || r_u32(other + 168) == 0xffffffffu)
+                if (i == idx || actor_types[i] == ACTOR_TYPE_NONE || actor_health[i].hp <= 0 || npc_targets[i].role == 4 || npc_targets[i].idx == 0xffffffffu)
                     continue;
-                diff = angle - (uint32)FUN_8001614C(r_s16(actor + 42), r_s16(actor + 50), r_s16(other + 42), r_s16(other + 50));
+                diff = angle - (uint32)math_dir16(actor_positions[idx].x.whole, actor_positions[idx].z.whole, actor_positions[i].x.whole, actor_positions[i].z.whole);
                 fold = (sint16)(uint16)((diff & 0x8000u) ? diff - 16384u : 16384u - diff);
-                weight = (uint32)base - r_u32(0x800941a0);
+                weight = (uint32)base - (uint32)dir_distance;
                 if ((sint32)weight < 0)
                     weight = 0;
-                product = (sint32)((uint32)fold * weight);
+                product = (uint32)fold * weight;
                 if (base == -1 && (uint32)product == 0x80000000u)
                     npc_wip_fatal(0x80048100);
                 sum += (uint32)(product / base);
             }
-            mask = ((uint32)(uint16)r_s16(actor + 56) + 512u) & 2047u;
-            dx0 = (uint32)(sint32)r_s16(0x800802d0 + 2u * mask) << 8;
-            dz0 = 0u - ((uint32)(sint32)r_s16(0x800806d0 + 2u * mask) << 8);
+            mask = ((uint32)(uint16)actor_orientation[idx].yaw + 512u) & 2047u;
+            dx0 = (uint32)(sint32)sin_table[mask] << 8;
+            dz0 = 0u - ((uint32)(sint32)sin_table[MATH_QUARTER_TURN + mask] << 8);
             if ((sint32)sum < -768)
             {
-                if (!FUN_80019718(r_u32(actor + 40) - dx0, r_u32(actor + 48) - dz0))
+                if (!regions_find_obstacle(actor_positions[idx].x.bits - dx0, actor_positions[idx].z.bits - dz0))
                 {
-                    FUN_8004C4D8(actor, table, 108);
+                    npc_start_animation(idx, table, 108);
                     return 3;
                 }
             }
             else if ((sint32)sum >= 769)
             {
-                if (!FUN_80019718(r_u32(actor + 40) + dx0, r_u32(actor + 48) + dz0))
+                if (!regions_find_obstacle(actor_positions[idx].x.bits + dx0, actor_positions[idx].z.bits + dz0))
                 {
-                    FUN_8004C4D8(actor, table, 113);
+                    npc_start_animation(idx, table, 113);
                     return 3;
                 }
             }
         }
     }
-    if (r_s16(actor + 52) == 48 && distance >= 641 && r_u32(actor + 168) != 0xffffffffu)
-        FUN_8004C4D8(actor, table, 267);
+    if (actor_types[idx] == 48 && distance >= 641 && npc_targets[idx].idx != 0xffffffffu)
+        npc_start_animation(idx, table, 267);
     mask = flags & 3u;
     threshold = !mask ? 108u : mask == 1 ? ((flags & 256u) ? 344u : 216u) : mask == 2 ? 640u : 1280u;
-    if ((sint32)r_u32(0x80093dd0) >= (sint32)r_u32(actor + 176) && !(flags & 256u) && distance < (sint32)(threshold >> 1))
+    if ((sint32)game_session.tick >= (sint32)actor_status[idx].deadline && !(flags & 256u) && distance < (sint32)(threshold >> 1))
     {
-        FUN_8004C4D8(actor, table, 103);
+        npc_start_animation(idx, table, 103);
         return 3;
     }
     if (distance < (sint32)threshold)
         return 0;
     if (distance < 640 && (flags & 4u))
     {
-        if (r_u32(actor + 4) == 0xffffffffu || (uint32)state != r_u32(actor + 204))
-            FUN_8004C4D8(actor, table, (sint32)r_u32(actor + 204));
+        if (actor_animations[idx].frame == 0xffffffffu || (uint32)state != npc_behavior_actors[idx].move_animation)
+            npc_start_animation(idx, table, npc_behavior_actors[idx].move_animation);
         return 1;
     }
-    if (r_u32(actor + 4) != 0xffffffffu)
+    if (actor_animations[idx].frame != 0xffffffffu)
         return 4;
-    FUN_8004C4D8(actor, table, FUN_8001A068(table, 87) ? 87 : (sint32)r_u32(actor + 204));
+    npc_start_animation(idx, table, (animation_stream(table, 87).kind != ACTOR_ANIMATION_SOURCE_NONE) ? 87 : (sint32)npc_behavior_actors[idx].move_animation);
     return 2;
 }
 
-GDB_CALL sint32 FUN_800292F8(sint32 index)
-{
-    FUNCTION_MARKER(0x800292f8u, "GAME.EXE");
-    sint32 type = r_s16(0x800b434c + 244u * (uint32)index), sound = 47, pitch = 6144;
-    switch (type)
-    {
-        case 1:
-        case 12:
-        case 29:
-        case 30:
-        case 38:
-            sound = 67;
-            break;
-        case 2:
-        case 32:
-            sound = 83;
-            break;
-        case 3:
-            sound = 103;
-            break;
-        case 48:
-            sound = 195;
-            break;
-        case 49:
-            sound = 176;
-            break;
-        case 14:
-            sound = 83;
-            pitch = 5888;
-            break;
-    }
-    return FUN_80056670(sound, 255, pitch);
-}
-
-/* 47AC0: mutual facing and target-state gate for the paired grapple animations. */
-/* 4ADA8: hold partner opposite the actor; collision correction releases the link. */
-GDB_CALL sint32 FUN_8004ADA8(sint32 index, sint32 victim)
-{
-    FUNCTION_MARKER(0x8004ada8u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, other = 0x800b4318 + 244u * (uint32)victim;
-    uint32 state, distance, sine, cosine, x, z, original_x, original_z;
-    if (r_s8(other + 121) == 1)
-        return 2;
-    if (r_s8(actor + 121) == 2)
-        return 172;
-    state = r_u32(other + 12);
-    if (state == 172 || state == 77)
-        return 77;
-    distance = (uint32)(sint32)r_s16(0x800944e0 + 2u * (uint32)(sint32)r_s16(actor + 52));
-    w_u16(other + 56, (uint16)((uint16)r_s16(actor + 56) ^ 1024u));
-    sine = (uint32)(sint32)r_s16(0x800802d0 + 2u * (uint32)(sint32)r_s16(actor + 56));
-    cosine = (uint32)(sint32)r_s16(0x800806d0 + 2u * (uint32)(sint32)r_s16(actor + 56));
-    original_x = x = r_u32(actor + 40) + distance * sine;
-    original_z = z = r_u32(actor + 48) - distance * cosine;
-    ff_collision_candidate(other, &x, &z);
-    if (x != original_x || z != original_z)
-    {
-        w_u8(other + 120, 255);
-        w_u8(actor + 122, 255);
-        return -1;
-    }
-    w_u32(other + 40, x);
-    w_u32(other + 48, z);
-    return (sint32)z;
-}
-
-GDB_CALL sint32 FUN_80047AC0(sint32 index, sint32 victim)
-{
-    FUNCTION_MARKER(0x80047ac0u, "GAME.EXE");
-    uint32 actor, other, table, other_table, angle, state;
-    if (victim == -1)
-        return 0;
-    actor = 0x800b4318 + 244u * (uint32)index;
-    other = 0x800b4318 + 244u * (uint32)victim;
-    table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52));
-    angle = FUN_8001614C(r_s16(actor + 42), r_s16(actor + 50), r_s16(other + 42), r_s16(other + 50));
-    if ((uint16)(angle - ((uint32)(uint16)r_s16(actor + 56) << 5) + 4096u) >= 8193u)
-        return 0;
-    angle = FUN_8001614C(r_s16(other + 42), r_s16(other + 50), r_s16(actor + 42), r_s16(actor + 50));
-    if ((uint16)(angle - ((uint32)(uint16)r_s16(other + 56) << 5) + 4096u) >= 8193u)
-        return 0;
-    if ((sint32)r_u32(0x800941a0) >= 257 || !r_s16(other + 66) || r_s8(other + 120) != -1)
-        return 0;
-    state = FUN_8004C9B0(other);
-    if (state != 69 && state != 82 && state != 103 && state != 113 && state != 108)
-        return 0;
-    w_u8(other + 120, (uint8)index);
-    w_u8(other + 121, 0);
-    w_u8(actor + 122, (uint8)victim);
-    w_u8(other + 123, 127);
-    FUN_800292F8(index);
-    other_table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(other + 52));
-    if (index < 2)
-        FUN_800237CC(actor, table, 166);
-    else
-        FUN_8004C4D8(actor, table, 166);
-    if (victim < 2)
-        FUN_800237CC(other, other_table, 171);
-    else
-        FUN_8004C4D8(other, other_table, 171);
-    return 1;
-}
-
 /* Actual48488: reject grapple/attachment and unavailable target states. */
-GDB_CALL sint32 FUN_80048488(sint32 index)
+static sint32 target_available(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
+    FUNCTION_MARKER(0x80048488, "GAME.EXE");
     sint32 state;
-    if (r_s8(actor + 120) != -1 || r_s8(actor + 122) != -1)
+    if (actor_contacts[idx].captor != -1 || actor_contacts[idx].captive != -1)
         return 0;
-    state = FUN_8002371C(actor);
+    state = animation_movement_state(actor_animations[idx].id);
     return state != 33 && state != 158 && state != 39 && state != 149 && state != 150 && state != 151;
 }
 
-GDB_CALL sint32 FUN_80048530(sint32 index)
+GDB_CALL sint32 npc_choose_action(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table, script, cursor, commands, next, state, frame, target = 0xffffffff;
-    uint32 behavior, stats, deadline, capability, tick, delay;
+    FUNCTION_MARKER(0x80048530, "GAME.EXE");
+    uint32 table, cursor, next, state, frame, target = 0xffffffff;
+    const NPC_AI_CAPABILITY *script;
+    const uint32 *commands;
+    uint32 capacity, choice;
+    uint32 behavior, deadline, capability, tick, delay;
     sint32 type, slot, pick, count, random, eligible, result;
-    type = r_s16(actor + 52);
-    behavior = r_u32(actor + 184);
-    stats = r_u32(actor + 180);
-    deadline = r_u32(actor + 176);
-    capability = r_u8(stats + 8u * behavior);
-    table = r_u32(0x800b3be8 + 4u * (uint32)type);
-    tick = r_u32(0x80093dd0);
-    script = 0x80084f84 + 16u * capability;
-    eligible = (sint32)tick >= (sint32)deadline && r_u32(actor + 164) != 4;
+    /* TODO: Investigate the original out-of-pool NPC operation */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    type = actor_types[idx];
+    behavior = npc_behavior_actors[idx].behavior;
+    NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[idx].profile;
+    deadline = actor_status[idx].deadline;
+    behavior = (profile.first + behavior) & NPC_BEHAVIOR_ROW_MASK;
+    if (!profile.rows || behavior >= profile.row_count)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    capability = profile.rows[behavior].capability;
+    table = animation_type_banks[(uint32)type];
+    tick = game_session.tick;
+    if (capability >= NPC_AI_CAPABILITY_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    script = npc_ai_capabilities + capability;
+    eligible = (sint32)tick >= (sint32)deadline && npc_targets[idx].role != 4;
     if (eligible)
     {
-        target = r_u32(actor + 168);
+        target = npc_targets[idx].idx;
         eligible = target != 0xffffffff;
     }
     if (!eligible)
     {
-        state = r_u32(actor + 12);
-        next = r_u32(actor + 200);
-        if (state == next && r_u32(actor + 4) != 0xffffffffu)
+        state = actor_animations[idx].id;
+        next = npc_behavior_actors[idx].idle_animation;
+        if (state == next && actor_animations[idx].frame != 0xffffffffu)
             return -1;
-        return FUN_8004C4D8(actor, table, (sint32)next);
+        return npc_start_animation(idx, table, next);
     }
-    if (!FUN_80048488((sint32)target))
+    if (!target_available((sint32)target))
     {
-        state = r_u32(actor + 12);
-        next = r_u32(actor + 200);
+        state = actor_animations[idx].id;
+        next = npc_behavior_actors[idx].idle_animation;
         if (state == next)
         {
-            frame = r_u32(actor + 4);
+            frame = actor_animations[idx].frame;
             if (frame != 0xffffffffu)
-                return (sint32)frame;
+                return frame;
         }
-        return FUN_8004C4D8(actor, table, (sint32)next);
+        return npc_start_animation(idx, table, next);
     }
-    random = (sint32)(ff_rand_8006D348() & 3u);
-    cursor = r_u32(actor + 188);
-    commands = r_u32(script + 8);
-    if (random < (sint32)r_u32(commands + 4u * cursor))
-        w_u32(actor + 188, cursor + 1u);
+    random = random_next() & 3u;
+    cursor = npc_behavior_actors[idx].command;
+    commands = script->code;
+    capacity = script->code_capacity;
+    if (!commands || cursor >= capacity)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    if (random < (sint32)commands[cursor])
+        npc_behavior_actors[idx].command = cursor + 1u;
     else
         for (;;)
         {
-            slot = r_s8(actor + 126);
+            slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
             if (slot == -1)
-                slot = r_s8(actor + 125);
-            random = (sint32)ff_rand_8006D348();
-            count = (sint32)r_u32(script);
+                slot = actor_items[idx].slot[ACTOR_ITEM_LEFT];
+            random = (sint32)random_next();
+            count = (sint32)script->choice_count;
             if (!count || (random == (-2147483647 - 1) && count == -1))
                 npc_wip_fatal(0x800486bc);
-            pick = (sint32)r_u32(r_u32(script + 4) + 4u * (uint32)(random % count));
-            w_u32(actor + 188, (uint32)pick);
+            choice = random % count;
+            const uint32 *choices = script->choices;
+            if (!choices || choice >= script->choice_capacity)
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            pick = (sint32)choices[choice];
+            npc_behavior_actors[idx].command = (uint32)pick;
             if (pick < 0)
             {
-                w_u32(actor + 188, (uint16)pick);
-                if (slot == -1 || !(r_u32(0x800846b8 + 4u * r_u32(0x8009a3c8 + 36u * (uint32)slot)) & ((uint32)(pick >> 16) & 0x3fffu)))
-                    w_u32(actor + 188, 0xffffffffu);
+                npc_behavior_actors[idx].command = (uint16)pick;
+                if (slot == -1)
+                    npc_behavior_actors[idx].command = 0xffffffffu;
+                else
+                {
+                    /* TODO: Investigate the original out-of-pool NPC operation */
+                    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+                    {
+                        DIAGNOSTIC(fprintf(stderr, "Invalid NPC command item actor %d slot %d in %s stage %u tick %u\n", idx, slot, __FUNCTION__, game_session.stage, game_session.tick));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    uint32 kind = dynamic_objects[slot].kind;
+                    uint32 item_idx = kind - DYNAMIC_ITEM_TYPE_FIRST, bits;
+                    if (item_idx < DYNAMIC_ITEM_TYPE_COUNT)
+                        bits = item_properties[item_idx].packed;
+                    else if (item_idx == DYNAMIC_ITEM_TYPE_COUNT)
+                        bits = npc_ai_capabilities[0].choice_count;
+                    else
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    if (!(bits & ((uint32)(pick >> 16) & 0x3fffu)))
+                        npc_behavior_actors[idx].command = 0xffffffffu;
+                }
             }
             else if (slot != -1)
-                w_u32(actor + 188, 0xffffffffu);
-            else if (r_u32(r_u32(script + 8) + 4u * (uint32)pick) == 166)
+                npc_behavior_actors[idx].command = 0xffffffffu;
+            else
             {
-                if (!FUN_80047AC0(index, (sint32)r_u32(actor + 168)))
-                    w_u32(actor + 188, 0xffffffffu);
+                commands = script->code;
+                capacity = script->code_capacity;
+                if (!commands || (uint32)pick >= capacity)
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                if (commands[(uint32)pick] == 166 && !actors_try_grapple(idx, npc_targets[idx].idx))
+                    npc_behavior_actors[idx].command = 0xffffffffu;
             }
-            if (r_u32(actor + 188) != 0xffffffffu)
+            if (npc_behavior_actors[idx].command != 0xffffffffu)
                 break;
         }
-    cursor = r_u32(actor + 188);
-    w_u32(actor + 188, cursor + 1u);
-    commands = r_u32(script + 8);
-    next = r_u32(commands + 4u * cursor);
+    cursor = npc_behavior_actors[idx].command;
+    npc_behavior_actors[idx].command = cursor + 1u;
+    commands = script->code;
+    capacity = script->code_capacity;
+    if (!commands || cursor >= capacity)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    next = commands[cursor];
     if (next == 69)
     {
-        state = r_u32(actor + 12);
-        next = r_u32(actor + 200);
-        if (state != next || r_u32(actor + 4) == 0xffffffffu)
-            FUN_8004C4D8(actor, table, (sint32)next);
+        state = actor_animations[idx].id;
+        next = npc_behavior_actors[idx].idle_animation;
+        if (state != next || actor_animations[idx].frame == 0xffffffffu)
+            npc_start_animation(idx, table, next);
     }
     else
-        FUN_8004C4D8(actor, table, (sint32)next);
-    cursor = r_u32(actor + 188);
-    w_u32(actor + 188, cursor + 1u);
-    commands = r_u32(script + 8);
-    tick = r_u32(0x80093dd0);
-    delay = r_u32(commands + 4u * cursor);
-    result = (sint32)(tick + delay);
-    w_u32(actor + 176, (uint32)result);
+        npc_start_animation(idx, table, next);
+    cursor = npc_behavior_actors[idx].command;
+    npc_behavior_actors[idx].command = cursor + 1u;
+    commands = script->code;
+    tick = game_session.tick;
+    capacity = script->code_capacity;
+    if (!commands || cursor >= capacity)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    delay = commands[cursor];
+    result = tick + delay;
+    actor_status[idx].deadline = (uint32)result;
     return result;
 }
 
-GDB_CALL sint32 FUN_800532B8(sint32 index)
+GDB_CALL sint32 npc_update_ranged_attack(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, table = r_u32(0x800b3be8 + 4 * (uint32)(sint32)r_s16(actor + 52)), other, item, type;
-    uint32 x, z, tick, deadline;
-    sint32 angle, slot, ammo;
-    FUN_8004C9B0(actor);
-    other = 0x800b4318 + 244 * r_u32(actor + 168);
-    x = r_u32(other + 40);
-    z = r_u32(other + 48);
-    angle = FUN_800483BC(index, x, z);
-    if ((uint16)((uint32)angle + 4096) >= 8193)
+    FUNCTION_MARKER(0x800532b8, "GAME.EXE");
+    /* TODO: Investigate the original out-of-pool NPC operation */
+    if (idx < 0 || idx >= ACTOR_COUNT)
     {
-        w_u32(actor + 176, r_u32(0x80093dd0) + 5);
-        return FUN_80048530(index);
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
     }
-    slot = r_s8(actor + 126);
+    ANIMATION_BANK_ID bank = animation_type_banks[(uint32)actor_types[idx]];
+    uint32 target, type;
+    uint32 x, z, tick, deadline;
+    sint32 yaw, slot, ammo;
+    npc_base_animation(idx);
+    target = npc_targets[idx].idx;
+    /* TODO: Investigate the original out-of-pool NPC operation */
+    if (target >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC facing target actor %d slot %u in %s stage %u tick %u\n", idx, target, __FUNCTION__, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    x = actor_positions[target].x.bits;
+    z = actor_positions[target].z.bits;
+    yaw = npc_turn_to_point(idx, x, z);
+    if ((uint16)((uint32)yaw + 4096) >= 8193)
+    {
+        actor_status[idx].deadline = game_session.tick + 5;
+        return npc_choose_action(idx);
+    }
+    slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     if (slot != -1)
     {
-        deadline = r_u32(actor + 176);
-        tick = r_u32(0x80093dd0);
-        if ((sint32)tick >= (sint32)deadline && (uint16)((uint32)angle + 2047) < 4095)
+        deadline = actor_status[idx].deadline;
+        tick = game_session.tick;
+        if ((sint32)tick >= (sint32)deadline && (uint16)((uint32)yaw + 2047) < 4095)
         {
-            item = 0x8009a3c8 + 36 * (uint32)slot;
-            type = r_u32(item);
+            /* TODO: Investigate the original out-of-pool NPC operation */
+            if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC firing item actor %d slot %d in %s stage %u tick %u\n", idx, slot, __FUNCTION__, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *item = dynamic_objects + slot;
+            type = item->kind;
             if (type - 499 < 5)
             {
-                ammo = r_s16(item + 22);
+                /* TODO: Investigate an NPC item access with a foreign native owner */
+                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase ammo stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                ammo = item->physics.life;
                 if (ammo <= 0)
-                    return FUN_8004C4D8(actor, table, 159);
-                w_u16(item + 22, (uint16)(ammo - 1));
-                return FUN_8004C4D8(actor, table, 270);
+                    return npc_start_animation(idx, bank, 159);
+                item->physics.life = ammo - 1;
+                return npc_start_animation(idx, bank, 270);
             }
             if (type == 506 || type == 509 || type - 507 < 2)
             {
-                ammo = r_s16(item + 22);
+                /* TODO: Investigate an NPC item access with a foreign native owner */
+                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase ammo stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                ammo = item->physics.life;
                 if (ammo <= 0)
-                    return FUN_8004C4D8(actor, table, 159);
-                w_u16(item + 22, (uint16)(ammo - 1));
-                FUN_8004C4D8(actor, table, 195);
-                FUN_800301CC(index);
-                deadline = r_u32(0x80093dd0) + 150;
-                w_u32(actor + 176, deadline);
-                return (sint32)deadline;
+                    return npc_start_animation(idx, bank, 159);
+                item->physics.life = ammo - 1;
+                npc_start_animation(idx, bank, 195);
+                actor_items_fire_projectile(idx);
+                deadline = game_session.tick + 150;
+                actor_status[idx].deadline = deadline;
+                return deadline;
             }
         }
     }
-    slot = r_s8(actor + 125);
+    slot = actor_items[idx].slot[ACTOR_ITEM_LEFT];
     if (slot != -1)
     {
-        deadline = r_u32(actor + 176);
-        tick = r_u32(0x80093dd0);
-        if ((sint32)tick >= (sint32)deadline && (uint16)((uint32)angle + 2047) < 4095)
+        deadline = actor_status[idx].deadline;
+        tick = game_session.tick;
+        if ((sint32)tick >= (sint32)deadline && (uint16)((uint32)yaw + 2047) < 4095)
         {
-            item = 0x8009a3c8 + 36 * (uint32)slot;
-            if (r_u32(item) == 515)
+            /* TODO: Investigate the original out-of-pool NPC operation */
+            if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
             {
-                ammo = r_s16(item + 22);
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC firing item actor %d slot %d in %s stage %u tick %u\n", idx, slot, __FUNCTION__, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            MODEL_OBJECT *item = dynamic_objects + slot;
+            if (item->kind == 515)
+            {
+                /* TODO: Investigate an NPC item access with a foreign native owner */
+                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC item owner actor %d slot %d kind %u owner %u phase ammo stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                ammo = item->physics.life;
                 if (ammo <= 0)
-                    return FUN_8004C4D8(actor, table, 159);
-                w_u16(item + 22, (uint16)(ammo - 1));
-                FUN_800237CC(actor, table, 193);
-                FUN_80030310(index);
-                deadline = r_u32(0x80093dd0) + 150;
-                w_u32(actor + 176, deadline);
-                return (sint32)deadline;
+                    return npc_start_animation(idx, bank, 159);
+                item->physics.life = ammo - 1;
+                animation_start_held(idx, bank, 193);
+                actor_items_fire_ray(idx);
+                deadline = game_session.tick + 150;
+                actor_status[idx].deadline = deadline;
+                return deadline;
             }
         }
     }
-    return FUN_80048530(index);
+    return npc_choose_action(idx);
 }
 
 /* 5392C: state270 starts the shot once, then waits for its animation. */
-GDB_CALL sint32 FUN_8005392C(sint32 index)
+GDB_CALL sint32 npc_fire_spread_and_wait(sint32 idx)
 {
     FUNCTION_MARKER(0x8005392cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type), deadline;
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type], deadline;
     if (frame != 0xffffffff)
         return -1;
-    FUN_8004C4D8(actor, table, 192);
-    FUN_80030440(index);
-    deadline = r_u32(0x80093dd0) + 120;
-    w_u32(actor + 176, deadline);
-    return (sint32)deadline;
+    npc_start_animation(idx, table, 192);
+    actor_items_fire_spread(idx);
+    deadline = game_session.tick + 120;
+    actor_status[idx].deadline = deadline;
+    return deadline;
 }
 
-GDB_CALL sint32 FUN_80054A40(sint32 index)
+GDB_CALL sint32 npc_finish_attack_lighting(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 state = r_u32(actor + 12);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    if ((state == 51 || state == 53) && (r_u32(actor + 28) & 0x3000u) == 0x3000u)
-        w_u8(actor + 156, r_u8(actor + 156) | 8);
-    if (r_u32(actor + 4) != 0xffffffffu)
+    FUNCTION_MARKER(0x80054a40u, "GAME.EXE");
+    sint32 type = actor_types[idx];
+    uint32 state = actor_animations[idx].id;
+    uint32 table = animation_type_banks[(uint32)type];
+    if ((state == 51 || state == 53) && (actor_animations[idx].motion.events & 0x3000u) == 0x3000u)
+    {
+        if ((uint32)idx >= ACTOR_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        actor_lighting[idx].flags |= 8;
+    }
+    if (actor_animations[idx].frame != 0xffffffffu)
         return 28;
-    state = r_u32(actor + 12);
-    if (state == 28 && (table == 0x80082a08 || table == 0x80082e8c || table == 0x80083794 || table == 0x800849a4))
-        return FUN_8004C4D8(actor, table, 149);
-    return FUN_800532B8(index);
+    state = actor_animations[idx].id;
+    if (state == 28 && (table == ANIMATION_BANK_SHARED1 || table == ANIMATION_BANK_SHARED2 || table == ANIMATION_BANK_SHARED4 || table == ANIMATION_BANK_SHARED8))
+        return npc_start_animation(idx, table, 149);
+    return npc_update_ranged_attack(idx);
 }
 
 /* Original behavior selection and close-range attack dispatch */
-GDB_CALL sint32 FUN_80053558(sint32 index)
+GDB_CALL sint32 npc_update_combat(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table = r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52)), target, role, other, type, x, z, frame;
+    FUNCTION_MARKER(0x80053558u, "GAME.EXE");
+    /* TODO: Investigate target owner outside its native pool */
+    if (idx < 0 || idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC target owner value %u actor %d stage %u tick %u\n", (uint32)idx, idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    uint32 table = animation_type_banks[(uint32)actor_types[idx]], target, role, other_idx, type, x, z, frame;
     sint32 state, result, slot, next;
-    state = FUN_8004C9B0(actor);
-    FUN_800531C4(index);
-    target = r_u32(actor + 168);
+    const FIXED_VEC3 *other_pos;
+    state = npc_base_animation(idx);
+    npc_update_target(idx);
+    target = npc_targets[idx].idx;
     if (target != 0xffffffffu)
     {
-        role = r_u32(actor + 164);
+        role = npc_targets[idx].role;
         if (role == 2)
         {
-            other = 0x800b4318 + 244u * target;
-            x = r_u32(other + 40);
-            z = r_u32(other + 48);
-            result = FUN_80047CE4(index, x, z, 6);
+            other_idx = target;
+            /* TODO: Investigate actor target outside its native pool */
+            if (other_idx >= ACTOR_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = actor_positions + other_idx;
+            x = other_pos->x.bits;
+            z = other_pos->z.bits;
+            result = npc_steer_to_point(idx, x, z, 6);
             if (result)
                 return result;
         }
         else if (role == 1)
         {
             type = 0xffffffffu;
-            slot = r_s8(actor + 126);
+            slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
             if (slot != -1)
-                type = r_u32(0x8009a3c8 + 36u * (uint32)slot);
+            {
+                /* TODO: Investigate held item outside its native pool */
+                if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC held item value %u actor %d stage %u tick %u\n", (uint32)slot, idx, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+            }
+            if (slot != -1)
+                type = dynamic_objects[slot].kind;
             if (type == 0xffffffffu)
             {
-                slot = r_s8(actor + 125);
+                slot = actor_items[idx].slot[ACTOR_ITEM_LEFT];
                 if (slot != -1)
-                    type = r_u32(0x8009a3c8 + 36u * (uint32)slot);
+                {
+                    /* TODO: Investigate held item outside its native pool */
+                    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
+                    {
+                        DIAGNOSTIC(fprintf(stderr, "Invalid NPC held item value %u actor %d stage %u tick %u\n", (uint32)slot, idx, game_session.stage, game_session.tick));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                }
+                if (slot != -1)
+                    type = dynamic_objects[slot].kind;
             }
-            other = 0x800b4318 + 244u * r_u32(actor + 168);
+            other_idx = npc_targets[idx].idx;
+            /* TODO: Investigate actor target outside its native pool */
+            if (other_idx >= ACTOR_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = actor_positions + other_idx;
             if (type - 499u < 5u || type == 515 || type == 506 || type == 509 || type - 507u < 2u || type - 521u >= 42u)
             {
-                x = r_u32(other + 40);
-                z = r_u32(other + 48);
-                result = FUN_80047CE4(index, x, z, 5);
+                x = other_pos->x.bits;
+                z = other_pos->z.bits;
+                result = npc_steer_to_point(idx, x, z, 5);
                 if (!result)
-                    return FUN_800532B8(index);
+                    return npc_update_ranged_attack(idx);
                 return result;
             }
-            x = r_u32(other + 40);
-            z = r_u32(other + 48);
-            result = FUN_80047CE4(index, x, z, 6);
+            x = other_pos->x.bits;
+            z = other_pos->z.bits;
+            result = npc_steer_to_point(idx, x, z, 6);
             if (result)
                 return result;
-            other = 0x800b4318 + 244u * r_u32(actor + 168);
-            x = r_u32(other + 40);
-            z = r_u32(other + 48);
-            result = ((uint32)FUN_800483BC(index, x, z) + 2047u) & 65535u;
+            other_idx = npc_targets[idx].idx;
+            /* TODO: Investigate actor target outside its native pool */
+            if (other_idx >= ACTOR_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = actor_positions + other_idx;
+            x = other_pos->x.bits;
+            z = other_pos->z.bits;
+            result = ((uint32)npc_turn_to_point(idx, x, z) + 2047u) & 65535u;
             result = (uint32)result < 4095u;
             if (result)
-                result = FUN_8004C4D8(actor, table, 159);
+                result = npc_start_animation(idx, table, 159);
             return result;
         }
         else if (role == 4)
         {
-            other = 0x8009a3c8 + 36u * target;
-            x = r_u32(other + 4);
-            z = r_u32(other + 12);
-            result = FUN_80047CE4(index, x, z, 0);
+            other_idx = target;
+            /* TODO: Investigate item target outside its native pool */
+            if (other_idx >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC item target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            other_pos = &dynamic_objects[other_idx].pos;
+            x = other_pos->x.bits;
+            z = other_pos->z.bits;
+            result = npc_steer_to_point(idx, x, z, 0);
             if (result)
                 return result;
-            type = r_u32(0x8009a3c8 + 36u * r_u32(actor + 168));
+            other_idx = npc_targets[idx].idx;
+            /* TODO: Investigate late item target outside its native pool */
+            if (other_idx >= DYNAMIC_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid NPC late item target value %u actor %d stage %u tick %u\n", (uint32)other_idx, idx, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            type = dynamic_objects[other_idx].kind;
             next = (sint32)type >= 522 ? 121 : type == 509 || type - 507u < 2u || type == 506 ? 123 : type == 515 || type == 504 ? 126 : 118;
-            return FUN_8004C4D8(actor, table, next);
+            return npc_start_animation(idx, table, next);
         }
     }
-    next = (sint32)r_u32(actor + 200);
+    next = (sint32)npc_behavior_actors[idx].idle_animation;
     if (state == next)
     {
-        frame = r_u32(actor + 4);
+        frame = actor_animations[idx].frame;
         if (frame != 0xffffffffu)
-            return (sint32)frame;
+            return frame;
     }
-    return FUN_8004C4D8(actor, table, next);
+    return npc_start_animation(idx, table, next);
 }
 
 /* Forwarding wrapper; normalized twins differ in callee targets. */
-GDB_CALL sint32 FUN_80053278(sint32 index)
+GDB_CALL sint32 npc_continue_combat(sint32 idx)
 {
-    return FUN_80053558(index);
-}
-
-GDB_CALL sint32 FUN_80048CFC(uint32 state)
-{
-    return state == 147 || state == 154 || state - 149u < 2u || state == 41 || state == 132 || state - 177u < 3u || state - 180u < 10u || state - 130u < 2u || state == 77 || state == 167 || state == 169 || state == 33 || state == 148 || state == 205 || state == 203 || state == 172 || state == 36;
-}
-
-GDB_CALL sint32 FUN_80052878(sint32 index)
-{
-    sint32 type = r_s16(0x800b434c + 244u * (uint32)index), sample;
-    if (type == 49)
-        sample = 177;
-    else if (type == 14)
-        sample = 210;
-    else
-        sample = (type == 32 ? 76 : 33) + (sint32)ff_rand_8006D348() % 3;
-    return FUN_80056670(sample, 255, 6144);
-}
-
-GDB_CALL uint32 FUN_8001F41C(uint32 attacker, uint32 victim, uint32 state)
-{
-    uint32 damage = r_u16(0x800b39a0 + 2u * state) >> 8;
-    if (attacker < 9u && victim < 9u)
-        return FUN_8001F230((sint32)attacker, (sint32)victim, (sint32)damage);
-    return victim < 9u;
+    FUNCTION_MARKER(0x80053278u, "GAME.EXE");
+    return npc_update_combat(idx);
 }
 
 /* 29530: death voice. Actual MIPS uses two RNG draws except fallback
  * voice selection, which consumes a third. No indexed reuse candidates. */
-GDB_CALL uint32 FUN_80029530(sint32 index)
-{
-    sint32 type = r_s16(0x800b434cu + 244u * (uint32)index), sound, pitch = 5952;
-    sint32 volume = 192 - (sint32)(ff_rand_8006D348() & 63u);
-    switch (type)
-    {
-        case 0:
-            sound = 42;
-            break;
-        case 1:
-            sound = 69;
-            break;
-        case 2:
-            sound = 82;
-            break;
-        case 3:
-            sound = 104;
-            break;
-        case 48:
-            sound = 193;
-            break;
-        case 12:
-        case 29:
-        case 30:
-        case 38:
-            sound = 14;
-            break;
-        case 49:
-        case 50:
-            sound = 174;
-            volume = 255;
-            break;
-        case 32:
-            sound = 160;
-            volume = 255;
-            break;
-        case 14:
-            sound = 174;
-            volume = 255;
-            pitch = 5696;
-            break;
-        default:
-            sound = (sint32)(ff_rand_8006D348() & 1u) + 12;
-            break;
-    }
-    pitch += (sint32)(ff_rand_8006D348() & 255u);
-    return FUN_80056670(sound, volume, pitch);
-}
 
 /* Hit reactions retain the original lethal, high-stun and directional paths */
-GDB_CALL sint32 FUN_80048DBC(sint32 index, sint32 attachment)
+GDB_CALL sint32 npc_attack_players(sint32 idx, sint32 attachment)
 {
     FUNCTION_MARKER(0x80048dbc, "GAME.EXE");
-    uint32 position[3], victim, source = 0x800b4318 + 244u * (uint32)index, x, z, table, angle, state, step;
-    uint32 flags, tick, angle_z, random;
-    sint32 i, type, j, partner, victim_x, victim_z, source_x, source_z, range_type, distance, radius, sine, cosine;
-    sint16 direction;
-    FUN_8001B9F4(index, attachment, position);
+    FIXED_VEC3 pos;
+    uint32 x, z, table, angle, state, step;
+    uint32 flags, tick, random;
+    sint32 yaw, yaw_z;
+    sint32 i, type, j, partner, victim_x, victim_z, src_x, src_z, range_type, distance, radius, s, c;
+    sint16 dir;
+    actor_attachment_pos(idx, attachment, pos.bits);
     for (i = 0; i < 2; i++)
     {
-        if (i == index)
+        if (i == idx)
             continue;
-        victim = 0x800b4318 + 244u * (uint32)i;
-        type = r_s16(victim + 52);
-        if (type == -1 || FUN_80048CFC(r_u32(victim + 12)))
+        type = actor_types[i];
+        if (type == -1 || actor_animation_blocks_hits(actor_animations[i].id))
             continue;
-        victim_x = r_s16(victim + 42);
-        victim_z = r_s16(victim + 50);
-        FUN_8001614C(victim_x, victim_z, (sint32)position[0] >> 16, (sint32)position[2] >> 16);
-        range_type = r_s16(victim + 52);
-        distance = (sint32)r_u32(0x800941a0);
-        radius = r_s16(0x80094120 + 2 * (uint32)range_type);
+        victim_x = actor_positions[i].x.whole;
+        victim_z = actor_positions[i].z.whole;
+        math_dir16(victim_x, victim_z, (sint32)pos.x.bits >> 16, (sint32)pos.z.bits >> 16);
+        range_type = actor_types[i];
+        distance = dir_distance;
+        if (range_type < 0 || range_type >= ACTOR_TYPE_COUNT)
+        {
+            /* TODO: Investigate hit victims outside the collision radius table */
+            DIAGNOSTIC(fprintf(stderr, "Invalid player hit radius type %d source %d victim %d stage %u tick %u\n", range_type, idx, i, game_session.stage, game_session.tick));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        radius = actor_col.radius[range_type];
         if (radius < distance)
             continue;
-        victim_x = r_s16(victim + 42);
-        victim_z = r_s16(victim + 50);
-        source_x = r_s16(source + 42);
-        source_z = r_s16(source + 50);
-        direction = (sint16)FUN_8001614C(victim_x, victim_z, source_x, source_z);
-        x = r_u32(victim + 40);
-        angle = r_u16(victim + 56);
-        z = r_u32(victim + 48);
-        direction = (sint16)((angle << 5) - (uint32)(sint32)direction - 16384);
-        FUN_8001697C(865, x, position[1], z);
-        FUN_80017C78(i);
-        FUN_800293D8(i);
-        angle = (uint32)(sint32)r_s16(victim + 56) ^ 1024u;
+        victim_x = actor_positions[i].x.whole;
+        victim_z = actor_positions[i].z.whole;
+        src_x = actor_positions[idx].x.whole;
+        src_z = actor_positions[idx].z.whole;
+        dir = (sint16)math_dir16(victim_x, victim_z, src_x, src_z);
+        x = actor_positions[i].x.bits;
+        angle = (uint16)actor_orientation[i].yaw;
+        z = actor_positions[i].z.bits;
+        dir = (angle << 5) - (uint32)(sint32)dir - 16384;
+        dynamic_objects_spawn_transient(865, x, pos.y.bits, z);
+        actor_items_drop_on_hit(i);
+        sound_play_pain(i);
+        angle = (uint32)(sint32)actor_orientation[i].yaw ^ 1024u;
         for (j = 0; j < 4; j++)
-            FUN_800310B8(x, position[1], z, angle);
+            effect_spawn_hit_reverse(x, pos.y.bits, z, angle);
         for (j = 0; j < 4; j++)
-            FUN_8003100C(x, position[1], z, angle);
-        w_u16(victim + 98, 0);
-        FUN_8001F41C((uint32)index, (uint32)i, r_u32(source + 12));
-        if (attachment == 3 && (uint32)r_u16(source + 52) - 40 < 4)
+            effect_spawn_hit(x, pos.y.bits, z, angle);
+        actor_trails[i].phase = 0;
+        actor_apply_animation_damage(idx, i, actor_animations[idx].id);
+        if (attachment == 3 && (uint32)((uint16)actor_types[idx]) - 40 < 4)
         {
-            w_u16(victim + 74, 127);
-            FUN_80056670(185, 255, 6144);
-            FUN_80056670(171, 255, 6144);
-            flags = r_u32(victim + 232);
-            tick = r_u32(0x80093dd0);
-            w_u32(victim + 232, flags | 1);
-            w_u32(victim + 176, tick + 20);
+            actor_health[i].stun = 127;
+            sound_voice_play(185, 255, 6144);
+            sound_voice_play(171, 255, 6144);
+            flags = actor_status[i].flags;
+            tick = game_session.tick;
+            actor_status[i].flags = flags | 1;
+            actor_status[i].deadline = tick + 20;
         }
-        if (r_s16(victim + 66) <= 0)
+        if (actor_health[i].hp <= 0)
         {
-            FUN_80029530(i);
-            w_u16(victim + 66, 0);
-            w_u32(0x8009466c, (uint32)i);
-            FUN_80017E30(i);
-            FUN_80019F00(victim, r_u32(0x800b3be8 + 4u * (uint32)type), direction < 0 ? 147 : 154);
-            partner = r_s8(victim + 122);
+            sound_play_death_voice(i);
+            actor_health[i].hp = 0;
+            game_session.defeated_player = (uint32)i;
+            actor_items_drop(i);
+            animation_start(i, animation_type_banks[(uint32)type], dir < 0 ? 147 : 154);
+            partner = actor_contacts[i].captive;
             if (partner != -1)
             {
-                w_u8(0x800b4390 + 244u * (uint32)partner, 255);
-                w_u8(victim + 122, 255);
+                if (partner < 0 || partner >= ACTOR_COUNT)
+                {
+                    /* TODO: Investigate an invalid captive after a lethal player hit */
+                    DIAGNOSTIC(fprintf(stderr, "Invalid lethal hit captive %d source %d victim %d stage %u tick %u\n", partner, idx, i, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                actor_contacts[partner].captor = ACTOR_SLOT_NONE;
+                actor_contacts[i].captive = ACTOR_SLOT_NONE;
             }
             return 1;
         }
-        if (r_s16(victim + 74) >= 49)
+        if (actor_health[i].stun >= 49)
         {
-            FUN_80029A40(index);
-            w_u16(victim + 74, 0);
-            FUN_80017E30(i);
-            table = r_u32(0x800b3be8 + 4 * (uint32)type);
-            FUN_80019F00(victim, table, direction < 0 ? 147 : 154);
+            sound_play_heavy_hit_voice(idx);
+            actor_health[i].stun = 0;
+            actor_items_drop(i);
+            table = animation_type_banks[(uint32)type];
+            animation_start(i, table, dir < 0 ? 147 : 154);
         }
-        else if (direction < 0)
+        else if (dir < 0)
         {
-            state = r_u32(source + 12);
+            state = actor_animations[idx].id;
             if (state == 11 || state == 40)
             {
-                table = r_u32(0x800b3be8 + 4 * (uint32)type);
-                FUN_80019F00(victim, table, 139);
+                table = animation_type_banks[(uint32)type];
+                animation_start(i, table, 139);
                 step = state == 11 ? 64 : 112;
-                angle = 2 * (uint32)(sint32)r_s16(victim + 56);
-                x = r_u32(victim + 40);
-                angle_z = 2 * (uint32)(sint32)r_s16(victim + 56);
-                sine = r_s16(0x800802d0 + angle);
-                w_u32(victim + 40, x - step * (uint32)sine);
-                cosine = r_s16(0x800806d0 + angle_z);
-                z = r_u32(victim + 48);
-                w_u32(victim + 48, z + step * (uint32)cosine);
+                yaw = actor_orientation[i].yaw;
+                x = actor_positions[i].x.bits;
+                yaw_z = actor_orientation[i].yaw;
+                if (yaw < 0 || yaw >= MATH_SIN_COUNT)
+                {
+                    /* TODO: Investigate hit reaction headings outside the sine table */
+                    DIAGNOSTIC(fprintf(stderr, "Invalid player hit sine heading %d source %d victim %d stage %u tick %u\n", yaw, idx, i, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                s = sin_table[yaw];
+                actor_positions[i].x.bits = x - step * (uint32)s;
+                if (yaw_z < -MATH_QUARTER_TURN || yaw_z >= MATH_ANGLE_COUNT)
+                {
+                    /* TODO: Investigate hit reaction headings outside the cosine view */
+                    DIAGNOSTIC(fprintf(stderr, "Invalid player hit cosine heading %d source %d victim %d stage %u tick %u\n", yaw_z, idx, i, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                c = sin_table[MATH_QUARTER_TURN + yaw_z];
+                z = actor_positions[i].z.bits;
+                actor_positions[i].z.bits = z + step * (uint32)c;
             }
             else
             {
-                random = ff_rand_8006D348();
-                table = r_u32(0x800b3be8 + 4 * (uint32)type);
-                FUN_80019F00(victim, table, (sint32)((random & 1) + 133));
+                random = random_next();
+                table = animation_type_banks[(uint32)type];
+                animation_start(i, table, (random & 1) + 133);
             }
         }
         else
         {
-            random = ff_rand_8006D348();
-            table = r_u32(0x800b3be8 + 4 * (uint32)type);
-            FUN_80019F00(victim, table, (sint32)((random & 1) | 152));
+            random = random_next();
+            table = animation_type_banks[(uint32)type];
+            animation_start(i, table, (random & 1) | 152);
         }
-        partner = r_s8(victim + 122);
+        partner = actor_contacts[i].captive;
         if (partner != -1)
         {
-            w_u8(0x800b4390 + 244u * (uint32)partner, 255);
-            w_u8(victim + 122, 255);
+            if (partner < 0 || partner >= ACTOR_COUNT)
+            {
+                /* TODO: Investigate an invalid captive after a player hit */
+                DIAGNOSTIC(fprintf(stderr, "Invalid hit captive %d source %d victim %d stage %u tick %u\n", partner, idx, i, game_session.stage, game_session.tick));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            actor_contacts[partner].captor = ACTOR_SLOT_NONE;
+            actor_contacts[i].captive = ACTOR_SLOT_NONE;
         }
         return 1;
     }
@@ -3088,551 +3125,407 @@ GDB_CALL sint32 FUN_80048DBC(sint32 index, sint32 attachment)
 /* 52944 entrance and event-free52FE8 dispatch. Other events/callbacks remain WIP. */
 /* 53E1C: detach, wait for animation completion, then recover or die.
  * The no-partner/no-completion return is -16 (SLL in branch delay slot). */
-GDB_CALL sint32 FUN_80053E1C(sint32 index)
+GDB_CALL sint32 npc_update_detached(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, tick;
-    sint32 type = r_s16(actor + 52);
-    sint32 partner = r_s8(actor + 122);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
-    sint32 result = (sint32)((uint32)partner << 4);
+    FUNCTION_MARKER(0x80053e1c, "GAME.EXE");
+    uint32 tick;
+    sint32 type = actor_types[idx];
+    sint32 partner = actor_contacts[idx].captive;
+    uint32 table = animation_type_banks[(uint32)type];
+    sint32 result = (uint32)partner << 4;
     if (partner != -1)
     {
-        result = (sint32)(244u * (uint32)partner);
-        w_u8(0x800b4390 + (uint32)result, 255);
-        w_u8(actor + 122, 255);
+        result = 244u * (uint32)partner;
+        actor_contacts[partner].captor = ACTOR_SLOT_NONE;
+        actor_contacts[idx].captive = ACTOR_SLOT_NONE;
     }
-    if (r_u32(actor + 4) != 0xffffffffu)
+    if (actor_animations[idx].frame != 0xffffffffu)
         return result;
-    if (r_s16(actor + 66) <= 0)
+    if (actor_health[idx].hp <= 0)
     {
-        w_u32(0x80093d24, r_u32(0x80093d24) + 1u);
-        FUN_80017E30(index);
-        result = FUN_8004C4D8(actor, table, 147);
-        w_u32(actor + 168, 0xffffffffu);
+        npc_behavior_cycle.progress = npc_behavior_cycle.progress + 1u;
+        actor_items_drop(idx);
+        result = npc_start_animation(idx, table, 147);
+        npc_targets[idx].idx = 0xffffffffu;
         return result;
     }
-    if (r_s16(actor + 74) < 33)
-        return FUN_80053558(index);
-    FUN_8004C4D8(actor, table, 103);
-    tick = r_u32(0x80093dd0);
-    w_u32(actor + 168, 0xffffffffu);
-    result = (sint32)(tick + 30);
-    w_u32(actor + 176, (uint32)result);
+    if (actor_health[idx].stun < 33)
+        return npc_update_combat(idx);
+    npc_start_animation(idx, table, 103);
+    tick = game_session.tick;
+    npc_targets[idx].idx = 0xffffffffu;
+    result = tick + 30;
+    actor_status[idx].deadline = (uint32)result;
     return result;
 }
 
 /* 53FC4: knockdown bookkeeping and recovery transitions.
  * Evidence: status/gameplay/npc-53fc4-mips-audit.md. */
-GDB_CALL sint32 FUN_80053FC4(sint32 index)
+GDB_CALL sint32 npc_update_knockdown(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table, count, behavior, stats, factor;
+    FUNCTION_MARKER(0x80053fc4, "GAME.EXE");
+    uint32 table, count, behavior, factor;
     sint32 type, partner, state, hp, timer, product, divisor, result;
     uint16 angle;
     uint32 tick;
-    type = r_s16(actor + 52);
-    count = r_u32(0x80093d24);
-    table = r_u32(0x800b3be8 + 4u * (uint32)type);
-    w_u32(0x80093d24, count + 1u);
-    w_u32(actor + 168, 0xffffffffu);
-    state = FUN_8004C9B0(actor);
-    partner = r_s8(actor + 122);
+    type = actor_types[idx];
+    count = npc_behavior_cycle.progress;
+    table = animation_type_banks[(uint32)type];
+    npc_behavior_cycle.progress = count + 1u;
+    npc_targets[idx].idx = 0xffffffffu;
+    state = npc_base_animation(idx);
+    partner = actor_contacts[idx].captive;
     if (partner != -1)
     {
-        w_u8(0x800b4390 + 244u * (uint32)partner, 255);
-        w_u8(actor + 122, 255);
+        actor_contacts[(uint32)partner].captor = ACTOR_SLOT_NONE;
+        actor_contacts[idx].captive = ACTOR_SLOT_NONE;
     }
-    result = (sint32)(r_u32(actor + 124) & 0xffff00u);
+    result = (uint32)actor_items[idx].bits << 8;
     if (result != 0xffff00)
-        result = FUN_80017E30(index);
-    if (r_u32(actor + 4) != 0xffffffffu)
+        result = actor_items_drop(idx);
+    if (actor_animations[idx].frame != 0xffffffffu)
         return result;
-    hp = r_s16(actor + 66);
+    hp = actor_health[idx].hp;
     if (hp <= 0)
         return hp;
-    timer = (sint32)r_u32(actor + 176);
-    tick = r_u32(0x80093dd0);
+    timer = (sint32)actor_status[idx].deadline;
+    tick = game_session.tick;
     if (timer < (sint32)tick)
     {
-        behavior = r_u32(actor + 184);
-        stats = r_u32(actor + 180);
-        w_u32(actor + 168, 0xffffffffu); /* 540D8: repeat after the callees. */
-        hp = r_s16(actor + 66);
-        divisor = (sint32)r_s16(actor + 72);
-        factor = r_u8(stats + 8u * behavior + 2);
+        if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        behavior = npc_behavior_actors[idx].behavior;
+        NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[idx].profile;
+        npc_targets[idx].idx = 0xffffffffu; /* 540D8: repeat after the callees. */
+        hp = actor_health[idx].hp;
+        divisor = (sint32)actor_health[idx].max;
+        behavior = (profile.first + behavior) & NPC_BEHAVIOR_ROW_MASK;
+        if (!profile.rows || behavior >= profile.row_count)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        factor = profile.rows[behavior].recovery_delay;
         product = (sint32)factor * (divisor - hp);
         if (!divisor)
             npc_wip_fatal(0x80054110);
         if (divisor == -1 && (uint32)product == 0x80000000u)
             npc_wip_fatal(0x80054128);
-        result = (sint32)(tick + (uint32)((product / divisor) + 1));
-        w_u32(actor + 176, (uint32)result);
+        result = tick + (uint32)((product / divisor) + 1);
+        actor_status[idx].deadline = (uint32)result;
         return result;
     }
     if (state == 0xb5)
     {
-        angle = (uint16)r_s16(actor + 56);
-        w_u16(actor + 56, angle ^ 0x400u);
-        return FUN_8004C4D8(actor, table, 0xfc);
+        angle = (uint16)actor_orientation[idx].yaw;
+        actor_orientation[idx].yaw = angle ^ 0x400u;
+        return npc_start_animation(idx, table, 0xfc);
     }
     if (state == 0xb7)
     {
-        if (table == 0x80082a08 || table == 0x80082e8c || table == 0x80083794 || table == 0x800849a4)
-            return FUN_80053558(index);
-        return FUN_8004C4D8(actor, table, 0xfd);
+        if (table == ANIMATION_BANK_SHARED1 || table == ANIMATION_BANK_SHARED2 || table == ANIMATION_BANK_SHARED4 || table == ANIMATION_BANK_SHARED8)
+            return npc_update_combat(idx);
+        return npc_start_animation(idx, table, 0xfd);
     }
     if (state == 0x8e)
     {
-        if (table == 0x80082a08 || table == 0x80082e8c || table == 0x80083794 || table == 0x800849a4)
-            return FUN_8004C4D8(actor, table, 0xfc);
-        return FUN_8004C4D8(actor, table, 0xfd);
+        if (table == ANIMATION_BANK_SHARED1 || table == ANIMATION_BANK_SHARED2 || table == ANIMATION_BANK_SHARED4 || table == ANIMATION_BANK_SHARED8)
+            return npc_start_animation(idx, table, 0xfc);
+        return npc_start_animation(idx, table, 0xfd);
     }
     if (state == 0x8c)
     {
-        if (table == 0x80082a08 || table == 0x80082e8c || table == 0x80083794 || table == 0x800849a4)
-            return FUN_8004C4D8(actor, table, 0xfc);
-        w_u16(actor + 56, (uint16)r_s16(actor + 56) ^ 0x400u);
-        return FUN_8004C4D8(actor, table, 0xfd);
+        if (table == ANIMATION_BANK_SHARED1 || table == ANIMATION_BANK_SHARED2 || table == ANIMATION_BANK_SHARED4 || table == ANIMATION_BANK_SHARED8)
+            return npc_start_animation(idx, table, 0xfc);
+        actor_orientation[idx].yaw = (uint16)actor_orientation[idx].yaw ^ 0x400u;
+        return npc_start_animation(idx, table, 0xfd);
     }
     if (state == 0x9a || ((uint32)state - 0xb6u < 2u) || state == 0xf1)
-        return FUN_8004C4D8(actor, table, 0xfd);
+        return npc_start_animation(idx, table, 0xfd);
     if (state == 0x8d || state == 0xb8)
     {
-        angle = (uint16)r_s16(actor + 56);
-        angle = (uint16)(((uint32)(angle - 0x200u)) & 0x7ffu);
-        w_u16(actor + 56, angle);
+        angle = (uint16)actor_orientation[idx].yaw;
+        angle = ((uint32)(angle - 0x200u)) & 0x7ffu;
+        actor_orientation[idx].yaw = angle;
         if (state == 0x8d)
-            w_u16(actor + 56, angle ^ 0x400u);
-        return FUN_8004C4D8(actor, table, 0xfc);
+            actor_orientation[idx].yaw = angle ^ 0x400u;
+        return npc_start_animation(idx, table, 0xfc);
     }
     if (state == 0xbc || state == 0x94)
     {
-        angle = (uint16)r_s16(actor + 56);
-        angle = (uint16)(((uint32)(angle + 0x200u)) & 0x7ffu);
-        w_u16(actor + 56, angle);
-        return FUN_8004C4D8(actor, table, 0xfd);
+        angle = (uint16)actor_orientation[idx].yaw;
+        angle = ((uint32)(angle + 0x200u)) & 0x7ffu;
+        actor_orientation[idx].yaw = angle;
+        return npc_start_animation(idx, table, 0xfd);
     }
     if (state == 0xbd)
     {
-        w_u16(actor + 56, ((uint16)r_s16(actor + 56) - 0x200u) & 0x7ffu);
-        return FUN_8004C4D8(actor, table, 0xfc);
+        actor_orientation[idx].yaw = ((uint16)actor_orientation[idx].yaw - 0x200u) & 0x7ffu;
+        return npc_start_animation(idx, table, 0xfc);
     }
     if (state == 0x119)
     {
-        w_u32(actor + 44, 0u);
-        return FUN_8004C4D8(actor, table, 0xfc);
+        actor_positions[idx].y.bits = 0u;
+        return npc_start_animation(idx, table, 0xfc);
     }
-    return FUN_8004C4D8(actor, table, 0xfc);
+    return npc_start_animation(idx, table, 0xfc);
 }
 
 /* 55100: defensive animation chain. Indexed twin4E484 differs final callee;
  * this mapping follows current MIPS, including return58 on other endedstates. */
-GDB_CALL sint32 FUN_80055100(sint32 index)
+GDB_CALL sint32 npc_finish_combat_combo(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244 * (uint32)index;
-    sint32 type = r_s16(actor + 52);
-    uint32 frame = r_u32(actor + 4);
-    uint32 table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    FUNCTION_MARKER(0x80055100u, "GAME.EXE");
+    sint32 type = actor_types[idx];
+    uint32 frame = actor_animations[idx].frame;
+    uint32 table = animation_type_banks[(uint32)type];
     sint32 state;
     if (frame != 0xffffffffu)
         return -1;
-    state = FUN_8004C9B0(actor);
+    state = npc_base_animation(idx);
     if (state == 57)
     {
-        w_u32(actor + 4, 0xffffffffu);
-        return FUN_8004C4D8(actor, table, 60);
+        actor_animations[idx].frame = 0xffffffffu;
+        return npc_start_animation(idx, table, 60);
     }
     if (state == 60)
-        return FUN_8004C4D8(actor, table, 58);
+        return npc_start_animation(idx, table, 58);
     if (state == 59)
-        return FUN_8004C4D8(actor, table, 60);
+        return npc_start_animation(idx, table, 60);
     if (state == 58)
-        return FUN_80053558(index);
+        return npc_update_combat(idx);
     return 58;
 }
 
 /* 55770: low-health stagger/recovery, actual signed timer comparison and
  * halfword HP addition. The return retains the pre-clamp HP value. */
-GDB_CALL sint32 FUN_80055770(sint32 index)
+GDB_CALL sint32 npc_update_recovery(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, table, state, frame, behavior, stats, factor, deadline, tick;
-    sint32 type, maximum, product, value;
-    type = r_s16(actor + 52);
-    frame = r_u32(actor + 4);
-    table = r_u32(0x800b3be8 + 4u * (uint32)type);
+    FUNCTION_MARKER(0x80055770, "GAME.EXE");
+    uint32 table, state, frame, behavior, factor, deadline, tick;
+    sint32 type, maximum, product, val;
+    type = actor_types[idx];
+    frame = actor_animations[idx].frame;
+    table = animation_type_banks[(uint32)type];
     if (frame != 0xffffffffu)
         return -1;
-    state = r_u32(actor + 12);
+    state = actor_animations[idx].id;
     if (state - 234u < 2u)
     {
-        behavior = r_u32(actor + 184);
-        stats = r_u32(actor + 180);
-        maximum = r_s16(actor + 72);
-        w_u32(actor + 168, 0xffffffffu);
-        value = r_s16(actor + 66);
-        factor = r_u8(stats + 8u * behavior + 2);
-        product = (sint32)(factor * (uint32)(maximum - value));
+        if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        behavior = npc_behavior_actors[idx].behavior;
+        NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[idx].profile;
+        maximum = actor_health[idx].max;
+        npc_targets[idx].idx = 0xffffffffu;
+        val = actor_health[idx].hp;
+        behavior = (profile.first + behavior) & NPC_BEHAVIOR_ROW_MASK;
+        if (!profile.rows || behavior >= profile.row_count)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        factor = profile.rows[behavior].recovery_delay;
+        product = factor * (uint32)(maximum - val);
         if (!maximum)
             npc_wip_fatal(0x80055818); /* Original BREAK7 division trap. */
         if (maximum == -1 && (uint32)product == 0x80000000u)
             npc_wip_fatal(0x80055830);
-        w_u32(actor + 176, r_u32(0x80093dd0) + (uint32)(product / maximum) + 1u);
-        return FUN_8004C4D8(actor, table, 236);
+        actor_status[idx].deadline = game_session.tick + (uint32)(product / maximum) + 1u;
+        return npc_start_animation(idx, table, 236);
     }
     if (state == 236)
-        return FUN_8004C4D8(actor, table, 237);
+        return npc_start_animation(idx, table, 237);
     if (state == 237)
-        return FUN_8004C4D8(actor, table, 238);
+        return npc_start_animation(idx, table, 238);
     if (state == 238)
     {
-        deadline = r_u32(actor + 176);
-        tick = r_u32(0x80093dd0);
+        deadline = actor_status[idx].deadline;
+        tick = game_session.tick;
         if ((sint32)tick < (sint32)deadline)
-            return FUN_8004C4D8(actor, table, 238);
-        FUN_8004C4D8(actor, table, 239);
-        value = (uint16)r_s16(actor + 66);
-        maximum = r_s16(actor + 72);
-        value = (sint16)((uint32)value + 32u);
-        w_u16(actor + 66, (uint16)value);
-        if (maximum < value)
-            w_u16(actor + 66, (uint16)maximum);
-        return value;
+            return npc_start_animation(idx, table, 238);
+        npc_start_animation(idx, table, 239);
+        val = (uint16)actor_health[idx].hp;
+        maximum = actor_health[idx].max;
+        val = (sint16)((uint32)val + 32u);
+        actor_health[idx].hp = (uint16)val;
+        if (maximum < val)
+            actor_health[idx].hp = (uint16)maximum;
+        return val;
     }
     if (state == 239)
-        return FUN_80053558(index);
+        return npc_update_combat(idx);
     return 239;
 }
 
 /* 29684: body-impact sound. Exact type map and one RNG pitch draw. */
-GDB_CALL uint32 FUN_80029684(sint32 index)
-{
-    sint32 type = r_s16(0x800b434c + 244u * (uint32)index), sound = 50;
-    switch (type)
-    {
-        case 1:
-        case 12:
-        case 48:
-        case 29:
-        case 30:
-        case 38:
-            sound = 68;
-            break;
-        case 3:
-            sound = 101;
-            break;
-        case 49:
-            sound = 168;
-            break;
-        case 14:
-            sound = 209;
-            break;
-    }
-    return FUN_80056670(sound, 255, 6144 - (sint32)(ff_rand_8006D348() & 255u));
-}
 
 /* 332BC intentionally applies damage/attribution twice, around impact sound. */
-GDB_CALL sint32 FUN_800332BC(sint32 index)
-{
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, x, z, state;
-    sint32 attacker;
-    x = r_u32(actor + 40);
-    z = r_u32(actor + 48);
-    FUN_80031C50(606, x, 0, z);
-    attacker = r_s8(actor + 129);
-    state = r_u32(actor + 12);
-    FUN_8001F41C((uint32)attacker, (uint32)index, state);
-    if (index >= 2)
-        FUN_8001B850(r_s8(actor + 129), index);
-    FUN_80029684(index);
-    attacker = r_s8(actor + 129);
-    state = r_u32(actor + 12);
-    FUN_8001F41C((uint32)attacker, (uint32)index, state);
-    return index < 2 ? 1 : FUN_8001B850(r_s8(actor + 129), index);
-}
 
 /* 52C0C..52CE8: captured actor maintenance; continue at52CEC afterwards. */
-static void npc_captured_update(uint32 actor, uint32 table, sint32 index)
+static void npc_captured_update(sint32 idx, ANIMATION_BANK_ID table)
 {
     uint32 state, deadline, tick;
     sint32 expired = 0;
-    if ((r_u32(actor + 124) & 0x00ffff00u) != 0x00ffff00u)
-        FUN_80017E30(index);
-    deadline = r_u32(actor + 176);
-    tick = r_u32(0x80093dd0);
+    if (actor_items[idx].bits != 0xffff)
+        actor_items_drop(idx);
+    deadline = actor_status[idx].deadline;
+    tick = game_session.tick;
     if ((sint32)tick >= (sint32)deadline)
     {
-        uint8 counter = (uint8)(r_u8(actor + 123) - 1u);
-        w_u8(actor + 123, counter);
+        uint8 counter = (uint8)(actor_contacts[idx].escape_ticks - 1u);
+        actor_contacts[idx].escape_ticks = counter;
         expired = (counter & 128) != 0;
     }
-    state = r_u32(actor + 12);
+    state = actor_animations[idx].id;
     if (expired && state == 171)
     {
-        FUN_8004C4D8(actor, table, 36);
+        npc_start_animation(idx, table, 36);
         return;
     }
     if (state != 139)
-        FUN_8004ADA8(r_s8(actor + 120), index);
-    if (r_u32(actor + 4) != 0xffffffffu)
+        actors_update_grapple(actor_contacts[idx].captor, idx);
+    if (actor_animations[idx].frame != 0xffffffffu)
         return;
-    state = r_u32(actor + 12);
+    state = actor_animations[idx].id;
     if (state == 172)
-        FUN_8004C4D8(actor, table, 77);
+        npc_start_animation(idx, table, 77);
     else if (state == 77)
-        w_u32(actor + 4, 0);
+        actor_animations[idx].frame = 0;
     else
-        FUN_8004C4D8(actor, table, 171);
+        npc_start_animation(idx, table, 171);
 }
 
-GDB_CALL sint32 FUN_80052944(sint32 index)
+GDB_CALL intptr npc_update_actor(sint32 idx)
 {
     FUNCTION_MARKER(0x80052944, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, events, callback, point[16], table, x, z, state;
-    sint32 type = r_s16(actor + 52), effect_type = r_s16(actor + 52), hp, result, age;
-    w_u32(0x800947ec, (uint32)index);
-    table = r_u32(0x800b3be8 + 4u * (uint32)type);
-    if (effect_type == 48 && !(r_u32(actor + 232) & 2u))
+    uint32 events, point[16], table, x, z, state;
+    sint32 type = actor_types[idx], effect_type = actor_types[idx], hp, result, age;
+    npc_update_idx = (uint32)idx;
+    table = animation_type_banks[(uint32)type];
+    if (effect_type == 48 && !(actor_status[idx].flags & ACTOR_CULLED))
     {
-        FUN_8004D64C(index, 0, point);
-        FUN_8004141C(875, point[0], point[1], point[2], point[4], point[5], point[6]);
-        FUN_8004141C(875, point[8], point[9], point[10], point[12], point[13], point[14]);
+        npc_build_attack_vectors(idx, 0, point);
+        effect_spawn_motion(875, point[0], point[1], point[2], point[4], point[5], point[6]);
+        effect_spawn_motion(875, point[8], point[9], point[10], point[12], point[13], point[14]);
     }
-    age = r_s8(actor + 119);
+    age = (sint8)actor_lifecycle[idx].death_ticks;
     if (age)
     {
         /* 52A4C..52B44: signed byte death age; skip ordinary AI/health paths. */
         age = (sint8)(age + 1);
-        w_u8(actor + 119, (uint8)age);
+        actor_lifecycle[idx].death_ticks = (uint8)age;
         if (age >= 61)
         {
-            uint16 phase = r_u16(0x80092930);
+            uint16 phase = npc_drop_phase;
             uint32 kind;
-            w_u32(actor, 0);
-            w_u16(actor + 52, 65535);
+            actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
+            actor_types[idx] = ACTOR_TYPE_NONE;
             if (phase & 1u)
             {
-                if (r_s8(0x8007f840 + ((phase >> 1) & 7u)))
-                    kind = 590u + (ff_rand_8006D348() & 1u);
+                if (drop_pattern[(phase >> 1) & 7u])
+                    kind = 590u + (random_next() & 1u);
                 else
-                    kind = (uint32)((sint32)ff_rand_8006D348() % 4) + 593u;
-                x = r_u32(actor + 40);
-                z = r_u32(actor + 48);
-                FUN_80016654(kind, x, 0, z);
+                    kind = (uint32)((sint32)random_next() % 4) + 593u;
+                x = actor_positions[idx].x.bits;
+                z = actor_positions[idx].z.bits;
+                dynamic_objects_spawn(kind, x, 0, z);
             }
-            w_u16(0x80092930, (uint16)(r_u16(0x80092930) + 1));
+            ++npc_drop_phase;
         }
-        if (r_u32(actor + 28) & 0x1000u)
+        if (actor_animations[idx].motion.events & 0x1000u)
         {
-            callback = r_u32(0x800bb9b0 + 4u * r_u32(actor + 12));
-            ff_actor_event_call(callback, index);
-            result = r_u16(actor + 84) + 1;
-            w_u16(actor + 84, (uint16)result);
+            uint32 event_state = actor_animations[idx].id & 0x3fffffff;
+            if (event_state >= ACTOR_EVENT_SLOT_COUNT)
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            actor_event_call(actor_events[event_state], idx);
+            result = actor_animations[idx].event_step + 1;
+            actor_animations[idx].event_step = (uint16)result;
             return result;
         }
         return 0; /* ANDI event1000 result on direct52F4C path. */
     }
-    hp = r_s16(actor + 66);
+    hp = actor_health[idx].hp;
     if (hp <= 0)
     {
-        sint32 partner = r_s8(actor + 122);
+        sint32 partner = actor_contacts[idx].captive;
         if (partner != -1)
         {
-            w_u8(0x800b4390 + 244u * (uint32)partner, 255);
-            w_u8(actor + 122, 255);
+            actor_contacts[(uint32)partner].captor = ACTOR_SLOT_NONE;
+            actor_contacts[idx].captive = ACTOR_SLOT_NONE;
         }
-        return FUN_8001B8DC(index); /* 52B58..52B98: detach before death processing. */
+        return actors_rec_death(idx); /* 52B58..52B98: detach before death processing. */
     }
-    if (type == 53 && !(r_u32(0x80093dd0) & 3u) && hp < (sint32)r_s16(actor + 72) - 1)
-        w_u16(actor + 66, (uint16)(hp + 1));
-    if (r_s16(actor + 80) > 0)
-        return FUN_80053034(index);
-    if (r_s8(actor + 120) != -1)
-        npc_captured_update(actor, table, index);
-    events = r_u32(actor + 28);
+    if (type == 53 && !(game_session.tick & 3u) && hp < (sint32)actor_health[idx].max - 1)
+        actor_health[idx].hp = (uint16)(hp + 1);
+    if (actor_lifecycle[idx].delay > 0)
+        return npc_update_entry_delay(idx);
+    if (actor_contacts[idx].captor != -1)
+        npc_captured_update(idx, table);
+    events = actor_animations[idx].motion.events;
     if (events & 2048u)
-        w_u16(actor + 82, 0);
+        actor_animations[idx].hit_flags = 0;
     {
         uint32 bit;
         for (bit = 0; bit < 9; bit++)
             if (events & (1u << bit))
-                if (FUN_80048DBC(index, (sint32)bit + 1))
-                    FUN_80052878(index);
+                if (npc_attack_players(idx, (sint32)bit + 1))
+                    sound_play_strike_voice(idx);
     }
-    if ((events & 0x400u) && FUN_8004930C(index))
-        FUN_80056670((sint32)(ff_rand_8006D348() & 1u) + 33, 255, 6144);
+    if ((events & 0x400u) && npc_process_weapon_hits(idx))
+        sound_voice_play((sint32)(random_next() & 1u) + 33, 255, 6144);
     /* 52EA4..52EE0: live impact callback precedes voice and eligibility. */
     if (events & 0x1000u)
     {
-        callback = r_u32(0x800bb9b0 + 4u * r_u32(actor + 12));
-        ff_actor_event_call(callback, index);
-        w_u16(actor + 84, (uint16)(r_u16(actor + 84) + 1));
+        uint32 event_state = actor_animations[idx].id & 0x3fffffff;
+        if (event_state >= ACTOR_EVENT_SLOT_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        actor_event_call(actor_events[event_state], idx);
+        actor_animations[idx].event_step = (uint16)(actor_animations[idx].event_step + 1);
     }
     /* 52EE4: one RNG draw, type49 selects alternate sample bank/volume. */
     if (events & 0x4000u)
-        FUN_80056670((type == 49 ? 87 : 52) + (sint32)(ff_rand_8006D348() & 3u), type == 49 ? 255 : 96, 6144);
-    result = FUN_80054C90(index);
+        sound_voice_play((type == 49 ? 87 : 52) + (sint32)(random_next() & 3u), type == 49 ? 255 : 96, 6144);
+    result = npc_react_to_target(idx);
     if (result)
         return result;
-    state = r_u32(actor + 12);
-    table = r_u32(actor + 160);
-    callback = r_u32(table + 4 * state);
-    return npc_action_call(callback, index);
+    state = actor_animations[idx].id;
+    if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    NPC_ACTION_BANK_REFERENCE bank = npc_action_actors[idx];
+    uint32 action_idx = (bank.first + state) & 0x3fffffff;
+    if (!bank.actions || action_idx >= NPC_ACTION_SLOT_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    return npc_action_call(bank.actions[action_idx], idx);
 }
 
-static sint32 npc_action_call(uint32 callback, sint32 index)
+static intptr npc_action_call(NPC_ACTION_REFERENCE callback, sint32 idx)
 {
-    if (callback == 0x8004bfa0)
-        return FUN_8004BFA0(index);
-    if (callback == 0x8004f084)
-        return FUN_8004F084(index);
-    if (callback == 0x8004ef64)
+    if (callback)
     {
-        /* Original JALR target remains in v0 across JR RA and NOP */
-        FUN_8004EF64();
-        return (sint32)callback;
+        const NPC_ACTION *action = callback;
+        switch (action->signature)
+        {
+            case NPC_ACTION_SINT32:
+                return action->fn.s32_idx(idx);
+            case NPC_ACTION_UINT32:
+                return (sint32)action->fn.u32_idx(idx);
+            case NPC_ACTION_INTPTR:
+                return action->fn.intptr_idx(idx);
+            case NPC_ACTION_NONE:
+                /* Preserve the original retained V0 as data, not a host pointer */
+                action->fn.none();
+                return action->retained_result;
+        }
     }
-    if (callback == 0x80055c30)
-        return FUN_80055C30(index);
-    if (callback == 0x8004d2d4)
-        return FUN_8004D2D4(index);
-    if (callback == 0x8004df2c)
-        return FUN_8004DF2C(index);
-    if (callback == 0x8004e7e8)
-        return FUN_8004E7E8(index);
-    if (callback == 0x8004d914)
-        return FUN_8004D914(index);
-    if (callback == 0x8004cfe4)
-        return FUN_8004CFE4(index);
-    if (callback == 0x8004db94)
-        return FUN_8004DB94(index);
-    if (callback == 0x800544e4)
-        return FUN_800544E4(index);
-    if (callback == 0x80054474)
-        return FUN_80054474(index);
-    if (callback == 0x80054398)
-        return FUN_80054398(index);
-    if (callback == 0x80055770)
-        return FUN_80055770(index);
-    if (callback == 0x80055100)
-        return FUN_80055100(index);
-    if (callback == 0x8004edb8)
-        return FUN_8004EDB8(index);
-    if (callback == 0x800555dc)
-        return FUN_800555DC(index);
-    if (callback == 0x8004ce48)
-        return FUN_8004CE48(index);
-    if (callback == 0x8004cb88)
-        return FUN_8004CB88(index);
-    if (callback == 0x80054598)
-        return FUN_80054598(index);
-    if (callback == 0x8004e574)
-        return FUN_8004E574(index);
-    if (callback == 0x800553f0)
-        return FUN_800553F0(index);
-    if (callback == 0x800551f0)
-        return FUN_800551F0(index);
-    if (callback == 0x80053cec)
-        return FUN_80053CEC(index);
-    if (callback == 0x8004cd5c)
-        return FUN_8004CD5C(index);
-    if (callback == 0x8004e484)
-        return FUN_8004E484(index);
-    if (callback == 0x80053e1c)
-        return FUN_80053E1C(index);
-    if (callback == 0x80053fc4)
-        return FUN_80053FC4(index);
-    if (callback == 0x80052fe8)
-        return FUN_80052FE8(index);
-    if (callback == 0x80054988)
-        return FUN_80054988(index);
-    if (callback == 0x80054840)
-        return FUN_80054840(index);
-    if (callback == 0x80053a70)
-        return FUN_80053A70(index);
-    if (callback == 0x800539c0)
-        return FUN_800539C0(index);
-    if (callback == 0x80053b40)
-        return FUN_80053B40(index);
-    if (callback == 0x80053bf0)
-        return FUN_80053BF0(index);
-    if (callback == 0x80052f70)
-        return FUN_80052F70(index);
-    if (callback == 0x8004bf3c)
-        return FUN_8004BF3C(index);
-    if (callback == 0x8004d20c)
-        return FUN_8004D20C(index);
-    if (callback == 0x8004e3d8)
-        return FUN_8004E3D8(index);
-    if (callback == 0x8004ece0)
-        return FUN_8004ECE0(index);
-    if (callback == 0x8004ed54)
-        return FUN_8004ED54(index);
-    if (callback == 0x80053f4c)
-        return FUN_80053F4C(index);
-    if (callback == 0x800547b8)
-        return FUN_800547B8(index);
-    if (callback == 0x80054900)
-        return FUN_80054900(index);
-    if (callback == 0x8005531c)
-        return FUN_8005531C(index);
-    if (callback == 0x80055574)
-        return FUN_80055574(index);
-    if (callback == 0x80056530)
-        return FUN_80056530(index);
-    if (callback == 0x800565a4)
-        return FUN_800565A4(index);
-    if (callback == 0x8004efb8)
-        return (sint32)FUN_8004EFB8(index);
-    if (callback == 0x80053298)
-        return FUN_80053298(index);
-    if (callback == 0x8004c134)
-        return FUN_8004C134(index);
-    if (callback == 0x8004c180)
-        return FUN_8004C180(index);
-    if (callback == 0x8004d288)
-        return FUN_8004D288(index);
-    if (callback == 0x8004e38c)
-        return FUN_8004E38C(index);
-    if (callback == 0x8004ec48)
-        return FUN_8004EC48(index);
-    if (callback == 0x8004ec94)
-        return FUN_8004EC94(index);
-    if (callback == 0x8004ef18)
-        return FUN_8004EF18(index);
-    if (callback == 0x8004ef6c)
-        return FUN_8004EF6C(index);
-    if (callback == 0x8004f038)
-        return FUN_8004F038(index);
-    if (callback == 0x8004f000)
-        return FUN_8004F000(index);
-    if (callback == 0x80053ca0)
-        return FUN_80053CA0(index);
-    if (callback == 0x80053dd0)
-        return FUN_80053DD0(index);
-    if (callback == 0x800553a4)
-        return FUN_800553A4(index);
-    if (callback == 0x80055528)
-        return FUN_80055528(index);
-    if (callback == 0x80055918)
-        return FUN_80055918(index);
-    if (callback == 0x80053558)
-        return FUN_80053558(index);
-    if (callback == 0x80053278)
-        return FUN_80053278(index);
-    if (callback == 0x80054a40)
-        return FUN_80054A40(index);
-    if (callback == 0x8005392c)
-        return FUN_8005392C(index);
-    npc_wip_fatal(callback);
+    DIAGNOSTIC(fprintf(stderr, "Unknown NPC action=%p actor=%d stage=%u tick=%u\n", (const void *)callback, idx, game_session.stage, game_session.tick));
+    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
     return 0;
 }
 
-GDB_CALL sint32 FUN_80054B44(uint32 state)
+GDB_CALL sint32 npc_animation_allows_target_reaction(uint32 state)
 {
+    FUNCTION_MARKER(0x80054b44u, "GAME.EXE");
     return !(state <= 5u || state - 26u < 5u || state - 234u < 4u);
 }
 
-GDB_CALL sint32 FUN_80054BC8(uint32 state)
+GDB_CALL sint32 npc_target_reaction_class(uint32 state)
 {
+    FUNCTION_MARKER(0x80054bc8u, "GAME.EXE");
     if (state <= 5u || state == 32 || state - 35u < 5u || state == 66)
         return 1;
     if (state == 24 || state == 25)
@@ -3644,616 +3537,840 @@ GDB_CALL sint32 FUN_80054BC8(uint32 state)
     return state == 67 ? 5 : 0;
 }
 
-/* 52744: unsigned attack-eligibility byte, indexed by target actor. */
-GDB_CALL sint32 FUN_80052744(sint32 index)
-{
-    return r_u8(0x80094414 + (uint32)index);
-}
-
 /* 54C90 reaction eligibility; accepted angle/distance gates precede reaction. */
-GDB_CALL sint32 FUN_80054C90(sint32 index)
+GDB_CALL sint32 npc_react_to_target(sint32 idx)
 {
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, target, other, angle, table, deadline, tick;
+    FUNCTION_MARKER(0x80054c90, "GAME.EXE");
+    uint32 target, angle, table, deadline, tick;
     sint32 state, reaction, type, x0, z0, x1, z1;
-    if (r_u32(0x80093d68) & 4u)
+    if (game_settings.flags & GAME_FLAG_SKIP_TARGET_REACTION)
         return 0;
-    type = r_s16(actor + 52);
-    deadline = r_u32(actor + 236);
-    tick = r_u32(0x80093dd0);
-    table = r_u32(0x800b3be8 + 4 * (uint32)type);
+    /* TODO: Investigate a reaction requested outside the native actor pool */
+    if ((uint32)idx >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC reaction actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    type = actor_types[idx];
+    deadline = npc_behavior_actors[idx].reaction_until;
+    tick = game_session.tick;
+    /* TODO: Investigate a reaction without a valid animation type */
+    if ((uint32)type >= ANIMATION_TYPE_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC reaction type %d actor %d stage %u tick %u\n", type, idx, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    table = animation_type_banks[(uint32)type];
     if ((sint32)tick < (sint32)deadline)
         return 0;
-    state = FUN_8004C9B0(actor);
+    state = npc_base_animation(idx);
     if (state == 57 || state == 59 || state == 208 || state == 210)
         return 0;
-    if ((state == 230 || state == 231 || state == 232) && !(r_u32(actor + 28) & 512u))
+    if ((state == 230 || state == 231 || state == 232) && !(actor_animations[idx].motion.events & 512u))
         return 0;
-    target = r_u32(actor + 168);
-    if (target == 0xffffffffu || r_u32(actor + 164) == 4)
+    target = npc_targets[idx].idx;
+    if (target == 0xffffffffu || npc_targets[idx].role == 4)
         return 0;
-    if (!FUN_80054B44(r_u32(actor + 12)))
+    if (!npc_animation_allows_target_reaction(actor_animations[idx].id))
         return 0;
-    other = 0x800b4318 + 244u * target;
-    reaction = FUN_80054BC8(r_u32(other + 12));
+    /* TODO: Investigate a reaction target outside the native actor pool */
+    if (target >= ACTOR_COUNT)
+    {
+        DIAGNOSTIC(fprintf(stderr, "Invalid NPC reaction target %u actor %d role %u stage %u tick %u\n", target, idx, (uint32)npc_targets[idx].role, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    reaction = npc_target_reaction_class(actor_animations[target].id);
     if (!reaction)
         return 0;
-    x0 = r_s16(other + 42);
-    z0 = r_s16(other + 50);
-    x1 = r_s16(actor + 42);
-    z1 = r_s16(actor + 50);
-    angle = (uint32)FUN_8001614C(x0, z0, x1, z1);
-    angle -= (uint32)r_u16(other + 56) << 5;
+    x0 = actor_positions[target].x.whole;
+    z0 = actor_positions[target].z.whole;
+    x1 = actor_positions[idx].x.whole;
+    z1 = actor_positions[idx].z.whole;
+    angle = (uint32)math_dir16(x0, z0, x1, z1);
+    angle -= (uint32)((uint16)actor_orientation[target].yaw) << 5;
     if (reaction == 2)
         angle ^= 0x8000u;
     if ((uint16)(angle + 12288u) >= 24577u)
         return 0;
-    x0 = r_s16(actor + 42);
-    z0 = r_s16(actor + 50);
-    x1 = r_s16(other + 42);
-    z1 = r_s16(other + 50);
-    angle = (uint32)FUN_8001614C(x0, z0, x1, z1);
-    angle -= (uint32)r_u16(actor + 56) << 5;
+    x0 = actor_positions[idx].x.whole;
+    z0 = actor_positions[idx].z.whole;
+    x1 = actor_positions[target].x.whole;
+    z1 = actor_positions[target].z.whole;
+    angle = (uint32)math_dir16(x0, z0, x1, z1);
+    angle -= (uint32)((uint16)actor_orientation[idx].yaw) << 5;
     if ((uint16)(angle + 12288u) >= 24577u)
         return 0;
-    if ((sint32)r_u32(0x800941a0) >= 449)
+    if (dir_distance >= 449)
         return 0;
     /* 54EC4..550D4: target eligibility, probability, reaction and shared counters. */
-    target = r_u32(actor + 168);
-    if (!FUN_80052744((sint32)target))
+    target = npc_targets[idx].idx;
+    if (!action_history_matched(target))
         return 0;
     {
-        uint32 roll = ff_rand_8006D348() & 255u, skill = r_u8(r_u32(actor + 180) + 3);
+        uint32 roll = random_next() & 255u;
+        if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[idx].profile;
+        if (!profile.rows || profile.first >= profile.row_count)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        uint32 skill = profile.rows[profile.first].reaction_threshold;
         uint32 old;
         sint32 animation = -1, alternative;
         if (skill < roll)
         {
-            w_u32(actor + 236, r_u32(0x80093dd0) + ((255u - skill) >> 5));
+            npc_behavior_actors[idx].reaction_until = game_session.tick + ((255u - skill) >> 5);
             return 0;
         }
         if (state == 60)
         {
-            if (r_u32(actor + 4) == 0xffffffffu)
-                FUN_8004C4D8(actor, table, 60);
+            if (actor_animations[idx].frame == 0xffffffffu)
+                npc_start_animation(idx, table, 60);
             return 1;
         }
-        alternative = r_u32(actor + 164) == 1 && r_u32(actor + 168) != 0xffffffffu;
+        alternative = npc_targets[idx].role == 1 && npc_targets[idx].idx != 0xffffffffu;
         if (reaction == 1)
-            animation = alternative && !(ff_rand_8006D348() & 1u) ? 230 : 57;
+            animation = alternative && !(random_next() & 1u) ? 230 : 57;
         else if (reaction == 2)
             animation = 57;
         else if (reaction == 3)
             animation = 231;
         else if (reaction == 4)
-            animation = alternative && !(ff_rand_8006D348() & 1u) ? 232 : 57;
+            animation = alternative && !(random_next() & 1u) ? 232 : 57;
         else if (reaction == 5)
         {
-            if ((r_u32(actor + 124) & 0x00ffff00u) != 0x00ffff00u)
-                FUN_80017E30(index);
+            if (actor_items[idx].bits != 0xffff)
+                actor_items_drop(idx);
             animation = 208;
         }
         if (animation != -1)
-            FUN_8004C4D8(actor, table, animation);
-        old = r_u32(0x800947d8);
-        w_u32(0x800947d8, old + 1u);
+            npc_start_animation(idx, table, animation);
+        old = level_wave.attacker_trigger_count;
+        level_wave.attacker_trigger_count = old + 1u;
         if ((sint32)(old + 1u) >= 3)
         {
-            uint32 level = r_u32(0x80093e18), limit = r_u32(0x800944dc);
-            w_u32(0x800947d8, old - 1u);
+            uint32 level = level_wave.attacker_limit, limit = level_wave.base_attacker_limit;
+            level_wave.attacker_trigger_count = old - 1u;
             level += 1;
             limit += 1;
-            w_u32(0x80093e18, level);
+            level_wave.attacker_limit = level;
             if ((sint32)level > (sint32)limit)
-                w_u32(0x80093e18, limit);
-            w_u32(0x80094798, r_u32(0x80093dd0) + 100u);
+                level_wave.attacker_limit = limit;
+            level_wave.attacker_decay_tick = game_session.tick + 100u;
         }
     }
     return 1;
 }
 
-GDB_CALL sint32 FUN_80052FE8(sint32 index)
+GDB_CALL sint32 npc_resume_combat6(sint32 idx)
 {
-    if (r_u32(0x800b4318 + 244u * (uint32)index + 4) == 0xffffffffu)
-        return FUN_80053278(index);
+    FUNCTION_MARKER(0x80052fe8u, "GAME.EXE");
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_continue_combat(idx);
     return -1;
 }
 
 /* 4A704 NPC dispatch and stage-specific environment response */
-GDB_CALL sint32 FUN_8004A704(void)
+GDB_CALL sint32 npc_update(void)
 {
     FUNCTION_MARKER(0x8004a704, "GAME.EXE");
-    uint32 deadline = r_u32(0x80094798), tick = r_u32(0x80093dd0);
-    uint32 actor, callback, stage, object, desired = 0, old, value, level, x, z, ax, az;
+    static const uint16 near_yaw_stage0[] = {0, 0};
+    static const uint16 far_yaw_stage0[] = {16384, 49152};
+    static const uint16 near_yaw_stage1[] = {16384, 49152, 16384, 16384, 0, 32768};
+    static const uint16 far_yaw_stage1[] = {16384, 0, 16384, 0, 0, 32768};
+    static const uint16 near_yaw_stage3[] = {16384, 16384, 49152, 49152};
+    uint32 deadline = level_wave.attacker_decay_tick, tick = game_session.tick;
+    uint32 stage, desired = 0, old, val, level, x, z, ax, az;
+    MODEL_OBJECT *item;
+    sint32 sound_played;
     sint32 i, j, type, nearest, distance, result, population, count;
     if (deadline == tick)
     {
-        level = r_u32(0x80093e18);
-        value = r_u32(0x800944dc);
-        if ((sint32)value < (sint32)level)
+        level = level_wave.attacker_limit;
+        val = level_wave.base_attacker_limit;
+        if ((sint32)val < (sint32)level)
         {
-            w_u32(0x80093e18, level - 1);
-            w_u32(0x80094798, deadline + 30);
-            w_u32(0x800947d8, 0);
+            level_wave.attacker_limit = level - 1;
+            level_wave.attacker_decay_tick = deadline + 30;
+            level_wave.attacker_trigger_count = 0;
         }
     }
-    if (!(r_u32(0x80093dd0) & 15u))
-        w_u32(0x80093d24, r_u32(0x80093d24) + 1u);
-    value = r_u32(0x80093d24);
-    if ((sint32)value < 49)
-        w_u32(0x80093d20, 0);
+    if (!(game_session.tick & 15u))
+        npc_behavior_cycle.progress = npc_behavior_cycle.progress + 1u;
+    val = npc_behavior_cycle.progress;
+    if ((sint32)val < 49)
+        npc_behavior_cycle.advance = 0;
     else
     {
-        w_u32(0x80093d20, 1);
-        w_u32(0x80093d24, value - 48);
+        npc_behavior_cycle.advance = 1;
+        npc_behavior_cycle.progress = val - 48;
     }
-    FUN_8004A4CC();
-    for (i = 2; i < 8; i++)
+    npc_balance_targets();
+    for (i = 2; i < ACTOR_COUNT; i++)
     {
-        actor = 0x800b4318 + 244u * (uint32)i;
-        type = r_s16(actor + 52);
+        type = actor_types[i];
         if (type == -1)
             continue;
-        if (r_s8(actor + 119))
-            w_u32(0x80093d24, r_u32(0x80093d24) + 1u);
-        if (r_u32(0x80093d20))
+        if (((sint8)actor_lifecycle[i].death_ticks))
+            npc_behavior_cycle.progress = npc_behavior_cycle.progress + 1u;
+        if (npc_behavior_cycle.advance)
         {
-            value = r_u32(actor + 184);
-            if ((sint32)value < 4)
+            val = npc_behavior_actors[i].behavior;
+            if ((sint32)val < 4)
             {
-                w_u32(actor + 184, value + 1);
-                w_u32(actor + 188, 0);
+                npc_behavior_actors[i].behavior = val + 1;
+                npc_behavior_actors[i].command = 0;
             }
         }
-        callback = r_u32(0x800b7060 + 4u * (uint32)type);
-        if (callback == 0x8004df2c)
-            FUN_8004DF2C(i);
-        else if (callback == 0x80052944)
-            FUN_80052944(i);
-        else if (callback == 0x8004ddec)
-            FUN_8004DDEC(i);
-        else if (callback == 0x8003b83c)
-            FUN_8003B83C(i);
-        else if (callback == 0x8003b8e4)
-            FUN_8003B8E4(i);
-        else if (callback == 0x8004be84)
-            FUN_8004BE84(i);
-        else if (callback == 0x80049e6c)
-            FUN_80049E6C(i);
-        else if (callback == 0x80056530)
-            FUN_80056530(i);
-        else if (callback == 0x80055c30)
-            FUN_80055C30(i);
-        else if (callback)
-            npc_wip_fatal(callback);
+        uint32 update_idx = (uint32)type & 0x3fffffff;
+        if (update_idx >= NPC_BEHAVIOR_TYPE_COUNT)
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        NPC_ACTION_REFERENCE update = npc_updates[update_idx];
+        if (update)
+            npc_action_call(update, i);
     }
-    stage = r_u32(0x80093d58);
+    stage = game_session.stage;
     if (stage >= 2u && stage != 3 && stage != 17)
         return 17;
-    result = (sint32)r_u32(0x800942dc);
+    result = (sint32)world_objects.tracked_count;
     if (result <= 0)
         return result;
     i = 0;
     for (;;)
     {
-        nearest = 32767;
-        for (j = 2; j < 8; j++)
+        /* TODO: Investigate tracked-list indices outside the original eight references */
+        if (i < 0 || i >= WORLD_TRACKED_COUNT)
         {
-            actor = 0x800b4318 + 244u * (uint32)j;
-            if (r_s16(actor + 52) == -1)
+            DIAGNOSTIC(fprintf(stderr, "Invalid tracked NPC index %d count %u stage %u\n", i, world_objects.tracked_count, game_session.stage));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        nearest = 32767;
+        for (j = 2; j < ACTOR_COUNT; j++)
+        {
+            if (actor_types[j] == ACTOR_TYPE_NONE)
                 continue;
-            object = r_u32(0x800940b8 + 4u * (uint32)i);
-            ax = (uint32)(sint32)r_s16(actor + 42);
-            az = (uint32)(sint32)r_s16(actor + 50);
-            x = (uint32)(sint32)r_s16(object + 6);
-            z = (uint32)(sint32)r_s16(object + 14);
-            distance = FUN_800163F4((sint32)x, (sint32)z, (sint32)ax, (sint32)az);
+            /* TODO: Investigate absent or invalid tracked references before object access */
+            if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+            {
+                DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            }
+            const MODEL_OBJECT *model = world_objects.object + world_objects.tracked[i].idx;
+            ax = (uint32)(sint32)actor_positions[j].x.whole;
+            az = (uint32)(sint32)actor_positions[j].z.whole;
+            x = (uint32)(sint32)model->pos.x.whole;
+            z = (uint32)(sint32)model->pos.z.whole;
+            distance = math_distance_approx(x, z, ax, az);
             /* Original tests entrance timer80 here, not HP66. */
-            if (distance < nearest && r_s16(actor + 80) > 0)
+            if (distance < nearest && actor_lifecycle[j].delay > 0)
                 nearest = distance;
         }
-        if (r_s8(0x800941a4) == 1)
+        if (level_transition.exit_requested == 1)
         {
-            population = (sint32)r_u32(0x800940b0);
+            population = (sint32)game_session.player_count;
             if (population > 0)
             {
-                stage = r_u32(0x80093d58);
+                stage = game_session.stage;
                 for (j = 0; j < population; j++)
                 {
-                    uint32 position = r_u32(0x800b4318 + 244u * (uint32)j + 48);
-                    if ((stage == 0 && (sint32)position <= 0x0a5fffff) || (stage == 1 && position + 0x077fffffu <= 0x02fffffeu))
+                    /* TODO: Investigate an exit population outside the actor pool */
+                    if ((uint32)j >= ACTOR_COUNT)
+                    {
+                        DIAGNOSTIC(fprintf(stderr, "Invalid NPC exit player %d population %d tracked %d stage %u tick %u\n", j, population, i, game_session.stage, game_session.tick));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    uint32 pos = actor_positions[(uint32)j].z.bits;
+                    if ((stage == 0 && (sint32)pos <= 0x0a5fffff) || (stage == 1 && pos + 0x077fffffu <= 0x02fffffeu))
                         nearest = 0;
                 }
             }
         }
-        stage = r_u32(0x80093d58);
-        if (stage == 3 && (sint32)r_u32(0x80093d60) > 0)
+        stage = game_session.stage;
+        if (stage == 3 && (sint32)game_session.scene_phase > 0)
             nearest = 512;
-        else if (stage == 17 && (sint32)r_u32(0x80093d60) > 0)
+        else if (stage == 17 && (sint32)game_session.scene_phase > 0)
             nearest = 0;
-        stage = r_u32(0x80093d58);
+        stage = game_session.stage;
         if (nearest < 384)
         {
             if (stage == 0)
-                desired = r_u16(0x8007f358 + 2u * (uint32)i);
+            {
+                /* TODO: Investigate original out-of-table object yaw reads */
+                if (i < 0 || (uint32)i >= sizeof(near_yaw_stage0) / sizeof(*near_yaw_stage0))
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC object yaw stage=%u index=%d\n", stage, i));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                desired = near_yaw_stage0[i];
+            }
             else if (stage == 1)
             {
-                desired = r_u16(0x8007f360 + 2u * (uint32)i);
+                /* TODO: Investigate original out-of-table object yaw reads */
+                if (i < 0 || (uint32)i >= sizeof(near_yaw_stage1) / sizeof(*near_yaw_stage1))
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC object yaw stage=%u index=%d\n", stage, i));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                desired = near_yaw_stage1[i];
                 if (i == 4)
                 {
-                    value = r_u32(0x80094674);
-                    w_u32(0x800945d0, 60);
-                    if (!value)
-                        FUN_80056670(124, 255, 0x1900);
-                    value = r_u32(0x80094674);
-                    if ((sint32)value < 32)
-                        w_u32(0x80094674, value + 2);
+                    val = stage_animation.phase[0];
+                    stage_animation.hold_ticks = 60;
+                    if (!val)
+                        sound_voice_play(124, 255, 0x1900);
+                    val = stage_animation.phase[0];
+                    if ((sint32)val < 32)
+                        stage_animation.phase[0] = val + 2;
                 }
                 else
                 {
-                    object = r_u32(0x800940b8 + 4u * (uint32)i);
-                    if (!r_s16(object + 30))
+                    /* TODO: Investigate absent or invalid tracked references before object access */
+                    if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
                     {
-                        FUN_80056670(108, 127, 0x1b00);
-                        object = r_u32(0x800940b8 + 4u * (uint32)i);
-                        w_u16(object + 30, 1);
+                        DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    item = world_objects.object + world_objects.tracked[i].idx;
+                    switch (item->payload_kind)
+                    {
+                        case MODEL_PAYLOAD_UNMIGRATED:
+                            sound_played = item->pending_motion.sound_played;
+                            break;
+                        case MODEL_PAYLOAD_OSCILLATION:
+                            sound_played = item->oscillation.sound_played;
+                            break;
+                        default:
+                            /* TODO: Investigate a tracked sound flag with a foreign payload */
+                            DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound owner slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    if (!sound_played)
+                    {
+                        sound_voice_play(108, 127, 0x1b00);
+                        /* TODO: Investigate absent or invalid tracked references before object access */
+                        if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+                        {
+                            DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        }
+                        item = world_objects.object + world_objects.tracked[i].idx;
+                        switch (item->payload_kind)
+                        {
+                            case MODEL_PAYLOAD_UNMIGRATED:
+                                item->pending_motion.sound_played = 1;
+                                break;
+                            case MODEL_PAYLOAD_OSCILLATION:
+                                item->oscillation.sound_played = 1;
+                                break;
+                            default:
+                                /* TODO: Investigate a tracked sound store with a foreign payload */
+                                DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound store slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        }
                     }
                 }
             }
             else if (stage == 3)
             {
-                object = r_u32(0x800940b8 + 4u * (uint32)i);
-                if (!r_s16(object + 30))
+                /* TODO: Investigate absent or invalid tracked references before object access */
+                if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
                 {
-                    FUN_80056670(108, 127, 0x1b00);
-                    object = r_u32(0x800940b8 + 4u * (uint32)i);
-                    w_u16(object + 30, 1);
+                    DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
                 }
-                desired = r_u16(0x8007f378 + 2u * (uint32)i);
+                item = world_objects.object + world_objects.tracked[i].idx;
+                switch (item->payload_kind)
+                {
+                    case MODEL_PAYLOAD_UNMIGRATED:
+                        sound_played = item->pending_motion.sound_played;
+                        break;
+                    case MODEL_PAYLOAD_OSCILLATION:
+                        sound_played = item->oscillation.sound_played;
+                        break;
+                    default:
+                        /* TODO: Investigate a tracked sound flag with a foreign payload */
+                        DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound owner slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                if (!sound_played)
+                {
+                    sound_voice_play(108, 127, 0x1b00);
+                    /* TODO: Investigate absent or invalid tracked references before object access */
+                    if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+                    {
+                        DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    item = world_objects.object + world_objects.tracked[i].idx;
+                    switch (item->payload_kind)
+                    {
+                        case MODEL_PAYLOAD_UNMIGRATED:
+                            item->pending_motion.sound_played = 1;
+                            break;
+                        case MODEL_PAYLOAD_OSCILLATION:
+                            item->oscillation.sound_played = 1;
+                            break;
+                        default:
+                            /* TODO: Investigate a tracked sound store with a foreign payload */
+                            DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound store slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                }
+                /* TODO: Investigate original out-of-table object yaw reads */
+                if (i < 0 || (uint32)i >= sizeof(near_yaw_stage3) / sizeof(*near_yaw_stage3))
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC object yaw stage=%u index=%d\n", stage, i));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                desired = near_yaw_stage3[i];
             }
             else if (stage == 17)
             {
-                value = r_u32(0x80094674);
-                w_u32(0x800945d0, 60);
-                if ((sint32)value < 64)
-                    w_u32(0x80094674, value + 8);
+                val = stage_animation.phase[0];
+                stage_animation.hold_ticks = 60;
+                if ((sint32)val < 64)
+                    stage_animation.phase[0] = val + 8;
             }
         }
         else
         {
             if (stage == 0)
-                desired = r_u16(0x8007f35c + 2u * (uint32)i);
+            {
+                /* TODO: Investigate original out-of-table object yaw reads */
+                if (i < 0 || (uint32)i >= sizeof(far_yaw_stage0) / sizeof(*far_yaw_stage0))
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC object yaw stage=%u index=%d\n", stage, i));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                desired = far_yaw_stage0[i];
+            }
             else if (stage == 1)
             {
-                object = r_u32(0x800940b8 + 4u * (uint32)i);
-                desired = r_u16(0x8007f36c + 2u * (uint32)i);
-                old = r_u16(object + 16);
+                /* TODO: Investigate absent or invalid tracked references before object access */
+                if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                item = world_objects.object + world_objects.tracked[i].idx;
+                /* TODO: Investigate original out-of-table object yaw reads */
+                if (i < 0 || (uint32)i >= sizeof(far_yaw_stage1) / sizeof(*far_yaw_stage1))
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid NPC object yaw stage=%u index=%d\n", stage, i));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                desired = far_yaw_stage1[i];
+                old = item->angles.yaw_bits;
                 if (i == 4)
                 {
-                    value = r_u32(0x800945d0);
-                    if ((sint32)value > 0)
-                        w_u32(0x800945d0, value - 1);
-                    if (!r_u32(0x800945d0))
+                    val = stage_animation.hold_ticks;
+                    if ((sint32)val > 0)
+                        stage_animation.hold_ticks = val - 1;
+                    if (!stage_animation.hold_ticks)
                     {
-                        if (r_u32(0x80094674) == 32)
-                            FUN_80056670(124, 255, (sint32)((ff_rand_8006D348() & 0x1ffu) | 0x1800u));
-                        value = r_u32(0x80094674);
-                        if ((sint32)value > 0)
-                            w_u32(0x80094674, value - 2);
+                        if (stage_animation.phase[0] == 32)
+                            sound_voice_play(124, 255, (random_next() & 0x1ffu) | 0x1800u);
+                        val = stage_animation.phase[0];
+                        if ((sint32)val > 0)
+                            stage_animation.phase[0] = val - 2;
                     }
                 }
-                else if (r_s16(object + 30) == 1 && ((desired - old + 511u) & 0xffffu) < 0x3ffu)
+                else
                 {
-                    FUN_80056670(109, 79, (sint32)((ff_rand_8006D348() & 0x1ffu) | 0x1a00u));
-                    object = r_u32(0x800940b8 + 4u * (uint32)i);
-                    w_u16(object + 30, 0);
+                    switch (item->payload_kind)
+                    {
+                        case MODEL_PAYLOAD_UNMIGRATED:
+                            sound_played = item->pending_motion.sound_played;
+                            break;
+                        case MODEL_PAYLOAD_OSCILLATION:
+                            sound_played = item->oscillation.sound_played;
+                            break;
+                        default:
+                            /* TODO: Investigate a tracked sound flag with a foreign payload */
+                            DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound owner slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    if (sound_played == 1 && ((desired - old + 511u) & 0xffffu) < 0x3ffu)
+                    {
+                        sound_voice_play(109, 79, (random_next() & 0x1ffu) | 0x1a00u);
+                        /* TODO: Investigate absent or invalid tracked references before object access */
+                        if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+                        {
+                            DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        }
+                        item = world_objects.object + world_objects.tracked[i].idx;
+                        switch (item->payload_kind)
+                        {
+                            case MODEL_PAYLOAD_UNMIGRATED:
+                                item->pending_motion.sound_played = 0;
+                                break;
+                            case MODEL_PAYLOAD_OSCILLATION:
+                                item->oscillation.sound_played = 0;
+                                break;
+                            default:
+                                /* TODO: Investigate a tracked sound store with a foreign payload */
+                                DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound store slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        }
+                    }
                 }
             }
             else if (stage == 3)
             {
-                object = r_u32(0x800940b8 + 4u * (uint32)i);
-                old = r_u16(object + 16);
-                type = r_s16(object + 30);
+                /* TODO: Investigate absent or invalid tracked references before object access */
+                if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                item = world_objects.object + world_objects.tracked[i].idx;
+                old = item->angles.yaw_bits;
+                switch (item->payload_kind)
+                {
+                    case MODEL_PAYLOAD_UNMIGRATED:
+                        sound_played = item->pending_motion.sound_played;
+                        break;
+                    case MODEL_PAYLOAD_OSCILLATION:
+                        sound_played = item->oscillation.sound_played;
+                        break;
+                    default:
+                        /* TODO: Investigate a tracked sound flag with a foreign payload */
+                        DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound owner slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                type = sound_played;
                 desired = 0;
                 if (type == 1 && ((511u - old) & 0xffffu) < 0x3ffu)
                 {
-                    FUN_80056670(109, 79, (sint32)((ff_rand_8006D348() & 0x1ffu) | 0x1a00u));
-                    object = r_u32(0x800940b8 + 4u * (uint32)i);
-                    w_u16(object + 30, 0);
+                    sound_voice_play(109, 79, (random_next() & 0x1ffu) | 0x1a00u);
+                    /* TODO: Investigate absent or invalid tracked references before object access */
+                    if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+                    {
+                        DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
+                    item = world_objects.object + world_objects.tracked[i].idx;
+                    switch (item->payload_kind)
+                    {
+                        case MODEL_PAYLOAD_UNMIGRATED:
+                            item->pending_motion.sound_played = 0;
+                            break;
+                        case MODEL_PAYLOAD_OSCILLATION:
+                            item->oscillation.sound_played = 0;
+                            break;
+                        default:
+                            /* TODO: Investigate a tracked sound store with a foreign payload */
+                            DIAGNOSTIC(fprintf(stderr, "Invalid tracked sound store slot %u kind %u payload %u stage %u tick %u\n", world_objects.tracked[i].idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
+                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    }
                 }
             }
             else if (stage == 17)
             {
-                value = r_u32(0x800945d0);
-                if ((sint32)value > 0)
-                    w_u32(0x800945d0, value - 1);
-                if (!r_u32(0x800945d0))
+                val = stage_animation.hold_ticks;
+                if ((sint32)val > 0)
+                    stage_animation.hold_ticks = val - 1;
+                if (!stage_animation.hold_ticks)
                 {
-                    value = r_u32(0x80094674);
-                    if ((sint32)value > 0)
-                        w_u32(0x80094674, value - 8);
+                    val = stage_animation.phase[0];
+                    if ((sint32)val > 0)
+                        stage_animation.phase[0] = val - 8;
                 }
             }
         }
-        object = r_u32(0x800940b8 + 4u * (uint32)i);
-        count = (sint32)r_u32(0x800942dc);
-        old = r_u16(object + 16);
+        /* TODO: Investigate absent or invalid tracked references before object access */
+        if (world_objects.tracked[i].present != 1 || world_objects.tracked[i].idx >= WORLD_OBJECT_COUNT)
+        {
+            DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(i), world_objects.tracked[i].idx, (uint32)world_objects.tracked[i].present));
+            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        }
+        item = world_objects.object + world_objects.tracked[i].idx;
+        count = (sint32)world_objects.tracked_count;
+        old = item->angles.yaw_bits;
         result = (sint32)((desired - old) << 16) >> 18;
-        w_u16(object + 16, (uint16)(old + (uint32)result));
+        item->angles.yaw_bits = (uint16)(old + (uint32)result);
         if (++i >= count)
             return result;
     }
 }
 
 /* 544E4: face stored target only in mode1; reload animation after facing. */
-GDB_CALL sint32 FUN_800544E4(sint32 index)
+GDB_CALL sint32 npc_finish_facing_target(sint32 idx)
 {
     FUNCTION_MARKER(0x800544e4u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, target, x, z;
-    if (r_u32(actor + 164) == 1)
+    uint32 target, x, z;
+    if (npc_targets[idx].role == 1)
     {
-        target = r_u32(actor + 168);
+        target = npc_targets[idx].idx;
         if (target != 0xffffffffu)
         {
-            x = r_u32(0x800b4340 + 244u * target);
-            z = r_u32(0x800b4348 + 244u * target);
-            FUN_800483BC(index, x, z);
+            x = actor_positions[target].x.bits;
+            z = actor_positions[target].z.bits;
+            npc_turn_to_point(idx, x, z);
         }
     }
-    if (r_u32(actor + 4) == 0xffffffffu)
-        return FUN_80053558(index);
+    if (actor_animations[idx].frame == 0xffffffffu)
+        return npc_update_combat(idx);
     return -1;
 }
 
 /* 33D7C: signed impact count; inherited A2/A3 are unused by31A28. */
-GDB_CALL uint32 FUN_80033D7C(sint32 index)
-{
-    FUNCTION_MARKER(0x80033d7cu, "GAME.EXE");
-    sint32 count = r_s16(0x800b436c + 244u * (uint32)index);
-    return count ? (uint32)count : FUN_80031A28(index, 577);
-}
-
-/* 49B78 inline distance metric: preserve wrapped ABS including INT_MIN. */
-static sint32 npc_distance_49B78(uint32 x, uint32 z, uint32 ox, uint32 oz)
-{
-    uint32 dx = x - ox, dz = z - oz;
-    if ((sint32)dx < 0)
-        dx = 0u - dx;
-    if ((sint32)dz < 0)
-        dz = 0u - dz;
-    return (sint32)((sint32)dz < (sint32)dx ? dx + (uint32)((sint32)dz >> 1) : dz + (uint32)((sint32)dx >> 1));
-}
-
-GDB_CALL sint32 FUN_80049B78(sint32 index)
-{
-    FUNCTION_MARKER(0x80049b78u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index, other, x, z, yaw, ox, oz, sine, cosine;
-    sint32 i, distance, count = (sint32)r_u32(0x800940b0);
-    w_u32(0x80094370, 0x7fffffff);
-    w_u32(0x800942e0, 0xffffffff);
-    i = 0;
-    other = 0x800b4318;
-    while (i < count)
-    {
-        if (r_s16(other + 66) > 0)
-        {
-            x = r_u32(actor + 40);
-            ox = r_u32(other + 40);
-            z = r_u32(actor + 48);
-            oz = r_u32(other + 48);
-            distance = npc_distance_49B78(x, z, ox, oz);
-            if (distance < (sint32)r_u32(0x80094370))
-            {
-                w_u32(0x80094370, (uint32)distance);
-                w_u32(0x800942e0, (uint32)i);
-            }
-        }
-        count = (sint32)r_u32(0x800940b0);
-        ++i;
-        other += 244;
-    }
-    yaw = (uint32)(sint32)r_s16(actor + 56);
-    x = r_u32(actor + 40);
-    w_u32(0x8009418c, 0x7fffffff);
-    sine = (uint32)(sint32)r_s16(0x800802d0 + 2u * yaw);
-    z = r_u32(actor + 48);
-    cosine = (uint32)(sint32)r_s16(0x800806d0 + 2u * yaw);
-    x += sine << 8;
-    z -= cosine << 8;
-    for (i = 2; i < 8; i++)
-    {
-        other = 0x800b4318 + 244u * (uint32)i;
-        if (r_s16(other + 52) == -1 || r_s16(other + 66) <= 0 || i == index)
-            continue;
-        ox = r_u32(other + 40);
-        oz = r_u32(other + 48);
-        distance = npc_distance_49B78(x, z, ox, oz);
-        if (distance < (sint32)r_u32(0x8009418c))
-            w_u32(0x8009418c, (uint32)distance);
-    }
-    return 0;
-}
 
 /* 49DB0: AEE90 is an immediate table address, not a word loaded there. */
-GDB_CALL sint32 FUN_80049DB0(sint32 index, sint32 mode)
+GDB_CALL sint32 npc_start_jump_off(sint32 idx, sint32 mode)
 {
     FUNCTION_MARKER(0x80049db0u, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244u * (uint32)index;
-    FUN_8004C4D8(actor, r_u32(0x800b3be8 + 4u * (uint32)(sint32)r_s16(actor + 52)), 269);
-    w_u16(actor + 80, 25);
-    w_u32(actor + 160, 0x800aee90);
-    w_u32(actor + 184, 0);
-    w_u32(actor + 188, 0);
-    FUN_80049B78(index);
-    w_u32(actor + 168, r_u32(0x800942e0));
-    w_u32(actor + 164, mode ? 1 : 2);
+    npc_start_animation(idx, animation_type_banks[(uint32)actor_types[idx]], 269);
+    actor_lifecycle[idx].delay = 25;
+    if ((uint32)idx >= NPC_BEHAVIOR_ACTOR_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    npc_action_actors[idx] = (NPC_ACTION_BANK_REFERENCE){npc_actions[NPC_ACTION_DEFAULT], 0};
+    npc_behavior_actors[idx].behavior = 0;
+    npc_behavior_actors[idx].command = 0;
+    actors_find_nearest_targets(idx);
+    npc_targets[idx].idx = actor_targeting.player_idx;
+    npc_targets[idx].role = mode ? 1 : 2;
     return mode ? 1 : 2;
 }
 
 /* Van arrival, collision region, braking and four passenger spawns */
-GDB_CALL uint32 FUN_80049E6C(sint32 index)
+GDB_CALL uint32 npc_update_van(sint32 idx)
 {
     FUNCTION_MARKER(0x80049e6cu, "GAME.EXE");
-    uint32 actor = 0x800b4318 + 244 * (uint32)index, region, x, z, point[3], obj, n, phase, state, wave, volume, pan, angle;
-    FF_STACK_VEHICLE vehicle;
-    sint32 speed, heading, yaw, tilt, roll, rate, value, child;
+    NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
+    ACTOR_ANIMATION *playback = actor_animations + idx;
+    FIXED_VEC3 *pos = actor_positions + idx;
+    ACTOR_ORIENTATION *orientation = actor_orientation + idx;
+    ACTOR_MOVEMENT *movement = actor_movement + idx;
+    FIXED_VEC3 point;
+    uint32 x, z, n, phase, state, wave, volume, pan, angle;
+    COLLISION_REGION *region;
+    VEHICLE_COLLISION_SHAPE vehicle;
+    sint32 speed, heading, yaw, tilt, roll, rate, val, child;
     int i;
     static const sint32 spawn_frame[4] = {13, 16, 28, 31}, spawn_kind[4] = {5, 6, 7, 5};
-    state = r_u32(actor + 12);
-    speed = r_s16(actor + 76);
-    heading = r_s16(actor + 78);
+    state = playback->id;
+    speed = movement->van_speed;
+    heading = movement->van_heading;
     if (!state)
         heading = 1024;
-    wave = (uint32)(sint32)r_s16(0x800802d0 + 2 * (uint32)heading);
-    x = r_u32(actor + 40);
-    w_u32(actor + 40, x + (uint32)((sint32)(wave * (uint32)speed) >> 1));
-    wave = (uint32)(sint32)r_s16(0x800806d0 + 2 * (uint32)heading);
-    n = r_u32(0x8009479c);
-    z = r_u32(actor + 48);
-    region = 0x8009ec70 + 24 * n;
-    w_u32(actor + 48, z - (uint32)((sint32)(wave * (uint32)speed) >> 1));
-    FUN_8003B77C(region, 66);
-    vehicle.angle = (uint16)heading;
-    vehicle.x = r_u32(actor + 40);
-    n = r_u32(0x8009479c);
-    vehicle.z = r_u32(actor + 48);
-    w_u32(0x8009479c, n - 1);
-    ff_stack_vehicle_collision(region, &vehicle);
-    yaw = r_s16(actor + 56);
+    if (heading < 0 || heading >= MATH_SIN_COUNT)
+    {
+        /* TODO: Investigate van headings outside the original sine table */
+        DIAGNOSTIC(fprintf(stderr, "Invalid van sine heading %d actor %d animation %u stage %u tick %u\n", heading, idx, playback->id, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    wave = (uint32)(sint32)sin_table[heading];
+    x = pos->x.bits;
+    pos->x.bits = x + (uint32)((sint32)(wave * (uint32)speed) >> 1);
+    if (heading < -MATH_QUARTER_TURN || heading >= MATH_ANGLE_COUNT)
+    {
+        /* TODO: Investigate van headings outside the original cosine view */
+        DIAGNOSTIC(fprintf(stderr, "Invalid van cosine heading %d actor %d animation %u stage %u tick %u\n", heading, idx, playback->id, game_session.stage, game_session.tick));
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    }
+    wave = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + heading];
+    n = col_regions.count;
+    z = pos->z.bits;
+    if (n >= COLLISION_REGION_COUNT)
+        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    region = col_regions.data + n;
+    pos->z.bits = z - (uint32)((sint32)(wave * (uint32)speed) >> 1);
+    col_region_configure(region, 66);
+    vehicle.yaw = (uint16)heading;
+    vehicle.x = pos->x.bits;
+    n = col_regions.count;
+    vehicle.z = pos->z.bits;
+    col_regions.count = n - 1;
+    actors_collide_vehicle_shape(region, &vehicle);
+    yaw = orientation->yaw;
     if (heading != yaw)
         heading -= 16;
-    if (r_u32(actor + 12))
+    if (playback->id)
     {
         if (!speed)
-            w_u32(actor + 216, (uint32)FUN_80056670(132, 0, 6400) + 1u);
-        ff_spatial_sound_80046884(actor + 40, &volume, &pan);
-        FUN_800568C8((sint32)(r_u32(actor + 216) - 1), (sint32)volume, (sint32)pan);
+            special->van_voice = (uint32)sound_voice_play(132, 0, 6400) + 1u;
+        sound_spatial(pos, &volume, &pan);
+        sound_voice_pan(special->van_voice - 1, volume, pan);
         if (speed == 240)
-            FUN_80056670(110, 255, 5888);
+            sound_voice_play(110, 255, 5888);
         if (speed < 256)
             speed += 16;
-        if ((sint32)r_u32(actor + 40) <= 100663295)
+        if ((sint32)pos->x.bits <= 100663295)
         {
-            yaw = r_s16(actor + 56);
+            yaw = orientation->yaw;
             if (yaw != 1024)
-                w_u16(actor + 56, (uint16)((yaw - 32) & 2047));
-            else if ((sint32)r_u32(actor + 48) > -100663296)
+                orientation->yaw = (uint16)((yaw - 32) & 2047);
+            else if ((sint32)pos->z.bits > -100663296)
             {
-                w_u32(actor + 12, 0);
-                w_u32(actor + 4, 0);
-                w_u32(actor, 1);
+                playback->id = 0;
+                playback->frame = 0;
+                playback->src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_PROCEDURAL, {0}};
             }
         }
     }
     else
     {
-        rate = r_s16(actor + 54);
+        rate = orientation->yaw_rate;
         if (yaw >= 385)
         {
             if (rate >= -31)
-                w_u16(actor + 54, (uint16)(rate - 2));
-            w_u16(actor + 58, 1536);
+                orientation->yaw_rate = (uint16)(rate - 2);
+            orientation->roll_rate = 1536;
         }
         else if (rate < 0)
-            w_u16(actor + 54, (uint16)(rate + 4));
-        angle = r_u16(actor + 56);
-        rate = r_u16(actor + 54);
-        roll = r_s16(actor + 60);
-        tilt = r_s16(actor + 58);
-        w_u16(actor + 56, (uint16)(angle + rate));
-        value = r_u16(actor + 60);
+            orientation->yaw_rate = (uint16)(rate + 4);
+        angle = (uint16)orientation->yaw;
+        rate = (uint16)orientation->yaw_rate;
+        roll = orientation->roll;
+        tilt = orientation->roll_rate;
+        orientation->yaw = (uint16)(angle + rate);
+        val = (uint16)orientation->roll;
         tilt = (sint16)(tilt + ((-roll - tilt) >> 3));
-        w_u16(actor + 58, (uint16)tilt);
-        roll = (sint16)(value + (tilt >> 2));
-        w_u16(actor + 60, (uint16)roll);
+        orientation->roll_rate = (uint16)tilt;
+        roll = (sint16)(val + (tilt >> 2));
+        orientation->roll = (uint16)roll;
         if (roll >= 1537)
-            w_u16(actor + 60, 1536);
-        if (r_s16(actor + 60) < -1536)
-            w_u16(actor + 60, (uint16)-1536);
+            orientation->roll = 1536;
+        if (orientation->roll < -1536)
+            orientation->roll = (uint16)-1536;
         speed -= 8;
         if (speed < 0)
             speed = 0;
         if (!speed)
         {
-            phase = r_u32(actor + 4) + 1u;
-            w_u32(actor + 4, phase);
-            value = (sint32)r_u32(0x80094674);
+            phase = playback->frame + 1u;
+            playback->frame = phase;
+            val = (sint32)stage_animation.phase[0];
             if ((sint32)phase < 39)
             {
-                if (value < 28)
-                    w_u32(0x80094674, (uint32)value + 1u);
+                if (val < 28)
+                    stage_animation.phase[0] = (uint32)val + 1u;
             }
-            else if (value > 0)
-                w_u32(0x80094674, (uint32)value - 4u);
+            else if (val > 0)
+                stage_animation.phase[0] = (uint32)val - 4u;
         }
-        if ((sint32)r_u32(actor + 4) >= 2)
+        if ((sint32)playback->frame >= 2)
         {
-            x = r_u32(actor + 40);
-            z = r_u32(actor + 48);
-            yaw = r_s16(actor + 56);
-            FUN_80010040();
-            FUN_80011D20();
-            FUN_800101CC(32768);
-            FUN_8001033C((sint32)((uint32)yaw << 5));
-            phase = r_u32(actor + 4);
+            x = pos->x.bits;
+            z = pos->z.bits;
+            yaw = orientation->yaw;
+            transform_push();
+            transform_identity();
+            transform_pitch(32768);
+            transform_yaw((uint32)yaw << 5);
+            phase = playback->frame;
             for (i = 0; i < 4; i++)
             {
                 if (i == 2)
-                    phase = r_u32(actor + 4);
+                    phase = playback->frame;
                 if (phase == (uint32)spawn_frame[i])
                 {
-                    FUN_800614F4((i & 1) ? -5242880 : 5242880, 0, i < 2 ? 524288 : -6815744, point);
-                    child = FUN_8004AF18(spawn_kind[i], x + point[0], z + point[2], (yaw + ((i & 1) ? -512 : 512)) & 2047, 0, 0, (i & 1) ? 0 : 1);
+                    transform_point((i & 1) ? -5242880 : 5242880, 0, i < 2 ? 524288 : -6815744, point.bits);
+                    child = npc_create(spawn_kind[i], x + point.x.bits, z + point.z.bits, (yaw + ((i & 1) ? -512 : 512)) & 2047, 0, 0, (i & 1) ? 0 : 1);
                     if (child < 0)
                     {
                         /* Keep this passenger pending until an NPC slot becomes free */
-                        w_u32(actor + 4, (uint32)spawn_frame[i] - 1);
+                        playback->frame = (uint32)spawn_frame[i] - 1;
                         phase = (uint32)spawn_frame[i] - 1;
                         continue;
                     }
-                    FUN_80049DB0(child, i == 0);
+                    npc_start_jump_off(child, i == 0);
                     if (i)
-                        w_u32(0x80093dbc, r_u32(0x80093dbc) + 1u);
+                        level_wave.remaining_enemies = level_wave.remaining_enemies + 1u;
                     if (i == 3)
-                        w_u8(actor + 117, 0);
+                        actor_lifecycle[idx].spawn_flag = 0;
                     if (i == 0 || i == 2)
-                        phase = r_u32(actor + 4);
+                        phase = playback->frame;
                 }
             }
-            if (r_u32(actor + 4) == 47)
+            if (playback->frame == 47)
             {
-                obj = 0x800b89f0 + 36u * r_u32(0x8009403c);
-                n = r_u32(0x8009479c);
-                region = 0x8009ec70 + 24u * n;
-                w_u16(actor + 52, 65535);
-                w_u32(obj, 66);
-                w_u32(obj + 4, x);
-                w_u32(obj + 8, 0);
-                w_u32(obj + 12, z);
-                w_u16(obj + 16, (uint16)((uint32)yaw << 5));
-                value = (sint32)r_u32(actor + 216);
-                state = r_u32(0x80093d60);
-                w_u16(obj + 30, (uint16)value);
-                w_u32(region + 20, obj);
-                w_u16(region + 4, (uint16)(x >> 16));
-                w_u16(region, (uint16)(x >> 16));
-                w_u16(region + 6, (uint16)(z >> 16));
-                w_u16(region + 2, (uint16)(z >> 16));
-                phase = r_u32(obj);
-                w_u32(0x8009479c, n + 1);
-                w_u32(0x80093d60, state + 1);
-                FUN_8003B77C(region, (sint32)phase);
-                n = r_u32(0x8009403c);
-                obj += 36;
-                w_u32(obj, 65);
-                w_u32(obj + 4, x);
-                w_u32(obj + 8, 0);
-                w_u32(obj + 12, z);
-                w_u16(obj + 16, (uint16)((uint32)yaw << 5));
-                w_u32(0x8009403c, n + 2u);
+                uint32 world_idx = world_objects.count;
+                n = col_regions.count;
+                if (n >= COLLISION_REGION_COUNT)
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                region = col_regions.data + n;
+                actor_types[idx] = ACTOR_TYPE_NONE;
+                /* TODO: Investigate the original van append beyond the world pool */
+                if (world_idx >= WORLD_OBJECT_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid van world slot %u actor %d stage %u tick %u\n", world_idx, idx, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                MODEL_OBJECT *world = world_objects.object + world_idx;
+                /* Publish the retained motion under its concrete runtime owner */
+                if (world->payload_kind != MODEL_PAYLOAD_UNMIGRATED)
+                {
+                    /* TODO: Investigate van construction over another native payload */
+                    DIAGNOSTIC(fprintf(stderr, "Invalid van reserve owner slot %u payload %u stage %u tick %u\n", world_idx, world->payload_kind, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                world->oscillation = world->pending_motion;
+                world->payload_kind = MODEL_PAYLOAD_OSCILLATION;
+                world->kind = 66;
+                world->pos.x.bits = x;
+                world->pos.y.bits = 0;
+                world->pos.z.bits = z;
+                world->angles.yaw_bits = (uint16)((uint32)yaw << 5);
+                val = (sint32)special->van_voice;
+                state = game_session.scene_phase;
+                world->oscillation.voice_plus_one = (sint16)val;
+                region->object = (WORLD_OBJECT_REFERENCE){world_idx, 1};
+                region->geometry.coord[2] = x >> 16;
+                region->geometry.coord[0] = x >> 16;
+                region->geometry.coord[3] = z >> 16;
+                region->geometry.coord[1] = z >> 16;
+                phase = world->kind;
+                col_regions.count = n + 1;
+                game_session.scene_phase = state + 1;
+                col_region_configure(region, phase);
+                n = world_objects.count;
+                /* TODO: Investigate an exhausted world pool after the first van append */
+                if (world_idx + 1 >= WORLD_OBJECT_COUNT)
+                {
+                    DIAGNOSTIC(fprintf(stderr, "Invalid second van world slot %u actor %d stage %u tick %u\n", world_idx + 1, idx, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                world = world_objects.object + world_idx + 1;
+                /* The companion retains the original flags, speed and voice words */
+                if (world->payload_kind != MODEL_PAYLOAD_UNMIGRATED)
+                {
+                    /* TODO: Investigate van construction over another native companion */
+                    DIAGNOSTIC(fprintf(stderr, "Invalid van companion reserve slot %u payload %u stage %u tick %u\n", world_idx + 1, world->payload_kind, game_session.stage, game_session.tick));
+                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                }
+                world->companion = (COMPANION_MODEL){.flags = world->pending_motion.roll_speed, .speed = world->pending_motion.speed, .physics_spin = world->pending_motion.pitch_speed, .physics_actor_idx = world->pending_motion.phase, .voice = world->pending_motion.voice_plus_one, .physics_vertical_speed = world->pending_motion.sound_clock, .physics_obstacle_flags = world->pending_motion.physics_obstacle_flags};
+                world->payload_kind = MODEL_PAYLOAD_COMPANION;
+                world->kind = 65;
+                world->pos.x.bits = x;
+                world->pos.y.bits = 0;
+                world->pos.z.bits = z;
+                world->angles.yaw_bits = (uint16)((uint32)yaw << 5);
+                world_objects.count = n + 2u;
             }
-            FUN_80010028();
+            transform_pop();
         }
     }
-    w_u16(actor + 78, (uint16)(heading & 2047));
-    w_u16(actor + 76, (uint16)speed);
+    movement->van_heading = (uint16)(heading & 2047);
+    movement->van_speed = (uint16)speed;
     return (uint32)heading & 2047;
+}
+
+GDB_CALL uint32 npc_finish_animation(sint32 idx)
+{
+    FUNCTION_MARKER(0x8004efb8u, "GAME.EXE");
+    uint32 result = 0xffffffffu;
+    if (actor_animations[idx].frame == 0xffffffffu)
+    {
+        result = actor_status[idx].flags & 0xfffffffeu;
+        actor_status[idx].flags = result;
+    }
+    return result;
+}
+
+GDB_CALL sint32 npc_continue_attack_behavior(sint32 idx)
+{
+    FUNCTION_MARKER(0x80053298u, "GAME.EXE");
+    return npc_update_combat(idx);
 }
