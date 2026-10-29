@@ -383,7 +383,7 @@ const OBJECT_CALLBACK callback_object_ignore_callback6 = {OBJECT_CALL_VOID_NONE,
 
 const OBJECT_CALLBACK callback_item_draw_explosive = {OBJECT_CALL_VOID_MODEL, {.no_result_model = item_draw_explosive}, 0};
 
-GDB_CALL intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT *item, struct EFFECT *effect)
+intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     if (callback)
     {
@@ -483,37 +483,37 @@ GDB_CALL intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT
     return 0;
 }
 
-GDB_CALL void object_ignore_callback0(void)
+void object_ignore_callback0(void)
 {
     FUNCTION_MARKER(0x8002a974u, "GAME.EXE");
 }
 
-GDB_CALL void object_ignore_callback1(void)
+void object_ignore_callback1(void)
 {
     FUNCTION_MARKER(0x80041b4cu, "GAME.EXE");
 }
 
-GDB_CALL void object_ignore_callback2(void)
+void object_ignore_callback2(void)
 {
     FUNCTION_MARKER(0x8004483cu, "GAME.EXE");
 }
 
-GDB_CALL void object_ignore_callback3(void)
+void object_ignore_callback3(void)
 {
     FUNCTION_MARKER(0x800455dcu, "GAME.EXE");
 }
 
-GDB_CALL void object_ignore_callback4(void)
+void object_ignore_callback4(void)
 {
     FUNCTION_MARKER(0x8005d150u, "GAME.EXE");
 }
 
-GDB_CALL void object_ignore_callback5(void)
+void object_ignore_callback5(void)
 {
     FUNCTION_MARKER(0x8005d158u, "GAME.EXE");
 }
 
-GDB_CALL void object_ignore_callback6(void)
+void object_ignore_callback6(void)
 {
     FUNCTION_MARKER(0x8005daccu, "GAME.EXE");
 }

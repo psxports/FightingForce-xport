@@ -28,6 +28,6 @@ extern DEMO_STATE demo;
 extern RESOURCE_FILE demo_file;
 extern const DEMO_STATE demo_defaults;
 
-GDB_CALL void demo_select_next(void);
+void demo_select_next(void);
 
 #endif

@@ -41,8 +41,8 @@ typedef struct EFFECT_LINE
     RGBC color;
 } EFFECT_LINE;
 
-GDB_CALL void effect_draw_line(const struct EFFECT *effect);
-GDB_CALL void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect);
+void effect_draw_line(const struct EFFECT *effect);
+void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect);
 
 typedef struct EFFECT_RIBBON
 {
@@ -57,9 +57,9 @@ typedef struct EFFECT_RIBBON
     sint16 frame;
 } EFFECT_RIBBON;
 
-GDB_CALL void effect_draw_ribbon(const struct EFFECT *effect);
-GDB_CALL uint32 effect_remove_line(struct EFFECT *effect);
-GDB_CALL uint32 effect_remove_ribbon(struct EFFECT *effect);
+void effect_draw_ribbon(const struct EFFECT *effect);
+uint32 effect_remove_line(struct EFFECT *effect);
+uint32 effect_remove_ribbon(struct EFFECT *effect);
 
 typedef struct EFFECT_MOVING_RIBBON
 {
@@ -68,8 +68,8 @@ typedef struct EFFECT_MOVING_RIBBON
     sint16 owner;
 } EFFECT_MOVING_RIBBON;
 
-GDB_CALL sint32 effect_update_moving_ribbon(struct EFFECT *effect);
-GDB_CALL void effect_draw_moving_ribbon(const struct EFFECT *effect);
+sint32 effect_update_moving_ribbon(struct EFFECT *effect);
+void effect_draw_moving_ribbon(const struct EFFECT *effect);
 
 typedef struct EFFECT_SPRITE
 {
@@ -87,13 +87,13 @@ typedef struct EFFECT_SPRITE
     sint16 owner;
 } EFFECT_SPRITE;
 
-GDB_CALL uint32 effect_update_dust_short(struct MODEL_OBJECT *item, struct EFFECT *effect);
-GDB_CALL uint32 effect_update_dust_long(struct EFFECT *effect);
-GDB_CALL uint32 effect_update_falling_spr(struct EFFECT *effect);
-GDB_CALL sint32 effect_update_drifting_spr(struct EFFECT *effect);
-GDB_CALL intptr effect_update_landing_spr(struct EFFECT *effect);
-GDB_CALL uint32 effect_update_spr_short(struct EFFECT *effect);
-GDB_CALL uint32 effect_update_spr_long(struct EFFECT *effect);
+uint32 effect_update_dust_short(struct MODEL_OBJECT *item, struct EFFECT *effect);
+uint32 effect_update_dust_long(struct EFFECT *effect);
+uint32 effect_update_falling_spr(struct EFFECT *effect);
+sint32 effect_update_drifting_spr(struct EFFECT *effect);
+intptr effect_update_landing_spr(struct EFFECT *effect);
+uint32 effect_update_spr_short(struct EFFECT *effect);
+uint32 effect_update_spr_long(struct EFFECT *effect);
 
 typedef struct EFFECT_PARTICLE
 {
@@ -137,112 +137,112 @@ extern EFFECT effects[EFFECT_COUNT];
 
 extern uint32 effect_rotate_cursor;
 
-GDB_CALL EFFECT *effect_alloc(void);
-GDB_CALL EFFECT *effect_alloc_rotating(void);
-GDB_CALL uint32 effect_spawn_hit(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_hit_reverse(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_actor_hit(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_actor_hit_reverse(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_rotating_particle(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL sint32 effects_spawn_falling_glass(uint32 x, uint32 y, uint32 z);
-GDB_CALL uint32 effect_spawn_spark(uint32 x, uint32 y, uint32 z);
-GDB_CALL uint32 effect_spawn_glass_fragment(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_slow_fragment(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_gate_fragment(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_at_attachment(sint32 idx);
-GDB_CALL uint32 effect_spawn_spark_reverse(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_point(uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL uint32 effect_spawn_attachment_particle(sint32 idx, uint32 kind);
-GDB_CALL EFFECT *effect_spawn_timed(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 age, sint32 a, sint32 b);
-GDB_CALL EFFECT *effect_spawn(uint32 kind, uint32 x, uint32 y, uint32 z);
-GDB_CALL intptr effect_spawn_debris(uint32 kind, uint32 x, uint32 y, uint32 z);
-GDB_CALL intptr effect_spawn_debris_aimed(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle);
-GDB_CALL EFFECT *effect_spawn_motion(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 dx, uint32 dy, uint32 dz);
-GDB_CALL sint32 effect_spawn_line(uint32 style, uint32 x, uint32 y, uint32 z, uint32 end_x, uint32 end_y, uint32 end_z, uint32 size, uint32 color);
+EFFECT *effect_alloc(void);
+EFFECT *effect_alloc_rotating(void);
+uint32 effect_spawn_hit(uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_hit_reverse(uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_actor_hit(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_actor_hit_reverse(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_rotating_particle(uint32 x, uint32 y, uint32 z, uint32 angle);
+sint32 effects_spawn_falling_glass(uint32 x, uint32 y, uint32 z);
+uint32 effect_spawn_spark(uint32 x, uint32 y, uint32 z);
+uint32 effect_spawn_glass_fragment(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_slow_fragment(uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_gate_fragment(uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_at_attachment(sint32 idx);
+uint32 effect_spawn_spark_reverse(uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_point(uint32 x, uint32 y, uint32 z, uint32 angle);
+uint32 effect_spawn_attachment_particle(sint32 idx, uint32 kind);
+EFFECT *effect_spawn_timed(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 age, sint32 a, sint32 b);
+EFFECT *effect_spawn(uint32 kind, uint32 x, uint32 y, uint32 z);
+intptr effect_spawn_debris(uint32 kind, uint32 x, uint32 y, uint32 z);
+intptr effect_spawn_debris_aimed(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle);
+EFFECT *effect_spawn_motion(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 dx, uint32 dy, uint32 dz);
+sint32 effect_spawn_line(uint32 style, uint32 x, uint32 y, uint32 z, uint32 end_x, uint32 end_y, uint32 end_z, uint32 size, uint32 color);
 
-GDB_CALL sint32 effect_spawn_velocity(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 yaw, sint32 pitch, sint32 speed);
+sint32 effect_spawn_velocity(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 yaw, sint32 pitch, sint32 speed);
 
-GDB_CALL intptr effect_update_debris(EFFECT *effect);
-GDB_CALL intptr effect_update_debris_low_gravity(EFFECT *effect);
-GDB_CALL intptr effect_update_debris_quarter_speed(EFFECT *effect);
+intptr effect_update_debris(EFFECT *effect);
+intptr effect_update_debris_low_gravity(EFFECT *effect);
+intptr effect_update_debris_quarter_speed(EFFECT *effect);
 
-GDB_CALL sint32 effects_update(void);
-GDB_CALL sint32 effects_draw(void);
-GDB_CALL void effect_draw_model(const struct EFFECT *effect);
-GDB_CALL void effect_draw_oriented_model(const struct EFFECT *effect);
+sint32 effects_update(void);
+sint32 effects_draw(void);
+void effect_draw_model(const struct EFFECT *effect);
+void effect_draw_oriented_model(const struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_blast_large(struct EFFECT *effect);
+uint32 effect_update_blast_large(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_blast(struct EFFECT *effect);
+uint32 effect_update_blast(struct EFFECT *effect);
 
-GDB_CALL void effect_draw_blast_large(const struct EFFECT *effect);
+void effect_draw_blast_large(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_blast(const struct EFFECT *effect);
+void effect_draw_blast(const struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_rising_spr_short(struct MODEL_OBJECT *item, struct EFFECT *effect);
+uint32 effect_update_rising_spr_short(struct MODEL_OBJECT *item, struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_rising_spr_long(struct MODEL_OBJECT *item, struct EFFECT *effect);
+uint32 effect_update_rising_spr_long(struct MODEL_OBJECT *item, struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_rising_smoke(struct MODEL_OBJECT *item, struct EFFECT *effect);
+uint32 effect_update_rising_smoke(struct MODEL_OBJECT *item, struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_ring_large(struct EFFECT *effect);
+uint32 effect_update_ring_large(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_ring(struct EFFECT *effect);
+uint32 effect_update_ring(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_ring_short(struct EFFECT *effect);
+uint32 effect_update_ring_short(struct EFFECT *effect);
 
-GDB_CALL void effect_draw_ring_large(const struct EFFECT *effect);
+void effect_draw_ring_large(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_ring(const struct EFFECT *effect);
+void effect_draw_ring(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_ring_small(const struct EFFECT *effect);
+void effect_draw_ring_small(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_rising_smoke(const struct EFFECT *effect);
+void effect_draw_rising_smoke(const struct EFFECT *effect);
 
-GDB_CALL sint32 effect_update_shockwave(struct EFFECT *effect);
+sint32 effect_update_shockwave(struct EFFECT *effect);
 
-GDB_CALL sint32 effect_update_particle(struct EFFECT *effect);
+sint32 effect_update_particle(struct EFFECT *effect);
 
-GDB_CALL void effect_draw_hit_particle(const struct EFFECT *effect);
+void effect_draw_hit_particle(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_spark(const struct EFFECT *effect);
+void effect_draw_spark(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_point(const struct EFFECT *effect);
+void effect_draw_point(const struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_falling_glass(struct EFFECT *effect);
+uint32 effect_update_falling_glass(struct EFFECT *effect);
 
-GDB_CALL void effect_draw_glass(const struct EFFECT *effect);
+void effect_draw_glass(const struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_slowing_particle(struct EFFECT *effect);
+uint32 effect_update_slowing_particle(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_stationary_particle(struct EFFECT *effect);
+uint32 effect_update_stationary_particle(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_short_particle(struct EFFECT *effect);
+uint32 effect_update_short_particle(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_long_particle(struct EFFECT *effect);
+uint32 effect_update_long_particle(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_remove_short_particle(struct EFFECT *effect);
+uint32 effect_remove_short_particle(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_remove_long_particle(struct EFFECT *effect);
+uint32 effect_remove_long_particle(struct EFFECT *effect);
 
-GDB_CALL void effect_draw_rotating_particle(void);
+void effect_draw_rotating_particle(void);
 
-GDB_CALL void effect_draw_short_particle(void);
+void effect_draw_short_particle(void);
 
-GDB_CALL void effect_draw_long_particle(void);
+void effect_draw_long_particle(void);
 
-GDB_CALL sint32 effect_update_bouncing_particle(struct MODEL_OBJECT *item, struct EFFECT *effect);
+sint32 effect_update_bouncing_particle(struct MODEL_OBJECT *item, struct EFFECT *effect);
 
-GDB_CALL void effect_draw_double_point(const struct EFFECT *effect);
+void effect_draw_double_point(const struct EFFECT *effect);
 
-GDB_CALL void effect_draw_attachment_model(const struct EFFECT *effect);
+void effect_draw_attachment_model(const struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_delayed_fragment(struct EFFECT *effect);
+uint32 effect_update_delayed_fragment(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_fragment(struct EFFECT *effect);
+uint32 effect_update_fragment(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_gate_fragment(struct EFFECT *effect);
+uint32 effect_update_gate_fragment(struct EFFECT *effect);
 
-GDB_CALL uint32 effect_update_gate_fragment_velocity(struct EFFECT *effect, uint32 incoming_v1);
+uint32 effect_update_gate_fragment_velocity(struct EFFECT *effect, uint32 incoming_v1);
 
 #endif

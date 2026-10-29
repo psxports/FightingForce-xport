@@ -23,7 +23,7 @@ typedef union PROJECTION_POINT
 
 extern uint32 proj_horizon;
 
-GDB_CALL sint32 proj_local(sint32 x, sint32 y, sint32 z, PROJECTION_POINT *dest);
-GDB_CALL void proj_update_horizon(void);
+sint32 proj_local(sint32 x, sint32 y, sint32 z, PROJECTION_POINT *dest);
+void proj_update_horizon(void);
 
 #endif

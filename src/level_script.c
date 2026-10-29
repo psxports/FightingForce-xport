@@ -70,7 +70,7 @@ const LEVEL_WAVE level_wave_defaults = {0, 0, 0, 0xffffffffu, 1, 0, 0, 0, 0};
 LEVEL_WAVE level_wave;
 LEVEL_SCRIPT_SCENE level_script_scene;
 
-GDB_CALL sint32 level_script_count_enemies(void)
+sint32 level_script_count_enemies(void)
 {
     FUNCTION_MARKER(0x8004BE28, "GAME.EXE");
     sint32 count = 0, type;
@@ -330,7 +330,7 @@ static uint32 activate_scene(void)
     return 1;
 }
 
-GDB_CALL sint32 level_script_update(void)
+sint32 level_script_update(void)
 {
     FUNCTION_MARKER(0x8004B228, "GAME.EXE");
     uint32 word_idx, remaining;

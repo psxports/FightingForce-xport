@@ -17,11 +17,11 @@ typedef struct LEVEL_START
 
 extern LEVEL_START level_starts[LEVEL_START_COUNT];
 
-GDB_CALL uint32 level_start_players(void);
-GDB_CALL void level_reset(void);
+uint32 level_start_players(void);
+void level_reset(void);
 
-GDB_CALL void level_start_playback(void);
+void level_start_playback(void);
 
-GDB_CALL uint32 level_initialize(void);
+uint32 level_initialize(void);
 
 #endif

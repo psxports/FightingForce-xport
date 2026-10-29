@@ -67,10 +67,10 @@ typedef struct ACTOR_POSE
 
 extern ACTOR_POSE actor_poses[ACTOR_POSE_COUNT];
 
-GDB_CALL void actor_pose_load_initial_motion(sint32 idx);
-GDB_CALL void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *pose);
-GDB_CALL void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[3]);
-GDB_CALL uint32 actor_place_attachment(FIXED_VEC3 *pos, sint32 idx, sint32 attachment);
+void actor_pose_load_initial_motion(sint32 idx);
+void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *pose);
+void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[3]);
+uint32 actor_place_attachment(FIXED_VEC3 *pos, sint32 idx, sint32 attachment);
 void actor_pose_copy(ACTOR_POSE *to, const ACTOR_POSE *from);
 
 #endif

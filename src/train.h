@@ -13,6 +13,6 @@ typedef enum TRAIN_SIDE
 
 extern sint16 train_accel[TRAIN_SIDE_COUNT];
 
-GDB_CALL uint32 train_update(MODEL_OBJECT *model);
+uint32 train_update(MODEL_OBJECT *model);
 
 #endif

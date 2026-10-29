@@ -43,7 +43,7 @@ static uint32 read_bit(const uint8 **flags, const uint8 *end, uint32 *bits, uint
 }
 
 /* Initial motion retains its distinct descriptor base and untouched lateral component */
-GDB_CALL void actor_pose_load_initial_motion(sint32 idx)
+void actor_pose_load_initial_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x80011a04, "GAME.EXE");
     ACTOR_ANIMATION *playback = actor_animations + idx;
@@ -71,7 +71,7 @@ GDB_CALL void actor_pose_load_initial_motion(sint32 idx)
 }
 
 /* Decode an absolute first frame, then sparse signed angle deltas */
-GDB_CALL void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *pose)
+void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *pose)
 {
     FUNCTION_MARKER(0x80011a50, "GAME.EXE");
     ACTOR_ANIMATION *playback = actor_animations + idx;
@@ -146,7 +146,7 @@ GDB_CALL void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *p
     } while (count);
 }
 
-GDB_CALL void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[3])
+void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[3])
 {
     FUNCTION_MARKER(0x8001b9f4, "GAME.EXE");
     ACTOR_POSE *pose;
@@ -189,7 +189,7 @@ GDB_CALL void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[
 }
 
 /* Place the computed attachment in its caller-owned Q16 position */
-GDB_CALL uint32 actor_place_attachment(FIXED_VEC3 *pos, sint32 idx, sint32 attachment)
+uint32 actor_place_attachment(FIXED_VEC3 *pos, sint32 idx, sint32 attachment)
 {
     FUNCTION_MARKER(0x80017f88, "GAME.EXE");
     FIXED_VEC3 point;

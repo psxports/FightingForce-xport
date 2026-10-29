@@ -141,7 +141,7 @@ extern ACTOR_STATUS actor_status[ACTOR_COUNT];
 extern sint16 actor_grapple_distance[ACTOR_TYPE_COUNT];
 extern uint32 actor_score_vals[ACTOR_TYPE_COUNT];
 
-GDB_CALL uint32 actors_init_score_vals(void);
+uint32 actors_init_score_vals(void);
 
 typedef union ACTOR_LIGHTING
 {
@@ -176,43 +176,43 @@ typedef struct ACTOR_TARGETING
 
 extern ACTOR_TARGETING actor_targeting;
 
-GDB_CALL uint32 actors_find_facing_targets(sint32 idx);
-GDB_CALL sint32 actors_find_nearest_targets(sint32 idx);
+uint32 actors_find_facing_targets(sint32 idx);
+sint32 actors_find_nearest_targets(sint32 idx);
 
 uint32 actors_reset(void);
 uint32 actors_reset_health(void);
-GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage);
-GDB_CALL sint32 actors_update_grapple(sint32 idx, sint32 victim);
-GDB_CALL sint32 actors_try_grapple(sint32 idx, sint32 victim);
-GDB_CALL sint32 actors_rec_hit(sint32 idx, sint32 victim);
-GDB_CALL sint32 actors_rec_death(sint32 idx);
-GDB_CALL sint32 actors_detach_companion(sint32 idx);
-GDB_CALL sint32 actors_capture_pair_offset(sint32 idx, sint32 partner);
-GDB_CALL uint32 actors_apply_pair_offset(sint32 idx, sint32 partner);
-GDB_CALL sint32 actors_update_pair_motion(sint32 idx);
-GDB_CALL sint32 character_trail_clear(sint32 resource);
-GDB_CALL uint32 character_trail_append(sint32 idx, sint32 attachment);
-GDB_CALL struct EFFECT *actors_emit_running_attack(sint32 idx);
-GDB_CALL uint32 actors_emit_arc(sint32 idx);
-GDB_CALL intptr actors_emit_link(sint32 idx, sint32 other_idx);
+uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage);
+sint32 actors_update_grapple(sint32 idx, sint32 victim);
+sint32 actors_try_grapple(sint32 idx, sint32 victim);
+sint32 actors_rec_hit(sint32 idx, sint32 victim);
+sint32 actors_rec_death(sint32 idx);
+sint32 actors_detach_companion(sint32 idx);
+sint32 actors_capture_pair_offset(sint32 idx, sint32 partner);
+uint32 actors_apply_pair_offset(sint32 idx, sint32 partner);
+sint32 actors_update_pair_motion(sint32 idx);
+sint32 character_trail_clear(sint32 resource);
+uint32 character_trail_append(sint32 idx, sint32 attachment);
+struct EFFECT *actors_emit_running_attack(sint32 idx);
+uint32 actors_emit_arc(sint32 idx);
+intptr actors_emit_link(sint32 idx, sint32 other_idx);
 
-GDB_CALL intptr actor_process_attack_effects(sint32 idx);
-GDB_CALL intptr actor_process_shock_attack(sint32 idx);
+intptr actor_process_attack_effects(sint32 idx);
+intptr actor_process_shock_attack(sint32 idx);
 
-GDB_CALL struct EFFECT *actor_emit_ground_effect(sint32 idx);
-GDB_CALL intptr actor_ground_effect_event(sint32 idx);
-GDB_CALL intptr actor_ground_effect_voice_event(sint32 idx);
+struct EFFECT *actor_emit_ground_effect(sint32 idx);
+intptr actor_ground_effect_event(sint32 idx);
+intptr actor_ground_effect_voice_event(sint32 idx);
 
-GDB_CALL uint32 players_past_x(sint32 x);
+uint32 players_past_x(sint32 x);
 
-GDB_CALL uint32 players_before_x(sint32 x);
+uint32 players_before_x(sint32 x);
 
-GDB_CALL uint32 players_before_z(sint32 z);
+uint32 players_before_z(sint32 z);
 
-GDB_CALL sint32 actor_is_defeated(sint32 idx);
+sint32 actor_is_defeated(sint32 idx);
 
-GDB_CALL sint32 players_past_z(sint32 z);
+sint32 players_past_z(sint32 z);
 
-GDB_CALL uint32 actor_apply_animation_damage(uint32 attacker, uint32 victim, uint32 state);
+uint32 actor_apply_animation_damage(uint32 attacker, uint32 victim, uint32 state);
 
 #endif

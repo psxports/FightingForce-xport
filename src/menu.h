@@ -62,39 +62,39 @@ extern const MENU_CALLBACK menu_callback_scores;
 extern MENU menu;
 extern const MENU menu_defaults;
 
-GDB_CALL uint32 language_menu_draw(void);
-GDB_CALL uint32 language_menu_run(void);
-GDB_CALL sint32 main_menu_update(void);
-GDB_CALL sint32 pad_menu_update(void);
-GDB_CALL sint32 scr_menu_update(void);
-GDB_CALL sint32 scores_menu_update(void);
-GDB_CALL sint32 menu_message_update(void);
-GDB_CALL sint32 menu_question_update(void);
-GDB_CALL uint32 menu_message_open(const char *message, uint32 message_capacity, MENU_CALLBACK_REFERENCE callback);
-GDB_CALL uint32 menu_question_open(const char *message, uint32 message_capacity, uint32 kind, MENU_CALLBACK_REFERENCE accept, MENU_CALLBACK_REFERENCE cancel);
-GDB_CALL uint32 menu_message_why_not(void);
-GDB_CALL uint32 menu_message_cannot(void);
+uint32 language_menu_draw(void);
+uint32 language_menu_run(void);
+sint32 main_menu_update(void);
+sint32 pad_menu_update(void);
+sint32 scr_menu_update(void);
+sint32 scores_menu_update(void);
+sint32 menu_message_update(void);
+sint32 menu_question_update(void);
+uint32 menu_message_open(const char *message, uint32 message_capacity, MENU_CALLBACK_REFERENCE callback);
+uint32 menu_question_open(const char *message, uint32 message_capacity, uint32 kind, MENU_CALLBACK_REFERENCE accept, MENU_CALLBACK_REFERENCE cancel);
+uint32 menu_message_why_not(void);
+uint32 menu_message_cannot(void);
 
 sint32 menu_draw_dialog(uint32 retained_s3);
 
 sint32 menu_end_dialog(uint32 retained_s3);
 
-GDB_CALL uint32 menu_begin_dim_frame(void);
+uint32 menu_begin_dim_frame(void);
 
 sint32 menu_play_effect(sint32 id, sint32 volume);
 
-GDB_CALL sint32 menu_play_move_sound(void);
+sint32 menu_play_move_sound(void);
 
-GDB_CALL sint32 menu_play_confirm_sound(void);
+sint32 menu_play_confirm_sound(void);
 
-GDB_CALL sint32 menu_draw_primary_pad_notice(sint32 y);
+sint32 menu_draw_primary_pad_notice(sint32 y);
 
-GDB_CALL uint32 menu_present_dim(void);
+uint32 menu_present_dim(void);
 
-GDB_CALL uint32 menu_draw_title_backdrop(void);
+uint32 menu_draw_title_backdrop(void);
 
-GDB_CALL uint32 title_menu_run(void);
+uint32 title_menu_run(void);
 
-GDB_CALL sint32 menu_finish_selection(sint32 skip_scene);
+sint32 menu_finish_selection(sint32 skip_scene);
 
 #endif

@@ -14,8 +14,8 @@ typedef struct LOADING
 extern const LOADING loading_defaults;
 extern LOADING loading;
 
-GDB_CALL uint32 loading_clear(void);
-GDB_CALL uint32 loading_begin(uint32 steps);
-GDB_CALL uint32 loading_draw(void);
+uint32 loading_clear(void);
+uint32 loading_begin(uint32 steps);
+uint32 loading_draw(void);
 
 #endif

@@ -123,7 +123,7 @@ static sint32 resource_disc_read(const char *name, void *dst, uint32 capacity, R
     return 0;
 }
 
-GDB_CALL uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_dst, uint32 native_capacity, RESOURCE_FILE *file, const RESOURCE_CURSOR *arena)
+uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_dst, uint32 native_capacity, RESOURCE_FILE *file, const RESOURCE_CURSOR *arena)
 {
     FUNCTION_MARKER(0x80061448, "GAME.EXE");
     uint32 attempt, capacity;
@@ -633,7 +633,7 @@ uint32 resource_copy_block(const uint8 *src, uint8 *dst)
 }
 
 /* Original count shifts by one, then copies uint32 words in forward order */
-GDB_CALL uint32 resource_copy_words(uint8 *dst, const uint8 *src, uint32 count)
+uint32 resource_copy_words(uint8 *dst, const uint8 *src, uint32 count)
 {
     FUNCTION_MARKER(0x80011F50, "GAME.EXE");
     uint32 result;
@@ -651,7 +651,7 @@ GDB_CALL uint32 resource_copy_words(uint8 *dst, const uint8 *src, uint32 count)
     return result;
 }
 
-GDB_CALL sint32 model_vertex_dir(MODEL_REFERENCE mesh, uint32 v0, uint32 v1)
+sint32 model_vertex_dir(MODEL_REFERENCE mesh, uint32 v0, uint32 v1)
 {
     FUNCTION_MARKER(0x800163acu, "GAME.EXE");
     /* TODO: Investigate original vertex indices outside the retained resource */

@@ -3,13 +3,13 @@
 
 #include "xport.h"
 
-GDB_CALL uint32 game_tables_init_resources(void);
-GDB_CALL uint32 game_tables_init_models(void);
-GDB_CALL uint32 game_tables_init(void);
-GDB_CALL uint32 game_tables_init_vehicles(void);
-GDB_CALL uint32 game_tables_init_extra_resources(void);
-GDB_CALL uint32 game_tables_init_npc_actions(void);
-GDB_CALL uint32 game_tables_init_extra_models(void);
-GDB_CALL uint32 game_tables_init_extra(void);
+uint32 game_tables_init_resources(void);
+uint32 game_tables_init_models(void);
+uint32 game_tables_init(void);
+uint32 game_tables_init_vehicles(void);
+uint32 game_tables_init_extra_resources(void);
+uint32 game_tables_init_npc_actions(void);
+uint32 game_tables_init_extra_models(void);
+uint32 game_tables_init_extra(void);
 
 #endif

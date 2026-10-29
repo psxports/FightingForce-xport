@@ -19,6 +19,6 @@ typedef struct SCREENSHOT
 
 extern SCREENSHOT screenshot;
 extern const SCREENSHOT screenshot_defaults;
-GDB_CALL uint32 screenshot_capture(void);
+uint32 screenshot_capture(void);
 
 #endif

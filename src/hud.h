@@ -18,11 +18,11 @@ typedef struct HUD
 
 extern HUD hud;
 
-GDB_CALL sint32 hud_format_score(sint32 player);
-GDB_CALL uint32 hud_draw(void);
-GDB_CALL uint32 hud_draw_health_left(uint32 xy, uint32 idx);
-GDB_CALL uint32 hud_draw_health_right(uint32 xy, uint32 idx);
-GDB_CALL uint32 hud_continue_prompt(uint32 player);
-GDB_CALL uint32 hud_update(void);
+sint32 hud_format_score(sint32 player);
+uint32 hud_draw(void);
+uint32 hud_draw_health_left(uint32 xy, uint32 idx);
+uint32 hud_draw_health_right(uint32 xy, uint32 idx);
+uint32 hud_continue_prompt(uint32 player);
+uint32 hud_update(void);
 
 #endif

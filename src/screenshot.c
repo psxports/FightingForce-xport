@@ -111,7 +111,7 @@ static uint32 file_write(uint32 handle, const uint8 *src, uint32 bytes)
     return total;
 }
 
-GDB_CALL uint32 screenshot_capture(void)
+uint32 screenshot_capture(void)
 {
     FUNCTION_MARKER(0x80067940u, "GAME.EXE");
     uint32 handle = file_create((const char *)screenshot.filename, sizeof(screenshot.filename)), block, row, offset, val;

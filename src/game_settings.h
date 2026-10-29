@@ -47,7 +47,7 @@ typedef struct GAME_SETTINGS
 extern GAME_SETTINGS game_settings;
 extern const GAME_SETTINGS game_settings_defaults;
 
-GDB_CALL uint32 game_settings_restore_card(void);
-GDB_CALL uint32 game_settings_capture_card(void);
+uint32 game_settings_restore_card(void);
+uint32 game_settings_capture_card(void);
 
 #endif

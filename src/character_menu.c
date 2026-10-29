@@ -30,7 +30,7 @@ static void draw_pair_names(const char *format, const char *name0, const char *n
 }
 
 /* Cancel clears ready bits but keeps processing same-frame input */
-GDB_CALL sint32 character_menu_update(void)
+sint32 character_menu_update(void)
 {
     FUNCTION_MARKER(0x80050798, "GAME.EXE");
     sint32 i;
@@ -158,7 +158,7 @@ GDB_CALL sint32 character_menu_update(void)
 }
 
 /* Draw four menu actors, their shadows and selected-player rings */
-GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
+sint32 character_menu_draw(const uint32 *sel, sint32 players)
 {
     FUNCTION_MARKER(0x80058e24, "GAME.EXE");
     uint32 i, phase, fade, actor_x, actor_y, actor_z;
@@ -295,7 +295,7 @@ GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
 }
 
 /* Advance all four menu actors independently of the selected player count */
-GDB_CALL sint32 character_menu_advance_actors(void)
+sint32 character_menu_advance_actors(void)
 {
     FUNCTION_MARKER(0x80050cc8, "GAME.EXE");
     sint32 i;

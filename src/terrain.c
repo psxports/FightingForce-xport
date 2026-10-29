@@ -18,7 +18,7 @@ const TERRAIN_VIEW_OFFSET terrain_view_offset[TERRAIN_VIEW_DIR_COUNT] = {
 
 /* Terrain grid uses six RTPT triples per row and a 17-point row stride
  * Packed X increments carry into Y at zero as in the original */
-GDB_CALL uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
+uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
 {
     FUNCTION_MARKER(0x8001100C, "GAME.EXE");
     uint32 row, col, n, packed, packet, ot, head, color, words[8], depths[3];
@@ -120,7 +120,7 @@ GDB_CALL uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
     return 0x8008d4b0;
 }
 
-GDB_CALL uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row)
+uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row)
 {
     FUNCTION_MARKER(0x800112a4u, "GAME.EXE");
     uint32 r, n, packed, packet, ot, head, point_idx = 0, cell, sx[4], uv[3], color;
@@ -257,7 +257,7 @@ static sint32 background_product(sint32 a, sint32 b)
     return (sint32)((uint32)a * (uint32)b) >> 8;
 }
 
-GDB_CALL sint32 background_render_strip(void)
+sint32 background_render_strip(void)
 {
     FUNCTION_MARKER(0x80064150, "GAME.EXE");
     uint32 parity, out_offset = 0;
@@ -298,7 +298,7 @@ GDB_CALL sint32 background_render_strip(void)
 }
 
 /* 80063EEC: four terrain grids and optional distant texture/quads. */
-GDB_CALL sint32 terrain_draw(void)
+sint32 terrain_draw(void)
 {
     FUNCTION_MARKER(0x80063EEC, "GAME.EXE");
     PROJECTION_POINT pos;

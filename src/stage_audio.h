@@ -18,6 +18,6 @@ typedef union STAGE_AUDIO_SLOT
 
 extern STAGE_AUDIO_SLOT stage_audio_slots[STAGE_AUDIO_SLOT_COUNT];
 
-GDB_CALL sint32 stage_audio_start(void);
+sint32 stage_audio_start(void);
 
 #endif

@@ -24,9 +24,9 @@ extern CHARACTER_MENU character_menu;
 extern const CHARACTER_MENU character_menu_defaults;
 extern const uint32 character_menu_types[CHARACTER_MENU_ACTOR_COUNT];
 
-GDB_CALL sint32 character_menu_update(void);
-GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players);
+sint32 character_menu_update(void);
+sint32 character_menu_draw(const uint32 *sel, sint32 players);
 
-GDB_CALL sint32 character_menu_advance_actors(void);
+sint32 character_menu_advance_actors(void);
 
 #endif

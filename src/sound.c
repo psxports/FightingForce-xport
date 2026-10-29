@@ -5,7 +5,7 @@
 #include "platform.h"
 
 /* Camera-relative pan and sine-table distance attenuation */
-GDB_CALL sint32 sound_spatial(const FIXED_VEC3 *pos, uint32 *volume, uint32 *pan)
+sint32 sound_spatial(const FIXED_VEC3 *pos, uint32 *volume, uint32 *pan)
 {
     FUNCTION_MARKER(0x80046884, "GAME.EXE");
     /* TODO: Investigate missing native spatial-sound arguments */
@@ -38,7 +38,7 @@ GDB_CALL sint32 sound_spatial(const FIXED_VEC3 *pos, uint32 *volume, uint32 *pan
 }
 
 /* 293D8 selection prefix. Keep RNG calls separate and ordered before56670. */
-GDB_CALL void sound_pain_parameters(sint32 idx, sint32 parameters[3])
+void sound_pain_parameters(sint32 idx, sint32 parameters[3])
 {
     sint32 type = actor_types[(uint32)idx], effect;
     switch (type)
@@ -78,7 +78,7 @@ GDB_CALL void sound_pain_parameters(sint32 idx, sint32 parameters[3])
     parameters[2] = 5952 + (random_next() & 255);
 }
 
-GDB_CALL sint32 sound_play_pain(sint32 idx)
+sint32 sound_play_pain(sint32 idx)
 {
     FUNCTION_MARKER(0x800293d8u, "GAME.EXE");
     sint32 p[3];
@@ -86,7 +86,7 @@ GDB_CALL sint32 sound_play_pain(sint32 idx)
     return sound_voice_play(p[0], p[1], p[2]);
 }
 
-GDB_CALL uint32 sound_volume_adjust(uint32 val, sint32 delta)
+uint32 sound_volume_adjust(uint32 val, sint32 delta)
 {
     FUNCTION_MARKER(0x80042820u, "GAME.EXE");
     /* Preserve volume-word wrapping before signed saturation */
@@ -94,7 +94,7 @@ GDB_CALL uint32 sound_volume_adjust(uint32 val, sint32 delta)
     return sum <= 0 ? 0u : sum < 255 ? sum : 255u;
 }
 
-GDB_CALL sint32 sound_play_attack_voice(sint32 idx)
+sint32 sound_play_attack_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80029944u, "GAME.EXE");
     sint32 kind = actor_types[(uint32)idx], sound = 51, pitch = 6144;
@@ -126,7 +126,7 @@ GDB_CALL sint32 sound_play_attack_voice(sint32 idx)
     return sound_voice_play(sound, 255, pitch - (sint32)(random_next() & 255u));
 }
 
-GDB_CALL sint32 sound_play_heavy_hit_voice(sint32 idx)
+sint32 sound_play_heavy_hit_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80029a40u, "GAME.EXE");
     sint32 kind = actor_types[(uint32)idx], sample, pitch = 6144;
@@ -152,7 +152,7 @@ GDB_CALL sint32 sound_play_heavy_hit_voice(sint32 idx)
     return sound_voice_play(sample, 255, pitch - (sint32)(random_next() & 255u));
 }
 
-GDB_CALL sint32 sound_play_chord(void)
+sint32 sound_play_chord(void)
 {
     FUNCTION_MARKER(0x800149ecu, "GAME.EXE");
     sound_voice_play(46, 255, 7168);
@@ -160,7 +160,7 @@ GDB_CALL sint32 sound_play_chord(void)
     return sound_voice_play(46, 255, 6656);
 }
 
-GDB_CALL sint32 sound_play_action_voice(sint32 idx)
+sint32 sound_play_action_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x8002976cu, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sample = 38;
@@ -189,7 +189,7 @@ GDB_CALL sint32 sound_play_action_voice(sint32 idx)
     return sound_voice_play(sample, 255, 6144 - (sint32)(random_next() & 255u));
 }
 
-GDB_CALL sint32 sound_play_strike_voice(sint32 idx)
+sint32 sound_play_strike_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80052878u, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sample;
@@ -202,7 +202,7 @@ GDB_CALL sint32 sound_play_strike_voice(sint32 idx)
     return sound_voice_play(sample, 255, 6144);
 }
 
-GDB_CALL uint32 sound_play_death_voice(sint32 idx)
+uint32 sound_play_death_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80029530u, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sound, pitch = 5952;
@@ -252,7 +252,7 @@ GDB_CALL uint32 sound_play_death_voice(sint32 idx)
     return sound_voice_play(sound, volume, pitch);
 }
 
-GDB_CALL uint32 sound_play_hit_voice(sint32 idx)
+uint32 sound_play_hit_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80029684u, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sound = 50;
@@ -279,7 +279,7 @@ GDB_CALL uint32 sound_play_hit_voice(sint32 idx)
     return sound_voice_play(sound, 255, 6144 - (sint32)(random_next() & 255u));
 }
 
-GDB_CALL sint32 sound_play_effort_voice(sint32 idx)
+sint32 sound_play_effort_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x800292f8u, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sound = 47, pitch = 6144;
@@ -313,7 +313,7 @@ GDB_CALL sint32 sound_play_effort_voice(sint32 idx)
     return sound_voice_play(sound, 255, pitch);
 }
 
-GDB_CALL sint32 sound_play_ground_voice(sint32 idx)
+sint32 sound_play_ground_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80029854u, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sample = 39;

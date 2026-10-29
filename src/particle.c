@@ -60,19 +60,19 @@ static uint32 draw_packet(sint32 x, sint32 y, sint32 z, uint32 color, PARTICLE_S
     return 0x8008d4b0;
 }
 
-GDB_CALL uint32 particle_draw_point(sint32 x, sint32 y, sint32 z, uint32 color)
+uint32 particle_draw_point(sint32 x, sint32 y, sint32 z, uint32 color)
 {
     FUNCTION_MARKER(0x800121a8, "GAME.EXE");
     return draw_packet(x, y, z, color, PARTICLE_SHAPE_POINT);
 }
 
-GDB_CALL uint32 particle_draw_line(sint32 x, sint32 y, sint32 z, uint32 color)
+uint32 particle_draw_line(sint32 x, sint32 y, sint32 z, uint32 color)
 {
     FUNCTION_MARKER(0x80012240, "GAME.EXE");
     return draw_packet(x, y, z, color, PARTICLE_SHAPE_LINE);
 }
 
-GDB_CALL uint32 particle_draw_quad(sint32 x, sint32 y, sint32 z, uint32 color)
+uint32 particle_draw_quad(sint32 x, sint32 y, sint32 z, uint32 color)
 {
     FUNCTION_MARKER(0x800122e0, "GAME.EXE");
     return draw_packet(x, y, z, color, PARTICLE_SHAPE_QUAD);

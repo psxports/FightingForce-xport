@@ -55,11 +55,11 @@ extern sint32 dir_distance;
 
 uint32 math_add_checked(uint32 val, sint32 delta);
 sint32 math_divide(sint32 dividend, sint32 divisor);
-GDB_CALL sint32 math_sqrt_odd(uint32 val);
-GDB_CALL sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1);
-GDB_CALL sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1);
-GDB_CALL sint32 math_distance_approx(sint32 x0, sint32 z0, sint32 x1, sint32 z1);
-GDB_CALL sint32 math_distance_newton(sint32 x0, sint32 z0, sint32 x1, sint32 z1);
-GDB_CALL sint32 math_sqrt_newton(sint32 val);
+sint32 math_sqrt_odd(uint32 val);
+sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1);
+sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1);
+sint32 math_distance_approx(sint32 x0, sint32 z0, sint32 x1, sint32 z1);
+sint32 math_distance_newton(sint32 x0, sint32 z0, sint32 x1, sint32 z1);
+sint32 math_sqrt_newton(sint32 val);
 
 #endif

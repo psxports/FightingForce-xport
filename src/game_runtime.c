@@ -35,7 +35,7 @@ static void poll_host_pads(void)
     pad_host_publish(2, ((pad0 & 255) << 8) | ((pad0 >> 8) & 255), ((pad1 & 255) << 8) | ((pad1 >> 8) & 255));
 }
 
-GDB_CALL void pause_refresh_pad(void)
+void pause_refresh_pad(void)
 {
     poll_host_pads();
 }
@@ -45,7 +45,7 @@ static void title_host_frame(void)
     poll_host_pads();
 }
 
-GDB_CALL uint32 frame_prepare(void)
+uint32 frame_prepare(void)
 {
     uint32 parity;
     DISPENV *disp;
@@ -228,7 +228,7 @@ static void game_initialize(void)
     pad_refresh_ports();
 }
 
-GDB_CALL int game_run(void)
+int game_run(void)
 {
     FUNCTION_MARKER(0x80015c6c, "GAME.EXE");
     gameplay_exit_active = 0;

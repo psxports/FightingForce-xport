@@ -19,7 +19,7 @@ MODEL_OBJECT dynamic_objects[DYNAMIC_OBJECT_COUNT];
 /* Dynamic slots are distinct from the effect and MPD scene-object pools
  * Storage and callback pointer migration remain coupled to their consumers */
 
-GDB_CALL sint32 dynamic_objects_spawn(uint32 kind, uint32 x, uint32 y, uint32 z)
+sint32 dynamic_objects_spawn(uint32 kind, uint32 x, uint32 y, uint32 z)
 {
     FUNCTION_MARKER(0x80016654, "GAME.EXE");
     sint32 idx;
@@ -100,7 +100,7 @@ GDB_CALL sint32 dynamic_objects_spawn(uint32 kind, uint32 x, uint32 y, uint32 z)
     return -1;
 }
 
-GDB_CALL sint32 dynamic_objects_spawn_randomized(sint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
+sint32 dynamic_objects_spawn_randomized(sint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80016748u, "GAME.EXE");
     sint32 slot = dynamic_objects_spawn_item(kind, x, y, z, angle);
@@ -117,7 +117,7 @@ GDB_CALL sint32 dynamic_objects_spawn_randomized(sint32 kind, uint32 x, uint32 y
     return slot;
 }
 
-GDB_CALL sint32 dynamic_objects_spawn_item(sint32 type, uint32 x, uint32 y, uint32 z, uint32 angle)
+sint32 dynamic_objects_spawn_item(sint32 type, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x800167c4, "GAME.EXE");
     sint32 i, uses;
@@ -153,7 +153,7 @@ GDB_CALL sint32 dynamic_objects_spawn_item(sint32 type, uint32 x, uint32 y, uint
     return -1;
 }
 
-GDB_CALL sint32 dynamic_objects_spawn_oriented(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
+sint32 dynamic_objects_spawn_oriented(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x800168bcu, "GAME.EXE");
     sint32 i;
@@ -229,7 +229,7 @@ GDB_CALL sint32 dynamic_objects_spawn_oriented(uint32 kind, uint32 x, uint32 y, 
     return -1;
 }
 
-GDB_CALL uint32 dynamic_objects_spawn_transient(uint32 type, uint32 x, uint32 y, uint32 z)
+uint32 dynamic_objects_spawn_transient(uint32 type, uint32 x, uint32 y, uint32 z)
 {
     FUNCTION_MARKER(0x8001697C, "GAME.EXE");
     uint32 i, angle;
@@ -306,7 +306,7 @@ GDB_CALL uint32 dynamic_objects_spawn_transient(uint32 type, uint32 x, uint32 y,
     return 0;
 }
 
-GDB_CALL sint32 dynamic_objects_update(void)
+sint32 dynamic_objects_update(void)
 {
     FUNCTION_MARKER(0x8001ED1C, "GAME.EXE");
     uint32 i, object, type, prev_car = 0, retained_angle = 0x800bbf78;
@@ -345,7 +345,7 @@ GDB_CALL sint32 dynamic_objects_update(void)
 }
 
 /* Select contact damage without narrowing the original model-kind guards */
-GDB_CALL uint32 object_apply_damage(sint32 attacker, sint32 victim, uint32 kind)
+uint32 object_apply_damage(sint32 attacker, sint32 victim, uint32 kind)
 {
     FUNCTION_MARKER(0x8001f468, "GAME.EXE");
     sint32 damage;
@@ -369,7 +369,7 @@ GDB_CALL uint32 object_apply_damage(sint32 attacker, sint32 victim, uint32 kind)
     return actor_apply_damage(attacker, victim, damage);
 }
 
-GDB_CALL uint32 object_update_expiring(MODEL_OBJECT *model)
+uint32 object_update_expiring(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002b2b4u, "GAME.EXE");
     /* TODO: Investigate an expiring model without its common native timer */
@@ -381,7 +381,7 @@ GDB_CALL uint32 object_update_expiring(MODEL_OBJECT *model)
     return 0xffffffffu;
 }
 
-GDB_CALL void dynamic_objects_settle_debris(MODEL_OBJECT *item)
+void dynamic_objects_settle_debris(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002ddb8u, "GAME.EXE");
     uint32 speed;
@@ -424,7 +424,7 @@ GDB_CALL void dynamic_objects_settle_debris(MODEL_OBJECT *item)
     transform_pop();
 }
 
-GDB_CALL sint32 dynamic_objects_draw(void)
+sint32 dynamic_objects_draw(void)
 {
     FUNCTION_MARKER(0x8001EE44, "GAME.EXE");
     uint8 attached[DYNAMIC_OBJECT_COUNT] = {0};
@@ -729,7 +729,7 @@ static void object_motion_bind(OBJECT_MOTION_VIEW *motion, MODEL_OBJECT *item)
 }
 
 /* Item motion, collision response, bounce sounds and lifetime */
-GDB_CALL sint32 object_update_physics(MODEL_OBJECT *item)
+sint32 object_update_physics(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002b2e4, "GAME.EXE");
     /* TODO: Investigate common object fields outside the world/dynamic pools */
@@ -960,7 +960,7 @@ GDB_CALL sint32 object_update_physics(MODEL_OBJECT *item)
     return -1;
 }
 
-GDB_CALL sint32 object_update_bouncing_drop(MODEL_OBJECT *model)
+sint32 object_update_bouncing_drop(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80046c08u, "GAME.EXE");
     uint32 offset;
@@ -1017,7 +1017,7 @@ GDB_CALL sint32 object_update_bouncing_drop(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL void object_update_rotation_shake(MODEL_OBJECT *model)
+void object_update_rotation_shake(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80046e1cu, "GAME.EXE");
     sint32 amplitude;
@@ -1055,7 +1055,7 @@ GDB_CALL void object_update_rotation_shake(MODEL_OBJECT *model)
     rotation->amplitude = rotation->amplitude - 2;
 }
 
-GDB_CALL void object_apply_rotations(const MODEL_OBJECT *model)
+void object_apply_rotations(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80047108u, "GAME.EXE");
     /* TODO: Investigate rotation common fields outside both native object pools */
@@ -1072,7 +1072,7 @@ GDB_CALL void object_apply_rotations(const MODEL_OBJECT *model)
 }
 
 /* Orbiting scene object and its two spatial sound channels */
-GDB_CALL sint32 object_update_orbit_sound(MODEL_OBJECT *model)
+sint32 object_update_orbit_sound(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80043520, "GAME.EXE");
     uint32 angle, inc, val, spatial_volume, pan;
@@ -1107,7 +1107,7 @@ GDB_CALL sint32 object_update_orbit_sound(MODEL_OBJECT *model)
     return sound_voice_pan(voice, volume, pan);
 }
 
-GDB_CALL sint32 object_update_ballistic_spin(MODEL_OBJECT *model)
+sint32 object_update_ballistic_spin(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002c2e4u, "GAME.EXE");
     sint32 velocity, speed, trig, angle;
@@ -1165,7 +1165,7 @@ GDB_CALL sint32 object_update_ballistic_spin(MODEL_OBJECT *model)
     return 0;
 }
 
-GDB_CALL uint32 object_update_drifting_spin(MODEL_OBJECT *model)
+uint32 object_update_drifting_spin(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002c454u, "GAME.EXE");
     uint32 result, delta, coord, offset, random;
@@ -1203,7 +1203,7 @@ GDB_CALL uint32 object_update_drifting_spin(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 object_update_falling_panel(MODEL_OBJECT *model)
+sint32 object_update_falling_panel(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002cef8u, "GAME.EXE");
     FIXED_VEC3 point;
@@ -1286,7 +1286,7 @@ GDB_CALL sint32 object_update_falling_panel(MODEL_OBJECT *model)
     return timer;
 }
 
-GDB_CALL uint32 object_update_falling_panel_sideways(MODEL_OBJECT *model)
+uint32 object_update_falling_panel_sideways(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002d2a4u, "GAME.EXE");
     FIXED_VEC3 point;
@@ -1369,7 +1369,7 @@ GDB_CALL uint32 object_update_falling_panel_sideways(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_shake(MODEL_OBJECT *model)
+uint32 object_update_shake(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002d218u, "GAME.EXE");
     sint32 timer;
@@ -1393,7 +1393,7 @@ GDB_CALL uint32 object_update_shake(MODEL_OBJECT *model)
     return odd << 4;
 }
 
-GDB_CALL uint32 object_update_ground_bounce(MODEL_OBJECT *model)
+uint32 object_update_ground_bounce(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002df00u, "GAME.EXE");
     uint16 velocity;
@@ -1423,7 +1423,7 @@ GDB_CALL uint32 object_update_ground_bounce(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_spinning_landing(MODEL_OBJECT *model)
+uint32 object_update_spinning_landing(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002dfa4u, "GAME.EXE");
     sint32 result;
@@ -1451,7 +1451,7 @@ GDB_CALL uint32 object_update_spinning_landing(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_sliding_bounce(MODEL_OBJECT *model)
+uint32 object_update_sliding_bounce(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e038u, "GAME.EXE");
     sint32 speed;
@@ -1491,7 +1491,7 @@ GDB_CALL uint32 object_update_sliding_bounce(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_stationary_bounce(MODEL_OBJECT *model)
+uint32 object_update_stationary_bounce(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e048u, "GAME.EXE");
     sint32 speed = 0;
@@ -1529,7 +1529,7 @@ GDB_CALL uint32 object_update_stationary_bounce(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 dynamic_objects_allocate(void)
+sint32 dynamic_objects_allocate(void)
 {
     FUNCTION_MARKER(0x800165ecu, "GAME.EXE");
     uint32 i;
@@ -1542,7 +1542,7 @@ GDB_CALL sint32 dynamic_objects_allocate(void)
     return -1;
 }
 
-GDB_CALL uint32 object_update_gate_shake(MODEL_OBJECT *model)
+uint32 object_update_gate_shake(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002cde0u, "GAME.EXE");
     sint32 timer;
@@ -1569,7 +1569,7 @@ GDB_CALL uint32 object_update_gate_shake(MODEL_OBJECT *model)
     return odd << 3;
 }
 
-GDB_CALL uint32 object_update_gate_panels_shake(MODEL_OBJECT *model)
+uint32 object_update_gate_panels_shake(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002ce6cu, "GAME.EXE");
     sint32 timer;
@@ -1595,7 +1595,7 @@ GDB_CALL uint32 object_update_gate_panels_shake(MODEL_OBJECT *model)
     return odd << 4;
 }
 
-GDB_CALL uint32 object_start_gate_panels_shake(MODEL_OBJECT *model)
+uint32 object_start_gate_panels_shake(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002ce78u, "GAME.EXE");
     sint32 timer;
@@ -1617,7 +1617,7 @@ GDB_CALL uint32 object_start_gate_panels_shake(MODEL_OBJECT *model)
     return odd << 4;
 }
 
-GDB_CALL uint32 object_update_falling_gate(MODEL_OBJECT *model)
+uint32 object_update_falling_gate(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002d7c8u, "GAME.EXE");
     uint16 speed, angle;
@@ -1655,7 +1655,7 @@ GDB_CALL uint32 object_update_falling_gate(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 object_update_gate_fragment(MODEL_OBJECT *model)
+sint32 object_update_gate_fragment(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002d8fcu, "GAME.EXE");
     uint32 angle;
@@ -1679,7 +1679,7 @@ GDB_CALL sint32 object_update_gate_fragment(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_oscillation(MODEL_OBJECT *model)
+uint32 object_update_oscillation(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002da3cu, "GAME.EXE");
     sint32 angle, velocity, timer;
@@ -1747,7 +1747,7 @@ GDB_CALL uint32 object_update_oscillation(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_compression(MODEL_OBJECT *model)
+uint32 object_update_compression(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002dba0u, "GAME.EXE");
     sint32 voice, pitch, offset, phase;
@@ -1805,7 +1805,7 @@ GDB_CALL uint32 object_update_compression(MODEL_OBJECT *model)
     return phase + 1;
 }
 
-GDB_CALL sint32 object_update_wobble(MODEL_OBJECT *model)
+sint32 object_update_wobble(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002d5d4, "GAME.EXE");
     /* TODO: Investigate common fields outside both native object pools */
@@ -1827,7 +1827,7 @@ GDB_CALL sint32 object_update_wobble(MODEL_OBJECT *model)
     return timer;
 }
 
-GDB_CALL intptr object_update_wobble_debris(MODEL_OBJECT *model)
+intptr object_update_wobble_debris(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002d678u, "GAME.EXE");
     uint32 kind, x, z;
@@ -1854,7 +1854,7 @@ GDB_CALL intptr object_update_wobble_debris(MODEL_OBJECT *model)
     return (intptr)effect_spawn_timed(kind, x, 0xffc00000u, z, 0, 0, 0);
 }
 
-GDB_CALL sint32 object_update_wobble_particles(MODEL_OBJECT *model)
+sint32 object_update_wobble_particles(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e8a4u, "GAME.EXE");
     uint32 kind, x, z;
@@ -1894,7 +1894,7 @@ GDB_CALL sint32 object_update_wobble_particles(MODEL_OBJECT *model)
     return phase;
 }
 
-GDB_CALL intptr object_update_smoke_emitter(MODEL_OBJECT *model)
+intptr object_update_smoke_emitter(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e9fcu, "GAME.EXE");
     uint32 volume, pan, x, z;
@@ -1931,7 +1931,7 @@ GDB_CALL intptr object_update_smoke_emitter(MODEL_OBJECT *model)
     return (intptr)effect;
 }
 
-GDB_CALL sint32 object_update_explosive(MODEL_OBJECT *item)
+sint32 object_update_explosive(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002bc1cu, "GAME.EXE");
     uint32 state, result, x, y, z;
@@ -1994,7 +1994,7 @@ GDB_CALL sint32 object_update_explosive(MODEL_OBJECT *item)
     return -1;
 }
 
-GDB_CALL sint32 object_update_island_fragment(MODEL_OBJECT *model)
+sint32 object_update_island_fragment(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002ee60u, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
@@ -2033,7 +2033,7 @@ GDB_CALL sint32 object_update_island_fragment(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 model_update_spinning(MODEL_OBJECT *model)
+sint32 model_update_spinning(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002ff30u, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
@@ -2284,7 +2284,7 @@ GDB_CALL sint32 model_update_spinning(MODEL_OBJECT *model)
     return -1;
 }
 
-GDB_CALL uint32 dynamic_objects_spawn_spinning(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 dynamic_objects_spawn_spinning(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031eb4u, "GAME.EXE");
     sint32 slot = dynamic_objects_allocate();
@@ -2364,7 +2364,7 @@ GDB_CALL uint32 dynamic_objects_spawn_spinning(uint32 kind, uint32 x, uint32 y, 
     return 6528;
 }
 
-GDB_CALL uint32 object_update_rising_spr(MODEL_OBJECT *model)
+uint32 object_update_rising_spr(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002ac8cu, "GAME.EXE");
     /* TODO: Investigate scripted common fields outside both native object pools */
@@ -2381,7 +2381,7 @@ GDB_CALL uint32 object_update_rising_spr(MODEL_OBJECT *model)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 object_update_oscillating_spr(MODEL_OBJECT *model)
+uint32 object_update_oscillating_spr(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002b1e4u, "GAME.EXE");
     uint32 phase, delta, x, result;
@@ -2420,7 +2420,7 @@ GDB_CALL uint32 object_update_oscillating_spr(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_orbit(MODEL_OBJECT *model)
+uint32 object_update_orbit(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8004348cu, "GAME.EXE");
     /* TODO: Investigate transport common fields outside both native object pools */
@@ -2438,7 +2438,7 @@ GDB_CALL uint32 object_update_orbit(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 object_update_wall_fragment(MODEL_OBJECT *model)
+uint32 object_update_wall_fragment(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80043680u, "GAME.EXE");
     uint32 offset, result;

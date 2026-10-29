@@ -12,10 +12,10 @@ extern SpuMallocState sound_heap;
 extern SpuMallocRecord sound_heap_recs[SOUND_HEAP_RECORD_COUNT];
 void sound_core_init(void);
 /* Cold SDK reset CPU/core path; platform IRQ/event setup is a host boundary. */
-GDB_CALL uint32 sound_device_reset(void);
+uint32 sound_device_reset(void);
 /* Native resource span to the existing shared SDK host-source API */
 uint32 sound_transfer_write(const void *src, uint32 bytes, uint32 src_bytes);
 void sound_transfer_wait(void);
-GDB_CALL sint32 sound_heap_init(sint32 entries, SpuMallocRecord *recs);
-GDB_CALL sint32 sound_heap_allocate(uint32 bytes);
+sint32 sound_heap_init(sint32 entries, SpuMallocRecord *recs);
+sint32 sound_heap_allocate(uint32 bytes);
 #endif

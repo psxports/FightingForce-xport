@@ -64,22 +64,22 @@ extern const ACTOR_EVENT actor_event_shock_attack;
 
 void actor_event_call(const ACTOR_EVENT *event, sint32 idx);
 
-GDB_CALL void actor_ignore_event(void);
-GDB_CALL sint32 actor_attack_voice_event(sint32 idx);
-GDB_CALL sint32 actor_attack_fixed_voice_event(sint32 idx);
-GDB_CALL sint32 actor_hit_repeat_event(sint32 idx);
-GDB_CALL sint32 actor_hit_begin_event(sint32 idx);
-GDB_CALL sint32 actor_heavy_hit_event(sint32 idx);
-GDB_CALL sint32 actor_hit_end_event(sint32 idx);
-GDB_CALL sint32 actor_hit_attachment_event(sint32 idx);
-GDB_CALL sint32 actor_hit_impact_event(sint32 idx);
-GDB_CALL sint32 actor_hit_flash_event(sint32 idx);
-GDB_CALL sint32 actor_attack_attachment_event(sint32 idx);
-GDB_CALL uint32 actor_attachment_impact_event(sint32 idx);
-GDB_CALL sint32 actor_impact_voice_event(sint32 idx);
-GDB_CALL uint32 actor_attachment_particle_event0(sint32 idx);
-GDB_CALL uint32 actor_attachment_particle_event1(sint32 idx);
-GDB_CALL intptr actor_burst_attachment_event(sint32 idx);
-GDB_CALL sint32 actor_release_item_event(sint32 idx);
+void actor_ignore_event(void);
+sint32 actor_attack_voice_event(sint32 idx);
+sint32 actor_attack_fixed_voice_event(sint32 idx);
+sint32 actor_hit_repeat_event(sint32 idx);
+sint32 actor_hit_begin_event(sint32 idx);
+sint32 actor_heavy_hit_event(sint32 idx);
+sint32 actor_hit_end_event(sint32 idx);
+sint32 actor_hit_attachment_event(sint32 idx);
+sint32 actor_hit_impact_event(sint32 idx);
+sint32 actor_hit_flash_event(sint32 idx);
+sint32 actor_attack_attachment_event(sint32 idx);
+uint32 actor_attachment_impact_event(sint32 idx);
+sint32 actor_impact_voice_event(sint32 idx);
+uint32 actor_attachment_particle_event0(sint32 idx);
+uint32 actor_attachment_particle_event1(sint32 idx);
+intptr actor_burst_attachment_event(sint32 idx);
+sint32 actor_release_item_event(sint32 idx);
 
 #endif

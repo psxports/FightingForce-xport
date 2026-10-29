@@ -65,7 +65,7 @@ void stage_animation_update_stage14(void)
     region2->col_kind = next == 64 ? 0 : 3;
 }
 
-GDB_CALL uint32 stage_animation_update_stage4(void)
+uint32 stage_animation_update_stage4(void)
 {
     FUNCTION_MARKER(0x8001ddbcu, "GAME.EXE");
     uint32 kind, x, y, r0, r1, result;
@@ -207,7 +207,7 @@ static uint32 scroll_four_uv(sint16 tex0, const sint16 *table)
 }
 
 /* Texture V windows retain byte wrapping */
-GDB_CALL uint32 stage_animation_scroll_stage0(void)
+uint32 stage_animation_scroll_stage0(void)
 {
     FUNCTION_MARKER(0x800580ac, "GAME.EXE");
     sint32 map_idx = tex_grps[70].first_tex + 6;
@@ -228,7 +228,7 @@ GDB_CALL uint32 stage_animation_scroll_stage0(void)
     return 0;
 }
 
-GDB_CALL uint32 stage_animation_scroll_stage1(void)
+uint32 stage_animation_scroll_stage1(void)
 {
     FUNCTION_MARKER(0x8005813cu, "GAME.EXE");
     sint32 map_idx = tex_grps[8].first_tex + 62;
@@ -245,19 +245,19 @@ GDB_CALL uint32 stage_animation_scroll_stage1(void)
     return val;
 }
 
-GDB_CALL uint32 stage_animation_scroll_lift(void)
+uint32 stage_animation_scroll_lift(void)
 {
     FUNCTION_MARKER(0x800581a8u, "GAME.EXE");
     return scroll_four_uv(tex_grps[9].first_tex, tex_map + 40);
 }
 
-GDB_CALL uint32 stage_animation_scroll_stage12(void)
+uint32 stage_animation_scroll_stage12(void)
 {
     FUNCTION_MARKER(0x800582e4u, "GAME.EXE");
     return scroll_four_uv(tex_grps[70].first_tex, tex_map + 136);
 }
 
-GDB_CALL sint32 stage_animation_scroll_stage14(void)
+sint32 stage_animation_scroll_stage14(void)
 {
     FUNCTION_MARKER(0x80058374u, "GAME.EXE");
     sint32 tex0 = tex_grps[20].first_tex;
@@ -301,7 +301,7 @@ GDB_CALL sint32 stage_animation_scroll_stage14(void)
     return 0;
 }
 
-GDB_CALL sint32 stage_animation_scroll_stage17(void)
+sint32 stage_animation_scroll_stage17(void)
 {
     FUNCTION_MARKER(0x80058524u, "GAME.EXE");
     sint32 tex0 = tex_grps[23].first_tex;

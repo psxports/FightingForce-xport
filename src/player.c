@@ -8,7 +8,7 @@
 PLAYER_SCORE player_scores[PLAYER_COUNT];
 uint32 player_repeat_counts[PLAYER_COUNT];
 
-GDB_CALL sint32 player_step_blocked(sint32 idx)
+sint32 player_step_blocked(sint32 idx)
 {
     FUNCTION_MARKER(0x8001a268u, "GAME.EXE");
     uint32 state = actor_animations[idx].id, distance, x, z, other_idx, dx, dz;
@@ -47,7 +47,7 @@ GDB_CALL sint32 player_step_blocked(sint32 idx)
 /* 199AC: first containing region, including rotated bounds and local-coordinate globals. */
 
 /* 23A48: choose a living state252/253 NPC by wrapped angular distance. */
-GDB_CALL sint32 player_start_pair_motion(sint32 idx)
+sint32 player_start_pair_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x80023a48u, "GAME.EXE");
     /* TODO: Investigate pair motion outside the native actor pool */
@@ -414,7 +414,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
 }
 
 /* 262B4..262FC: one RNG draw per footstep, followed by the real sound allocator. */
-GDB_CALL void player_play_footstep(sint32 type)
+void player_play_footstep(sint32 type)
 {
     static const sint32 bases[4] = {52, 72, 87, 72};
     if ((uint32)type >= 4)
@@ -425,7 +425,7 @@ GDB_CALL void player_play_footstep(sint32 type)
 /* 1A07C: predict whether this player's step increases separation beyond the
  * two-player boundary. The initial distance call also occurs in one-player mode.
  * Unlike1AEF4's movement bound, this uses inclusive +/-0x4000000. */
-GDB_CALL sint32 player_step_exceeds_bounds(sint32 idx)
+sint32 player_step_exceeds_bounds(sint32 idx)
 {
     FUNCTION_MARKER(0x8001a07c, "GAME.EXE");
     uint32 other_idx, step, x, z, dx, dz;
@@ -556,13 +556,13 @@ static uint32 update_dir(sint32 idx, sint32 state, uint32 *buttons, uint32 locke
     return flags;
 }
 
-GDB_CALL uint32 player_update_dir(sint32 idx, sint32 state, uint32 *buttons, uint32 locked)
+uint32 player_update_dir(sint32 idx, sint32 state, uint32 *buttons, uint32 locked)
 {
     return update_dir(idx, state, buttons, locked, NULL);
 }
 
 /* 26108..262A4: movement requested by the animation event2000. */
-GDB_CALL void player_move_input(sint32 idx, uint32 buttons)
+void player_move_input(sint32 idx, uint32 buttons)
 {
     ACTOR_MOVEMENT *movement = actor_movement + idx;
     uint32 desired = movement->desired_yaw, dir = buttons & 240u, speed, offset, x, z, analog_x, analog_y, s, c;
@@ -648,7 +648,7 @@ static void player_target_turn(sint32 idx, const ACTOR_TARGET_DIRECTION *dir)
  * path stop at a named original PC; this is not complete player logic.
  * Evidence: player-first-path.lst, actual MIPS and first-call differential. */
 /* 23DC0: acquire a facing, eligible NPC for the grapple animation pair. */
-GDB_CALL sint32 player_try_grapple(sint32 idx)
+sint32 player_try_grapple(sint32 idx)
 {
     FUNCTION_MARKER(0x80023dc0u, "GAME.EXE");
     uint32 other_idx, table;
@@ -1170,7 +1170,7 @@ static void early_contacts(sint32 idx, sint32 type, sint32 state, uint32 events)
         }
 }
 
-GDB_CALL sint32 player_update(void)
+sint32 player_update(void)
 {
     FUNCTION_MARKER(0x80024008, "GAME.EXE");
     sint32 idx = 0, count = game_session.player_count, type, partner, state, timer, pose_step, contact_state;

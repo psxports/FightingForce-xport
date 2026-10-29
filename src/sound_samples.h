@@ -27,6 +27,6 @@ typedef struct SOUND_SAMPLES
 
 extern SOUND_SAMPLES sound_samples;
 
-GDB_CALL sint32 sound_samples_load(sint32 archive);
+sint32 sound_samples_load(sint32 archive);
 
 #endif

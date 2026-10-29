@@ -124,21 +124,21 @@ typedef const CAMERA_STAGE_HANDLER *CAMERA_STAGE_REFERENCE;
 extern const CAMERA_STAGE_HANDLER camera_stage_handlers[CAMERA_HANDLER_COUNT];
 extern CAMERA_STAGE_REFERENCE camera_stage_refs[CAMERA_STAGE_COUNT];
 
-GDB_CALL sint32 camera_update_stage(CAMERA_STAGE_REFERENCE ref);
-GDB_CALL sint32 camera_update_stage0(void);
+sint32 camera_update_stage(CAMERA_STAGE_REFERENCE ref);
+sint32 camera_update_stage0(void);
 
 extern CAMERA camera;
 extern const CAMERA camera_defaults;
 extern const FIXED_VEC3 camera_menu_dst;
 extern const FIXED_VEC3 camera_options_dst;
 
-GDB_CALL sint32 camera_update(void);
-GDB_CALL sint32 camera_update_target(void);
+sint32 camera_update(void);
+sint32 camera_update_target(void);
 
-GDB_CALL sint32 camera_update_focus(void);
-GDB_CALL sint32 camera_update_transition(void);
-GDB_CALL sint32 camera_update_motion(uint32 x_speed);
-GDB_CALL sint32 camera_capture(const uint32 *pos, sint32 yaw, sint32 pitch);
-GDB_CALL sint32 camera_orbit(void);
+sint32 camera_update_focus(void);
+sint32 camera_update_transition(void);
+sint32 camera_update_motion(uint32 x_speed);
+sint32 camera_capture(const uint32 *pos, sint32 yaw, sint32 pitch);
+sint32 camera_orbit(void);
 
 #endif

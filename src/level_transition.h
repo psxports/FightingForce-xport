@@ -20,14 +20,14 @@ typedef struct LEVEL_TRANSITION
 extern LEVEL_TRANSITION level_transition;
 extern const char continue_count_format[];
 
-GDB_CALL sint32 level_transition_at_exit(void);
-GDB_CALL sint32 level_transition_continue_prompt(void);
-GDB_CALL sint32 level_transition_update(void);
+sint32 level_transition_at_exit(void);
+sint32 level_transition_continue_prompt(void);
+sint32 level_transition_update(void);
 
-GDB_CALL uint32 level_draw_fade_step(sint32 level);
+uint32 level_draw_fade_step(sint32 level);
 
-GDB_CALL void level_transition_noop(void);
+void level_transition_noop(void);
 
-GDB_CALL void level_prepare_frame_noop(void);
+void level_prepare_frame_noop(void);
 
 #endif

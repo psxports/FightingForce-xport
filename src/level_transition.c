@@ -6,7 +6,7 @@ const char continue_count_format[] = "%sS = %d";
 
 LEVEL_TRANSITION level_transition;
 
-GDB_CALL sint32 level_transition_at_exit(void)
+sint32 level_transition_at_exit(void)
 {
     FUNCTION_MARKER(0x8001886C, "GAME.EXE");
     uint32 mask = 1, stage = game_session.stage, i;
@@ -102,7 +102,7 @@ GDB_CALL sint32 level_transition_at_exit(void)
     return result;
 }
 
-GDB_CALL sint32 level_transition_continue_prompt(void)
+sint32 level_transition_continue_prompt(void)
 {
     FUNCTION_MARKER(0x8005FB44, "GAME.EXE");
     uint32 val = level_transition.continue_phase, step, buttons;
@@ -190,7 +190,7 @@ advance:
 }
 
 /* Original main-loop phase15038..1556C,not a separate MIPS entry */
-GDB_CALL sint32 level_transition_update(void)
+sint32 level_transition_update(void)
 {
     uint32 i, pad, transition = level_transition.finish_tick;
     sint32 type, result, fade;
@@ -339,7 +339,7 @@ pause_run:
     return 0;
 }
 
-GDB_CALL uint32 level_draw_fade_step(sint32 level)
+uint32 level_draw_fade_step(sint32 level)
 {
     FUNCTION_MARKER(0x8001453cu, "GAME.EXE");
     frame_prepare();
@@ -349,12 +349,12 @@ GDB_CALL uint32 level_draw_fade_step(sint32 level)
     return disp_fade_from_origin(level);
 }
 
-GDB_CALL void level_transition_noop(void)
+void level_transition_noop(void)
 {
     FUNCTION_MARKER(0x8005e138u, "GAME.EXE");
 }
 
-GDB_CALL void level_prepare_frame_noop(void)
+void level_prepare_frame_noop(void)
 {
     FUNCTION_MARKER(0x80011fecu, "GAME.EXE");
 }

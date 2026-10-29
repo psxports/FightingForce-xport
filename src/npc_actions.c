@@ -152,8 +152,7 @@ const NPC_ACTION npc_action_bike = {NPC_ACTION_INTPTR, {.intptr_idx = npc_update
 
 const NPC_ACTION npc_action_companion_wait = {NPC_ACTION_INTPTR, {.intptr_idx = npc_update_companion_wait}, 0};
 
-
-GDB_CALL void npc_ignore_action(void)
+void npc_ignore_action(void)
 {
     FUNCTION_MARKER(0x8004ef64u, "GAME.EXE");
 }

@@ -139,8 +139,8 @@ extern const RESOURCE_LOADER resource_loaders[RESOURCE_LOADER_COUNT];
 extern const RESOURCE_LOADER *stage_resource_loaders[STAGE_RESOURCE_KIND_COUNT][RESOURCE_STAGE_COUNT];
 extern const RESOURCE_LOADER *const player_resource_loaders[PLAYER_RESOURCE_COUNT];
 
-GDB_CALL uint32 resource_loader_call(RESOURCE_LOADER_DOMAIN domain, const RESOURCE_LOADER *loader);
+uint32 resource_loader_call(RESOURCE_LOADER_DOMAIN domain, const RESOURCE_LOADER *loader);
 
-GDB_CALL uint32 resource_load_frontend_surface(void);
+uint32 resource_load_frontend_surface(void);
 
 #endif

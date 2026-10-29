@@ -273,30 +273,30 @@ extern const OBJECT_CALLBACK callback_model_draw;
 extern const OBJECT_CALLBACK callback_object_ignore_callback6;
 extern const OBJECT_CALLBACK callback_item_draw_explosive;
 
-GDB_CALL intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT *item, struct EFFECT *effect);
+intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT *item, struct EFFECT *effect);
 
-GDB_CALL void object_ignore_callback0(void);
+void object_ignore_callback0(void);
 
-GDB_CALL void object_ignore_callback1(void);
+void object_ignore_callback1(void);
 
-GDB_CALL void object_ignore_callback2(void);
+void object_ignore_callback2(void);
 
-GDB_CALL void object_ignore_callback3(void);
+void object_ignore_callback3(void);
 
-GDB_CALL void object_ignore_callback4(void);
+void object_ignore_callback4(void);
 
-GDB_CALL void object_ignore_callback5(void);
+void object_ignore_callback5(void);
 
-GDB_CALL void object_ignore_callback6(void);
+void object_ignore_callback6(void);
 
-GDB_CALL uint32 object_draw_faded_fixed_model(void);
+uint32 object_draw_faded_fixed_model(void);
 
-GDB_CALL uint32 object_draw_camera_x_gated_fixed_model(void);
+uint32 object_draw_camera_x_gated_fixed_model(void);
 
-GDB_CALL uint32 object_draw_timed_scale(void);
+uint32 object_draw_timed_scale(void);
 
-GDB_CALL uint32 object_draw_fixed_pair(void);
+uint32 object_draw_fixed_pair(void);
 
-GDB_CALL uint32 object_draw_phase_yaw_variant(void);
+uint32 object_draw_phase_yaw_variant(void);
 
 #endif

@@ -45,7 +45,7 @@ static sint32 move_toward(MODEL_OBJECT *item, sint32 target_x, sint32 target_z)
     return result;
 }
 
-GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *retained_projectile)
+uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *retained_projectile)
 {
     FUNCTION_MARKER(0x800420f8u, "GAME.EXE");
     sint32 player_x = actor_positions[0].x.whole, player_z = actor_positions[0].z.whole, state, delta, distance, pitch, volume, voice, x, z;
@@ -260,7 +260,7 @@ uint32 helicopter_update_retained(MODEL_OBJECT *item, uint32 prev_car, uint32 re
     return helicopter_update(item, &projectile);
 }
 
-GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
+uint32 helicopter_update_scene(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002a168u, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
@@ -402,7 +402,7 @@ GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL void helicopter_draw_scene(const MODEL_OBJECT *model)
+void helicopter_draw_scene(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002a640u, "GAME.EXE");
     sint32 amplitude, scale;
@@ -444,7 +444,7 @@ GDB_CALL void helicopter_draw_scene(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL void helicopter_draw(const MODEL_OBJECT *model)
+void helicopter_draw(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8004277cu, "GAME.EXE");
     /* TODO: Investigate object drawing without a native position */
@@ -461,7 +461,7 @@ GDB_CALL void helicopter_draw(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
+uint32 helicopter_update_intro(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002c69cu, "GAME.EXE");
     uint32 volume, pan, tick, yaw, pitch, roll, delta, offset, val;
@@ -580,7 +580,7 @@ GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
     return 55;
 }
 
-GDB_CALL void helicopter_draw_intro(const MODEL_OBJECT *item)
+void helicopter_draw_intro(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002cac4u, "GAME.EXE");
     transform_push();
@@ -603,7 +603,7 @@ GDB_CALL void helicopter_draw_intro(const MODEL_OBJECT *item)
     transform_pop();
 }
 
-GDB_CALL uint32 helicopter_update_patrol(MODEL_OBJECT *model)
+uint32 helicopter_update_patrol(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x800403dcu, "GAME.EXE");
     uint32 volume, pan, offset, result;
@@ -688,7 +688,7 @@ GDB_CALL uint32 helicopter_update_patrol(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL void helicopter_draw_patrol(const MODEL_OBJECT *item)
+void helicopter_draw_patrol(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80044cd4u, "GAME.EXE");
     sint32 angle;

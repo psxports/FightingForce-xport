@@ -70,7 +70,7 @@ static void bike_partner_state(sint32 idx, uint32 state)
     animation_start(partner_idx, animation_type_banks[(uint32)actor_types[partner_idx]], state);
 }
 
-GDB_CALL intptr npc_update_bike(sint32 idx)
+intptr npc_update_bike(sint32 idx)
 {
     FUNCTION_MARKER(0x80055c30u, "GAME.EXE");
     NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
@@ -270,7 +270,7 @@ GDB_CALL intptr npc_update_bike(sint32 idx)
     return (sint32)result;
 }
 
-GDB_CALL sint32 npc_update_attack_motion(sint32 idx)
+sint32 npc_update_attack_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d2d4u, "GAME.EXE");
     NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
@@ -374,7 +374,7 @@ GDB_CALL sint32 npc_update_attack_motion(sint32 idx)
 
 static intptr npc_action_call(NPC_ACTION_REFERENCE callback, sint32 idx);
 
-GDB_CALL intptr npc_update_vulkan(sint32 idx)
+intptr npc_update_vulkan(sint32 idx)
 {
     FUNCTION_MARKER(0x8004df2cu, "GAME.EXE");
     uint32 events, level, volume = 0, result, state, handle;
@@ -475,7 +475,7 @@ GDB_CALL intptr npc_update_vulkan(sint32 idx)
     return npc_action_call(bank.actions[action_idx], idx);
 }
 
-GDB_CALL sint32 npc_attack_beams(sint32 idx)
+sint32 npc_attack_beams(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e7e8u, "GAME.EXE");
     static const uint32 styles[NPC_BEAM_COUNT] = {108, 106, 107};
@@ -530,7 +530,7 @@ GDB_CALL sint32 npc_attack_beams(sint32 idx)
     return npc_start_animation(idx, table, state);
 }
 
-GDB_CALL uint32 npc_build_attack_vectors(sint32 idx, uint32 scale, uint32 output[16])
+uint32 npc_build_attack_vectors(sint32 idx, uint32 scale, uint32 output[16])
 {
     FUNCTION_MARKER(0x8004d64cu, "GAME.EXE");
     int i;
@@ -573,7 +573,7 @@ GDB_CALL uint32 npc_build_attack_vectors(sint32 idx, uint32 scale, uint32 output
     return output[10];
 }
 
-GDB_CALL sint32 npc_emit_attack_effects(sint32 idx)
+sint32 npc_emit_attack_effects(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d914u, "GAME.EXE");
     NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
@@ -621,7 +621,7 @@ GDB_CALL sint32 npc_emit_attack_effects(sint32 idx)
     return 0x00090000;
 }
 
-GDB_CALL intptr npc_update_stage4_departure(sint32 idx)
+intptr npc_update_stage4_departure(sint32 idx)
 {
     FUNCTION_MARKER(0x8003b8e4u, "GAME.EXE");
     uint32 yaw, result;
@@ -668,7 +668,7 @@ finish:
     return (sint32)result;
 }
 
-GDB_CALL sint32 npc_attack_electric(sint32 idx)
+sint32 npc_attack_electric(sint32 idx)
 {
     FUNCTION_MARKER(0x8004db94u, "GAME.EXE");
     uint32 state;
@@ -717,7 +717,7 @@ GDB_CALL sint32 npc_attack_electric(sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 npc_move_oscillating(sint32 idx)
+sint32 npc_move_oscillating(sint32 idx)
 {
     FUNCTION_MARKER(0x8004cfe4u, "GAME.EXE");
     NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
@@ -772,7 +772,7 @@ GDB_CALL sint32 npc_move_oscillating(sint32 idx)
     return dir_distance;
 }
 
-GDB_CALL sint32 npc_release_captive(sint32 idx)
+sint32 npc_release_captive(sint32 idx)
 {
     FUNCTION_MARKER(0x80054598u, "GAME.EXE");
     uint32 random, other_table;
@@ -817,7 +817,7 @@ GDB_CALL sint32 npc_release_captive(sint32 idx)
     return npc_start_animation(idx, table, 177);
 }
 
-GDB_CALL sint32 npc_finish_grapple(sint32 idx)
+sint32 npc_finish_grapple(sint32 idx)
 {
     FUNCTION_MARKER(0x8004cb88u, "GAME.EXE");
 
@@ -874,7 +874,7 @@ GDB_CALL sint32 npc_finish_grapple(sint32 idx)
     return animation_start_held(slot, table, action);
 }
 
-GDB_CALL sint32 npc_fire_fan(sint32 idx)
+sint32 npc_fire_fan(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e6acu, "GAME.EXE");
     FIXED_VEC3 pos;
@@ -898,7 +898,7 @@ GDB_CALL sint32 npc_fire_fan(sint32 idx)
     return hit != 0;
 }
 
-GDB_CALL sint32 npc_carry_captive_to_point(sint32 idx)
+sint32 npc_carry_captive_to_point(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ce48u, "GAME.EXE");
     uint32 table, frame, angle, heading;
@@ -939,7 +939,7 @@ GDB_CALL sint32 npc_carry_captive_to_point(sint32 idx)
     return animation_start_held(slot, table, 184);
 }
 
-GDB_CALL sint32 npc_throw_items(sint32 idx)
+sint32 npc_throw_items(sint32 idx)
 {
     FUNCTION_MARKER(0x800555dcu, "GAME.EXE");
     FIXED_VEC3 point;
@@ -997,7 +997,7 @@ GDB_CALL sint32 npc_throw_items(sint32 idx)
     return point.z.bits;
 }
 
-GDB_CALL sint32 npc_advance_charge(sint32 idx)
+sint32 npc_advance_charge(sint32 idx)
 {
     FUNCTION_MARKER(0x8004edb8u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1034,7 +1034,7 @@ GDB_CALL sint32 npc_advance_charge(sint32 idx)
     return npc_start_animation(idx, table, 275);
 }
 
-GDB_CALL intptr npc_update_jetpack_sound(sint32 idx)
+intptr npc_update_jetpack_sound(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ddecu, "GAME.EXE");
     uint32 state = actor_animations[idx].id, volume, pan;
@@ -1053,7 +1053,7 @@ GDB_CALL intptr npc_update_jetpack_sound(sint32 idx)
     return npc_update_actor(idx);
 }
 
-GDB_CALL sint32 npc_finish_aimed_charge(sint32 idx)
+sint32 npc_finish_aimed_charge(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e574u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1078,7 +1078,7 @@ GDB_CALL sint32 npc_finish_aimed_charge(sint32 idx)
     return npc_start_animation(idx, table, attack ? 271 : 272);
 }
 
-GDB_CALL sint32 npc_update_fall(sint32 idx)
+sint32 npc_update_fall(sint32 idx)
 {
     FUNCTION_MARKER(0x800553f0u, "GAME.EXE");
     uint32 slot, height;
@@ -1121,7 +1121,7 @@ GDB_CALL sint32 npc_update_fall(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_wait_target_animation(sint32 idx)
+sint32 npc_wait_target_animation(sint32 idx)
 {
     FUNCTION_MARKER(0x800551f0u, "GAME.EXE");
     uint32 slot;
@@ -1146,7 +1146,7 @@ GDB_CALL sint32 npc_wait_target_animation(sint32 idx)
     return 209;
 }
 
-GDB_CALL sint32 npc_claim_ranged_item(sint32 idx)
+sint32 npc_claim_ranged_item(sint32 idx)
 {
     FUNCTION_MARKER(0x80053cecu, "GAME.EXE");
     /* TODO: Investigate NPC item actions outside the native actor pool */
@@ -1183,7 +1183,7 @@ GDB_CALL sint32 npc_claim_ranged_item(sint32 idx)
     return npc_start_animation(idx, table, 122);
 }
 
-GDB_CALL sint32 npc_begin_captive_carry(sint32 idx)
+sint32 npc_begin_captive_carry(sint32 idx)
 {
     FUNCTION_MARKER(0x8004cd5cu, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1200,7 +1200,7 @@ GDB_CALL sint32 npc_begin_captive_carry(sint32 idx)
     return actors_capture_pair_offset(idx, slot);
 }
 
-GDB_CALL sint32 npc_finish_vulkan_combo(sint32 idx)
+sint32 npc_finish_vulkan_combo(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e484u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1224,7 +1224,7 @@ GDB_CALL sint32 npc_finish_vulkan_combo(sint32 idx)
     return 58;
 }
 
-GDB_CALL intptr npc_update_stage4_idle(sint32 idx)
+intptr npc_update_stage4_idle(sint32 idx)
 {
     FUNCTION_MARKER(0x8003b83cu, "GAME.EXE");
     uint32 type;
@@ -1240,7 +1240,7 @@ GDB_CALL intptr npc_update_stage4_idle(sint32 idx)
     return npc_start_animation(idx, table, action);
 }
 
-GDB_CALL sint32 npc_finish_turn(sint32 idx)
+sint32 npc_finish_turn(sint32 idx)
 {
     FUNCTION_MARKER(0x80054988u, "GAME.EXE");
     uint32 table;
@@ -1252,7 +1252,7 @@ GDB_CALL sint32 npc_finish_turn(sint32 idx)
     return npc_update_ranged_attack(idx);
 }
 
-GDB_CALL sint32 npc_finish_captive_strike(sint32 idx)
+sint32 npc_finish_captive_strike(sint32 idx)
 {
     FUNCTION_MARKER(0x80054840u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1265,7 +1265,7 @@ GDB_CALL sint32 npc_finish_captive_strike(sint32 idx)
     return npc_start_animation(idx, table, random_next() & 1u ? 12 : 13);
 }
 
-GDB_CALL sint32 npc_choose_held_item_action(sint32 idx)
+sint32 npc_choose_held_item_action(sint32 idx)
 {
     FUNCTION_MARKER(0x80053a70u, "GAME.EXE");
     /* TODO: Investigate the original out-of-pool NPC operation */
@@ -1286,7 +1286,7 @@ GDB_CALL sint32 npc_choose_held_item_action(sint32 idx)
     return npc_start_animation(idx, table, (sint32)(random_next() & 1u) + 247);
 }
 
-GDB_CALL sint32 npc_claim_right_item0(sint32 idx)
+sint32 npc_claim_right_item0(sint32 idx)
 {
     FUNCTION_MARKER(0x800539c0u, "GAME.EXE");
     /* TODO: Investigate NPC item operations outside the native actor pool */
@@ -1314,7 +1314,7 @@ GDB_CALL sint32 npc_claim_right_item0(sint32 idx)
     return npc_start_animation(idx, table, 119);
 }
 
-GDB_CALL sint32 npc_claim_right_item1(sint32 idx)
+sint32 npc_claim_right_item1(sint32 idx)
 {
     FUNCTION_MARKER(0x80053b40u, "GAME.EXE");
     /* TODO: Investigate NPC item operations outside the native actor pool */
@@ -1342,7 +1342,7 @@ GDB_CALL sint32 npc_claim_right_item1(sint32 idx)
     return npc_start_animation(idx, table, 124);
 }
 
-GDB_CALL sint32 npc_claim_left_item(sint32 idx)
+sint32 npc_claim_left_item(sint32 idx)
 {
     FUNCTION_MARKER(0x80053bf0u, "GAME.EXE");
     /* TODO: Investigate NPC item operations outside the native actor pool */
@@ -1370,7 +1370,7 @@ GDB_CALL sint32 npc_claim_left_item(sint32 idx)
     return npc_start_animation(idx, table, 127);
 }
 
-GDB_CALL sint32 npc_wait_captor_release(sint32 idx)
+sint32 npc_wait_captor_release(sint32 idx)
 {
     FUNCTION_MARKER(0x80052f70u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1381,7 +1381,7 @@ GDB_CALL sint32 npc_wait_captor_release(sint32 idx)
     return -1;
 }
 
-GDB_CALL intptr npc_update_action(sint32 idx)
+intptr npc_update_action(sint32 idx)
 {
     FUNCTION_MARKER(0x8004be84u, "GAME.EXE");
     uint32 state;
@@ -1419,19 +1419,19 @@ static sint32 npc_finished_to(sint32 idx, sint32 action)
     return npc_start_animation(idx, table, action);
 }
 
-GDB_CALL sint32 npc_finish_to_idle(sint32 idx)
+sint32 npc_finish_to_idle(sint32 idx)
 {
     FUNCTION_MARKER(0x8004bf3cu, "GAME.EXE");
     return npc_finished_to(idx, 69);
 }
 
-GDB_CALL sint32 npc_finish_charge_start(sint32 idx)
+sint32 npc_finish_charge_start(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ed54u, "GAME.EXE");
     return npc_finished_to(idx, 275);
 }
 
-GDB_CALL sint32 npc_begin_attack_wait(sint32 idx)
+sint32 npc_begin_attack_wait(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d20cu, "GAME.EXE");
     NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
@@ -1445,7 +1445,7 @@ GDB_CALL sint32 npc_begin_attack_wait(sint32 idx)
     return npc_start_animation(idx, table, 266);
 }
 
-GDB_CALL sint32 npc_update_delay(sint32 idx)
+sint32 npc_update_delay(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e3d8u, "GAME.EXE");
     uint32 table = animation_type_banks[(uint32)actor_types[idx]], result;
@@ -1459,7 +1459,7 @@ GDB_CALL sint32 npc_update_delay(sint32 idx)
     return result ? (sint32)result : npc_continue_alternate_combat(idx);
 }
 
-GDB_CALL sint32 npc_begin_charge_loop(sint32 idx)
+sint32 npc_begin_charge_loop(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ece0u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1471,7 +1471,7 @@ GDB_CALL sint32 npc_begin_charge_loop(sint32 idx)
     return sound_voice_play(187, 255, 4096);
 }
 
-GDB_CALL sint32 npc_update_knockdown_pose(sint32 idx)
+sint32 npc_update_knockdown_pose(sint32 idx)
 {
     FUNCTION_MARKER(0x80053f4cu, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1494,19 +1494,19 @@ static sint32 npc_after_hold(sint32 idx)
     return npc_start_animation(idx, table, 11);
 }
 
-GDB_CALL sint32 npc_finish_captive_hold0(sint32 idx)
+sint32 npc_finish_captive_hold0(sint32 idx)
 {
     FUNCTION_MARKER(0x800547b8u, "GAME.EXE");
     return npc_after_hold(idx);
 }
 
-GDB_CALL sint32 npc_finish_captive_hold1(sint32 idx)
+sint32 npc_finish_captive_hold1(sint32 idx)
 {
     FUNCTION_MARKER(0x80054900u, "GAME.EXE");
     return npc_after_hold(idx);
 }
 
-GDB_CALL sint32 npc_choose_animation_variant(sint32 idx)
+sint32 npc_choose_animation_variant(sint32 idx)
 {
     FUNCTION_MARKER(0x8005531cu, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -1517,7 +1517,7 @@ GDB_CALL sint32 npc_choose_animation_variant(sint32 idx)
     return npc_start_animation(idx, table, (sint32)(random_next() & 3u) + 243);
 }
 
-GDB_CALL sint32 npc_set_stun_recovery_deadline(sint32 idx)
+sint32 npc_set_stun_recovery_deadline(sint32 idx)
 {
     FUNCTION_MARKER(0x80055574u, "GAME.EXE");
     if (actor_animations[idx].frame != 0xffffffffu)
@@ -1529,7 +1529,7 @@ GDB_CALL sint32 npc_set_stun_recovery_deadline(sint32 idx)
     return npc_update_combat(idx);
 }
 
-GDB_CALL intptr npc_update_companion_wait(sint32 idx)
+intptr npc_update_companion_wait(sint32 idx)
 {
     FUNCTION_MARKER(0x80056530u, "GAME.EXE");
     sint32 count = actor_lifecycle[idx].delay;
@@ -1540,7 +1540,7 @@ GDB_CALL intptr npc_update_companion_wait(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_approach0(sint32 idx)
+sint32 npc_resume_approach0(sint32 idx)
 {
     FUNCTION_MARKER(0x8004c134u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1548,7 +1548,7 @@ GDB_CALL sint32 npc_resume_approach0(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_approach1(sint32 idx)
+sint32 npc_resume_approach1(sint32 idx)
 {
     FUNCTION_MARKER(0x8004c180u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1556,7 +1556,7 @@ GDB_CALL sint32 npc_resume_approach1(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_combat0(sint32 idx)
+sint32 npc_resume_combat0(sint32 idx)
 {
     FUNCTION_MARKER(0x8004d288u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1564,7 +1564,7 @@ GDB_CALL sint32 npc_resume_combat0(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_alternate_combat5(sint32 idx)
+sint32 npc_resume_alternate_combat5(sint32 idx)
 {
     FUNCTION_MARKER(0x8004e38cu, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1572,7 +1572,7 @@ GDB_CALL sint32 npc_resume_alternate_combat5(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_alternate_combat0(sint32 idx)
+sint32 npc_resume_alternate_combat0(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ec48u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1580,7 +1580,7 @@ GDB_CALL sint32 npc_resume_alternate_combat0(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_alternate_combat1(sint32 idx)
+sint32 npc_resume_alternate_combat1(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ec94u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1588,7 +1588,7 @@ GDB_CALL sint32 npc_resume_alternate_combat1(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_alternate_combat2(sint32 idx)
+sint32 npc_resume_alternate_combat2(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ef18u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1596,7 +1596,7 @@ GDB_CALL sint32 npc_resume_alternate_combat2(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_alternate_combat3(sint32 idx)
+sint32 npc_resume_alternate_combat3(sint32 idx)
 {
     FUNCTION_MARKER(0x8004ef6cu, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1604,7 +1604,7 @@ GDB_CALL sint32 npc_resume_alternate_combat3(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_alternate_combat4(sint32 idx)
+sint32 npc_resume_alternate_combat4(sint32 idx)
 {
     FUNCTION_MARKER(0x8004f038u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1612,7 +1612,7 @@ GDB_CALL sint32 npc_resume_alternate_combat4(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_combat1(sint32 idx)
+sint32 npc_resume_combat1(sint32 idx)
 {
     FUNCTION_MARKER(0x80053ca0u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1620,7 +1620,7 @@ GDB_CALL sint32 npc_resume_combat1(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_combat2(sint32 idx)
+sint32 npc_resume_combat2(sint32 idx)
 {
     FUNCTION_MARKER(0x80053dd0u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1628,7 +1628,7 @@ GDB_CALL sint32 npc_resume_combat2(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_combat3(sint32 idx)
+sint32 npc_resume_combat3(sint32 idx)
 {
     FUNCTION_MARKER(0x800553a4u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1636,7 +1636,7 @@ GDB_CALL sint32 npc_resume_combat3(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_combat4(sint32 idx)
+sint32 npc_resume_combat4(sint32 idx)
 {
     FUNCTION_MARKER(0x80055528u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1644,7 +1644,7 @@ GDB_CALL sint32 npc_resume_combat4(sint32 idx)
     return -1;
 }
 
-GDB_CALL sint32 npc_resume_combat5(sint32 idx)
+sint32 npc_resume_combat5(sint32 idx)
 {
     FUNCTION_MARKER(0x80055918u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -1663,7 +1663,7 @@ static uint32 approach_can_stop(sint32 idx)
 }
 
 /* 4BFA0: approach thresholds depend on current action (216 / 264). */
-GDB_CALL sint32 npc_approach_target(sint32 idx)
+sint32 npc_approach_target(sint32 idx)
 {
     FUNCTION_MARKER(0x8004bfa0u, "GAME.EXE");
     uint32 target, table;
@@ -1712,7 +1712,7 @@ GDB_CALL sint32 npc_approach_target(sint32 idx)
 }
 
 /* 4F084: preserve v0 after distance tests, not just the movement status. */
-GDB_CALL sint32 npc_update_alternate_combat(sint32 idx)
+sint32 npc_update_alternate_combat(sint32 idx)
 {
     /* TODO: Investigate target owner outside its native pool */
     XASSERT(idx >= 0 && idx < ACTOR_COUNT);
@@ -1847,14 +1847,14 @@ GDB_CALL sint32 npc_update_alternate_combat(sint32 idx)
 }
 
 /* IDA misses forwarded a0 in this call-only entry. */
-GDB_CALL sint32 npc_continue_alternate_combat(sint32 idx)
+sint32 npc_continue_alternate_combat(sint32 idx)
 {
     FUNCTION_MARKER(0x8004f000u, "GAME.EXE");
     return npc_update_alternate_combat(idx);
 }
 
 /* 54474: completed recovery150 turns around, then resumes normal NPC logic. */
-GDB_CALL sint32 npc_finish_recovery_turn(sint32 idx)
+sint32 npc_finish_recovery_turn(sint32 idx)
 {
     FUNCTION_MARKER(0x80054474u, "GAME.EXE");
     if (actor_animations[idx].frame != 0xffffffffu)
@@ -1865,7 +1865,7 @@ GDB_CALL sint32 npc_finish_recovery_turn(sint32 idx)
 }
 
 /* 54398: signed deadline; loop animation while waiting, then recover. */
-GDB_CALL sint32 npc_wait_recovery_deadline(sint32 idx)
+sint32 npc_wait_recovery_deadline(sint32 idx)
 {
     FUNCTION_MARKER(0x80054398u, "GAME.EXE");
     uint32 table = animation_type_banks[(uint32)actor_types[idx]];
@@ -1881,7 +1881,7 @@ GDB_CALL sint32 npc_wait_recovery_deadline(sint32 idx)
     return npc_start_animation(idx, table, state == 253 ? 150 : (sint32)((random_next() & 2u) | 149u));
 }
 
-GDB_CALL sint32 npc_base_animation(sint32 idx)
+sint32 npc_base_animation(sint32 idx)
 {
     FUNCTION_MARKER(0x8004c9b0, "GAME.EXE");
     const NPC_BEHAVIOR_ACTOR *behavior = npc_behavior_actors + idx;
@@ -1930,7 +1930,7 @@ GDB_CALL sint32 npc_base_animation(sint32 idx)
     }
 }
 
-GDB_CALL sint32 npc_start_animation(sint32 idx, ANIMATION_BANK_ID table, sint32 state)
+sint32 npc_start_animation(sint32 idx, ANIMATION_BANK_ID table, sint32 state)
 {
     FUNCTION_MARKER(0x8004c4d8, "GAME.EXE");
     /* TODO: Investigate NPC item operations outside the native actor pool */
@@ -2044,7 +2044,7 @@ GDB_CALL sint32 npc_start_animation(sint32 idx, ANIMATION_BANK_ID table, sint32 
 
 /* 4AF18 consumes seven arguments; IDA's eleven-argument draft is incorrect.
  * Stack slots +10/+14/+18 are flag117, timer80 and field8 respectively. */
-GDB_CALL sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint32 timer, uint32 extra)
+sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint32 timer, uint32 extra)
 {
     FUNCTION_MARKER(0x8004af18, "GAME.EXE");
     uint32 idx, hp, table, move_animation, color, idle_animation;
@@ -2169,7 +2169,7 @@ GDB_CALL sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 f
 }
 
 /* Actual MIPS53034, including real expiry dispatch53278->53558. */
-GDB_CALL sint32 npc_update_entry_delay(sint32 idx)
+sint32 npc_update_entry_delay(sint32 idx)
 {
     FUNCTION_MARKER(0x80053034, "GAME.EXE");
     uint32 table = animation_type_banks[(uint32)actor_types[idx]];
@@ -2218,7 +2218,7 @@ GDB_CALL sint32 npc_update_entry_delay(sint32 idx)
     return timer;
 }
 
-GDB_CALL sint32 npc_turn_to_point(sint32 idx, uint32 x, uint32 z)
+sint32 npc_turn_to_point(sint32 idx, uint32 x, uint32 z)
 {
     FUNCTION_MARKER(0x800483bc, "GAME.EXE");
     uint32 yaw, difference;
@@ -2242,7 +2242,7 @@ GDB_CALL sint32 npc_turn_to_point(sint32 idx, uint32 x, uint32 z)
 
 /* Steer toward a Q16 point with obstacle probes and neighboring NPC avoidance */
 /* Original6A0F8 calls have no effect: JR RA / NOP */
-GDB_CALL sint32 npc_steer_to_point(sint32 idx, uint32 x, uint32 z, uint32 flags)
+sint32 npc_steer_to_point(sint32 idx, uint32 x, uint32 z, uint32 flags)
 {
     FUNCTION_MARKER(0x80047CE4, "GAME.EXE");
     /* TODO: Investigate steering requested outside the native actor pool */
@@ -2372,7 +2372,7 @@ static sint32 target_available(sint32 idx)
     return state != 33 && state != 158 && state != 39 && state != 149 && state != 150 && state != 151;
 }
 
-GDB_CALL sint32 npc_choose_action(sint32 idx)
+sint32 npc_choose_action(sint32 idx)
 {
     FUNCTION_MARKER(0x80048530, "GAME.EXE");
     uint32 table, cursor, next, state, frame, target = 0xffffffff;
@@ -2513,7 +2513,7 @@ GDB_CALL sint32 npc_choose_action(sint32 idx)
     return result;
 }
 
-GDB_CALL sint32 npc_update_ranged_attack(sint32 idx)
+sint32 npc_update_ranged_attack(sint32 idx)
 {
     FUNCTION_MARKER(0x800532b8, "GAME.EXE");
     /* TODO: Investigate the original out-of-pool NPC operation */
@@ -2606,7 +2606,7 @@ GDB_CALL sint32 npc_update_ranged_attack(sint32 idx)
 }
 
 /* 5392C: state270 starts the shot once, then waits for its animation. */
-GDB_CALL sint32 npc_fire_spread_and_wait(sint32 idx)
+sint32 npc_fire_spread_and_wait(sint32 idx)
 {
     FUNCTION_MARKER(0x8005392cu, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -2621,7 +2621,7 @@ GDB_CALL sint32 npc_fire_spread_and_wait(sint32 idx)
     return deadline;
 }
 
-GDB_CALL sint32 npc_finish_attack_lighting(sint32 idx)
+sint32 npc_finish_attack_lighting(sint32 idx)
 {
     FUNCTION_MARKER(0x80054a40u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -2641,7 +2641,7 @@ GDB_CALL sint32 npc_finish_attack_lighting(sint32 idx)
 }
 
 /* Original behavior selection and close-range attack dispatch */
-GDB_CALL sint32 npc_update_combat(sint32 idx)
+sint32 npc_update_combat(sint32 idx)
 {
     FUNCTION_MARKER(0x80053558u, "GAME.EXE");
     /* TODO: Investigate target owner outside its native pool */
@@ -2749,7 +2749,7 @@ GDB_CALL sint32 npc_update_combat(sint32 idx)
 }
 
 /* Forwarding wrapper; normalized twins differ in callee targets. */
-GDB_CALL sint32 npc_continue_combat(sint32 idx)
+sint32 npc_continue_combat(sint32 idx)
 {
     FUNCTION_MARKER(0x80053278u, "GAME.EXE");
     return npc_update_combat(idx);
@@ -2759,7 +2759,7 @@ GDB_CALL sint32 npc_continue_combat(sint32 idx)
  * voice selection, which consumes a third. No indexed reuse candidates. */
 
 /* Hit reactions retain the original lethal, high-stun and directional paths */
-GDB_CALL sint32 npc_attack_players(sint32 idx, sint32 attachment)
+sint32 npc_attack_players(sint32 idx, sint32 attachment)
 {
     FUNCTION_MARKER(0x80048dbc, "GAME.EXE");
     FIXED_VEC3 pos;
@@ -2902,7 +2902,7 @@ GDB_CALL sint32 npc_attack_players(sint32 idx, sint32 attachment)
 /* 52944 entrance and event-free52FE8 dispatch. Other events/callbacks remain WIP. */
 /* 53E1C: detach, wait for animation completion, then recover or die.
  * The no-partner/no-completion return is -16 (SLL in branch delay slot). */
-GDB_CALL sint32 npc_update_detached(sint32 idx)
+sint32 npc_update_detached(sint32 idx)
 {
     FUNCTION_MARKER(0x80053e1c, "GAME.EXE");
     uint32 tick;
@@ -2938,7 +2938,7 @@ GDB_CALL sint32 npc_update_detached(sint32 idx)
 
 /* 53FC4: knockdown bookkeeping and recovery transitions.
  * Evidence: status/gameplay/npc-53fc4-mips-audit.md. */
-GDB_CALL sint32 npc_update_knockdown(sint32 idx)
+sint32 npc_update_knockdown(sint32 idx)
 {
     FUNCTION_MARKER(0x80053fc4, "GAME.EXE");
     uint32 table;
@@ -3055,7 +3055,7 @@ GDB_CALL sint32 npc_update_knockdown(sint32 idx)
 
 /* 55100: defensive animation chain. Indexed twin4E484 differs final callee;
  * this mapping follows current MIPS, including return58 on other endedstates. */
-GDB_CALL sint32 npc_finish_combat_combo(sint32 idx)
+sint32 npc_finish_combat_combo(sint32 idx)
 {
     FUNCTION_MARKER(0x80055100u, "GAME.EXE");
     uint32 type = actor_types[idx];
@@ -3081,7 +3081,7 @@ GDB_CALL sint32 npc_finish_combat_combo(sint32 idx)
 
 /* 55770: low-health stagger/recovery, actual signed timer comparison and
  * halfword HP addition. The return retains the pre-clamp HP value. */
-GDB_CALL sint32 npc_update_recovery(sint32 idx)
+sint32 npc_update_recovery(sint32 idx)
 {
     FUNCTION_MARKER(0x80055770, "GAME.EXE");
     uint32 table;
@@ -3182,7 +3182,7 @@ static void npc_captured_update(sint32 idx, ANIMATION_BANK_ID table)
         npc_start_animation(idx, table, 171);
 }
 
-GDB_CALL intptr npc_update_actor(sint32 idx)
+intptr npc_update_actor(sint32 idx)
 {
     FUNCTION_MARKER(0x80052944, "GAME.EXE");
     uint32 events, point[16], table, x, z, state;
@@ -3305,13 +3305,13 @@ static intptr npc_action_call(NPC_ACTION_REFERENCE callback, sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 npc_animation_allows_target_reaction(uint32 state)
+sint32 npc_animation_allows_target_reaction(uint32 state)
 {
     FUNCTION_MARKER(0x80054b44u, "GAME.EXE");
     return !(state <= 5u || state - 26u < 5u || state - 234u < 4u);
 }
 
-GDB_CALL sint32 npc_target_reaction_class(uint32 state)
+sint32 npc_target_reaction_class(uint32 state)
 {
     FUNCTION_MARKER(0x80054bc8u, "GAME.EXE");
     if (state <= 5u || state == 32 || state - 35u < 5u || state == 66)
@@ -3326,7 +3326,7 @@ GDB_CALL sint32 npc_target_reaction_class(uint32 state)
 }
 
 /* 54C90 reaction eligibility; accepted angle/distance gates precede reaction. */
-GDB_CALL sint32 npc_react_to_target(sint32 idx)
+sint32 npc_react_to_target(sint32 idx)
 {
     FUNCTION_MARKER(0x80054c90, "GAME.EXE");
     uint32 target;
@@ -3439,7 +3439,7 @@ GDB_CALL sint32 npc_react_to_target(sint32 idx)
     return 1;
 }
 
-GDB_CALL sint32 npc_resume_combat6(sint32 idx)
+sint32 npc_resume_combat6(sint32 idx)
 {
     FUNCTION_MARKER(0x80052fe8u, "GAME.EXE");
     if (actor_animations[idx].frame == 0xffffffffu)
@@ -3448,7 +3448,7 @@ GDB_CALL sint32 npc_resume_combat6(sint32 idx)
 }
 
 /* 4A704 NPC dispatch and stage-specific environment response */
-GDB_CALL sint32 npc_update(void)
+sint32 npc_update(void)
 {
     FUNCTION_MARKER(0x8004a704, "GAME.EXE");
     static const uint16 near_yaw_stage0[] = {0, 0};
@@ -3804,7 +3804,7 @@ GDB_CALL sint32 npc_update(void)
 }
 
 /* 544E4: face stored target only in mode1; reload animation after facing. */
-GDB_CALL sint32 npc_finish_facing_target(sint32 idx)
+sint32 npc_finish_facing_target(sint32 idx)
 {
     FUNCTION_MARKER(0x800544e4u, "GAME.EXE");
     uint32 target, x, z;
@@ -3826,7 +3826,7 @@ GDB_CALL sint32 npc_finish_facing_target(sint32 idx)
 /* 33D7C: signed impact count; inherited A2/A3 are unused by31A28. */
 
 /* 49DB0: AEE90 is an immediate table address, not a word loaded there. */
-GDB_CALL sint32 npc_start_jump_off(sint32 idx, sint32 mode)
+sint32 npc_start_jump_off(sint32 idx, sint32 mode)
 {
     FUNCTION_MARKER(0x80049db0u, "GAME.EXE");
     npc_start_animation(idx, animation_type_banks[(uint32)actor_types[idx]], 269);
@@ -3842,7 +3842,7 @@ GDB_CALL sint32 npc_start_jump_off(sint32 idx, sint32 mode)
 }
 
 /* Van arrival, collision region, braking and four passenger spawns */
-GDB_CALL uint32 npc_update_van(sint32 idx)
+uint32 npc_update_van(sint32 idx)
 {
     FUNCTION_MARKER(0x80049e6cu, "GAME.EXE");
     NPC_SPECIAL *special = &npc_behavior_actors[idx].special;
@@ -4039,7 +4039,7 @@ GDB_CALL uint32 npc_update_van(sint32 idx)
     return heading & 2047;
 }
 
-GDB_CALL uint32 npc_finish_animation(sint32 idx)
+uint32 npc_finish_animation(sint32 idx)
 {
     FUNCTION_MARKER(0x8004efb8u, "GAME.EXE");
     uint32 result = 0xffffffffu;
@@ -4051,7 +4051,7 @@ GDB_CALL uint32 npc_finish_animation(sint32 idx)
     return result;
 }
 
-GDB_CALL sint32 npc_continue_attack_behavior(sint32 idx)
+sint32 npc_continue_attack_behavior(sint32 idx)
 {
     FUNCTION_MARKER(0x80053298u, "GAME.EXE");
     return npc_update_combat(idx);

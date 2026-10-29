@@ -24,7 +24,7 @@ const OPTIONS_MENU options_menu_defaults = {
 };
 
 /* 80052624: draw before input; use existing controller count without refresh. */
-GDB_CALL sint32 scores_menu_update(void)
+sint32 scores_menu_update(void)
 {
     FUNCTION_MARKER(0x80052624, "GAME.EXE");
     uint32 i = 0, raw, edge;
@@ -55,7 +55,7 @@ GDB_CALL sint32 scores_menu_update(void)
 
 /* 800519D4: display both player headings, then each connected player's scheme.
  * Preserve redundant decoder calls: they update disconnect/reset state. */
-GDB_CALL sint32 pad_menu_update(void)
+sint32 pad_menu_update(void)
 {
     FUNCTION_MARKER(0x800519d4, "GAME.EXE");
     char buffer[256];
@@ -136,7 +136,7 @@ GDB_CALL sint32 pad_menu_update(void)
 
 /* 80051C98: adjustment edges from either pad, in left/right/up/down order.
  * The inclusive left guard permits -10 -> -11, as in actual MIPS. */
-GDB_CALL sint32 scr_menu_update(void)
+sint32 scr_menu_update(void)
 {
     FUNCTION_MARKER(0x80051c98, "GAME.EXE");
     uint32 edge, players;
@@ -190,7 +190,7 @@ static void home(void)
 }
 
 /* Original option text and both palettes remain caller-local */
-GDB_CALL sint32 options_menu_update(void)
+sint32 options_menu_update(void)
 {
     FUNCTION_MARKER(0x80050d98, "GAME.EXE");
     char buffer[256];
@@ -514,7 +514,7 @@ GDB_CALL sint32 options_menu_update(void)
     return result;
 }
 
-GDB_CALL uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
+uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
 {
     FUNCTION_MARKER(0x80062ab4u, "GAME.EXE");
     sint32 width = val >> 2;

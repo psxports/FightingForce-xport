@@ -4,7 +4,7 @@
 
 ACTOR_ITEMS actor_items[ACTOR_COUNT];
 
-GDB_CALL sint32 actor_items_drop_on_hit(sint32 idx)
+sint32 actor_items_drop_on_hit(sint32 idx)
 {
     FUNCTION_MARKER(0x80017c78, "GAME.EXE");
     MODEL_OBJECT *item;
@@ -50,7 +50,7 @@ GDB_CALL sint32 actor_items_drop_on_hit(sint32 idx)
     return 4;
 }
 
-GDB_CALL uint32 actor_items_drop(sint32 idx)
+uint32 actor_items_drop(sint32 idx)
 {
     FUNCTION_MARKER(0x80017e30, "GAME.EXE");
     FIXED_VEC3 point;
@@ -206,7 +206,7 @@ GDB_CALL uint32 actor_items_drop(sint32 idx)
     return result;
 }
 
-GDB_CALL uint32 actor_items_calc_weapon_point(sint32 idx, sint32 half, uint32 out[3])
+uint32 actor_items_calc_weapon_point(sint32 idx, sint32 half, uint32 out[3])
 {
     FUNCTION_MARKER(0x8001cf08, "GAME.EXE");
     /* TODO: Investigate invalid weapon references at the original access */
@@ -244,7 +244,7 @@ GDB_CALL uint32 actor_items_calc_weapon_point(sint32 idx, sint32 half, uint32 ou
     return out[2];
 }
 
-GDB_CALL sint32 actor_items_hit_weapon(sint32 idx, sint32 half)
+sint32 actor_items_hit_weapon(sint32 idx, sint32 half)
 {
     FUNCTION_MARKER(0x8001d10c, "GAME.EXE");
     uint32 kind, x, y, z;
@@ -378,7 +378,7 @@ GDB_CALL sint32 actor_items_hit_weapon(sint32 idx, sint32 half)
     return 0;
 }
 
-GDB_CALL sint32 animation_start_held(sint32 idx, ANIMATION_BANK_ID table, sint32 animation)
+sint32 animation_start_held(sint32 idx, ANIMATION_BANK_ID table, sint32 animation)
 {
     FUNCTION_MARKER(0x800237CC, "GAME.EXE");
     sint32 slot;
@@ -470,7 +470,7 @@ GDB_CALL sint32 animation_start_held(sint32 idx, ANIMATION_BANK_ID table, sint32
     return animation_start(idx, table, animation);
 }
 
-GDB_CALL sint32 actor_items_fire_projectile(sint32 idx)
+sint32 actor_items_fire_projectile(sint32 idx)
 {
     FUNCTION_MARKER(0x800301ccu, "GAME.EXE");
     uint32 kind;
@@ -505,7 +505,7 @@ GDB_CALL sint32 actor_items_fire_projectile(sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 actor_items_fire_ray(sint32 idx)
+sint32 actor_items_fire_ray(sint32 idx)
 {
     FUNCTION_MARKER(0x80030310u, "GAME.EXE");
     const MODEL_OBJECT *held;
@@ -536,7 +536,7 @@ GDB_CALL sint32 actor_items_fire_ray(sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 actor_items_fire_spread(sint32 idx)
+sint32 actor_items_fire_spread(sint32 idx)
 {
     FUNCTION_MARKER(0x80030440u, "GAME.EXE");
     const MODEL_OBJECT *held;

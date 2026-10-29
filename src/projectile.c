@@ -29,12 +29,12 @@ static sint32 query_actor(uint32 world_x, uint32 world_z, const MODEL_OBJECT *mo
     return -1;
 }
 
-GDB_CALL sint32 projectile_query_model(uint32 world_x, uint32 world_z, const MODEL_OBJECT *model)
+sint32 projectile_query_model(uint32 world_x, uint32 world_z, const MODEL_OBJECT *model)
 {
     return query_actor(world_x, world_z, model, NULL);
 }
 
-GDB_CALL sint32 projectile_query_src(uint32 world_x, uint32 world_z, const PROJECTILE_SOURCE *projectile)
+sint32 projectile_query_src(uint32 world_x, uint32 world_z, const PROJECTILE_SOURCE *projectile)
 {
     return query_actor(world_x, world_z, NULL, projectile);
 }
@@ -70,13 +70,13 @@ static sint32 apply_contact(sint32 idx, const MODEL_OBJECT *model, uintptr_t ret
     return col_call(col_callbacks[handler_idx], obstacle, target_model, &point, -1);
 }
 
-GDB_CALL sint32 projectile_contact_model(sint32 idx, const MODEL_OBJECT *model, uint32 retained_word)
+sint32 projectile_contact_model(sint32 idx, const MODEL_OBJECT *model, uint32 retained_word)
 {
     return apply_contact(idx, model, retained_word, NULL, 0);
 }
 
 /* Retained word is the original caller's entry-SP-12 carrier */
-GDB_CALL sint32 projectile_contact_vals(sint32 idx, uint32 kind, const uint32 pos[3], uint32 retained_word)
+sint32 projectile_contact_vals(sint32 idx, uint32 kind, const uint32 pos[3], uint32 retained_word)
 {
     return apply_contact(idx, NULL, retained_word, pos, kind);
 }
@@ -149,22 +149,22 @@ static sint32 trace(MODEL_OBJECT *model, sint32 idx, uint32 native_pos[3], uint1
     return 0;
 }
 
-GDB_CALL sint32 projectile_trace_model(MODEL_OBJECT *model, sint32 idx)
+sint32 projectile_trace_model(MODEL_OBJECT *model, sint32 idx)
 {
     return trace(model, idx, NULL, 0, 0);
 }
 
-GDB_CALL sint32 projectile_trace_npc(uint32 pos[3], uint16 angle, sint32 idx)
+sint32 projectile_trace_npc(uint32 pos[3], uint16 angle, sint32 idx)
 {
     return trace(NULL, idx, pos, angle, 499);
 }
 
-GDB_CALL sint32 projectile_trace_weapon(uint32 pos[3], uint32 kind, uint16 angle, sint32 idx)
+sint32 projectile_trace_weapon(uint32 pos[3], uint32 kind, uint16 angle, sint32 idx)
 {
     return trace(NULL, idx, pos, angle, kind);
 }
 
-GDB_CALL intptr projectile_update_accelerating(MODEL_OBJECT *model)
+intptr projectile_update_accelerating(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002fa90u, "GAME.EXE");
     uint32 offset, x, y, z, dx, dy, dz, result;
@@ -255,7 +255,7 @@ GDB_CALL intptr projectile_update_accelerating(MODEL_OBJECT *model)
     return (sint32)result;
 }
 
-GDB_CALL uint32 projectile_update_ballistic(MODEL_OBJECT *model, uint32 retained_s3)
+uint32 projectile_update_ballistic(MODEL_OBJECT *model, uint32 retained_s3)
 {
     FUNCTION_MARKER(0x80041b54u, "GAME.EXE");
     uint32 angle, speed, x, y, z, dx, dz, result;
@@ -326,7 +326,7 @@ GDB_CALL uint32 projectile_update_ballistic(MODEL_OBJECT *model, uint32 retained
     return 0xffffffffu;
 }
 
-GDB_CALL void projectile_draw_glow(const struct MODEL_OBJECT *item)
+void projectile_draw_glow(const struct MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005cd1cu, "GAME.EXE");
     PROJECTION_POINT pos;

@@ -5,7 +5,7 @@
 
 ACTION_HISTORY action_history;
 
-GDB_CALL uint8 *action_history_reset(void)
+uint8 *action_history_reset(void)
 {
     FUNCTION_MARKER(0x800526F0, "GAME.EXE");
     memset(action_history.action, 0, sizeof(action_history.action));
@@ -14,7 +14,7 @@ GDB_CALL uint8 *action_history_reset(void)
     return action_history.predicted;
 }
 
-GDB_CALL uint8 action_history_matched(sint32 target)
+uint8 action_history_matched(sint32 target)
 {
     FUNCTION_MARKER(0x80052744, "GAME.EXE");
     /* TODO: Investigate a non-player target reading beyond the match array */
@@ -22,7 +22,7 @@ GDB_CALL uint8 action_history_matched(sint32 target)
     return action_history.matched[target];
 }
 
-GDB_CALL uint8 action_history_rec(sint32 player, sint32 action)
+uint8 action_history_rec(sint32 player, sint32 action)
 {
     FUNCTION_MARKER(0x80052758, "GAME.EXE");
     uint8 *history;

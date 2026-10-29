@@ -67,7 +67,7 @@ static void finisher_contact(sint32 victim, sint32 idx, uint32 x, uint32 y, uint
     sound_voice_play(78, 255, 5632);
 }
 
-GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
+sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
 {
     FUNCTION_MARKER(0x8001c35c, "GAME.EXE");
     uint32 hit_x = contact->pos.bits[0], hit_y = contact->pos.bits[1], hit_z = contact->pos.bits[2];
@@ -223,7 +223,7 @@ GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
 }
 
 /* Collision event latch retains the original actor callback carrier */
-GDB_CALL sint32 actor_col_event(COLLISION_REGION *obstacle, sint32 idx)
+sint32 actor_col_event(COLLISION_REGION *obstacle, sint32 idx)
 {
     FUNCTION_MARKER(0x8001a3f8, "GAME.EXE");
     ACTOR_ANIMATION *playback = actor_animations + idx;
@@ -473,7 +473,7 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
     return clear;
 }
 
-GDB_CALL void actor_correct_obstacles(sint32 idx, uint32 *x, uint32 *z)
+void actor_correct_obstacles(sint32 idx, uint32 *x, uint32 *z)
 {
     correct_obstacles(idx, x, z);
 }
@@ -485,7 +485,7 @@ static int excluded_animation(uint32 n)
 
 /* 8001B2C4: ordered pair separation. The global call counter is not decremented
  * on return. Candidate actor stores occur only in the second-distance branch */
-GDB_CALL sint32 actors_resolve_overlaps(sint32 idx)
+sint32 actors_resolve_overlaps(sint32 idx)
 {
     FUNCTION_MARKER(0x8001b2c4, "GAME.EXE");
     uint32 count, animation;
@@ -682,13 +682,13 @@ static uint32 collide_vehicle(COLLISION_REGION *region, const MODEL_OBJECT *mode
     return 0;
 }
 
-GDB_CALL uint32 actors_collide_vehicle(COLLISION_REGION *region, const struct MODEL_OBJECT *model)
+uint32 actors_collide_vehicle(COLLISION_REGION *region, const struct MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80029afc, "GAME.EXE");
     return collide_vehicle(region, model, NULL);
 }
 
-GDB_CALL uint32 actors_collide_vehicle_shape(COLLISION_REGION *region, const VEHICLE_COLLISION_SHAPE *vehicle)
+uint32 actors_collide_vehicle_shape(COLLISION_REGION *region, const VEHICLE_COLLISION_SHAPE *vehicle)
 {
     return collide_vehicle(region, NULL, vehicle);
 }
@@ -785,7 +785,7 @@ static sint32 projectile_impact(uint32 world_x, uint32 world_z, const MODEL_OBJE
     return 0;
 }
 
-GDB_CALL sint32 npc_process_weapon_hits(sint32 idx)
+sint32 npc_process_weapon_hits(sint32 idx)
 {
     FUNCTION_MARKER(0x8004930cu, "GAME.EXE");
     /* TODO: Investigate the original out-of-pool NPC operation */
@@ -866,7 +866,7 @@ GDB_CALL sint32 npc_process_weapon_hits(sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 actors_apply_nearby_contact(sint32 attacker, uint32 world_x, uint32 world_z)
+sint32 actors_apply_nearby_contact(sint32 attacker, uint32 world_x, uint32 world_z)
 {
     FUNCTION_MARKER(0x80055964u, "GAME.EXE");
     sint32 x = (sint32)world_x >> 16, z = (sint32)world_z >> 16, idx, type, slot;
@@ -913,7 +913,7 @@ GDB_CALL sint32 actors_apply_nearby_contact(sint32 attacker, uint32 world_x, uin
     return 0;
 }
 
-GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx)
+sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx)
 {
     FUNCTION_MARKER(0x8001bbe8, "GAME.EXE");
     MODEL_OBJECT *target_model = NULL;
@@ -993,7 +993,7 @@ GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx
     return 0;
 }
 
-GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact, uint32 kind)
+sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact, uint32 kind)
 {
     FUNCTION_MARKER(0x8001bfa0, "GAME.EXE");
     sint32 i, type, other_x, other_z, range_type, distance, radius;
@@ -1098,7 +1098,7 @@ GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact,
     return 0;
 }
 
-GDB_CALL sint32 actor_process_attachment_hits(sint32 idx, sint32 attachment)
+sint32 actor_process_attachment_hits(sint32 idx, sint32 attachment)
 {
     FUNCTION_MARKER(0x8001ced0u, "GAME.EXE");
     COLLISION_POINT point;
@@ -1106,17 +1106,17 @@ GDB_CALL sint32 actor_process_attachment_hits(sint32 idx, sint32 attachment)
     return actor_process_hits(idx, &point);
 }
 
-GDB_CALL sint32 actor_projectile_impact(uint32 world_x, uint32 world_z, const struct MODEL_OBJECT *model, const struct EFFECT *effect)
+sint32 actor_projectile_impact(uint32 world_x, uint32 world_z, const struct MODEL_OBJECT *model, const struct EFFECT *effect)
 {
     return projectile_impact(world_x, world_z, model, NULL, effect);
 }
 
-GDB_CALL sint32 actor_projectile_impact_src(uint32 world_x, uint32 world_z, const PROJECTILE_SOURCE *projectile)
+sint32 actor_projectile_impact_src(uint32 world_x, uint32 world_z, const PROJECTILE_SOURCE *projectile)
 {
     return projectile_impact(world_x, world_z, NULL, projectile, NULL);
 }
 
-GDB_CALL sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const struct EFFECT *effect, const struct MODEL_OBJECT *model)
+sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const struct EFFECT *effect, const struct MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80031f64u, "GAME.EXE");
     /* TODO: Investigate a missing, ambiguous or cross-format radial source */
@@ -1191,7 +1191,7 @@ GDB_CALL sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const
     return 0;
 }
 
-GDB_CALL sint32 actor_animation_blocks_hits(uint32 state)
+sint32 actor_animation_blocks_hits(uint32 state)
 {
     FUNCTION_MARKER(0x80048cfcu, "GAME.EXE");
     return state == 147 || state == 154 || state - 149u < 2u || state == 41 || state == 132 || state - 177u < 3u || state - 180u < 10u || state - 130u < 2u || state == 77 || state == 167 || state == 169 || state == 33 || state == 148 || state == 205 || state == 203 || state == 172 || state == 36;

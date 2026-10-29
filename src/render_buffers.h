@@ -31,12 +31,12 @@ typedef struct RENDER_BUFFERS
 
 extern RENDER_BUFFERS render_buffers;
 
-GDB_CALL sint32 render_ot_init(uint32 table_addr);
-GDB_CALL sint32 render_ot_compact(void);
-GDB_CALL uint32 render_ot_insert_flags(uint32 bucket_addr, uint32 packet_addr, uint32 flags);
-GDB_CALL uint32 render_ot_insert(uint32 bucket_addr, uint32 packet_addr);
-GDB_CALL uint32 render_buffers_select(void);
+sint32 render_ot_init(uint32 table_addr);
+sint32 render_ot_compact(void);
+uint32 render_ot_insert_flags(uint32 bucket_addr, uint32 packet_addr, uint32 flags);
+uint32 render_ot_insert(uint32 bucket_addr, uint32 packet_addr);
+uint32 render_buffers_select(void);
 
-GDB_CALL uint32 render_insert_tex_page(uint32 page, uint32 bucket);
+uint32 render_insert_tex_page(uint32 page, uint32 bucket);
 
 #endif

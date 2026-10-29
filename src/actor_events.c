@@ -82,7 +82,7 @@ void actor_event_call(const ACTOR_EVENT *event, sint32 idx)
     XASSERT(0);
 }
 
-GDB_CALL sint32 actor_hit_effects(sint32 idx)
+sint32 actor_hit_effects(sint32 idx)
 {
     FUNCTION_MARKER(0x800455e4u, "GAME.EXE");
     if ((sint16)actor_animations[idx].event_step)
@@ -103,12 +103,12 @@ GDB_CALL sint32 actor_hit_effects(sint32 idx)
     return actors_rec_hit(actor_contacts[idx].last_attacker, idx);
 }
 
-GDB_CALL void actor_ignore_event(void)
+void actor_ignore_event(void)
 {
     FUNCTION_MARKER(0x80032ed8u, "GAME.EXE");
 }
 
-GDB_CALL sint32 actor_attack_voice_event(sint32 idx)
+sint32 actor_attack_voice_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80032f38u, "GAME.EXE");
     sint32 type = actor_types[idx];
@@ -129,7 +129,7 @@ GDB_CALL sint32 actor_attack_voice_event(sint32 idx)
     return 49;
 }
 
-GDB_CALL sint32 actor_attack_fixed_voice_event(sint32 idx)
+sint32 actor_attack_fixed_voice_event(sint32 idx)
 {
     FUNCTION_MARKER(0x800330ccu, "GAME.EXE");
     if (actor_animations[idx].motion.events & 0x8000u)
@@ -143,7 +143,7 @@ GDB_CALL sint32 actor_attack_fixed_voice_event(sint32 idx)
     return sound_voice_play(22, 255, 6144);
 }
 
-GDB_CALL sint32 actor_hit_repeat_event(sint32 idx)
+sint32 actor_hit_repeat_event(sint32 idx)
 {
     FUNCTION_MARKER(0x800332bcu, "GAME.EXE");
     uint32 x, z, state;
@@ -163,7 +163,7 @@ GDB_CALL sint32 actor_hit_repeat_event(sint32 idx)
     return idx < 2 ? 1 : actors_rec_hit(actor_contacts[idx].last_attacker, idx);
 }
 
-GDB_CALL sint32 actor_hit_begin_event(sint32 idx)
+sint32 actor_hit_begin_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033488u, "GAME.EXE");
     uint32 x, z, state;
@@ -182,7 +182,7 @@ GDB_CALL sint32 actor_hit_begin_event(sint32 idx)
     return actors_rec_hit(actor_contacts[idx].last_attacker, idx);
 }
 
-GDB_CALL sint32 actor_heavy_hit_event(sint32 idx)
+sint32 actor_heavy_hit_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033534u, "GAME.EXE");
     uint32 angle = actor_orientation[idx].yaw, x = actor_positions[idx].x.bits, y = actor_positions[idx].y.bits, z = actor_positions[idx].z.bits;
@@ -224,7 +224,7 @@ GDB_CALL sint32 actor_heavy_hit_event(sint32 idx)
     return actors_rec_hit(actor_contacts[idx].last_attacker, idx);
 }
 
-GDB_CALL sint32 actor_hit_end_event(sint32 idx)
+sint32 actor_hit_end_event(sint32 idx)
 {
     FUNCTION_MARKER(0x800336ccu, "GAME.EXE");
     uint32 x, z, state;
@@ -241,7 +241,7 @@ GDB_CALL sint32 actor_hit_end_event(sint32 idx)
     return actors_rec_hit(actor_contacts[idx].last_attacker, idx);
 }
 
-GDB_CALL sint32 actor_hit_attachment_event(sint32 idx)
+sint32 actor_hit_attachment_event(sint32 idx)
 {
     FUNCTION_MARKER(0x8003375cu, "GAME.EXE");
     uint32 angle;
@@ -275,7 +275,7 @@ GDB_CALL sint32 actor_hit_attachment_event(sint32 idx)
     return sound_play_hit_voice(idx);
 }
 
-GDB_CALL sint32 actor_hit_impact_event(sint32 idx)
+sint32 actor_hit_impact_event(sint32 idx)
 {
     FUNCTION_MARKER(0x800338e0u, "GAME.EXE");
     FIXED_VEC3 point;
@@ -308,7 +308,7 @@ GDB_CALL sint32 actor_hit_impact_event(sint32 idx)
     return actors_rec_hit(actor_contacts[idx].last_attacker, idx);
 }
 
-GDB_CALL sint32 actor_hit_flash_event(sint32 idx)
+sint32 actor_hit_flash_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033a6cu, "GAME.EXE");
     uint32 angle;
@@ -347,7 +347,7 @@ GDB_CALL sint32 actor_hit_flash_event(sint32 idx)
     return sound_play_hit_voice(idx);
 }
 
-GDB_CALL sint32 actor_attack_attachment_event(sint32 idx)
+sint32 actor_attack_attachment_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033c44u, "GAME.EXE");
     uint32 angle, i;
@@ -368,33 +368,33 @@ GDB_CALL sint32 actor_attack_attachment_event(sint32 idx)
     return 0;
 }
 
-GDB_CALL uint32 actor_attachment_impact_event(sint32 idx)
+uint32 actor_attachment_impact_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033d7cu, "GAME.EXE");
     sint32 count = (sint16)actor_animations[idx].event_step;
     return count ? count : effect_spawn_attachment_particle(idx, 577);
 }
 
-GDB_CALL sint32 actor_impact_voice_event(sint32 idx)
+sint32 actor_impact_voice_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033dc8u, "GAME.EXE");
     sint32 val = (sint16)actor_animations[idx].event_step;
     return val ? val : sound_voice_play(28, 255, 6144);
 }
 
-GDB_CALL uint32 actor_attachment_particle_event0(sint32 idx)
+uint32 actor_attachment_particle_event0(sint32 idx)
 {
     FUNCTION_MARKER(0x80033e18u, "GAME.EXE");
     return effect_spawn_attachment_particle(idx, 578);
 }
 
-GDB_CALL uint32 actor_attachment_particle_event1(sint32 idx)
+uint32 actor_attachment_particle_event1(sint32 idx)
 {
     FUNCTION_MARKER(0x80033e38u, "GAME.EXE");
     return effect_spawn_attachment_particle(idx, 578);
 }
 
-GDB_CALL intptr actor_burst_attachment_event(sint32 idx)
+intptr actor_burst_attachment_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033e58u, "GAME.EXE");
     uint32 angle, i;
@@ -411,7 +411,7 @@ GDB_CALL intptr actor_burst_attachment_event(sint32 idx)
     return (uint32)sound_voice_play(59, 255, 6144);
 }
 
-GDB_CALL sint32 actor_release_item_event(sint32 idx)
+sint32 actor_release_item_event(sint32 idx)
 {
     FUNCTION_MARKER(0x800341a0u, "GAME.EXE");
     sint32 slot;

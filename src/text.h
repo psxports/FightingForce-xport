@@ -55,19 +55,19 @@ extern const TEXT_GRADIENT text_gradient_defaults;
 extern const TEXT_GRADIENT text_inactive_gradient;
 extern uint32 text_gradient_phase;
 
-GDB_CALL sint32 text_gradient_update(void);
-GDB_CALL sint32 text_center_gradient(const char *text, sint32 y);
-GDB_CALL sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const TEXT_GRADIENT *colors);
+sint32 text_gradient_update(void);
+sint32 text_center_gradient(const char *text, sint32 y);
+sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const TEXT_GRADIENT *colors);
 
-GDB_CALL uint32 text_format_digits(sint32 val, char *dst);
-GDB_CALL sint32 text_width(const char *text);
-GDB_CALL sint32 text_draw(const char *text, sint32 x, sint32 y);
-GDB_CALL sint32 text_center(const char *text, sint32 y);
-GDB_CALL sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 phase);
-GDB_CALL sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint32 phase);
-GDB_CALL uint32 text_draw_logo(sint32 x, sint32 y);
-GDB_CALL sint32 text_draw_right(const char *text, sint32 x, sint32 y);
-GDB_CALL uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, sint32 y);
+uint32 text_format_digits(sint32 val, char *dst);
+sint32 text_width(const char *text);
+sint32 text_draw(const char *text, sint32 x, sint32 y);
+sint32 text_center(const char *text, sint32 y);
+sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 phase);
+sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint32 phase);
+uint32 text_draw_logo(sint32 x, sint32 y);
+sint32 text_draw_right(const char *text, sint32 x, sint32 y);
+uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, sint32 y);
 
 enum
 {
@@ -82,9 +82,9 @@ typedef struct TEXT_LAYOUT
 
 extern TEXT_LAYOUT text_layout;
 
-GDB_CALL sint32 text_glyph(sint32 character);
-GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity);
-GDB_CALL sint32 text_draw_lines(sint32 y);
+sint32 text_glyph(sint32 character);
+sint32 text_wrap(const char *text, char *buffer, uint32 capacity);
+sint32 text_draw_lines(sint32 y);
 
 extern sint32 text_hint;
 

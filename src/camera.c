@@ -17,7 +17,7 @@ _Static_assert(sizeof(CAMERA_ANGLES) == 4, "Camera angle size");
 _Static_assert(sizeof(FIXED_XZ) == 8, "Ground-plane center size");
 _Static_assert(offsetof(CAMERA_MOTION, phase) == 48, "Camera phase wire offset");
 
-GDB_CALL sint32 camera_update(void)
+sint32 camera_update(void)
 {
     FUNCTION_MARKER(0x800474b8, "GAME.EXE");
     uint32 target_x = camera.target.x.bits;
@@ -57,7 +57,7 @@ GDB_CALL sint32 camera_update(void)
     return result;
 }
 
-GDB_CALL sint32 camera_update_target(void)
+sint32 camera_update_target(void)
 {
     FUNCTION_MARKER(0x800476e8, "GAME.EXE");
     uint32 radius = camera.tracking.radius + 1280;
@@ -143,7 +143,7 @@ GDB_CALL sint32 camera_update_target(void)
     return 0xfec00000;
 }
 
-GDB_CALL sint32 camera_capture(const uint32 *pos, sint32 yaw, sint32 pitch)
+sint32 camera_capture(const uint32 *pos, sint32 yaw, sint32 pitch)
 {
     FUNCTION_MARKER(0x8004f980, "GAME.EXE");
     uint16 oldyaw = camera.angles.yaw_bits, oldpitch = camera.angles.pitch_bits;
@@ -165,7 +165,7 @@ GDB_CALL sint32 camera_capture(const uint32 *pos, sint32 yaw, sint32 pitch)
     return val;
 }
 
-GDB_CALL sint32 camera_update_transition(void)
+sint32 camera_update_transition(void)
 {
     FUNCTION_MARKER(0x8004f520, "GAME.EXE");
     sint32 phase = camera.motion.phase, result;
@@ -223,7 +223,7 @@ GDB_CALL sint32 camera_update_transition(void)
     return result;
 }
 
-GDB_CALL sint32 camera_update_motion(uint32 x_speed)
+sint32 camera_update_motion(uint32 x_speed)
 {
     FUNCTION_MARKER(0x8004f6d0u, "GAME.EXE");
     uint32 speed, target, p, vals[5], result;
@@ -274,7 +274,7 @@ GDB_CALL sint32 camera_update_motion(uint32 x_speed)
     return result;
 }
 
-GDB_CALL sint32 camera_orbit(void)
+sint32 camera_orbit(void)
 {
     FUNCTION_MARKER(0x8004fa10, "GAME.EXE");
     sint32 i, n = character_menu.player_count;
@@ -301,7 +301,7 @@ GDB_CALL sint32 camera_orbit(void)
     return camera_capture(pos.bits, angle >> 16, 0);
 }
 
-GDB_CALL sint32 camera_update_focus(void)
+sint32 camera_update_focus(void)
 {
     FUNCTION_MARKER(0x80047600, "GAME.EXE");
     uint32 mask = (actor_health[0].hp > 0 ? 1u : 0u) + (actor_health[1].hp > 0 ? 2u : 0u);
@@ -386,7 +386,7 @@ static sint32 follow_biker(void)
     return update_target_from(x, z);
 }
 
-GDB_CALL sint32 camera_update_stage0(void)
+sint32 camera_update_stage0(void)
 {
     FUNCTION_MARKER(0x80027DF8, "GAME.EXE");
     uint32 mode = game_session.scene_phase;
@@ -910,7 +910,7 @@ const CAMERA_STAGE_HANDLER camera_stage_handlers[CAMERA_HANDLER_COUNT] = {
     {update_actor2, CAMERA_HANDLER_ACTOR2},        {update_stage14, CAMERA_HANDLER_STAGE14}, {update_stage15, CAMERA_HANDLER_STAGE15}, {update_stage16, CAMERA_HANDLER_STAGE16}, {update_stage17, CAMERA_HANDLER_STAGE17}, {update_stage18, CAMERA_HANDLER_STAGE18}, {update_stage19, CAMERA_HANDLER_STAGE19}, {update_stage20, CAMERA_HANDLER_STAGE20}, {update_stage21, CAMERA_HANDLER_STAGE21}, {update_stage22, CAMERA_HANDLER_STAGE22}, {update_stage23, CAMERA_HANDLER_STAGE23}, {update_stage24, CAMERA_HANDLER_STAGE24}, {update_frontend, CAMERA_HANDLER_FRONTEND},
 };
 
-GDB_CALL sint32 camera_update_stage(CAMERA_STAGE_REFERENCE ref)
+sint32 camera_update_stage(CAMERA_STAGE_REFERENCE ref)
 {
     XASSERT(ref);
     return ref->update();

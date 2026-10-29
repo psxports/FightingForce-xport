@@ -3,7 +3,7 @@
 /* Both initialized tracks begin with acceleration fifty */
 sint16 train_accel[TRAIN_SIDE_COUNT] = {50, 50};
 
-GDB_CALL uint32 train_update(MODEL_OBJECT *model)
+uint32 train_update(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003fdccu, "GAME.EXE");
     sint32 side, max_speed, state, distance, val, volume, denominator, numerator;

@@ -95,7 +95,7 @@ static sint32 pause_select(uint32 player, uint32 pad)
     return 0;
 }
 
-GDB_CALL sint32 game_pause_run(void)
+sint32 game_pause_run(void)
 {
     FUNCTION_MARKER(0x8005DBBC, "GAME.EXE");
     uint32 player = (game_pause_flags & 2u) != 0, pad = pad_game.port[player], buttons, flags;

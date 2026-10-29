@@ -57,22 +57,22 @@ typedef struct GEOMETRY_WORKSPACE
 extern GEOMETRY_WORKSPACE geometry_workspace;
 
 /* Matrix, packed XY and depth views share the same scratch storage */
-GDB_CALL void transform_pop(void);
-GDB_CALL void transform_push(void);
-GDB_CALL void transform_translate(sint32 x, sint32 y, sint32 z);
-GDB_CALL void transform_reload(void);
-GDB_CALL uint32 transform_point(sint32 x, sint32 y, sint32 z, uint32 output[3]);
-GDB_CALL void transform_pitch(sint32 angle);
-GDB_CALL void transform_pitch_idx(uint32 idx);
-GDB_CALL void transform_yaw(sint32 angle);
-GDB_CALL void transform_yaw_idx(uint32 idx);
-GDB_CALL void transform_roll(sint32 angle);
-GDB_CALL void transform_roll_idx(uint32 idx);
-GDB_CALL void transform_scale(sint32 x, sint32 y, sint32 z);
-GDB_CALL void transform_reset(void);
-GDB_CALL sint32 transform_identity(void);
-GDB_CALL sint32 transform_origin_visible(void);
-GDB_CALL void transform_load(const POSE_MATRIX *src);
-GDB_CALL sint16 transform_origin_depth(void);
+void transform_pop(void);
+void transform_push(void);
+void transform_translate(sint32 x, sint32 y, sint32 z);
+void transform_reload(void);
+uint32 transform_point(sint32 x, sint32 y, sint32 z, uint32 output[3]);
+void transform_pitch(sint32 angle);
+void transform_pitch_idx(uint32 idx);
+void transform_yaw(sint32 angle);
+void transform_yaw_idx(uint32 idx);
+void transform_roll(sint32 angle);
+void transform_roll_idx(uint32 idx);
+void transform_scale(sint32 x, sint32 y, sint32 z);
+void transform_reset(void);
+sint32 transform_identity(void);
+sint32 transform_origin_visible(void);
+void transform_load(const POSE_MATRIX *src);
+sint16 transform_origin_depth(void);
 
 #endif

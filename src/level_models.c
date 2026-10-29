@@ -12,7 +12,7 @@
 
 /* 14A34..14B70 stage0 initialization, before music and frame-loop setup. */
 
-GDB_CALL sint32 level_run(void)
+sint32 level_run(void)
 {
     sint32 result;
     FUNCTION_MARKER(0x80014a34, "GAME.EXE");
@@ -31,7 +31,7 @@ GDB_CALL sint32 level_run(void)
 
 /* 14808: initial player positions/orientation and camera origin. */
 
-GDB_CALL uint32 level_load_common_models(void)
+uint32 level_load_common_models(void)
 {
     FUNCTION_MARKER(0x80016c18u, "GAME.EXE");
     MODEL_REFERENCE model0, model1, model2, model3, model4;

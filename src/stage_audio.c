@@ -2,7 +2,7 @@
 
 STAGE_AUDIO_SLOT stage_audio_slots[STAGE_AUDIO_SLOT_COUNT];
 
-GDB_CALL sint32 stage_audio_start(void)
+sint32 stage_audio_start(void)
 {
     FUNCTION_MARKER(0x80014584, "GAME.EXE");
     uint32 stage = game_session.stage;

@@ -2,7 +2,7 @@
 
 VEHICLE_STEERING vehicle_steering;
 
-GDB_CALL sint32 vehicle_steering_draw(MODEL_OBJECT *item)
+sint32 vehicle_steering_draw(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032e20u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
@@ -87,7 +87,7 @@ static sint32 vehicle_steering_probe(MODEL_OBJECT *model, uint32 dx, uint32 dz)
     return 1;
 }
 
-GDB_CALL sint32 vehicle_steering_move(MODEL_OBJECT *model)
+sint32 vehicle_steering_move(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f6ecu, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
@@ -165,7 +165,7 @@ static sint32 apply_turn(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 vehicle_steering_update(MODEL_OBJECT *model)
+uint32 vehicle_steering_update(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f9c0u, "GAME.EXE");
     uint32 x = actor_positions[0].x.bits, z = actor_positions[0].z.bits, offset, dx, dz;

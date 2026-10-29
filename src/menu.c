@@ -39,7 +39,7 @@ const MENU menu_defaults = {
     .question_cancel = &menu_callback_main,
 };
 
-GDB_CALL uint32 language_menu_draw(void)
+uint32 language_menu_draw(void)
 {
     const TEXTURE_DESCRIPTOR *desc;
     FUNCTION_MARKER(0x800697a4u, "GAME.EXE");
@@ -101,7 +101,7 @@ GDB_CALL uint32 language_menu_draw(void)
     return text_center(language_heading, 30);
 }
 
-GDB_CALL uint32 language_menu_run(void)
+uint32 language_menu_run(void)
 {
     FUNCTION_MARKER(0x80069b34u, "GAME.EXE");
     uint32 buttons, tick, selection;
@@ -253,7 +253,7 @@ static uint32 menu_dim_backdrop(void)
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
-GDB_CALL uint32 menu_begin_dim_frame(void)
+uint32 menu_begin_dim_frame(void)
 {
     FUNCTION_MARKER(0x8006a5b8u, "GAME.EXE");
     sint32 r, g, b;
@@ -294,7 +294,7 @@ sint32 menu_end_dialog(uint32 retained_s3)
     return 0;
 }
 
-GDB_CALL sint32 menu_question_update(void)
+sint32 menu_question_update(void)
 {
     FUNCTION_MARKER(0x800520acu, "GAME.EXE");
     static const uint32 color_offsets[4] = {0, 3, 9, 6};
@@ -346,7 +346,7 @@ GDB_CALL sint32 menu_question_update(void)
     return 0;
 }
 
-GDB_CALL sint32 menu_message_update(void)
+sint32 menu_message_update(void)
 {
     FUNCTION_MARKER(0x80051e50u, "GAME.EXE");
     uint32 phase = menu.message_phase;
@@ -401,7 +401,7 @@ GDB_CALL sint32 menu_message_update(void)
 }
 
 /* Original 4FEF4..4FF70 */
-GDB_CALL void menu_prepare_frame(void)
+void menu_prepare_frame(void)
 {
     uint32 yaw, pitch, x, y, z, tick;
     hud_update();
@@ -480,13 +480,13 @@ sint32 menu_update_selection_frame(uint32 *retained_s3)
     return result;
 }
 
-GDB_CALL sint32 menu_update_frame(void)
+sint32 menu_update_frame(void)
 {
     uint32 retained_s3 = 0xffffffff;
     return menu_update_selection_frame(&retained_s3);
 }
 
-GDB_CALL sint32 menu_finish_selection(sint32 skip_scene)
+sint32 menu_finish_selection(sint32 skip_scene)
 {
     int i;
     uint32 count;
@@ -542,26 +542,26 @@ sint32 menu_play_effect(sint32 id, sint32 volume)
     return game_services.play_effect(id, volume, 0x1f00);
 }
 
-GDB_CALL sint32 menu_play_move_sound(void)
+sint32 menu_play_move_sound(void)
 {
     FUNCTION_MARKER(0x8004f468u, "GAME.EXE");
     return menu_play_effect(3, 255);
 }
 
-GDB_CALL sint32 menu_play_confirm_sound(void)
+sint32 menu_play_confirm_sound(void)
 {
     FUNCTION_MARKER(0x8004f490u, "GAME.EXE");
     return menu_play_effect(4, 127);
 }
 
-GDB_CALL sint32 menu_draw_primary_pad_notice(sint32 y)
+sint32 menu_draw_primary_pad_notice(sint32 y)
 {
     FUNCTION_MARKER(0x8004f4f8u, "GAME.EXE");
     return text_center(localization.text[LOCAL_TEXT_CONTROLLER1_REMOVED], y);
 }
 
 /* Draw the main menu before processing edge-triggered input */
-GDB_CALL sint32 main_menu_update(void)
+sint32 main_menu_update(void)
 {
     FUNCTION_MARKER(0x80050270, "GAME.EXE");
     uint32 phase = menu.color_phase, mode, frame, menu_count, other_count, stamp;
@@ -983,7 +983,7 @@ uint32 menu_initialize(void)
     return 0;
 }
 
-GDB_CALL uint32 menu_run(void)
+uint32 menu_run(void)
 {
     uint32 timeout, retained_s3 = 0xffffffff;
     FUNCTION_MARKER(0x8004fbcc, "GAME.EXE");
@@ -1026,7 +1026,7 @@ static void copy_text(const char *src, uint32 src_capacity)
     } while (byte);
 }
 
-GDB_CALL uint32 menu_message_open(const char *message, uint32 message_capacity, MENU_CALLBACK_REFERENCE callback)
+uint32 menu_message_open(const char *message, uint32 message_capacity, MENU_CALLBACK_REFERENCE callback)
 {
     FUNCTION_MARKER(0x80051e14u, "GAME.EXE");
     menu.message_return = callback;
@@ -1036,7 +1036,7 @@ GDB_CALL uint32 menu_message_open(const char *message, uint32 message_capacity, 
     return 0x80051e50;
 }
 
-GDB_CALL uint32 menu_question_open(const char *message, uint32 message_capacity, uint32 kind, MENU_CALLBACK_REFERENCE accept, MENU_CALLBACK_REFERENCE cancel)
+uint32 menu_question_open(const char *message, uint32 message_capacity, uint32 kind, MENU_CALLBACK_REFERENCE accept, MENU_CALLBACK_REFERENCE cancel)
 {
     FUNCTION_MARKER(0x8005205cu, "GAME.EXE");
     menu.question_accept = accept;
@@ -1048,13 +1048,13 @@ GDB_CALL uint32 menu_question_open(const char *message, uint32 message_capacity,
     return 0x800520ac;
 }
 
-GDB_CALL uint32 menu_message_why_not(void)
+uint32 menu_message_why_not(void)
 {
     FUNCTION_MARKER(0x800523c8u, "GAME.EXE");
     return menu_message_open(message_why_not, sizeof(message_why_not), &menu_callback_options);
 }
 
-GDB_CALL uint32 menu_message_cannot(void)
+uint32 menu_message_cannot(void)
 {
     FUNCTION_MARKER(0x800523f8u, "GAME.EXE");
     return menu_message_open(message_cannot, sizeof(message_cannot), &menu_callback_options);

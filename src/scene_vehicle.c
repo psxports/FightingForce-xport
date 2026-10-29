@@ -1,6 +1,6 @@
 #include "game.h"
 
-GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
+intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80043978u, "GAME.EXE");
     /* TODO: Investigate a scene vehicle with a foreign native owner */
@@ -223,7 +223,7 @@ region_update:
     return actors_collide_vehicle(region, model);
 }
 
-GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
+uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80044334u, "GAME.EXE");
     /* TODO: Investigate a scene vehicle with a foreign native owner */
@@ -359,7 +359,7 @@ region_update:
     return 0;
 }
 
-GDB_CALL sint32 scene_vehicle_update_accelerating_truck(MODEL_OBJECT *model)
+sint32 scene_vehicle_update_accelerating_truck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80043128u, "GAME.EXE");
     /* TODO: Investigate emitter operands outside both native object pools */
@@ -392,7 +392,7 @@ GDB_CALL sint32 scene_vehicle_update_accelerating_truck(MODEL_OBJECT *model)
 
 static const uint32 transport_wrap_kinds[8] = {175, 176, 177, 178, 179, 180, 181, 182};
 
-GDB_CALL uint32 scene_vehicle_update_traffic(MODEL_OBJECT *model)
+uint32 scene_vehicle_update_traffic(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8004471cu, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
@@ -437,7 +437,7 @@ enum
     SCENE_CAR_MOVING_EXHAUST_WIDTH = 80 << 16
 };
 
-GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
+uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80042ba0u, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
@@ -548,7 +548,7 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
     return actors_collide_vehicle(region, model);
 }
 
-GDB_CALL sint32 scene_vehicle_update_departure(MODEL_OBJECT *model)
+sint32 scene_vehicle_update_departure(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80042f80u, "GAME.EXE");
     COLLISION_REGION *region;
@@ -607,7 +607,7 @@ GDB_CALL sint32 scene_vehicle_update_departure(MODEL_OBJECT *model)
     return 55;
 }
 
-GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
+uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80044844u, "GAME.EXE");
     /* TODO: Investigate a scene vehicle with a foreign native owner */

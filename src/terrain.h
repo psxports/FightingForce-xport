@@ -49,14 +49,14 @@ typedef union BACKGROUND_IMAGE
 extern TERRAIN_MAP terrain_map;
 extern BACKGROUND_IMAGE background_img;
 
-GDB_CALL uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z);
-GDB_CALL uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row);
-GDB_CALL sint32 background_render_strip(void);
-GDB_CALL sint32 terrain_draw(void);
-GDB_CALL RESOURCE_VIEW terrain_load_texs(const char *name);
-GDB_CALL uint32 terrain_build_map(RESOURCE_VIEW map, RESOURCE_VIEW pixels);
-GDB_CALL uint32 terrain_relocate_tiles(void);
-GDB_CALL uint32 terrain_load(const char *tex_name, const char *map_name);
-GDB_CALL void terrain_build_descs(void);
+uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z);
+uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row);
+sint32 background_render_strip(void);
+sint32 terrain_draw(void);
+RESOURCE_VIEW terrain_load_texs(const char *name);
+uint32 terrain_build_map(RESOURCE_VIEW map, RESOURCE_VIEW pixels);
+uint32 terrain_relocate_tiles(void);
+uint32 terrain_load(const char *tex_name, const char *map_name);
+void terrain_build_descs(void);
 
 #endif

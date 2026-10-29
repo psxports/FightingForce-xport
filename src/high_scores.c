@@ -19,7 +19,7 @@ static const uint8 characters[HIGH_SCORE_CHARACTER_COUNT] = {'#', '<', 'A', 'B',
 static const char score_format[4] = "%u";
 static const char score_mark[4] = "?";
 
-GDB_CALL sint32 high_scores_insert(uint32 score)
+sint32 high_scores_insert(uint32 score)
 {
     FUNCTION_MARKER(0x8006aa70, "GAME.EXE");
     uint32 idx = 0, i;
@@ -36,11 +36,12 @@ GDB_CALL sint32 high_scores_insert(uint32 score)
     return idx;
 }
 
-GDB_CALL sint32 high_scores_draw(void)
+sint32 high_scores_draw(void)
 {
     FUNCTION_MARKER(0x8006a968, "GAME.EXE");
     char buffer[32];
-    sint32 i; uint32 width;
+    sint32 i;
+    uint32 width;
     text_center(localization.text[LOCAL_TEXT_HIGH_SCORES], 32);
     for (i = 0; i < HIGH_SCORE_COUNT; i++)
     {
@@ -162,7 +163,7 @@ static void name_edit(uint32 player, uint32 score, char *name)
         memcpy(name, default_name.text, HIGH_SCORE_NAME_BYTES);
 }
 
-GDB_CALL uint32 high_scores_run(uint32 score0, uint32 score1)
+uint32 high_scores_run(uint32 score0, uint32 score1)
 {
     FUNCTION_MARKER(0x8006ab80u, "GAME.EXE");
     uint8 saved[8];
@@ -214,7 +215,7 @@ GDB_CALL uint32 high_scores_run(uint32 score0, uint32 score1)
     return high_scores_resume(saved);
 }
 
-GDB_CALL uint32 high_scores_resume(const uint8 *saved)
+uint32 high_scores_resume(const uint8 *saved)
 {
     uint32 buttons, tick, result;
     sint32 fade;

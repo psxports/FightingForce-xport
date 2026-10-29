@@ -29,7 +29,7 @@ static const sint8 digit_width[TEXT_DIGIT_WIDTH_COUNT] = {
     11, 10, 9, 8, 11, 9, 9, 10, 10, 9, 5, 4, 3, 3, 6, 4, 4, 6, 4, 4, 10, 9, 9, 8, 11, 10, 10, 10, 9, 9, 10, 8, 8, 7, 10, 9, 8, 10, 9, 8, 9, 8, 8, 7, 10, 9, 8, 10, 8, 8, 11, 10, 10, 9, 12, 10, 10, 12, 10, 10, 12, 11, 11, 10, 13, 11, 11, 13, 11, 11, 8, 7, 7, 7, 9, 8, 6, 10, 7, 7, 11, 9, 9, 8, 11, 10, 9, 11, 10, 9, 12, 10, 9, 9, 12, 10, 10, 11, 11, 10,
 };
 
-GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
+sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
 {
     FUNCTION_MARKER(0x80061800, "GAME.EXE");
     char *p = buffer, *word = buffer;
@@ -97,7 +97,7 @@ GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
     }
 }
 
-GDB_CALL sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 phase)
+sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 phase)
 {
     FUNCTION_MARKER(0x8006159cu, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -145,7 +145,7 @@ GDB_CALL sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 pha
     return 0;
 }
 
-GDB_CALL sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint32 phase)
+sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint32 phase)
 {
     FUNCTION_MARKER(0x800616dcu, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -185,7 +185,7 @@ GDB_CALL sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint
     return 0;
 }
 
-GDB_CALL sint32 text_draw_lines(sint32 y)
+sint32 text_draw_lines(sint32 y)
 {
     FUNCTION_MARKER(0x800619e8, "GAME.EXE");
     sint32 count = text_layout.line_count;
@@ -212,7 +212,7 @@ GDB_CALL sint32 text_draw_lines(sint32 y)
     return 0;
 }
 
-GDB_CALL sint32 text_draw_right(const char *text, sint32 x, sint32 y)
+sint32 text_draw_right(const char *text, sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80061cb8u, "GAME.EXE");
     uint32 width = text_width(text);
@@ -228,7 +228,7 @@ GDB_CALL sint32 text_draw_right(const char *text, sint32 x, sint32 y)
 
 /* Original GAME.EXE:80018670..8001886C. IDA draft audited against all MIPS branches.
  * The unsigned lowercase-range comparison precedes signed special-character cases. */
-GDB_CALL sint32 text_glyph(sint32 character)
+sint32 text_glyph(sint32 character)
 {
     FUNCTION_MARKER(0x80018670, "GAME.EXE");
     if (character - 97u < 26u)
@@ -287,7 +287,7 @@ GDB_CALL sint32 text_glyph(sint32 character)
 }
 
 /* Signed glyph widths and text bytes retain the original ten-pixel margin */
-GDB_CALL sint32 text_width(const char *text)
+sint32 text_width(const char *text)
 {
     FUNCTION_MARKER(0x8005efb8, "GAME.EXE");
     uint32 width = 0;
@@ -315,7 +315,7 @@ GDB_CALL sint32 text_width(const char *text)
 }
 
 /* Original GAME.EXE:80061B7C..80061C68. Signed glyph widths and font table LH. */
-GDB_CALL sint32 text_draw(const char *text, sint32 x, sint32 y)
+sint32 text_draw(const char *text, sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80061b7c, "GAME.EXE");
     PROJECTION_POINT pos = {.v = {x, y, 0, 0}};
@@ -344,7 +344,7 @@ GDB_CALL sint32 text_draw(const char *text, sint32 x, sint32 y)
 }
 
 /* Original GAME.EXE:80061ADC..80061B28. SRA width/2, not C signed division. */
-GDB_CALL sint32 text_center(const char *text, sint32 y)
+sint32 text_center(const char *text, sint32 y)
 {
     FUNCTION_MARKER(0x80061adc, "GAME.EXE");
     sint32 width = text_width(text);
@@ -352,7 +352,7 @@ GDB_CALL sint32 text_center(const char *text, sint32 y)
 }
 
 /* GAME.EXE:80061C68. Logo font bank, fixed depth 16. */
-GDB_CALL uint32 text_draw_logo(sint32 x, sint32 y)
+uint32 text_draw_logo(sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80061c68, "GAME.EXE");
     PROJECTION_POINT pos = {.v = {x, y, 16, 0}};
@@ -366,7 +366,7 @@ GDB_CALL uint32 text_draw_logo(sint32 x, sint32 y)
  * GPU traversal masks to 24 bits. A host pointer must never enter this chain. */
 
 /* Signed byte deltas and late color reloads retain original interpolation */
-GDB_CALL sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const TEXT_GRADIENT *colors)
+sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const TEXT_GRADIENT *colors)
 {
     FUNCTION_MARKER(0x80062c0c, "GAME.EXE");
     sint32 width = text_width(text);
@@ -426,7 +426,7 @@ GDB_CALL sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const T
 }
 
 /* Score digits retain separate carried-character and continuation reads */
-GDB_CALL uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, sint32 y)
+uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80061d0c, "GAME.EXE");
     PROJECTION_POINT pos = {.v = {x, y, 0, 0}};
@@ -456,7 +456,7 @@ GDB_CALL uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, si
 }
 
 /* Negative values use one character; retain the full32 return and unwritten bytes */
-GDB_CALL uint32 text_format_digits(sint32 val, char *dst)
+uint32 text_format_digits(sint32 val, char *dst)
 {
     FUNCTION_MARKER(0x80061e0c, "GAME.EXE");
     uint32 result = val + 48u;
@@ -476,14 +476,14 @@ GDB_CALL uint32 text_format_digits(sint32 val, char *dst)
 }
 
 /* 61B28: centered text, arithmetic width/2, fixed palette93BE4. */
-GDB_CALL sint32 text_center_gradient(const char *text, sint32 y)
+sint32 text_center_gradient(const char *text, sint32 y)
 {
     FUNCTION_MARKER(0x80061b28u, "GAME.EXE");
     sint32 width = text_width(text);
     return text_draw_gradient(text, 160u - (width >> 1), y, &text_active_gradient);
 }
 
-GDB_CALL sint32 text_gradient_update(void)
+sint32 text_gradient_update(void)
 {
     FUNCTION_MARKER(0x80067d3c, "GAME.EXE");
     uint32 phase = text_gradient_phase, i, j;

@@ -7,7 +7,7 @@ sint32 npc_target_priorities[NPC_TARGET_PRIORITY_COUNT];
 NPC_TARGET npc_targets[NPC_BEHAVIOR_ACTOR_COUNT];
 sint32 npc_target_distances[NPC_BEHAVIOR_ACTOR_COUNT];
 
-GDB_CALL sint32 npc_find_target_conflict(sint32 idx, sint32 target)
+sint32 npc_find_target_conflict(sint32 idx, sint32 target)
 {
     FUNCTION_MARKER(0x80048844, "GAME.EXE");
     sint32 i, count = 0, role;
@@ -36,7 +36,7 @@ GDB_CALL sint32 npc_find_target_conflict(sint32 idx, sint32 target)
     return -1;
 }
 
-GDB_CALL void npc_reset_target_priorities(sint32 idx)
+void npc_reset_target_priorities(sint32 idx)
 {
     FUNCTION_MARKER(0x80048964, "GAME.EXE");
     uint32 i;
@@ -46,7 +46,7 @@ GDB_CALL void npc_reset_target_priorities(sint32 idx)
         rank[i] = -1;
 }
 
-GDB_CALL sint32 npc_select_target(sint32 idx)
+sint32 npc_select_target(sint32 idx)
 {
     FUNCTION_MARKER(0x8004899c, "GAME.EXE");
     sint32 i, best = 0, result = -1, val;
@@ -64,7 +64,7 @@ GDB_CALL sint32 npc_select_target(sint32 idx)
     return result;
 }
 
-GDB_CALL sint32 npc_rank_targets(sint32 idx)
+sint32 npc_rank_targets(sint32 idx)
 {
     FUNCTION_MARKER(0x800489f4, "GAME.EXE");
     uint32 config;
@@ -137,7 +137,7 @@ GDB_CALL sint32 npc_rank_targets(sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 npc_update_target(sint32 idx)
+sint32 npc_update_target(sint32 idx)
 {
     FUNCTION_MARKER(0x800531c4, "GAME.EXE");
     NPC_TARGET *choice = npc_targets + idx;
@@ -162,7 +162,7 @@ GDB_CALL sint32 npc_update_target(sint32 idx)
 }
 
 /* Preserve X-only distance and the current-actor candidate comparison */
-GDB_CALL uint32 npc_balance_targets(void)
+uint32 npc_balance_targets(void)
 {
     FUNCTION_MARKER(0x8004a4cc, "GAME.EXE");
     uint32 i, j, target, sel;

@@ -121,12 +121,12 @@ extern ANIMATION_BANK_ID animation_type_banks[ANIMATION_TYPE_COUNT];
 extern uint16 animation_flags[ANIMATION_COUNT];
 extern uint32 animation_fall_exit;
 
-GDB_CALL sint32 animation_start_toggle(sint32 idx, ANIMATION_BANK_ID table, sint32 animation);
-GDB_CALL sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 animation);
-GDB_CALL ACTOR_ANIMATION_SOURCE animation_stream(ANIMATION_BANK_ID table, sint32 animation);
-GDB_CALL uint32 animation_matches_stream(sint32 idx, uint32 action);
-GDB_CALL sint32 animation_movement_state(uint32 state);
-GDB_CALL sint32 animation_update_motion(sint32 idx);
-GDB_CALL sint32 animation_scale_vertical_motion(sint32 idx);
+sint32 animation_start_toggle(sint32 idx, ANIMATION_BANK_ID table, sint32 animation);
+sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 animation);
+ACTOR_ANIMATION_SOURCE animation_stream(ANIMATION_BANK_ID table, sint32 animation);
+uint32 animation_matches_stream(sint32 idx, uint32 action);
+sint32 animation_movement_state(uint32 state);
+sint32 animation_update_motion(sint32 idx);
+sint32 animation_scale_vertical_motion(sint32 idx);
 
 #endif

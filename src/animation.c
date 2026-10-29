@@ -11,7 +11,7 @@ uint32 animation_fall_exit;
 ANIMATION_BANK animation_banks[ANIMATION_BANK_COUNT];
 ANIMATION_BANK_ID animation_type_banks[ANIMATION_TYPE_COUNT];
 
-GDB_CALL ACTOR_ANIMATION_SOURCE animation_stream(ANIMATION_BANK_ID table, sint32 animation)
+ACTOR_ANIMATION_SOURCE animation_stream(ANIMATION_BANK_ID table, sint32 animation)
 {
     FUNCTION_MARKER(0x8001a068, "GAME.EXE");
     /* TODO: Resolve a missing animation bank after the full CDB playthrough */
@@ -22,7 +22,7 @@ GDB_CALL ACTOR_ANIMATION_SOURCE animation_stream(ANIMATION_BANK_ID table, sint32
 
 /* 8001AE7C: conditional vertical scaling for animation 269. Return remains
  * four times the old negative value on unsupported stages, without a store. */
-GDB_CALL sint32 animation_scale_vertical_motion(sint32 idx)
+sint32 animation_scale_vertical_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x8001ae7c, "GAME.EXE");
     ACTOR_ANIMATION *playback = actor_animations + idx;
@@ -49,7 +49,7 @@ GDB_CALL sint32 animation_scale_vertical_motion(sint32 idx)
 }
 
 /* Start a stream and publish initial playback state */
-GDB_CALL sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 animation)
+sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 animation)
 {
     FUNCTION_MARKER(0x80019F00, "GAME.EXE");
     ACTOR_ANIMATION *playback = actor_animations + idx;
@@ -84,7 +84,7 @@ GDB_CALL sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 anim
 }
 
 /* Toggle the retained actor selector before attempting animation startup */
-GDB_CALL sint32 animation_start_toggle(sint32 idx, ANIMATION_BANK_ID table, sint32 animation)
+sint32 animation_start_toggle(sint32 idx, ANIMATION_BANK_ID table, sint32 animation)
 {
     FUNCTION_MARKER(0x8001a03cu, "GAME.EXE");
     ACTOR_ANIMATION *playback = actor_animations + idx;
@@ -93,7 +93,7 @@ GDB_CALL sint32 animation_start_toggle(sint32 idx, ANIMATION_BANK_ID table, sint
 }
 
 /* 8002371C: map animation variants to the state used by actor movement. */
-GDB_CALL sint32 animation_movement_state(uint32 state)
+sint32 animation_movement_state(uint32 state)
 {
     FUNCTION_MARKER(0x8002371c, "GAME.EXE");
     if (state == 198 || state == 70 || state - 71u < 2 || state == 73 || state == 76 || state == 78)
@@ -109,7 +109,7 @@ GDB_CALL sint32 animation_movement_state(uint32 state)
 
 /* 8001AEF4: velocity comes from the old pose, even though decoding advances
  * the stream and replaces velocity fields before movement is applied. */
-GDB_CALL sint32 animation_update_motion(sint32 idx)
+sint32 animation_update_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x8001aef4, "GAME.EXE");
     uint32 stage = game_session.stage;
@@ -193,7 +193,7 @@ movement_done:
 }
 
 /* Compare actual stream locations without merging distinct original address-space views */
-GDB_CALL uint32 animation_matches_stream(sint32 idx, uint32 action)
+uint32 animation_matches_stream(sint32 idx, uint32 action)
 {
     FUNCTION_MARKER(0x8004c464, "GAME.EXE");
     sint32 type = actor_types[idx];

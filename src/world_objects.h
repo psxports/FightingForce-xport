@@ -77,52 +77,52 @@ typedef struct WORLD_REGION_KIND
 extern sint16 world_object_height[MODEL_TYPE_COUNT];
 extern WORLD_REGION_KIND world_region_kinds[WORLD_REGION_KIND_COUNT];
 
-GDB_CALL uint32 world_objects_bob(MODEL_OBJECT *item);
-GDB_CALL uint32 world_objects_update_traffic(MODEL_OBJECT *model);
-GDB_CALL uint32 world_objects_draw_tank(const MODEL_OBJECT *item);
-GDB_CALL void world_objects_roll(MODEL_OBJECT *item);
-GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map);
-GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uint32 z);
-GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uint32 z);
-GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type);
+uint32 world_objects_bob(MODEL_OBJECT *item);
+uint32 world_objects_update_traffic(MODEL_OBJECT *model);
+uint32 world_objects_draw_tank(const MODEL_OBJECT *item);
+void world_objects_roll(MODEL_OBJECT *item);
+uint32 world_objects_load_map(RESOURCE_VIEW map);
+uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uint32 z);
+uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uint32 z);
+uint32 world_objects_init_special(uint32 next_idx, uint32 type);
 
-GDB_CALL uint32 world_objects_build_regions(void);
-GDB_CALL sint32 world_objects_draw(void);
+uint32 world_objects_build_regions(void);
+sint32 world_objects_draw(void);
 
-GDB_CALL uint32 object_draw_base_compressed(MODEL_OBJECT *item);
+uint32 object_draw_base_compressed(MODEL_OBJECT *item);
 
-GDB_CALL uint32 object_draw_compressed(MODEL_OBJECT *item);
+uint32 object_draw_compressed(MODEL_OBJECT *item);
 
-GDB_CALL uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item);
+uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item);
 
-GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model);
+uint32 world_objects_draw_car(const MODEL_OBJECT *model);
 
-GDB_CALL sint32 world_objects_start_army_trucks(void);
-GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model);
-GDB_CALL uint32 world_objects_update_army_truck_wreck(MODEL_OBJECT *model);
+sint32 world_objects_start_army_trucks(void);
+sint32 world_objects_update_army_truck(MODEL_OBJECT *model);
+uint32 world_objects_update_army_truck_wreck(MODEL_OBJECT *model);
 
-GDB_CALL sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachment);
+sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachment);
 
-GDB_CALL uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model);
-GDB_CALL uint32 world_objects_draw_moving_emitter(const MODEL_OBJECT *item);
+uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model);
+uint32 world_objects_draw_moving_emitter(const MODEL_OBJECT *item);
 
-GDB_CALL intptr world_objects_update_burning_bin(MODEL_OBJECT *model);
+intptr world_objects_update_burning_bin(MODEL_OBJECT *model);
 
-GDB_CALL sint32 world_objects_update_water_cannon(MODEL_OBJECT *model);
-GDB_CALL intptr world_objects_update_truck_fire(MODEL_OBJECT *model);
+sint32 world_objects_update_water_cannon(MODEL_OBJECT *model);
+intptr world_objects_update_truck_fire(MODEL_OBJECT *model);
 
-GDB_CALL sint32 world_objects_update_falling_door(MODEL_OBJECT *item);
+sint32 world_objects_update_falling_door(MODEL_OBJECT *item);
 
-GDB_CALL uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model);
+uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model);
 
-GDB_CALL sint32 world_objects_update_lifting_door(MODEL_OBJECT *model);
+sint32 world_objects_update_lifting_door(MODEL_OBJECT *model);
 
-GDB_CALL uint32 world_objects_update_aircraft(MODEL_OBJECT *model);
+uint32 world_objects_update_aircraft(MODEL_OBJECT *model);
 
-GDB_CALL uint32 world_objects_update_scrolling_wall(MODEL_OBJECT *model);
+uint32 world_objects_update_scrolling_wall(MODEL_OBJECT *model);
 
-GDB_CALL uint32 world_objects_update_radar(MODEL_OBJECT *item);
+uint32 world_objects_update_radar(MODEL_OBJECT *item);
 
-GDB_CALL struct EFFECT *world_objects_update_hydrant_spray(const MODEL_OBJECT *model);
+struct EFFECT *world_objects_update_hydrant_spray(const MODEL_OBJECT *model);
 
 #endif

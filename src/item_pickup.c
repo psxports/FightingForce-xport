@@ -5,7 +5,7 @@
 ITEM_PICKUP item_pickup;
 
 /* Select the first eligible slot in original pool order */
-GDB_CALL uint32 item_pickup_select(sint32 idx, sint32 radius)
+uint32 item_pickup_select(sint32 idx, sint32 radius)
 {
     FUNCTION_MARKER(0x80017fe0, "GAME.EXE");
     uint32 type, i;
@@ -101,7 +101,7 @@ GDB_CALL uint32 item_pickup_select(sint32 idx, sint32 radius)
     return 4u * idx;
 }
 
-GDB_CALL void item_pickup_draw(MODEL_OBJECT *item)
+void item_pickup_draw(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005d820, "GAME.EXE");
     /* TODO: Investigate an absent native dynamic draw receiver */
@@ -240,7 +240,7 @@ const OBJECT_CALLBACK callback_default_model_draw = {OBJECT_CALL_VOID_MUTABLE_MO
 
 const OBJECT_CALLBACK callback_model_draw = {OBJECT_CALL_VOID_MUTABLE_MODEL, {.no_result_mutable_model = item_pickup_draw}, 0};
 
-GDB_CALL uint32 item_draw_explosive_countdown(const MODEL_OBJECT *item)
+uint32 item_draw_explosive_countdown(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002bdd0u, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -259,7 +259,7 @@ GDB_CALL uint32 item_draw_explosive_countdown(const MODEL_OBJECT *item)
     return spr_draw(&pos, tex_map[(121u + (grp))]);
 }
 
-GDB_CALL void item_draw_explosive(const MODEL_OBJECT *item)
+void item_draw_explosive(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005dad4u, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -285,7 +285,7 @@ GDB_CALL void item_draw_explosive(const MODEL_OBJECT *item)
     transform_pop();
 }
 
-GDB_CALL sint32 item_pickup_find_for_npc(sint32 x, sint32 z)
+sint32 item_pickup_find_for_npc(sint32 x, sint32 z)
 {
     FUNCTION_MARKER(0x80055b68u, "GAME.EXE");
     uint32 i;

@@ -17,13 +17,13 @@ typedef struct PLAYER_SCORE
 extern PLAYER_SCORE player_scores[PLAYER_COUNT];
 extern uint32 player_repeat_counts[PLAYER_COUNT];
 
-GDB_CALL uint32 player_update_dir(sint32 idx, sint32 state, uint32 *buttons, uint32 locked);
-GDB_CALL void player_move_input(sint32 idx, uint32 buttons);
-GDB_CALL sint32 player_step_exceeds_bounds(sint32 idx);
-GDB_CALL sint32 player_step_blocked(sint32 idx);
-GDB_CALL sint32 player_try_grapple(sint32 idx);
-GDB_CALL sint32 player_start_pair_motion(sint32 idx);
+uint32 player_update_dir(sint32 idx, sint32 state, uint32 *buttons, uint32 locked);
+void player_move_input(sint32 idx, uint32 buttons);
+sint32 player_step_exceeds_bounds(sint32 idx);
+sint32 player_step_blocked(sint32 idx);
+sint32 player_try_grapple(sint32 idx);
+sint32 player_start_pair_motion(sint32 idx);
 
-GDB_CALL void player_play_footstep(sint32 type);
+void player_play_footstep(sint32 type);
 
 #endif

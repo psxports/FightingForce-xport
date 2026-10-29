@@ -21,8 +21,8 @@ typedef struct COLLISION_DROPS
 
 extern COLLISION_DROPS col_drops;
 
-GDB_CALL uint32 col_region_build(COLLISION_REGION *region, sint32 model_type, sint32 hits, sint32 kind, sint32 padding);
-GDB_CALL uint32 col_region_configure(COLLISION_REGION *region, sint32 model_type);
+uint32 col_region_build(COLLISION_REGION *region, sint32 model_type, sint32 hits, sint32 kind, sint32 padding);
+uint32 col_region_configure(COLLISION_REGION *region, sint32 model_type);
 
 typedef struct COLLISION_POINT
 {
@@ -56,9 +56,9 @@ extern COLLISION_REFERENCE col_callbacks[COLLISION_SLOT_COUNT];
 extern const COLLISION_HANDLER col_handlers[COLLISION_HANDLER_COUNT];
 
 /* Actor indices are 0..ACTOR_COUNT-1, or -1 when the original source has no actor */
-GDB_CALL sint32 col_call(COLLISION_REFERENCE target, COLLISION_REGION *obstacle, struct MODEL_OBJECT *model, COLLISION_POINT *contact, sint32 actor_idx);
+sint32 col_call(COLLISION_REFERENCE target, COLLISION_REGION *obstacle, struct MODEL_OBJECT *model, COLLISION_POINT *contact, sint32 actor_idx);
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
-GDB_CALL uint32 col_noop(void);
+uint32 col_noop(void);
 
 #endif

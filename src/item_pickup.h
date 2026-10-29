@@ -19,12 +19,12 @@ typedef struct ITEM_PICKUP
 
 extern ITEM_PICKUP item_pickup;
 
-GDB_CALL uint32 item_pickup_select(sint32 idx, sint32 radius);
-GDB_CALL void item_pickup_draw(struct MODEL_OBJECT *item);
+uint32 item_pickup_select(sint32 idx, sint32 radius);
+void item_pickup_draw(struct MODEL_OBJECT *item);
 
-GDB_CALL uint32 item_draw_explosive_countdown(const struct MODEL_OBJECT *item);
-GDB_CALL void item_draw_explosive(const struct MODEL_OBJECT *item);
+uint32 item_draw_explosive_countdown(const struct MODEL_OBJECT *item);
+void item_draw_explosive(const struct MODEL_OBJECT *item);
 
-GDB_CALL sint32 item_pickup_find_for_npc(sint32 x, sint32 z);
+sint32 item_pickup_find_for_npc(sint32 x, sint32 z);
 
 #endif

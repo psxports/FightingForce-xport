@@ -5,6 +5,6 @@
 
 extern uint8 game_pause_flags;
 
-GDB_CALL sint32 game_pause_run(void);
+sint32 game_pause_run(void);
 
 #endif

@@ -3,7 +3,7 @@
 /* Original initialized mode is two; segment storage belongs to BSS */
 SUSPENDED suspended = {2};
 
-GDB_CALL uint32 suspended_update(MODEL_OBJECT *model)
+uint32 suspended_update(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80044d90u, "GAME.EXE");
     uint32 x, y, total = 0, offset, phase;
@@ -95,7 +95,7 @@ GDB_CALL uint32 suspended_update(MODEL_OBJECT *model)
     return 2;
 }
 
-GDB_CALL void suspended_draw(const MODEL_OBJECT *model)
+void suspended_draw(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x800450f8u, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -117,7 +117,7 @@ GDB_CALL void suspended_draw(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL void suspended_noop(void)
+void suspended_noop(void)
 {
     FUNCTION_MARKER(0x80044d88u, "GAME.EXE");
 }

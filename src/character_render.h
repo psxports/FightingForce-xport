@@ -3,6 +3,6 @@
 
 #include "xport.h"
 
-GDB_CALL sint32 characters_draw(void);
+sint32 characters_draw(void);
 
 #endif

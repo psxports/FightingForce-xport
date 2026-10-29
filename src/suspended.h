@@ -31,9 +31,9 @@ typedef struct SUSPENDED
 
 extern SUSPENDED suspended;
 
-GDB_CALL uint32 suspended_update(MODEL_OBJECT *model);
-GDB_CALL void suspended_draw(const MODEL_OBJECT *model);
+uint32 suspended_update(MODEL_OBJECT *model);
+void suspended_draw(const MODEL_OBJECT *model);
 
-GDB_CALL void suspended_noop(void);
+void suspended_noop(void);
 
 #endif

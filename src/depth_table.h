@@ -10,6 +10,6 @@ enum
 
 extern sint16 depth_table[DEPTH_TABLE_COUNT];
 
-GDB_CALL uint32 depth_table_build(void);
+uint32 depth_table_build(void);
 
 #endif

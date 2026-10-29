@@ -7,7 +7,7 @@
 ITEM_CORRECTION item_corrections[DYNAMIC_ITEM_TYPE_COUNT];
 
 /* Original trail mesh operations retain the pad halfword of every vertex */
-GDB_CALL sint32 character_trail_clear(sint32 resource)
+sint32 character_trail_clear(sint32 resource)
 {
     FUNCTION_MARKER(0x80057ca4, "GAME.EXE");
     MODEL_REFERENCE model;
@@ -29,7 +29,7 @@ GDB_CALL sint32 character_trail_clear(sint32 resource)
     return 0;
 }
 
-GDB_CALL uint32 character_trail_append(sint32 idx, sint32 attachment)
+uint32 character_trail_append(sint32 idx, sint32 attachment)
 {
     FUNCTION_MARKER(0x80057ce4, "GAME.EXE");
     ACTOR_TRAIL *trail = actor_trails + idx;
@@ -197,7 +197,7 @@ static uint32 actor_color(ACTOR_LIGHTING *light, int player)
 }
 
 /* 58D9C: item correction rotations in Z/Y/X order, then signed fixed translation. */
-GDB_CALL void item_apply_correction(const ITEM_CORRECTION *correction)
+void item_apply_correction(const ITEM_CORRECTION *correction)
 {
     FUNCTION_MARKER(0x80058d9c, "GAME.EXE");
     sint32 angle = correction->roll;
@@ -484,7 +484,7 @@ static void actor_body(uint32 idx, sint32 type, int player)
 }
 
 /* 593FC: character, held-item, trail, van and shadow rendering. */
-GDB_CALL sint32 characters_draw(void)
+sint32 characters_draw(void)
 {
     FUNCTION_MARKER(0x800593fc, "GAME.EXE");
     sint32 i, type, count;
@@ -541,7 +541,7 @@ GDB_CALL sint32 characters_draw(void)
 }
 
 /* 5D67C: settled debris local transform and kind-dependent origin bias. */
-GDB_CALL void object_draw_settled_debris(const MODEL_OBJECT *item)
+void object_draw_settled_debris(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005d67cu, "GAME.EXE");
     uint32 kind;

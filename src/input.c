@@ -20,7 +20,7 @@ const DEMO_CONFIG demo_config[DEMO_COUNT] = {
 
 typedef char PAD_INPUT_LAYOUT_CHECK[sizeof(PAD_INPUT_STREAM) == 8 && offsetof(PAD_INPUT_STREAM, frame) == 8 && sizeof(PAD_INPUT_FRAME) == 8 ? 1 : -1];
 
-GDB_CALL uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len)
+uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len)
 {
     FUNCTION_MARKER(0x8005f058, "GAME.EXE");
     XASSERT(data && !((uintptr_t)data & 3u) && byte_len >= sizeof(*data));
@@ -34,13 +34,13 @@ GDB_CALL uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len)
     return pad_stream.count;
 }
 
-GDB_CALL void pad_stream_disable(void)
+void pad_stream_disable(void)
 {
     FUNCTION_MARKER(0x8005f0c8, "GAME.EXE");
     pad_stream.mode = PAD_STREAM_LIVE;
 }
 
-GDB_CALL uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len)
+uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len)
 {
     FUNCTION_MARKER(0x8005f0d8, "GAME.EXE");
     uint32 random;
@@ -60,7 +60,7 @@ GDB_CALL uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len)
     return 1;
 }
 
-GDB_CALL void pad_stream_reset(void)
+void pad_stream_reset(void)
 {
     FUNCTION_MARKER(0x8005f214, "GAME.EXE");
     pad_stream.mode = PAD_STREAM_LIVE;
@@ -69,7 +69,7 @@ GDB_CALL void pad_stream_reset(void)
 }
 
 /* 5F558: raw gameplay buttons; the first mapping wins if both IDs match. */
-GDB_CALL uint32 pad_game_buttons(uint32 pad)
+uint32 pad_game_buttons(uint32 pad)
 {
     FUNCTION_MARKER(0x8005f558, "GAME.EXE");
     uint32 val;
@@ -84,7 +84,7 @@ GDB_CALL uint32 pad_game_buttons(uint32 pad)
 }
 
 /* Original normal, recording and playback input paths */
-GDB_CALL uint32 pad_game_poll(void)
+uint32 pad_game_poll(void)
 {
     FUNCTION_MARKER(0x8005f23c, "GAME.EXE");
     if (game_services.audit_input_event)
@@ -168,7 +168,7 @@ static uint8 *pad_action_slot(uint32 player, PAD_BIND binding)
 }
 
 /* Decay action latches, then retain new face-button edges for twelve ticks */
-GDB_CALL uint8 *pad_action_press(uint32 player, uint32 buttons)
+uint8 *pad_action_press(uint32 player, uint32 buttons)
 {
     FUNCTION_MARKER(0x8005f8f0, "GAME.EXE");
     uint32 i;
@@ -204,7 +204,7 @@ GDB_CALL uint8 *pad_action_press(uint32 player, uint32 buttons)
     return 0;
 }
 
-GDB_CALL uint8 *pad_action_hold(uint32 player, uint32 buttons)
+uint8 *pad_action_hold(uint32 player, uint32 buttons)
 {
     FUNCTION_MARKER(0x8005fa58, "GAME.EXE");
     uint8 *slot;
@@ -249,14 +249,14 @@ void pad_host_publish(uint32 connected, uint32 buttons0, uint32 buttons1)
     }
 }
 
-GDB_CALL uint8 *pad_action_clear(sint32 player)
+uint8 *pad_action_clear(sint32 player)
 {
     FUNCTION_MARKER(0x8005fb00, "GAME.EXE");
     return memset(pad_action.latch[player], 0, sizeof(pad_action.latch[player]));
 }
 
 /* Poll mapped menu edges without changing the last raw menu sample */
-GDB_CALL uint32 pad_menu_poll(sint32 player)
+uint32 pad_menu_poll(sint32 player)
 {
     FUNCTION_MARKER(0x80068114, "GAME.EXE");
     if (game_services.audit_input_event)
@@ -270,7 +270,7 @@ GDB_CALL uint32 pad_menu_poll(sint32 player)
 GAME_SERVICES game_services;
 
 /* GAME.EXE:800573A8. The second pad is counted only if the first is valid. */
-GDB_CALL sint32 pad_count_devices(void)
+sint32 pad_count_devices(void)
 {
     FUNCTION_MARKER(0x800573a8, "GAME.EXE");
     const PAD_REPORT *pad = &pad_reports[0];
@@ -281,7 +281,7 @@ GDB_CALL sint32 pad_count_devices(void)
 }
 
 /* GAME.EXE:8005EC90. Return is always one, not the controller count. */
-GDB_CALL sint32 pad_refresh_ports(void)
+sint32 pad_refresh_ports(void)
 {
     FUNCTION_MARKER(0x8005ec90, "GAME.EXE");
     pad_decode.count = pad_count_devices();
@@ -292,7 +292,7 @@ GDB_CALL sint32 pad_refresh_ports(void)
 
 /* GAME.EXE:8005F5AC. Complete input decoder including grace counters and reset.
  * The reset path does not return: IDA's post-longjmp store is unreachable. */
-GDB_CALL sint16 pad_decode_buttons(sint32 port)
+sint16 pad_decode_buttons(sint32 port)
 {
     FUNCTION_MARKER(0x8005f5ac, "GAME.EXE");
     /* Apply recorded buttons at the original decode-time load */
@@ -400,7 +400,7 @@ GDB_CALL sint16 pad_decode_buttons(sint32 port)
 }
 
 /* Existing selection phase of original15C6C, not a new original function */
-GDB_CALL void demo_select_next(void)
+void demo_select_next(void)
 {
     uint32 idx = demo.next_idx;
     sint32 divisor = demo.count;

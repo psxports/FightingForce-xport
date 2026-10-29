@@ -19,10 +19,10 @@ extern const SOUND_SETTINGS sound_settings_defaults;
 extern SOUND_SETTINGS sound_settings;
 extern uint32 sound_reverb_configured;
 
-GDB_CALL sint32 sound_reverb_reset(void);
-GDB_CALL sint32 sound_reverb_configure(void);
-GDB_CALL sint32 sound_reverb_enable_channels(void);
-GDB_CALL sint32 sound_reverb_disable_channels(void);
-GDB_CALL sint32 sound_output_init(void);
+sint32 sound_reverb_reset(void);
+sint32 sound_reverb_configure(void);
+sint32 sound_reverb_enable_channels(void);
+sint32 sound_reverb_disable_channels(void);
+sint32 sound_output_init(void);
 
 #endif

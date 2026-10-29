@@ -34,7 +34,7 @@ static const COLLISION_MODEL_RULE model_rules[COLLISION_MODEL_RULE_COUNT + 1] = 
 };
 
 /* Original five arguments; padding is caller SP+10, not argument nine from IDA */
-GDB_CALL uint32 col_region_build(COLLISION_REGION *region, sint32 model_type, sint32 hits, sint32 kind, sint32 padding)
+uint32 col_region_build(COLLISION_REGION *region, sint32 model_type, sint32 hits, sint32 kind, sint32 padding)
 {
     FUNCTION_MARKER(0x80016a28, "GAME.EXE");
     sint32 min_x = 32767, min_z = 32767, max_x = -32768, max_z = -32768, i, n, x, z;
@@ -103,7 +103,7 @@ GDB_CALL uint32 col_region_build(COLLISION_REGION *region, sint32 model_type, si
     return result;
 }
 
-GDB_CALL uint32 col_region_configure(COLLISION_REGION *region, sint32 model_type)
+uint32 col_region_configure(COLLISION_REGION *region, sint32 model_type)
 {
     FUNCTION_MARKER(0x8003b77c, "GAME.EXE");
     const COLLISION_MODEL_RULE *entry = model_rules;
@@ -132,7 +132,7 @@ GDB_CALL uint32 col_region_configure(COLLISION_REGION *region, sint32 model_type
 
 COLLISION_REFERENCE col_callbacks[COLLISION_SLOT_COUNT];
 
-GDB_CALL sint32 col_call(COLLISION_REFERENCE target, COLLISION_REGION *obstacle, MODEL_OBJECT *model, COLLISION_POINT *contact, sint32 actor_idx)
+sint32 col_call(COLLISION_REFERENCE target, COLLISION_REGION *obstacle, MODEL_OBJECT *model, COLLISION_POINT *contact, sint32 actor_idx)
 {
     if (game_services.col_event)
         return game_services.col_event(target, obstacle, model, contact, actor_idx);
@@ -151,7 +151,7 @@ GDB_CALL sint32 col_call(COLLISION_REFERENCE target, COLLISION_REGION *obstacle,
 }
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
-GDB_CALL uint32 col_noop(void)
+uint32 col_noop(void)
 {
     FUNCTION_MARKER(0x8001f510u, "GAME.EXE");
     return 0;

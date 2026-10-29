@@ -120,8 +120,8 @@ extern NPC_AI_CAPABILITY npc_ai_capabilities[NPC_AI_CAPABILITY_COUNT];
 extern NPC_BEHAVIOR_ROW npc_behavior_rows[NPC_BEHAVIOR_ROW_COUNT];
 extern NPC_BEHAVIOR_ACTOR npc_behavior_actors[NPC_BEHAVIOR_ACTOR_COUNT];
 
-GDB_CALL void npc_behavior_load(void);
-GDB_CALL sint32 npc_base_animation(sint32 idx);
-GDB_CALL sint32 npc_start_animation(sint32 idx, ANIMATION_BANK_ID table, sint32 state);
+void npc_behavior_load(void);
+sint32 npc_base_animation(sint32 idx);
+sint32 npc_start_animation(sint32 idx, ANIMATION_BANK_ID table, sint32 state);
 
 #endif

@@ -46,7 +46,7 @@ static uint32 next_line(void)
     }
 }
 
-GDB_CALL uint32 localization_load(void)
+uint32 localization_load(void)
 {
     FUNCTION_MARKER(0x80018e50, "GAME.EXE");
     uint32 i;

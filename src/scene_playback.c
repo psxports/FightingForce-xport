@@ -26,7 +26,7 @@ enum
 static const sint16 loading_steps[SCENE_SEQUENCE_COUNT] = {69, 38, 29, 32, 244, 26, 253, 0};
 
 /* Original scene resource operations retain their numeric result ABI temporarily */
-GDB_CALL uint32 scene_load_resources0(void)
+uint32 scene_load_resources0(void)
 {
     FUNCTION_MARKER(0x80039578, "GAME.EXE");
     uint32 arena, byte_len;
@@ -101,7 +101,7 @@ GDB_CALL uint32 scene_load_resources0(void)
     return clip1.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources1(void)
+uint32 scene_load_resources1(void)
 {
     FUNCTION_MARKER(0x80039a10u, "GAME.EXE");
     uint32 arena, byte_len;
@@ -154,7 +154,7 @@ GDB_CALL uint32 scene_load_resources1(void)
     return clip7.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources2(void)
+uint32 scene_load_resources2(void)
 {
     FUNCTION_MARKER(0x80039c88u, "GAME.EXE");
     uint32 arena, byte_len;
@@ -192,7 +192,7 @@ GDB_CALL uint32 scene_load_resources2(void)
     return clip4.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources3(void)
+uint32 scene_load_resources3(void)
 {
     FUNCTION_MARKER(0x80039e18u, "GAME.EXE");
     uint32 arena, byte_len;
@@ -229,7 +229,7 @@ GDB_CALL uint32 scene_load_resources3(void)
     return clip1.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources4(void)
+uint32 scene_load_resources4(void)
 {
     FUNCTION_MARKER(0x80039fdcu, "GAME.EXE");
     uint32 arena, byte_len;
@@ -265,7 +265,7 @@ GDB_CALL uint32 scene_load_resources4(void)
     return clip5.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources5(void)
+uint32 scene_load_resources5(void)
 {
     MODEL_REFERENCE model0;
     FUNCTION_MARKER(0x8003a12cu, "GAME.EXE");
@@ -304,7 +304,7 @@ GDB_CALL uint32 scene_load_resources5(void)
     return clip3.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources6(void)
+uint32 scene_load_resources6(void)
 {
     MODEL_REFERENCE model0;
     FUNCTION_MARKER(0x8003a2c0u, "GAME.EXE");
@@ -352,7 +352,7 @@ GDB_CALL uint32 scene_load_resources6(void)
     return clip5.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources7(void)
+uint32 scene_load_resources7(void)
 {
     FUNCTION_MARKER(0x8003a4d4u, "GAME.EXE");
     uint32 arena, byte_len;
@@ -394,7 +394,7 @@ GDB_CALL uint32 scene_load_resources7(void)
     return clip7.context_address;
 }
 
-GDB_CALL uint32 scene_load_resources8(void)
+uint32 scene_load_resources8(void)
 {
     FUNCTION_MARKER(0x8003a664u, "GAME.EXE");
     uint32 arena, byte_len;
@@ -412,7 +412,7 @@ GDB_CALL uint32 scene_load_resources8(void)
 
 /* 4799C: signed upper clamp only; all fixed-point shifts use unsigned bits
  * to preserve MIPS wrapping without shifting negative signed C values */
-GDB_CALL sint32 scene_apply_camera_frame(sint32 frame)
+sint32 scene_apply_camera_frame(sint32 frame)
 {
     FUNCTION_MARKER(0x8004799c, "GAME.EXE");
     uint32 yaw;
@@ -433,7 +433,7 @@ GDB_CALL sint32 scene_apply_camera_frame(sint32 frame)
 }
 
 /* 47A40 does not clamp the frame; its final halfword store is in jr's slot */
-GDB_CALL uint32 scene_apply_object_frame(sint32 frame, uint32 object_idx, uint32 stream)
+uint32 scene_apply_object_frame(sint32 frame, uint32 object_idx, uint32 stream)
 {
     FUNCTION_MARKER(0x80047a40, "GAME.EXE");
     uint32 result;
@@ -456,7 +456,7 @@ GDB_CALL uint32 scene_apply_object_frame(sint32 frame, uint32 object_idx, uint32
     return result;
 }
 
-GDB_CALL sint32 scene_update_prison_ending(uint32 frame)
+sint32 scene_update_prison_ending(uint32 frame)
 {
     FUNCTION_MARKER(0x8003b5f0u, "GAME.EXE");
     uint32 tick = game_session.tick;
@@ -495,7 +495,7 @@ GDB_CALL sint32 scene_update_prison_ending(uint32 frame)
     return 8192;
 }
 
-GDB_CALL uint32 scene_update_hovercraft_fleet(sint32 frame)
+uint32 scene_update_hovercraft_fleet(sint32 frame)
 {
     FUNCTION_MARKER(0x8003a934u, "GAME.EXE");
     if ((sint32)camera.pos.y.bits > (sint32)0xff300000u)
@@ -511,7 +511,7 @@ GDB_CALL uint32 scene_update_hovercraft_fleet(sint32 frame)
     return scene_apply_object_frame(frame, 3, 4);
 }
 
-GDB_CALL uint32 scene_update_wing(sint32 frame)
+uint32 scene_update_wing(sint32 frame)
 {
     FUNCTION_MARKER(0x8003aa00u, "GAME.EXE");
     camera.angles.pitch_bits = (uint16)(((uint16)camera.angles.pitch) - 2048u);
@@ -520,7 +520,7 @@ GDB_CALL uint32 scene_update_wing(sint32 frame)
     return scene_apply_object_frame(frame, 16, 1);
 }
 
-GDB_CALL uint32 scene_update_island_fleet(sint32 frame)
+uint32 scene_update_island_fleet(sint32 frame)
 {
     FUNCTION_MARKER(0x8003aa54u, "GAME.EXE");
     world_objects.count = 6;
@@ -536,7 +536,7 @@ GDB_CALL uint32 scene_update_island_fleet(sint32 frame)
     return scene_apply_object_frame(frame, 5, 5);
 }
 
-GDB_CALL sint32 scene_update_traffic_explosions(uint32 frame)
+sint32 scene_update_traffic_explosions(uint32 frame)
 {
     FUNCTION_MARKER(0x8003a700u, "GAME.EXE");
     camera.pos.y.bits = (sint32)camera.pos.y.bits >> 1;
@@ -583,7 +583,7 @@ GDB_CALL sint32 scene_update_traffic_explosions(uint32 frame)
     return scene_apply_object_frame(frame, 32, 7);
 }
 
-GDB_CALL uint32 scene_update_wing_destruction(uint32 frame)
+uint32 scene_update_wing_destruction(uint32 frame)
 {
     FUNCTION_MARKER(0x8003ab18u, "GAME.EXE");
     FIXED_VEC3 point;
@@ -668,7 +668,7 @@ GDB_CALL uint32 scene_update_wing_destruction(uint32 frame)
     return scene_apply_object_frame(frame, 3, 3);
 }
 
-GDB_CALL uint32 scene_update_tower_destruction(uint32 frame)
+uint32 scene_update_tower_destruction(uint32 frame)
 {
     FUNCTION_MARKER(0x8003aed8u, "GAME.EXE");
     uint32 tick, y, kind, val, phase;
@@ -799,7 +799,7 @@ GDB_CALL uint32 scene_update_tower_destruction(uint32 frame)
     return scene_apply_object_frame(frame, 5, 5);
 }
 
-GDB_CALL uint32 scene_update_intro_helicopter(sint32 frame)
+uint32 scene_update_intro_helicopter(sint32 frame)
 {
     FUNCTION_MARKER(0x8003a6acu, "GAME.EXE");
     camera.angles.pitch_bits = (uint16)(((uint16)camera.angles.pitch) - 1024u);
@@ -854,7 +854,7 @@ static sint32 draw_characters(void)
     return result;
 }
 
-GDB_CALL sint32 sequence_run(sint32 sequence, void (*prepare_frame)(void))
+sint32 sequence_run(sint32 sequence, void (*prepare_frame)(void))
 {
     const RESOURCE_LOADER *tex;
     uint32 old_stage, stage, i;
@@ -1026,7 +1026,7 @@ GDB_CALL sint32 sequence_run(sint32 sequence, void (*prepare_frame)(void))
     return 1;
 }
 
-GDB_CALL uint32 scene_step(void)
+uint32 scene_step(void)
 {
     uint32 frame, stage;
     FUNCTION_MARKER(0x8001559c, "GAME.EXE");
@@ -1068,7 +1068,7 @@ GDB_CALL uint32 scene_step(void)
     return frame;
 }
 
-GDB_CALL sint32 scene_run_ending_disp(void)
+sint32 scene_run_ending_disp(void)
 {
     FUNCTION_MARKER(0x8005a690u, "GAME.EXE");
     uint32 phase = 456960u, packet, pad;

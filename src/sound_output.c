@@ -129,7 +129,7 @@ sint32 sound_reverb_configure(void)
     return game_session.stage == 17 ? sound_reverb_disable_channels() : 17;
 }
 
-GDB_CALL sint32 sound_reverb_enable_channels(void)
+sint32 sound_reverb_enable_channels(void)
 {
     FUNCTION_MARKER(0x80056b78u, "GAME.EXE");
     return SpuSetReverbVoice(1, 0xffffff);
@@ -155,7 +155,7 @@ sint32 sound_output_init(void)
     return sound_reverb_configure();
 }
 
-GDB_CALL uint32 sound_device_init(void)
+uint32 sound_device_init(void)
 {
     FUNCTION_MARKER(0x8007676cu, "GAME.EXE");
     return sound_device_reset(); /* 7678C mode0, existing native SPU reset. */

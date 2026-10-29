@@ -1,6 +1,6 @@
 #include "game.h"
 
-GDB_CALL sint32 air_bike_update_approach(MODEL_OBJECT *model)
+sint32 air_bike_update_approach(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002efdcu, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
@@ -60,7 +60,7 @@ GDB_CALL sint32 air_bike_update_approach(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 air_bike_update_departure(MODEL_OBJECT *model)
+sint32 air_bike_update_departure(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002f2e0u, "GAME.EXE");
     uint32 volume, pan, yaw, pitch, roll, distance, offset, y, frame;

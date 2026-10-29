@@ -17,7 +17,7 @@ uint32 effect_rotate_cursor;
 EFFECT effects[EFFECT_COUNT];
 
 /* Scan slots1..111, leaving slot0 and the rotating tail reserved */
-GDB_CALL EFFECT *effect_alloc(void)
+EFFECT *effect_alloc(void)
 {
     FUNCTION_MARKER(0x80030f44, "GAME.EXE");
     uint32 i;
@@ -32,7 +32,7 @@ GDB_CALL EFFECT *effect_alloc(void)
 }
 
 /* Advance and clear one of the 16 rotating tail slots */
-GDB_CALL EFFECT *effect_alloc_rotating(void)
+EFFECT *effect_alloc_rotating(void)
 {
     FUNCTION_MARKER(0x80030facu, "GAME.EXE");
     uint32 i = (effect_rotate_cursor + 1u) & (EFFECT_ROTATE_COUNT - 1u);
@@ -70,13 +70,13 @@ static uint32 spawn_hit(uint32 x, uint32 y, uint32 z, uint32 angle, int reverse,
     return v;
 }
 
-GDB_CALL uint32 effect_spawn_hit(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_hit(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x8003100c, "GAME.EXE");
     return spawn_hit(x, y, z, angle, 0, 0, 0);
 }
 
-GDB_CALL uint32 effect_spawn_hit_reverse(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_hit_reverse(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x800310b8, "GAME.EXE");
     return spawn_hit(x, y, z, angle, 1, 0, 0);
@@ -85,19 +85,19 @@ GDB_CALL uint32 effect_spawn_hit_reverse(uint32 x, uint32 y, uint32 z, uint32 an
 /* 31164/3124C: actual fifth stack argument is a full word angle, not IDA a9.
  * Same particle fields/RNG as 3100C/310B8; actor type53 selects kind1.
  * Allocation failure returns the branch-delay result index<<4 without RNG */
-GDB_CALL uint32 effect_spawn_actor_hit(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_actor_hit(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031164, "GAME.EXE");
     return spawn_hit(x, y, z, angle, 0, 1, idx);
 }
 
-GDB_CALL uint32 effect_spawn_actor_hit_reverse(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_actor_hit_reverse(sint32 idx, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x8003124c, "GAME.EXE");
     return spawn_hit(x, y, z, angle, 1, 1, idx);
 }
 
-GDB_CALL uint32 effect_spawn_rotating_particle(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_rotating_particle(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031338u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -121,7 +121,7 @@ GDB_CALL uint32 effect_spawn_rotating_particle(uint32 x, uint32 y, uint32 z, uin
     return result;
 }
 
-GDB_CALL sint32 effects_spawn_falling_glass(uint32 x, uint32 y, uint32 z)
+sint32 effects_spawn_falling_glass(uint32 x, uint32 y, uint32 z)
 {
     FUNCTION_MARKER(0x800313fcu, "GAME.EXE");
     uint32 i, angle, radius;
@@ -148,7 +148,7 @@ GDB_CALL sint32 effects_spawn_falling_glass(uint32 x, uint32 y, uint32 z)
     return 0;
 }
 
-GDB_CALL uint32 effect_spawn_spark(uint32 x, uint32 y, uint32 z)
+uint32 effect_spawn_spark(uint32 x, uint32 y, uint32 z)
 {
     FUNCTION_MARKER(0x80031510u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -171,7 +171,7 @@ GDB_CALL uint32 effect_spawn_spark(uint32 x, uint32 y, uint32 z)
 }
 
 /* 315A4: fifth word argument is angle; return is the third RNG low six bits */
-GDB_CALL uint32 effect_spawn_glass_fragment(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_glass_fragment(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x800315a4u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -196,7 +196,7 @@ GDB_CALL uint32 effect_spawn_glass_fragment(uint32 kind, uint32 x, uint32 y, uin
 }
 
 /* Radial RNG precedes vertical RNG; allocation failure returns 583 */
-GDB_CALL uint32 effect_spawn_slow_fragment(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_slow_fragment(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031660u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -218,7 +218,7 @@ GDB_CALL uint32 effect_spawn_slow_fragment(uint32 x, uint32 y, uint32 z, uint32 
     return v;
 }
 
-GDB_CALL uint32 effect_spawn_gate_fragment(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_gate_fragment(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031710u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -240,7 +240,7 @@ GDB_CALL uint32 effect_spawn_gate_fragment(uint32 x, uint32 y, uint32 z, uint32 
     return result;
 }
 
-GDB_CALL uint32 effect_spawn_at_attachment(sint32 idx)
+uint32 effect_spawn_at_attachment(sint32 idx)
 {
     FUNCTION_MARKER(0x800317d0u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -266,7 +266,7 @@ GDB_CALL uint32 effect_spawn_at_attachment(sint32 idx)
 }
 
 /* 31894: reverse-facing kind6, three RNG calls, then signed speed halving */
-GDB_CALL uint32 effect_spawn_spark_reverse(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_spark_reverse(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031894u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -289,7 +289,7 @@ GDB_CALL uint32 effect_spawn_spark_reverse(uint32 x, uint32 y, uint32 z, uint32 
     return particle->radial_speed;
 }
 
-GDB_CALL uint32 effect_spawn_point(uint32 x, uint32 y, uint32 z, uint32 angle)
+uint32 effect_spawn_point(uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031968u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -314,7 +314,7 @@ GDB_CALL uint32 effect_spawn_point(uint32 x, uint32 y, uint32 z, uint32 angle)
 }
 
 /* 31A28: attachment-dependent particle in the rotating pool */
-GDB_CALL uint32 effect_spawn_attachment_particle(sint32 idx, uint32 kind)
+uint32 effect_spawn_attachment_particle(sint32 idx, uint32 kind)
 {
     FUNCTION_MARKER(0x80031a28u, "GAME.EXE");
     EFFECT *effect = effect_alloc_rotating();
@@ -351,7 +351,7 @@ GDB_CALL uint32 effect_spawn_attachment_particle(sint32 idx, uint32 kind)
 }
 
 /* 31B20: seven actual MIPS arguments; Hex-Rays draft stack arguments are shifted */
-GDB_CALL EFFECT *effect_spawn_timed(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 age, sint32 a, sint32 b)
+EFFECT *effect_spawn_timed(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 age, sint32 a, sint32 b)
 {
     FUNCTION_MARKER(0x80031b20u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -475,7 +475,7 @@ GDB_CALL EFFECT *effect_spawn_timed(uint32 kind, uint32 x, uint32 y, uint32 z, s
 }
 
 /* 31C50: allocate and initialize one generic effect, including zero-fill */
-GDB_CALL EFFECT *effect_spawn(uint32 kind, uint32 x, uint32 y, uint32 z)
+EFFECT *effect_spawn(uint32 kind, uint32 x, uint32 y, uint32 z)
 {
     FUNCTION_MARKER(0x80031c50u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -539,7 +539,7 @@ GDB_CALL EFFECT *effect_spawn(uint32 kind, uint32 x, uint32 y, uint32 z)
 }
 
 /* 31CD8: five RNG draws and two real2F828 updates, age reset after each */
-GDB_CALL intptr effect_spawn_debris(uint32 kind, uint32 x, uint32 y, uint32 z)
+intptr effect_spawn_debris(uint32 kind, uint32 x, uint32 y, uint32 z)
 {
     FUNCTION_MARKER(0x80031cd8u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -575,7 +575,7 @@ GDB_CALL intptr effect_spawn_debris(uint32 kind, uint32 x, uint32 y, uint32 z)
 }
 
 /* 31DA8: aimed variant, wider radial speed for kinds902..905 */
-GDB_CALL intptr effect_spawn_debris_aimed(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
+intptr effect_spawn_debris_aimed(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 angle)
 {
     FUNCTION_MARKER(0x80031da8u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -610,7 +610,7 @@ GDB_CALL intptr effect_spawn_debris_aimed(uint32 kind, uint32 x, uint32 y, uint3
     return result;
 }
 
-GDB_CALL EFFECT *effect_spawn_motion(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 dx, uint32 dy, uint32 dz)
+EFFECT *effect_spawn_motion(uint32 kind, uint32 x, uint32 y, uint32 z, uint32 dx, uint32 dy, uint32 dz)
 {
     FUNCTION_MARKER(0x8004141cu, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -694,7 +694,7 @@ GDB_CALL EFFECT *effect_spawn_motion(uint32 kind, uint32 x, uint32 y, uint32 z, 
 }
 
 /* 4150C: nine actual arguments, not the thirteen inferred by IDA */
-GDB_CALL sint32 effect_spawn_line(uint32 style, uint32 x, uint32 y, uint32 z, uint32 end_x, uint32 end_y, uint32 end_z, uint32 size, uint32 color)
+sint32 effect_spawn_line(uint32 style, uint32 x, uint32 y, uint32 z, uint32 end_x, uint32 end_y, uint32 end_z, uint32 size, uint32 color)
 {
     FUNCTION_MARKER(0x8004150cu, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -720,7 +720,7 @@ GDB_CALL sint32 effect_spawn_line(uint32 style, uint32 x, uint32 y, uint32 z, ui
 }
 
 /* Spawn with the original yaw jitter and Q15 velocity products */
-GDB_CALL sint32 effect_spawn_velocity(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 yaw, sint32 pitch, sint32 speed)
+sint32 effect_spawn_velocity(uint32 kind, uint32 x, uint32 y, uint32 z, sint32 yaw, sint32 pitch, sint32 speed)
 {
     FUNCTION_MARKER(0x800412a8u, "GAME.EXE");
     EFFECT *effect = effect_alloc();
@@ -832,7 +832,7 @@ GDB_CALL sint32 effect_spawn_velocity(uint32 kind, uint32 x, uint32 y, uint32 z,
 }
 
 /* Visit all 128 effect slots and skip absent update callbacks */
-GDB_CALL sint32 effects_update(void)
+sint32 effects_update(void)
 {
     FUNCTION_MARKER(0x8001edb8, "GAME.EXE");
     uint32 i, type;
@@ -851,7 +851,7 @@ GDB_CALL sint32 effects_update(void)
 }
 
 /* Apply model height, then yaw, pitch and roll */
-GDB_CALL void effect_draw_model(const struct EFFECT *effect)
+void effect_draw_model(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005c66c, "GAME.EXE");
     uint32 x, y, z, camera_x, camera_y, camera_z, type, height;
@@ -885,7 +885,7 @@ GDB_CALL void effect_draw_model(const struct EFFECT *effect)
 }
 
 /* Visit all 128 effect slots and draw the default model for absent callbacks */
-GDB_CALL sint32 effects_draw(void)
+sint32 effects_draw(void)
 {
     FUNCTION_MARKER(0x8001ef68, "GAME.EXE");
     uint32 i, type;
@@ -950,19 +950,19 @@ static intptr update_debris(EFFECT *effect, uint32 gravity, uint32 vertical_shif
     return (intptr)effect_spawn(605, x, y, z);
 }
 
-GDB_CALL intptr effect_update_debris_low_gravity(EFFECT *effect)
+intptr effect_update_debris_low_gravity(EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002f700u, "GAME.EXE");
     return update_debris(effect, 3, 2);
 }
 
-GDB_CALL intptr effect_update_debris(EFFECT *effect)
+intptr effect_update_debris(EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002f828u, "GAME.EXE");
     return update_debris(effect, 6, 1);
 }
 
-GDB_CALL intptr effect_update_debris_quarter_speed(EFFECT *effect)
+intptr effect_update_debris_quarter_speed(EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002f950u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format debris callback sources */
@@ -1007,7 +1007,7 @@ GDB_CALL intptr effect_update_debris_quarter_speed(EFFECT *effect)
     return (intptr)effect_spawn_timed(870, x, y, z, 0, 0, 0);
 }
 
-GDB_CALL void effect_draw_line(const struct EFFECT *effect)
+void effect_draw_line(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d024u, "GAME.EXE");
     PROJECTION_POINT a, b;
@@ -1034,7 +1034,7 @@ GDB_CALL void effect_draw_line(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_ribbon(const struct EFFECT *effect)
+void effect_draw_ribbon(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005cdbcu, "GAME.EXE");
     PROJECTION_POINT a, b;
@@ -1061,7 +1061,7 @@ GDB_CALL void effect_draw_ribbon(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL uint32 effect_remove_line(struct EFFECT *effect)
+uint32 effect_remove_line(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x800415f4u, "GAME.EXE");
     /* TODO: Investigate a missing native removal target */
@@ -1070,7 +1070,7 @@ GDB_CALL uint32 effect_remove_line(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_remove_ribbon(struct EFFECT *effect)
+uint32 effect_remove_ribbon(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x80041600u, "GAME.EXE");
     /* TODO: Investigate a missing native removal target */
@@ -1079,7 +1079,7 @@ GDB_CALL uint32 effect_remove_ribbon(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL sint32 effect_update_moving_ribbon(struct EFFECT *effect)
+sint32 effect_update_moving_ribbon(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8004160cu, "GAME.EXE");
     EFFECT_MOVING_RIBBON *moving;
@@ -1105,7 +1105,7 @@ GDB_CALL sint32 effect_update_moving_ribbon(struct EFFECT *effect)
     return -1;
 }
 
-GDB_CALL void effect_draw_moving_ribbon(const struct EFFECT *effect)
+void effect_draw_moving_ribbon(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005cee4u, "GAME.EXE");
     PROJECTION_POINT a, b;
@@ -1139,7 +1139,7 @@ GDB_CALL void effect_draw_moving_ribbon(const struct EFFECT *effect)
 }
 
 /* Cached model-kind dispatch retains original no-draw cases */
-GDB_CALL void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect)
+void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005c808, "GAME.EXE");
     /* TODO: Investigate absent or conflicting native sprite owners */
@@ -1274,7 +1274,7 @@ GDB_CALL void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL uint32 effect_update_dust_short(struct MODEL_OBJECT *item, struct EFFECT *effect)
+uint32 effect_update_dust_short(struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002ae10u, "GAME.EXE");
     /* TODO: Investigate absent or conflicting native sprite owners */
@@ -1313,7 +1313,7 @@ GDB_CALL uint32 effect_update_dust_short(struct MODEL_OBJECT *item, struct EFFEC
     return delta;
 }
 
-GDB_CALL uint32 effect_update_dust_long(struct EFFECT *effect)
+uint32 effect_update_dust_long(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002ae64u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1334,7 +1334,7 @@ GDB_CALL uint32 effect_update_dust_long(struct EFFECT *effect)
     return delta;
 }
 
-GDB_CALL uint32 effect_update_falling_spr(struct EFFECT *effect)
+uint32 effect_update_falling_spr(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x800417ecu, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1360,7 +1360,7 @@ GDB_CALL uint32 effect_update_falling_spr(struct EFFECT *effect)
     return result;
 }
 
-GDB_CALL sint32 effect_update_drifting_spr(struct EFFECT *effect)
+sint32 effect_update_drifting_spr(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x80041894u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1385,7 +1385,7 @@ GDB_CALL sint32 effect_update_drifting_spr(struct EFFECT *effect)
     return result;
 }
 
-GDB_CALL intptr effect_update_landing_spr(struct EFFECT *effect)
+intptr effect_update_landing_spr(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x800416e0u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1413,7 +1413,7 @@ GDB_CALL intptr effect_update_landing_spr(struct EFFECT *effect)
     return result;
 }
 
-GDB_CALL uint32 effect_update_spr_short(struct EFFECT *effect)
+uint32 effect_update_spr_short(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x80041974u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1428,7 +1428,7 @@ GDB_CALL uint32 effect_update_spr_short(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_update_spr_long(struct EFFECT *effect)
+uint32 effect_update_spr_long(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x800419a4u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1443,7 +1443,7 @@ GDB_CALL uint32 effect_update_spr_long(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL void effect_draw_oriented_model(const struct EFFECT *effect)
+void effect_draw_oriented_model(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d2e4u, "GAME.EXE");
     uint32 kind;
@@ -1456,7 +1456,7 @@ GDB_CALL void effect_draw_oriented_model(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL uint32 effect_update_blast_large(struct EFFECT *effect)
+uint32 effect_update_blast_large(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002aeb8u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1471,7 +1471,7 @@ GDB_CALL uint32 effect_update_blast_large(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_update_blast(struct EFFECT *effect)
+uint32 effect_update_blast(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002aee8u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1486,7 +1486,7 @@ GDB_CALL uint32 effect_update_blast(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL void effect_draw_blast_large(const struct EFFECT *effect)
+void effect_draw_blast_large(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d160u, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -1509,7 +1509,7 @@ GDB_CALL void effect_draw_blast_large(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL uint32 effect_update_rising_spr_short(struct MODEL_OBJECT *item, struct EFFECT *effect)
+uint32 effect_update_rising_spr_short(struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002ace8u, "GAME.EXE");
     /* TODO: Investigate absent or conflicting native sprite owners */
@@ -1560,7 +1560,7 @@ GDB_CALL uint32 effect_update_rising_spr_short(struct MODEL_OBJECT *item, struct
     return delta;
 }
 
-GDB_CALL uint32 effect_update_rising_spr_long(struct MODEL_OBJECT *item, struct EFFECT *effect)
+uint32 effect_update_rising_spr_long(struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002ad7cu, "GAME.EXE");
     /* TODO: Investigate absent or conflicting native sprite owners */
@@ -1611,7 +1611,7 @@ GDB_CALL uint32 effect_update_rising_spr_long(struct MODEL_OBJECT *item, struct 
     return delta;
 }
 
-GDB_CALL uint32 effect_update_rising_smoke(struct MODEL_OBJECT *item, struct EFFECT *effect)
+uint32 effect_update_rising_smoke(struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002b150u, "GAME.EXE");
     /* TODO: Investigate absent or conflicting native sprite owners */
@@ -1662,7 +1662,7 @@ GDB_CALL uint32 effect_update_rising_smoke(struct MODEL_OBJECT *item, struct EFF
     return delta;
 }
 
-GDB_CALL uint32 effect_update_ring_large(struct EFFECT *effect)
+uint32 effect_update_ring_large(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002af18u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1677,7 +1677,7 @@ GDB_CALL uint32 effect_update_ring_large(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_update_ring(struct EFFECT *effect)
+uint32 effect_update_ring(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002af48u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1692,7 +1692,7 @@ GDB_CALL uint32 effect_update_ring(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_update_ring_short(struct EFFECT *effect)
+uint32 effect_update_ring_short(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002b120u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1707,7 +1707,7 @@ GDB_CALL uint32 effect_update_ring_short(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL void effect_draw_ring_large(const struct EFFECT *effect)
+void effect_draw_ring_large(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d340u, "GAME.EXE");
     uint32 scale, color;
@@ -1724,7 +1724,7 @@ GDB_CALL void effect_draw_ring_large(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_ring(const struct EFFECT *effect)
+void effect_draw_ring(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d3d8u, "GAME.EXE");
     uint32 shade, kind;
@@ -1745,7 +1745,7 @@ GDB_CALL void effect_draw_ring(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_ring_small(const struct EFFECT *effect)
+void effect_draw_ring_small(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d488u, "GAME.EXE");
     uint32 shade, kind;
@@ -1768,7 +1768,7 @@ GDB_CALL void effect_draw_ring_small(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_rising_smoke(const struct EFFECT *effect)
+void effect_draw_rising_smoke(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d53cu, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -1791,7 +1791,7 @@ GDB_CALL void effect_draw_rising_smoke(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_blast(const struct EFFECT *effect)
+void effect_draw_blast(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005d1fcu, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -1823,7 +1823,7 @@ GDB_CALL void effect_draw_blast(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL sint32 effect_update_shockwave(struct EFFECT *effect)
+sint32 effect_update_shockwave(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002af78u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format sprite callback sources */
@@ -1863,7 +1863,7 @@ GDB_CALL sint32 effect_update_shockwave(struct EFFECT *effect)
     return result;
 }
 
-GDB_CALL sint32 effect_update_particle(struct EFFECT *effect)
+sint32 effect_update_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002bec0u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -1901,7 +1901,7 @@ GDB_CALL sint32 effect_update_particle(struct EFFECT *effect)
     return age + 1;
 }
 
-GDB_CALL void effect_draw_hit_particle(const struct EFFECT *effect)
+void effect_draw_hit_particle(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005c2f0u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -1939,7 +1939,7 @@ GDB_CALL void effect_draw_hit_particle(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_spark(const struct EFFECT *effect)
+void effect_draw_spark(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005c480u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -1974,7 +1974,7 @@ GDB_CALL void effect_draw_spark(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_point(const struct EFFECT *effect)
+void effect_draw_point(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005c598u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2059,7 +2059,7 @@ static uint32 update_aged_particle(struct EFFECT *effect, uint32 inc)
     return (uint32)(sint32)(sint16)age;
 }
 
-GDB_CALL uint32 effect_update_falling_glass(struct EFFECT *effect)
+uint32 effect_update_falling_glass(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002bfa8u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2086,7 +2086,7 @@ GDB_CALL uint32 effect_update_falling_glass(struct EFFECT *effect)
     return result;
 }
 
-GDB_CALL void effect_draw_glass(const struct EFFECT *effect)
+void effect_draw_glass(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002abe0u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2105,7 +2105,7 @@ GDB_CALL void effect_draw_glass(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL uint32 effect_update_slowing_particle(struct EFFECT *effect)
+uint32 effect_update_slowing_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002c060u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2120,7 +2120,7 @@ GDB_CALL uint32 effect_update_slowing_particle(struct EFFECT *effect)
     return update_slowing_particle(effect);
 }
 
-GDB_CALL uint32 effect_update_stationary_particle(struct EFFECT *effect)
+uint32 effect_update_stationary_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002c078u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2130,19 +2130,19 @@ GDB_CALL uint32 effect_update_stationary_particle(struct EFFECT *effect)
     return update_slowing_particle(effect);
 }
 
-GDB_CALL uint32 effect_update_short_particle(struct EFFECT *effect)
+uint32 effect_update_short_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002c154u, "GAME.EXE");
     return update_aged_particle(effect, 4);
 }
 
-GDB_CALL uint32 effect_update_long_particle(struct EFFECT *effect)
+uint32 effect_update_long_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002c1f4u, "GAME.EXE");
     return update_aged_particle(effect, 2);
 }
 
-GDB_CALL uint32 effect_remove_short_particle(struct EFFECT *effect)
+uint32 effect_remove_short_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002c1dcu, "GAME.EXE");
     /* TODO: Investigate an absent native particle removal source */
@@ -2151,7 +2151,7 @@ GDB_CALL uint32 effect_remove_short_particle(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_remove_long_particle(struct EFFECT *effect)
+uint32 effect_remove_long_particle(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002c27cu, "GAME.EXE");
     /* TODO: Investigate an absent native particle removal source */
@@ -2160,22 +2160,22 @@ GDB_CALL uint32 effect_remove_long_particle(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL void effect_draw_rotating_particle(void)
+void effect_draw_rotating_particle(void)
 {
     FUNCTION_MARKER(0x8005c654u, "GAME.EXE");
 }
 
-GDB_CALL void effect_draw_short_particle(void)
+void effect_draw_short_particle(void)
 {
     FUNCTION_MARKER(0x8005c65cu, "GAME.EXE");
 }
 
-GDB_CALL void effect_draw_long_particle(void)
+void effect_draw_long_particle(void)
 {
     FUNCTION_MARKER(0x8005c664u, "GAME.EXE");
 }
 
-GDB_CALL sint32 effect_update_bouncing_particle(struct MODEL_OBJECT *item, struct EFFECT *effect)
+sint32 effect_update_bouncing_particle(struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002e11cu, "GAME.EXE");
     /* TODO: Investigate absent or conflicting native bouncing owners */
@@ -2291,7 +2291,7 @@ GDB_CALL sint32 effect_update_bouncing_particle(struct MODEL_OBJECT *item, struc
     return result;
 }
 
-GDB_CALL void effect_draw_double_point(const struct EFFECT *effect)
+void effect_draw_double_point(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005bbacu, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2309,7 +2309,7 @@ GDB_CALL void effect_draw_double_point(const struct EFFECT *effect)
     transform_pop();
 }
 
-GDB_CALL void effect_draw_attachment_model(const struct EFFECT *effect)
+void effect_draw_attachment_model(const struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005bc64u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2384,7 +2384,7 @@ static uint32 update_fragment_bounce(struct EFFECT *effect)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 effect_update_delayed_fragment(struct EFFECT *effect)
+uint32 effect_update_delayed_fragment(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002cba0u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2400,13 +2400,13 @@ GDB_CALL uint32 effect_update_delayed_fragment(struct EFFECT *effect)
     return update_falling_fragment(effect);
 }
 
-GDB_CALL uint32 effect_update_fragment(struct EFFECT *effect)
+uint32 effect_update_fragment(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002cbb0u, "GAME.EXE");
     return update_falling_fragment(effect);
 }
 
-GDB_CALL uint32 effect_update_gate_fragment(struct EFFECT *effect)
+uint32 effect_update_gate_fragment(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002ccbcu, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */
@@ -2437,7 +2437,7 @@ GDB_CALL uint32 effect_update_gate_fragment(struct EFFECT *effect)
 }
 
 /* Nonstandard direct suffix entry consumes v1 from its caller. */
-GDB_CALL uint32 effect_update_gate_fragment_velocity(struct EFFECT *effect, uint32 incoming_v1)
+uint32 effect_update_gate_fragment_velocity(struct EFFECT *effect, uint32 incoming_v1)
 {
     FUNCTION_MARKER(0x8002cd78u, "GAME.EXE");
     /* TODO: Investigate unpublished or cross-format particle callback sources */

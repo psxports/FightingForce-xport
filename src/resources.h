@@ -63,7 +63,7 @@ typedef struct MODEL_REFERENCE
     uint32 face_byte_len;
 } MODEL_REFERENCE;
 
-GDB_CALL sint32 model_vertex_dir(MODEL_REFERENCE mesh, uint32 v0, uint32 v1);
+sint32 model_vertex_dir(MODEL_REFERENCE mesh, uint32 v0, uint32 v1);
 
 extern MODEL_REFERENCE model_refs[MODEL_TYPE_COUNT];
 extern uint32 model_height[MODEL_TYPE_COUNT];
@@ -156,17 +156,17 @@ extern RESOURCE_ARCHIVE resource_archive;
 extern const char *resource_file_names[RESOURCE_FILE_COUNT];
 extern const char *const resource_paths[RESOURCE_PATH_COUNT];
 
-GDB_CALL uint32 resource_copy_block(const uint8 *src, uint8 *dst);
-GDB_CALL uint32 resource_copy_words(uint8 *dst, const uint8 *src, uint32 count);
-GDB_CALL uint32 resource_swap32(uint32 val);
+uint32 resource_copy_block(const uint8 *src, uint8 *dst);
+uint32 resource_copy_words(uint8 *dst, const uint8 *src, uint32 count);
+uint32 resource_swap32(uint32 val);
 /* File owners grow within nonzero native_capacity; zero retains the existing file limit */
-GDB_CALL uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_dst, uint32 native_capacity, RESOURCE_FILE *file, const RESOURCE_CURSOR *arena);
-GDB_CALL RESOURCE_VIEW resource_find(const char *name);
-GDB_CALL sint32 resource_exists(const char *name);
-GDB_CALL RESOURCE_VIEW resource_find_quiet(const char *name);
-GDB_CALL uint32 resource_load_model(const char *name, uint32 type, uint32 tex_grp);
-GDB_CALL uint32 resource_load_character(const char *name, uint32 type, uint32 grp);
-GDB_CALL uint32 resource_load_animations(const char *name, sint32 type);
-GDB_CALL uint32 resource_load_frontend_models(void);
+uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_dst, uint32 native_capacity, RESOURCE_FILE *file, const RESOURCE_CURSOR *arena);
+RESOURCE_VIEW resource_find(const char *name);
+sint32 resource_exists(const char *name);
+RESOURCE_VIEW resource_find_quiet(const char *name);
+uint32 resource_load_model(const char *name, uint32 type, uint32 tex_grp);
+uint32 resource_load_character(const char *name, uint32 type, uint32 grp);
+uint32 resource_load_animations(const char *name, sint32 type);
+uint32 resource_load_frontend_models(void);
 
 #endif

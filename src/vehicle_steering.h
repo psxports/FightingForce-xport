@@ -32,9 +32,9 @@ typedef struct VEHICLE_STEERING
 
 extern VEHICLE_STEERING vehicle_steering;
 
-GDB_CALL uint32 vehicle_steering_update(MODEL_OBJECT *model);
+uint32 vehicle_steering_update(MODEL_OBJECT *model);
 
-GDB_CALL sint32 vehicle_steering_move(MODEL_OBJECT *model);
-GDB_CALL sint32 vehicle_steering_draw(MODEL_OBJECT *item);
+sint32 vehicle_steering_move(MODEL_OBJECT *model);
+sint32 vehicle_steering_draw(MODEL_OBJECT *item);
 
 #endif

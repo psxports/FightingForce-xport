@@ -18,8 +18,8 @@ typedef struct ACTION_HISTORY
 
 extern ACTION_HISTORY action_history;
 
-GDB_CALL uint8 *action_history_reset(void);
-GDB_CALL uint8 action_history_rec(sint32 player, sint32 action);
-GDB_CALL uint8 action_history_matched(sint32 target);
+uint8 *action_history_reset(void);
+uint8 action_history_rec(sint32 player, sint32 action);
+uint8 action_history_matched(sint32 target);
 
 #endif

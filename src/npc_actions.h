@@ -126,130 +126,130 @@ extern const NPC_ACTION npc_action_bike;
 extern const NPC_ACTION npc_action_companion_wait;
 extern const NPC_ACTION npc_action_lab_tank_wait;
 
-GDB_CALL uint32 npc_update_van(sint32 idx);
-GDB_CALL intptr npc_update_bike(sint32 idx);
-GDB_CALL intptr npc_update_companion_wait(sint32 idx);
+uint32 npc_update_van(sint32 idx);
+intptr npc_update_bike(sint32 idx);
+intptr npc_update_companion_wait(sint32 idx);
 
-GDB_CALL sint32 npc_start_jump_off(sint32 idx, sint32 mode);
+sint32 npc_start_jump_off(sint32 idx, sint32 mode);
 
-GDB_CALL uint32 npc_finish_animation(sint32 idx);
+uint32 npc_finish_animation(sint32 idx);
 
-GDB_CALL sint32 npc_continue_attack_behavior(sint32 idx);
+sint32 npc_continue_attack_behavior(sint32 idx);
 
-GDB_CALL intptr npc_update_vulkan(sint32 idx);
+intptr npc_update_vulkan(sint32 idx);
 
-GDB_CALL intptr npc_update_stage4_departure(sint32 idx);
+intptr npc_update_stage4_departure(sint32 idx);
 
-GDB_CALL sint32 npc_release_captive(sint32 idx);
+sint32 npc_release_captive(sint32 idx);
 
-GDB_CALL sint32 npc_carry_captive_to_point(sint32 idx);
+sint32 npc_carry_captive_to_point(sint32 idx);
 
-GDB_CALL sint32 npc_advance_charge(sint32 idx);
+sint32 npc_advance_charge(sint32 idx);
 
-GDB_CALL intptr npc_update_jetpack_sound(sint32 idx);
+intptr npc_update_jetpack_sound(sint32 idx);
 
-GDB_CALL sint32 npc_finish_aimed_charge(sint32 idx);
+sint32 npc_finish_aimed_charge(sint32 idx);
 
-GDB_CALL sint32 npc_wait_target_animation(sint32 idx);
+sint32 npc_wait_target_animation(sint32 idx);
 
-GDB_CALL sint32 npc_claim_ranged_item(sint32 idx);
+sint32 npc_claim_ranged_item(sint32 idx);
 
-GDB_CALL sint32 npc_begin_captive_carry(sint32 idx);
+sint32 npc_begin_captive_carry(sint32 idx);
 
-GDB_CALL sint32 npc_finish_vulkan_combo(sint32 idx);
+sint32 npc_finish_vulkan_combo(sint32 idx);
 
-GDB_CALL intptr npc_update_stage4_idle(sint32 idx);
+intptr npc_update_stage4_idle(sint32 idx);
 
-GDB_CALL sint32 npc_finish_turn(sint32 idx);
+sint32 npc_finish_turn(sint32 idx);
 
-GDB_CALL sint32 npc_finish_captive_strike(sint32 idx);
+sint32 npc_finish_captive_strike(sint32 idx);
 
-GDB_CALL sint32 npc_choose_held_item_action(sint32 idx);
+sint32 npc_choose_held_item_action(sint32 idx);
 
-GDB_CALL sint32 npc_claim_right_item0(sint32 idx);
+sint32 npc_claim_right_item0(sint32 idx);
 
-GDB_CALL sint32 npc_claim_right_item1(sint32 idx);
+sint32 npc_claim_right_item1(sint32 idx);
 
-GDB_CALL sint32 npc_claim_left_item(sint32 idx);
+sint32 npc_claim_left_item(sint32 idx);
 
-GDB_CALL sint32 npc_wait_captor_release(sint32 idx);
+sint32 npc_wait_captor_release(sint32 idx);
 
-GDB_CALL sint32 npc_finish_to_idle(sint32 idx);
+sint32 npc_finish_to_idle(sint32 idx);
 
-GDB_CALL sint32 npc_finish_charge_start(sint32 idx);
+sint32 npc_finish_charge_start(sint32 idx);
 
-GDB_CALL sint32 npc_begin_charge_loop(sint32 idx);
+sint32 npc_begin_charge_loop(sint32 idx);
 
-GDB_CALL sint32 npc_update_knockdown_pose(sint32 idx);
+sint32 npc_update_knockdown_pose(sint32 idx);
 
-GDB_CALL sint32 npc_finish_captive_hold0(sint32 idx);
+sint32 npc_finish_captive_hold0(sint32 idx);
 
-GDB_CALL sint32 npc_finish_captive_hold1(sint32 idx);
+sint32 npc_finish_captive_hold1(sint32 idx);
 
-GDB_CALL sint32 npc_choose_animation_variant(sint32 idx);
+sint32 npc_choose_animation_variant(sint32 idx);
 
-GDB_CALL sint32 npc_set_stun_recovery_deadline(sint32 idx);
+sint32 npc_set_stun_recovery_deadline(sint32 idx);
 
-GDB_CALL sint32 npc_resume_approach0(sint32 idx);
+sint32 npc_resume_approach0(sint32 idx);
 
-GDB_CALL sint32 npc_resume_approach1(sint32 idx);
+sint32 npc_resume_approach1(sint32 idx);
 
-GDB_CALL sint32 npc_resume_combat0(sint32 idx);
+sint32 npc_resume_combat0(sint32 idx);
 
-GDB_CALL sint32 npc_resume_alternate_combat5(sint32 idx);
+sint32 npc_resume_alternate_combat5(sint32 idx);
 
-GDB_CALL sint32 npc_resume_alternate_combat0(sint32 idx);
+sint32 npc_resume_alternate_combat0(sint32 idx);
 
-GDB_CALL sint32 npc_resume_alternate_combat1(sint32 idx);
+sint32 npc_resume_alternate_combat1(sint32 idx);
 
-GDB_CALL sint32 npc_resume_alternate_combat2(sint32 idx);
+sint32 npc_resume_alternate_combat2(sint32 idx);
 
-GDB_CALL sint32 npc_resume_alternate_combat3(sint32 idx);
+sint32 npc_resume_alternate_combat3(sint32 idx);
 
-GDB_CALL sint32 npc_resume_alternate_combat4(sint32 idx);
+sint32 npc_resume_alternate_combat4(sint32 idx);
 
-GDB_CALL sint32 npc_resume_combat1(sint32 idx);
+sint32 npc_resume_combat1(sint32 idx);
 
-GDB_CALL sint32 npc_resume_combat2(sint32 idx);
+sint32 npc_resume_combat2(sint32 idx);
 
-GDB_CALL sint32 npc_resume_combat3(sint32 idx);
+sint32 npc_resume_combat3(sint32 idx);
 
-GDB_CALL sint32 npc_resume_combat4(sint32 idx);
+sint32 npc_resume_combat4(sint32 idx);
 
-GDB_CALL sint32 npc_resume_combat5(sint32 idx);
+sint32 npc_resume_combat5(sint32 idx);
 
-GDB_CALL sint32 npc_update_alternate_combat(sint32 idx);
+sint32 npc_update_alternate_combat(sint32 idx);
 
-GDB_CALL sint32 npc_continue_alternate_combat(sint32 idx);
+sint32 npc_continue_alternate_combat(sint32 idx);
 
-GDB_CALL sint32 npc_finish_recovery_turn(sint32 idx);
+sint32 npc_finish_recovery_turn(sint32 idx);
 
-GDB_CALL sint32 npc_wait_recovery_deadline(sint32 idx);
+sint32 npc_wait_recovery_deadline(sint32 idx);
 
-GDB_CALL sint32 npc_fire_spread_and_wait(sint32 idx);
+sint32 npc_fire_spread_and_wait(sint32 idx);
 
-GDB_CALL sint32 npc_finish_facing_target(sint32 idx);
+sint32 npc_finish_facing_target(sint32 idx);
 
-GDB_CALL sint32 npc_update_detached(sint32 idx);
+sint32 npc_update_detached(sint32 idx);
 
-GDB_CALL sint32 npc_update_knockdown(sint32 idx);
+sint32 npc_update_knockdown(sint32 idx);
 
-GDB_CALL sint32 npc_update_recovery(sint32 idx);
+sint32 npc_update_recovery(sint32 idx);
 
-GDB_CALL sint32 npc_finish_attack_lighting(sint32 idx);
+sint32 npc_finish_attack_lighting(sint32 idx);
 
-GDB_CALL sint32 npc_update_combat(sint32 idx);
+sint32 npc_update_combat(sint32 idx);
 
-GDB_CALL sint32 npc_continue_combat(sint32 idx);
+sint32 npc_continue_combat(sint32 idx);
 
-GDB_CALL sint32 npc_finish_combat_combo(sint32 idx);
+sint32 npc_finish_combat_combo(sint32 idx);
 
-GDB_CALL sint32 npc_animation_allows_target_reaction(uint32 state);
+sint32 npc_animation_allows_target_reaction(uint32 state);
 
-GDB_CALL sint32 npc_target_reaction_class(uint32 state);
+sint32 npc_target_reaction_class(uint32 state);
 
-GDB_CALL sint32 npc_resume_combat6(sint32 idx);
+sint32 npc_resume_combat6(sint32 idx);
 
-GDB_CALL void npc_ignore_action(void);
+void npc_ignore_action(void);
 
 #endif

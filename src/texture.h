@@ -80,7 +80,7 @@ typedef struct TEXTURE_EFFECT_PALETTES
 } TEXTURE_EFFECT_PALETTES;
 
 extern TEXTURE_EFFECT_PALETTES tex_effect_pals;
-GDB_CALL uint32 tex_upload_pals(void);
+uint32 tex_upload_pals(void);
 
 enum
 {
@@ -152,14 +152,14 @@ extern const TEXTURE_UPLOAD_RECTANGLES tex_upload_rect_defaults;
 
 extern TEXTURE_ALLOCATOR tex_allocator;
 
-GDB_CALL uint32 tex_allocator_reset(void);
-GDB_CALL uint32 tex_alloc_pal(void);
-GDB_CALL uint32 tex_alloc_image(sint32 width, sint32 height, sint32 mode, PSX_RECT *rect);
+uint32 tex_allocator_reset(void);
+uint32 tex_alloc_pal(void);
+uint32 tex_alloc_image(sint32 width, sint32 height, sint32 mode, PSX_RECT *rect);
 
-GDB_CALL uint32 tex_load_background(const char *tex_name, const char *pal_name, sint32 upload_pixels);
-GDB_CALL void tex_build_effect_pals(uint16 *pal);
-GDB_CALL TEXTURE_DESCRIPTOR *tex_build_desc(uint32 width, uint32 height, uint32 mode, uint32 flags, uint32 allocated, uint32 pal_slot, sint32 pal_x, sint32 pal_y_next);
-GDB_CALL void tex_fix_uv(uint32 grp_idx, uint32 tex_idx, TEXTURE_DESCRIPTOR *desc);
-GDB_CALL uint32 tex_load_grps(uint32 all_characters);
+uint32 tex_load_background(const char *tex_name, const char *pal_name, sint32 upload_pixels);
+void tex_build_effect_pals(uint16 *pal);
+TEXTURE_DESCRIPTOR *tex_build_desc(uint32 width, uint32 height, uint32 mode, uint32 flags, uint32 allocated, uint32 pal_slot, sint32 pal_x, sint32 pal_y_next);
+void tex_fix_uv(uint32 grp_idx, uint32 tex_idx, TEXTURE_DESCRIPTOR *desc);
+uint32 tex_load_grps(uint32 all_characters);
 
 #endif

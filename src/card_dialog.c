@@ -11,7 +11,7 @@ CARD_TEXT_WORKSPACES card_text;
 CARD_DIALOG card_dialog;
 CARD_PROMPT card_prompts[CARD_PROMPT_COUNT];
 
-GDB_CALL sint32 card_format_description(char *out, uint32 capacity)
+sint32 card_format_description(char *out, uint32 capacity)
 {
     FUNCTION_MARKER(0x8006ba58, "GAME.EXE");
     sint32 stage = card_storage.preview.stage;
@@ -51,7 +51,7 @@ GDB_CALL sint32 card_format_description(char *out, uint32 capacity)
     return result;
 }
 
-GDB_CALL uint32 card_settings_load_dialog(void)
+uint32 card_settings_load_dialog(void)
 {
     FUNCTION_MARKER(0x80069554u, "GAME.EXE");
     uint8 saved[260];
@@ -427,7 +427,7 @@ static sint32 save_file_dialog(uint32 retained_s3)
     return 2;
 }
 
-GDB_CALL sint32 card_save_dialog(void)
+sint32 card_save_dialog(void)
 {
     FUNCTION_MARKER(0x80068d68u, "GAME.EXE");
     CARD_SAVE_TEXT saved = card_text.save;
@@ -574,7 +574,7 @@ static void card_dialog_choices(sint32 choice)
     text_draw_gradient(localization.text[LOCAL_TEXT_NO], 170, 170, choice ? &text_active_gradient : &text_inactive_gradient);
 }
 
-GDB_CALL sint32 card_confirm_dialog(CARD_PROMPT prompt, sint32 choice, sint32 monitor_card)
+sint32 card_confirm_dialog(CARD_PROMPT prompt, sint32 choice, sint32 monitor_card)
 {
     FUNCTION_MARKER(0x80068520u, "GAME.EXE");
     uint8 saved[257];
@@ -785,7 +785,7 @@ sint32 card_menu_load_settings(uint32 retained_s3)
     return load_dialog(retained_s3);
 }
 
-GDB_CALL sint32 card_menu_save_settings(void)
+sint32 card_menu_save_settings(void)
 {
     FUNCTION_MARKER(0x80052484u, "GAME.EXE");
     card_dialog.settings_only = 1;

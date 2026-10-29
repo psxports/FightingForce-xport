@@ -97,9 +97,9 @@ int game_run_arguments(int argc, char **argv);
 
 /* Native binding for SDK/BIOS services in the separate SLUS image. */
 
-GDB_CALL uint32 sound_device_init(void);
-GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *dst);
-GDB_CALL uint32 credits_run(void);
+uint32 sound_device_init(void);
+uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *dst);
+uint32 credits_run(void);
 
 typedef struct PAD_HOST_STATE
 {
@@ -213,105 +213,105 @@ typedef struct PAD_ACTION_STATE
 extern PAD_ACTION_STATE pad_action;
 extern const uint8 pad_bindings[PAD_SCHEME_COUNT][PAD_BIND_COUNT];
 void pad_host_publish(uint32 connected, uint32 buttons0, uint32 buttons1);
-GDB_CALL sint32 npc_update_attack_motion(sint32 idx);
-GDB_CALL sint32 npc_attack_beams(sint32 idx);
+sint32 npc_update_attack_motion(sint32 idx);
+sint32 npc_attack_beams(sint32 idx);
 extern uint32 platform_interrupts_enabled;
-GDB_CALL void platform_interrupts_disable(void);
-GDB_CALL void platform_interrupts_enable(void);
-GDB_CALL void card_backend_init(uint32 mode);
-GDB_CALL void card_backend_start(void);
-GDB_CALL void card_pad_init(uint32 mode);
-GDB_CALL void card_pad_start(void);
+void platform_interrupts_disable(void);
+void platform_interrupts_enable(void);
+void card_backend_init(uint32 mode);
+void card_backend_start(void);
+void card_pad_init(uint32 mode);
+void card_pad_start(void);
 
-GDB_CALL DIRENTRY *card_backend_first_file(const char *path, DIRENTRY *entry);
-GDB_CALL sint32 card_backend_erase(const char *path);
-GDB_CALL uint32 npc_build_attack_vectors(sint32 idx, uint32 scale, uint32 output[16]);
-GDB_CALL sint32 npc_emit_attack_effects(sint32 idx);
-GDB_CALL sint32 regions_apply_radial_hit(const FIXED_VEC3 *pos, sint32 radius, uint32 retained_word);
-GDB_CALL sint32 packet_color_half(const uint16 packet[9]);
-GDB_CALL sint32 npc_attack_electric(sint32 idx);
-GDB_CALL sint32 npc_move_oscillating(sint32 idx);
-GDB_CALL uint32 object_draw_scene_gated(const MODEL_OBJECT *model);
-GDB_CALL sint32 npc_finish_grapple(sint32 idx);
-GDB_CALL sint32 npc_fire_fan(sint32 idx);
-GDB_CALL sint32 model_update_spinning(MODEL_OBJECT *model);
-GDB_CALL sint32 npc_throw_items(sint32 idx);
-GDB_CALL void object_draw_depth_bob(const MODEL_OBJECT *model);
-GDB_CALL sint32 npc_update_fall(sint32 idx);
-GDB_CALL void object_draw_repeated_pair(const MODEL_OBJECT *model);
-GDB_CALL sint32 actor_hit_effects(sint32 idx);
-GDB_CALL uint32 object_draw_shadowed_model(const MODEL_OBJECT *model);
-GDB_CALL uint32 actor_transform_point(const POSE_MATRIX *matrix, uint32 point[3]);
-GDB_CALL uint32 object_draw_phase_gated(const MODEL_OBJECT *model);
-GDB_CALL uint32 object_draw_player_facing(MODEL_OBJECT *model);
-GDB_CALL uint32 object_draw_stage_gated(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_raised(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_base_raised(const MODEL_OBJECT *item);
-GDB_CALL uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len);
-GDB_CALL uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len);
-GDB_CALL uint32 object_draw_rotated_packets(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_depth_rotated_packets(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_scene_active(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_scene_early(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_depth_fade(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_near_fade(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_depth_pair(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_visible_yaw(const MODEL_OBJECT *item);
-GDB_CALL sint32 npc_begin_attack_wait(sint32 idx);
-GDB_CALL sint32 npc_update_delay(sint32 idx);
-GDB_CALL intptr npc_update_action(sint32 idx);
-GDB_CALL uint32 object_draw_side_spin(const MODEL_OBJECT *model);
-GDB_CALL uint32 object_draw_camera_yaw_outer(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_kind_bias(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_stage_bias(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_flag_256(const MODEL_OBJECT *item);
-GDB_CALL void object_draw_height_offset(const MODEL_OBJECT *model);
-GDB_CALL uint32 object_draw_scene_variant(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_flag_512(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_quarter_turn(const MODEL_OBJECT *item);
-GDB_CALL void object_draw_dimmed_yaw(const MODEL_OBJECT *item);
-GDB_CALL void object_draw_inverted_roll(const MODEL_OBJECT *item);
-GDB_CALL void object_draw_offset_spinning_pair(const MODEL_OBJECT *model);
-GDB_CALL sint32 math_distance_xz(uint32 x0, uint32 z0, uint32 x1, uint32 z1);
-GDB_CALL sint32 npc_approach_target(sint32 idx);
-GDB_CALL sint32 npc_update_ranged_attack(sint32 idx);
-GDB_CALL uint32 object_update_yaw(MODEL_OBJECT *item);
+DIRENTRY *card_backend_first_file(const char *path, DIRENTRY *entry);
+sint32 card_backend_erase(const char *path);
+uint32 npc_build_attack_vectors(sint32 idx, uint32 scale, uint32 output[16]);
+sint32 npc_emit_attack_effects(sint32 idx);
+sint32 regions_apply_radial_hit(const FIXED_VEC3 *pos, sint32 radius, uint32 retained_word);
+sint32 packet_color_half(const uint16 packet[9]);
+sint32 npc_attack_electric(sint32 idx);
+sint32 npc_move_oscillating(sint32 idx);
+uint32 object_draw_scene_gated(const MODEL_OBJECT *model);
+sint32 npc_finish_grapple(sint32 idx);
+sint32 npc_fire_fan(sint32 idx);
+sint32 model_update_spinning(MODEL_OBJECT *model);
+sint32 npc_throw_items(sint32 idx);
+void object_draw_depth_bob(const MODEL_OBJECT *model);
+sint32 npc_update_fall(sint32 idx);
+void object_draw_repeated_pair(const MODEL_OBJECT *model);
+sint32 actor_hit_effects(sint32 idx);
+uint32 object_draw_shadowed_model(const MODEL_OBJECT *model);
+uint32 actor_transform_point(const POSE_MATRIX *matrix, uint32 point[3]);
+uint32 object_draw_phase_gated(const MODEL_OBJECT *model);
+uint32 object_draw_player_facing(MODEL_OBJECT *model);
+uint32 object_draw_stage_gated(const MODEL_OBJECT *item);
+uint32 object_draw_raised(const MODEL_OBJECT *item);
+uint32 object_draw_base_raised(const MODEL_OBJECT *item);
+uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len);
+uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len);
+uint32 object_draw_rotated_packets(const MODEL_OBJECT *item);
+uint32 object_draw_depth_rotated_packets(const MODEL_OBJECT *item);
+uint32 object_draw_scene_active(const MODEL_OBJECT *item);
+uint32 object_draw_scene_early(const MODEL_OBJECT *item);
+uint32 object_draw_depth_fade(const MODEL_OBJECT *item);
+uint32 object_draw_near_fade(const MODEL_OBJECT *item);
+uint32 object_draw_depth_pair(const MODEL_OBJECT *item);
+uint32 object_draw_visible_yaw(const MODEL_OBJECT *item);
+sint32 npc_begin_attack_wait(sint32 idx);
+sint32 npc_update_delay(sint32 idx);
+intptr npc_update_action(sint32 idx);
+uint32 object_draw_side_spin(const MODEL_OBJECT *model);
+uint32 object_draw_camera_yaw_outer(const MODEL_OBJECT *item);
+uint32 object_draw_kind_bias(const MODEL_OBJECT *item);
+uint32 object_draw_stage_bias(const MODEL_OBJECT *item);
+uint32 object_draw_flag_256(const MODEL_OBJECT *item);
+void object_draw_height_offset(const MODEL_OBJECT *model);
+uint32 object_draw_scene_variant(const MODEL_OBJECT *item);
+uint32 object_draw_flag_512(const MODEL_OBJECT *item);
+uint32 object_draw_quarter_turn(const MODEL_OBJECT *item);
+void object_draw_dimmed_yaw(const MODEL_OBJECT *item);
+void object_draw_inverted_roll(const MODEL_OBJECT *item);
+void object_draw_offset_spinning_pair(const MODEL_OBJECT *model);
+sint32 math_distance_xz(uint32 x0, uint32 z0, uint32 x1, uint32 z1);
+sint32 npc_approach_target(sint32 idx);
+sint32 npc_update_ranged_attack(sint32 idx);
+uint32 object_update_yaw(MODEL_OBJECT *item);
 
-GDB_CALL void object_draw_settled_debris(const MODEL_OBJECT *item);
-GDB_CALL uint32 pad_game_poll(void);
-GDB_CALL void pad_stream_disable(void);
-GDB_CALL sint32 level_run(void);
-GDB_CALL uint32 object_draw_yaw_flag_128(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_camera_yaw_inner(const MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_wave(MODEL_OBJECT *item);
-GDB_CALL uint32 object_draw_visible_player_facing(MODEL_OBJECT *model);
-GDB_CALL uint32 object_draw_offset_shadow(const MODEL_OBJECT *item);
-GDB_CALL void object_draw_raised_spinning_pair(const MODEL_OBJECT *model);
+void object_draw_settled_debris(const MODEL_OBJECT *item);
+uint32 pad_game_poll(void);
+void pad_stream_disable(void);
+sint32 level_run(void);
+uint32 object_draw_yaw_flag_128(const MODEL_OBJECT *item);
+uint32 object_draw_camera_yaw_inner(const MODEL_OBJECT *item);
+uint32 object_draw_wave(MODEL_OBJECT *item);
+uint32 object_draw_visible_player_facing(MODEL_OBJECT *model);
+uint32 object_draw_offset_shadow(const MODEL_OBJECT *item);
+void object_draw_raised_spinning_pair(const MODEL_OBJECT *model);
 
-GDB_CALL sint32 game_init_devices(void);
+sint32 game_init_devices(void);
 void pad_host_init(void);
-GDB_CALL uint8 *pad_action_clear(sint32 player);
+uint8 *pad_action_clear(sint32 player);
 
 sint32 game_cold_reset(void);
-GDB_CALL uint32 frame_draw_scene(void);
-GDB_CALL uint32 frame_prepare(void);
+uint32 frame_draw_scene(void);
+uint32 frame_prepare(void);
 
-GDB_CALL sint32 pad_count_devices(void);
-GDB_CALL sint32 pad_refresh_ports(void);
-GDB_CALL sint16 pad_decode_buttons(sint32 port);
-GDB_CALL void pad_stream_reset(void);
-GDB_CALL uint32 pad_menu_poll(sint32 player);
-GDB_CALL sint32 menu_update_frame(void);
+sint32 pad_count_devices(void);
+sint32 pad_refresh_ports(void);
+sint16 pad_decode_buttons(sint32 port);
+void pad_stream_reset(void);
+uint32 pad_menu_poll(sint32 player);
+sint32 menu_update_frame(void);
 sint32 menu_update_selection_frame(uint32 *retained_s3);
-GDB_CALL void menu_prepare_frame(void);
-GDB_CALL void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *effect);
-GDB_CALL sint32 player_update(void);
-GDB_CALL uint32 pad_game_buttons(uint32 pad);
-GDB_CALL uint8 *pad_action_press(uint32 player, uint32 buttons);
-GDB_CALL uint8 *pad_action_hold(uint32 player, uint32 buttons);
+void menu_prepare_frame(void);
+void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *effect);
+sint32 player_update(void);
+uint32 pad_game_buttons(uint32 pad);
+uint8 *pad_action_press(uint32 player, uint32 buttons);
+uint8 *pad_action_hold(uint32 player, uint32 buttons);
 extern uint32 random_seed;
-GDB_CALL uint32 random_next(void);
-GDB_CALL uint32 object_update_impact_spr(MODEL_OBJECT *item);
+uint32 random_next(void);
+uint32 object_update_impact_spr(MODEL_OBJECT *item);
 
 /* Required runtime services. Unbound services fail explicitly, never silently
  * stand in for an implementation. Audit harnesses may bind recording adapters. */
@@ -329,34 +329,34 @@ typedef struct GAME_SERVICES
 
 extern GAME_SERVICES game_services;
 
-GDB_CALL uint32 object_draw_rotated(const MODEL_OBJECT *item);
+uint32 object_draw_rotated(const MODEL_OBJECT *item);
 
-GDB_CALL void object_draw_pitched_spinning_pair(const MODEL_OBJECT *model);
+void object_draw_pitched_spinning_pair(const MODEL_OBJECT *model);
 
-GDB_CALL void object_draw_phased_effects(const MODEL_OBJECT *model);
+void object_draw_phased_effects(const MODEL_OBJECT *model);
 
-GDB_CALL sint32 object_update_orbit_sound(MODEL_OBJECT *model);
+sint32 object_update_orbit_sound(MODEL_OBJECT *model);
 
-GDB_CALL uint32 menu_present(void);
-GDB_CALL uint32 menu_initialize(void);
-GDB_CALL uint32 menu_run(void);
+uint32 menu_present(void);
+uint32 menu_initialize(void);
+uint32 menu_run(void);
 
-GDB_CALL sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint32 timer, uint32 extra);
+sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint32 timer, uint32 extra);
 
-GDB_CALL sint32 npc_update_entry_delay(sint32 idx);
+sint32 npc_update_entry_delay(sint32 idx);
 
-GDB_CALL sint32 npc_turn_to_point(sint32 idx, uint32 x, uint32 z);
+sint32 npc_turn_to_point(sint32 idx, uint32 x, uint32 z);
 
-GDB_CALL sint32 npc_steer_to_point(sint32 idx, uint32 x, uint32 z, uint32 flags);
+sint32 npc_steer_to_point(sint32 idx, uint32 x, uint32 z, uint32 flags);
 
-GDB_CALL intptr npc_update_actor(sint32 idx);
+intptr npc_update_actor(sint32 idx);
 
-GDB_CALL sint32 npc_react_to_target(sint32 idx);
+sint32 npc_react_to_target(sint32 idx);
 
-GDB_CALL sint32 npc_update(void);
+sint32 npc_update(void);
 
-GDB_CALL void pause_refresh_pad(void);
+void pause_refresh_pad(void);
 
-GDB_CALL sint32 npc_attack_players(sint32 idx, sint32 attachment);
+sint32 npc_attack_players(sint32 idx, sint32 attachment);
 
 #endif

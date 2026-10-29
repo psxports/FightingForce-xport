@@ -1,6 +1,6 @@
 #include "game.h"
 
-GDB_CALL uint32 credits_run(void)
+uint32 credits_run(void)
 {
     FUNCTION_MARKER(0x8005a280u, "GAME.EXE");
     RESOURCE_VIEW credits = resource_find("CREDITS.TXT");

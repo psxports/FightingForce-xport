@@ -33,21 +33,21 @@ typedef struct DISPLAY_BUFFERS
 
 extern DISPLAY_BUFFERS disp_buffers;
 
-GDB_CALL void disp_initialize(void);
-GDB_CALL void disp_setup(void);
-GDB_CALL uint32 disp_apply_offsets(void);
-GDB_CALL uint32 disp_update_offsets(void);
-GDB_CALL uint32 disp_begin_frame(void);
-GDB_CALL sint32 disp_draw_scene(void);
-GDB_CALL sint32 disp_wait_vblank(void);
+void disp_initialize(void);
+void disp_setup(void);
+uint32 disp_apply_offsets(void);
+uint32 disp_update_offsets(void);
+uint32 disp_begin_frame(void);
+sint32 disp_draw_scene(void);
+sint32 disp_wait_vblank(void);
 
-GDB_CALL uint32 disp_set_fade(sint32 r, sint32 g, sint32 b);
-GDB_CALL uint32 disp_fade_from_origin(sint32 level);
-GDB_CALL uint32 disp_draw_fade(void);
-GDB_CALL uint32 disp_draw_flash(void);
+uint32 disp_set_fade(sint32 r, sint32 g, sint32 b);
+uint32 disp_fade_from_origin(sint32 level);
+uint32 disp_draw_fade(void);
+uint32 disp_draw_flash(void);
 
-GDB_CALL sint32 disp_update_pulse(void);
+sint32 disp_update_pulse(void);
 
-GDB_CALL uint32 disp_prepare_scene(void);
+uint32 disp_prepare_scene(void);
 
 #endif

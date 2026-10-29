@@ -61,7 +61,7 @@ static void load_gte(const uint32 words[8])
 }
 
 /* 80010028 only advances the pointer: it does not reload GTE registers. */
-GDB_CALL void transform_pop(void)
+void transform_pop(void)
 {
     FUNCTION_MARKER(0x80010028, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -70,7 +70,7 @@ GDB_CALL void transform_pop(void)
 }
 
 /* 80010040 snapshots all eight source words before writing the lower slot. */
-GDB_CALL void transform_push(void)
+void transform_push(void)
 {
     FUNCTION_MARKER(0x80010040, "GAME.EXE");
     uint32 words[8];
@@ -92,7 +92,7 @@ GDB_CALL void transform_push(void)
 
 /* 800100C4: MVMVA results use MAC1..3, not saturated IR1..3. Translation
  * fractions are discarded before the operation; stores wrap after SLL 16. */
-GDB_CALL void transform_translate(sint32 x, sint32 y, sint32 z)
+void transform_translate(sint32 x, sint32 y, sint32 z)
 {
     FUNCTION_MARKER(0x800100c4, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -114,7 +114,7 @@ GDB_CALL void transform_translate(sint32 x, sint32 y, sint32 z)
 
 /* 80010170: reload geometry registers from the current matrix, without moving
  * its pointer or modifying the matrix. Translation fractions are discarded. */
-GDB_CALL void transform_reload(void)
+void transform_reload(void)
 {
     FUNCTION_MARKER(0x80010170, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -127,7 +127,7 @@ GDB_CALL void transform_reload(void)
     load_gte(words);
 }
 
-GDB_CALL void transform_pitch(sint32 angle)
+void transform_pitch(sint32 angle)
 {
     FUNCTION_MARKER(0x800101cc, "GAME.EXE");
     uint32 idx;
@@ -137,7 +137,7 @@ GDB_CALL void transform_pitch(sint32 angle)
         transform_pitch_idx(idx);
 }
 
-GDB_CALL void transform_yaw(sint32 angle)
+void transform_yaw(sint32 angle)
 {
     FUNCTION_MARKER(0x8001033c, "GAME.EXE");
     uint32 idx;
@@ -147,7 +147,7 @@ GDB_CALL void transform_yaw(sint32 angle)
         transform_yaw_idx(idx);
 }
 
-GDB_CALL void transform_roll(sint32 angle)
+void transform_roll(sint32 angle)
 {
     FUNCTION_MARKER(0x800104a0, "GAME.EXE");
     uint32 idx;
@@ -158,7 +158,7 @@ GDB_CALL void transform_roll(sint32 angle)
 }
 
 /* Table pitch uses three rotation-only MVMVA columns */
-GDB_CALL void transform_pitch_idx(uint32 idx)
+void transform_pitch_idx(uint32 idx)
 {
     POSE_MATRIX *matrix;
     POSE_MATRIX *rotation = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 1];
@@ -181,7 +181,7 @@ GDB_CALL void transform_pitch_idx(uint32 idx)
 }
 
 /* 8001033C: same column multiply as pitch, with a different scratch matrix. */
-GDB_CALL void transform_yaw_idx(uint32 idx)
+void transform_yaw_idx(uint32 idx)
 {
     POSE_MATRIX *matrix;
     POSE_MATRIX *rotation = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 1];
@@ -202,7 +202,7 @@ GDB_CALL void transform_yaw_idx(uint32 idx)
 }
 
 /* 800104B4 is also called directly by the model stream with a table offset. */
-GDB_CALL void transform_roll_idx(uint32 idx)
+void transform_roll_idx(uint32 idx)
 {
     POSE_MATRIX *matrix;
     POSE_MATRIX *rotation = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 1];
@@ -225,7 +225,7 @@ GDB_CALL void transform_roll_idx(uint32 idx)
 }
 
 /* Actual 10F94 uses the low32 product before SRA14. */
-GDB_CALL void transform_scale(sint32 x, sint32 y, sint32 z)
+void transform_scale(sint32 x, sint32 y, sint32 z)
 {
     FUNCTION_MARKER(0x80010f94, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -243,7 +243,7 @@ GDB_CALL void transform_scale(sint32 x, sint32 y, sint32 z)
 
 /* 80011C60: Reset matrix stack to SCRATCHPAD, then pitch followed by yaw
  * The original uses unsigned halfword angle loads. Return is not consumed. */
-GDB_CALL void transform_reset(void)
+void transform_reset(void)
 {
     FUNCTION_MARKER(0x80011c60, "GAME.EXE");
     POSE_MATRIX *matrix = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 2];
@@ -259,7 +259,7 @@ GDB_CALL void transform_reset(void)
 }
 
 /* 80011D20: eight word stores include matrix padding and translations. */
-GDB_CALL sint32 transform_identity(void)
+sint32 transform_identity(void)
 {
     FUNCTION_MARKER(0x80011d20, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -274,7 +274,7 @@ GDB_CALL sint32 transform_identity(void)
 }
 
 /* Test the transformed origin against the original near and horizontal gates */
-GDB_CALL sint32 transform_origin_visible(void)
+sint32 transform_origin_visible(void)
 {
     FUNCTION_MARKER(0x80011e5c, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -304,7 +304,7 @@ GDB_CALL sint32 transform_origin_visible(void)
 }
 
 /* 80011F74: load all eight words before stores, then reload COP2 controls. */
-GDB_CALL void transform_load(const POSE_MATRIX *src)
+void transform_load(const POSE_MATRIX *src)
 {
     FUNCTION_MARKER(0x80011f74, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -321,7 +321,7 @@ GDB_CALL void transform_load(const POSE_MATRIX *src)
     load_gte(words);
 }
 
-GDB_CALL sint16 transform_origin_depth(void)
+sint16 transform_origin_depth(void)
 {
     FUNCTION_MARKER(0x80012190u, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -331,7 +331,7 @@ GDB_CALL sint16 transform_origin_depth(void)
 }
 
 /* Reload the current transform, then convert Q16 coordinates through RotTrans */
-GDB_CALL uint32 transform_point(sint32 x, sint32 y, sint32 z, uint32 output[3])
+uint32 transform_point(sint32 x, sint32 y, sint32 z, uint32 output[3])
 {
     FUNCTION_MARKER(0x800614f4u, "GAME.EXE");
     SVECTOR v;

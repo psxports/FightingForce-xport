@@ -45,7 +45,7 @@ static const uint32 icon[32] = {
     0x33111225, 0x52211133, 0x66666442, 0x24466666, 0x33779941, 0x34221111, 0x66644943, 0x34221746, 0x77333441, 0x83422249, 0x73311141, 0x88395559, 0x73112212, 0x88519555, 0x57122258, 0x88521755, 0x55732588, 0x85552175, 0x55593588, 0x21222117, 0x95554388, 0x14321137, 0x94552438, 0x34433377, 0x64722241, 0x34944666, 0x11112243, 0x14997733, 0x66666442, 0x24466666, 0x33111225, 0x52211133,
 };
 
-GDB_CALL sint32 card_init_events(void)
+sint32 card_init_events(void)
 {
     FUNCTION_MARKER(0x8006b050u, "GAME.EXE");
     static const uint32 specs[4] = {4, 0x8000, 0x100, 0x2000};
@@ -95,7 +95,7 @@ static sint32 write_file_dummy(sint32 fd, const uint8 *src, uint32 bytes)
     return -1; /* WIP absent card. */
 }
 
-GDB_CALL sint32 card_write_save(uint32 slot, const char *name, uint32 name_capacity, const char *title, uint32 title_capacity, uint32 notice_context, uint8 *data, uint32 capacity)
+sint32 card_write_save(uint32 slot, const char *name, uint32 name_capacity, const char *title, uint32 title_capacity, uint32 notice_context, uint8 *data, uint32 capacity)
 {
     FUNCTION_MARKER(0x8006b22cu, "GAME.EXE");
     uint32 words[4];
@@ -158,7 +158,7 @@ GDB_CALL sint32 card_write_save(uint32 slot, const char *name, uint32 name_capac
     return written == CARD_FILE_SIZE ? 1 : -3;
 }
 
-GDB_CALL sint32 card_file_exists(uint32 slot, const char *name, uint32 capacity)
+sint32 card_file_exists(uint32 slot, const char *name, uint32 capacity)
 {
     FUNCTION_MARKER(0x8006b1c8u, "GAME.EXE");
     sint32 fd;
@@ -170,7 +170,7 @@ GDB_CALL sint32 card_file_exists(uint32 slot, const char *name, uint32 capacity)
     return 1;
 }
 
-GDB_CALL sint32 card_format(uint32 slot)
+sint32 card_format(uint32 slot)
 {
     FUNCTION_MARKER(0x8006b6ccu, "GAME.EXE");
     snprintf(card_files.path, sizeof(card_files.path), "bu%2.2x:", slot & 255);
@@ -179,7 +179,7 @@ GDB_CALL sint32 card_format(uint32 slot)
     return 0;
 }
 
-GDB_CALL sint32 card_delete_file(uint32 slot, const char *name, uint32 capacity)
+sint32 card_delete_file(uint32 slot, const char *name, uint32 capacity)
 {
     FUNCTION_MARKER(0x8006b710u, "GAME.EXE");
     if (!card_file_exists(slot, name, capacity))
@@ -188,7 +188,7 @@ GDB_CALL sint32 card_delete_file(uint32 slot, const char *name, uint32 capacity)
     return card_backend_erase(card_files.path);
 }
 
-GDB_CALL sint32 card_read_save(uint32 slot, const char *name, uint32 name_capacity, uint8 *dst, uint32 capacity)
+sint32 card_read_save(uint32 slot, const char *name, uint32 name_capacity, uint8 *dst, uint32 capacity)
 {
     FUNCTION_MARKER(0x8006b77cu, "GAME.EXE");
     sint32 fd, count;
@@ -202,7 +202,7 @@ GDB_CALL sint32 card_read_save(uint32 slot, const char *name, uint32 name_capaci
     return count == CARD_FILE_SIZE;
 }
 
-GDB_CALL sint32 card_read_save_info(void)
+sint32 card_read_save_info(void)
 {
     FUNCTION_MARKER(0x8006b9d0u, "GAME.EXE");
     uint8 stage, player_count, type0, type1;
@@ -229,7 +229,7 @@ static DIRENTRY *next_file_dummy(DIRENTRY *entry)
     return NULL;
 }
 
-GDB_CALL sint32 card_scan_directory(uint32 slot, DIRENTRY *entries, uint32 capacity)
+sint32 card_scan_directory(uint32 slot, DIRENTRY *entries, uint32 capacity)
 {
     FUNCTION_MARKER(0x8006bf74u, "GAME.EXE");
     uint8 saved[128];
@@ -257,7 +257,7 @@ GDB_CALL sint32 card_scan_directory(uint32 slot, DIRENTRY *entries, uint32 capac
     return count;
 }
 
-GDB_CALL sint32 card_list_files(uint32 slot, CARD_DIRECTORY *directory)
+sint32 card_list_files(uint32 slot, CARD_DIRECTORY *directory)
 {
     FUNCTION_MARKER(0x8006bffcu, "GAME.EXE");
     sint32 count, fd, bytes;
@@ -309,7 +309,7 @@ GDB_CALL sint32 card_list_files(uint32 slot, CARD_DIRECTORY *directory)
     return count;
 }
 
-GDB_CALL uint32 card_encode_character(uint32 character)
+uint32 card_encode_character(uint32 character)
 {
     FUNCTION_MARKER(0x8006bdf4u, "GAME.EXE");
     uint32 ch = character & 255, grp = 0, punctuation = 0, val;
@@ -336,7 +336,7 @@ GDB_CALL uint32 card_encode_character(uint32 character)
     return ((val & 255) << 8) | ((val >> 8) & 255);
 }
 
-GDB_CALL sint32 card_encode_title(uint16 *dst, uint32 capacity, const char *src, uint32 src_capacity)
+sint32 card_encode_title(uint16 *dst, uint32 capacity, const char *src, uint32 src_capacity)
 {
     FUNCTION_MARKER(0x8006bf14u, "GAME.EXE");
     uint32 i = 0;
@@ -355,7 +355,7 @@ GDB_CALL sint32 card_encode_title(uint16 *dst, uint32 capacity, const char *src,
     return 0;
 }
 
-GDB_CALL sint32 card_decode_character(uint32 character)
+sint32 card_decode_character(uint32 character)
 {
     FUNCTION_MARKER(0x8006c178u, "GAME.EXE");
     uint32 ch = character & 65535, high = ch >> 8;
@@ -376,7 +376,7 @@ GDB_CALL sint32 card_decode_character(uint32 character)
     return ' ';
 }
 
-GDB_CALL void card_decode_title(char *dst, uint32 capacity, const uint16 *src, uint32 count)
+void card_decode_title(char *dst, uint32 capacity, const uint16 *src, uint32 count)
 {
     FUNCTION_MARKER(0x8006c6e8u, "GAME.EXE");
     uint32 i = 0, ch;
@@ -407,13 +407,13 @@ static sint32 test_grp(const uint32 *events)
     return result;
 }
 
-GDB_CALL sint32 card_clear_io_events(void)
+sint32 card_clear_io_events(void)
 {
     FUNCTION_MARKER(0x8006b894u, "GAME.EXE");
     return test_grp(card_storage.event[0]);
 }
 
-GDB_CALL sint32 card_clear_software_events(void)
+sint32 card_clear_software_events(void)
 {
     FUNCTION_MARKER(0x8006b950u, "GAME.EXE");
     return test_grp(card_storage.event[1]);
@@ -428,13 +428,13 @@ static sint32 wait_grp(const uint32 *events)
                 return i;
 }
 
-GDB_CALL sint32 card_wait_io_event(void)
+sint32 card_wait_io_event(void)
 {
     FUNCTION_MARKER(0x8006b820u, "GAME.EXE");
     return wait_grp(card_storage.event[0]);
 }
 
-GDB_CALL sint32 card_wait_software_event(void)
+sint32 card_wait_software_event(void)
 {
     FUNCTION_MARKER(0x8006b8dcu, "GAME.EXE");
     return wait_grp(card_storage.event[1]);
@@ -446,7 +446,7 @@ static void complete(uint32 result)
     card_storage.phase = 3;
 }
 
-GDB_CALL sint32 card_update(void)
+sint32 card_update(void)
 {
     FUNCTION_MARKER(0x8006bb44u, "GAME.EXE");
     uint32 state = card_storage.phase;
@@ -531,7 +531,7 @@ GDB_CALL sint32 card_update(void)
     return 2;
 }
 
-GDB_CALL sint32 card_wait(void)
+sint32 card_wait(void)
 {
     FUNCTION_MARKER(0x8006b998u, "GAME.EXE");
     do
@@ -542,7 +542,7 @@ GDB_CALL sint32 card_wait(void)
     return 0;
 }
 
-GDB_CALL uint32 card_wait_status(uint32 *output)
+uint32 card_wait_status(uint32 *output)
 {
     FUNCTION_MARKER(0x8006bdbcu, "GAME.EXE");
     card_update();
@@ -550,7 +550,7 @@ GDB_CALL uint32 card_wait_status(uint32 *output)
     return card_poll_status(output);
 }
 
-GDB_CALL uint32 card_poll_status(uint32 *output)
+uint32 card_poll_status(uint32 *output)
 {
     FUNCTION_MARKER(0x8006bd9cu, "GAME.EXE");
     uint32 val = card_storage.completion;

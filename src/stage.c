@@ -2,7 +2,7 @@
 
 #include "game.h"
 
-GDB_CALL void stage_update(void)
+void stage_update(void)
 {
     uint32 stage, phase, step, i, timer;
     COLLISION_REGION *region;
@@ -408,7 +408,7 @@ GDB_CALL void stage_update(void)
     }
 }
 
-GDB_CALL void stage_update_world(void)
+void stage_update_world(void)
 {
     FUNCTION_MARKER(0x8001d640u, "GAME.EXE");
     uint32 i, object, result, tick = 0, stage, phase, prev_car = 0;
@@ -554,7 +554,7 @@ static const char demo_exit_french1[] = "TOUCHE POUR QUITTER";
 
 static const char demo_recording_text[] = "RECORDING DEMO";
 
-GDB_CALL sint32 game_update_frame_prefix(void)
+sint32 game_update_frame_prefix(void)
 {
     uint32 tick, i;
     sint32 second;

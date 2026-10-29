@@ -5,7 +5,7 @@ REGION_TRIGGER_REFERENCE region_triggers[REGION_KIND_COUNT];
 
 static const sint16 pulse_scale = 64;
 
-GDB_CALL uint32 regions_update_pickup(sint32 idx, uint32 retained_xyz[3])
+uint32 regions_update_pickup(sint32 idx, uint32 retained_xyz[3])
 {
     FUNCTION_MARKER(0x80033f7cu, "GAME.EXE");
     uint32 kind, type, x, z;
@@ -252,7 +252,7 @@ static uint32 face_angle0(COLLISION_REGION *region, sint32 idx)
     return result;
 }
 
-GDB_CALL sint32 regions_find_obstacle(uint32 x, uint32 z)
+sint32 regions_find_obstacle(uint32 x, uint32 z)
 {
     FUNCTION_MARKER(0x80019718, "GAME.EXE");
     sint32 count = col_regions.count, px = (sint32)x >> 16, pz = (sint32)z >> 16;
@@ -442,7 +442,7 @@ static uint32 call_trigger(REGION_TRIGGER_REFERENCE target, COLLISION_REGION *re
     return target->call(region, actor);
 }
 
-GDB_CALL uint32 regions_apply_actor(sint32 idx)
+uint32 regions_apply_actor(sint32 idx)
 {
     FUNCTION_MARKER(0x80019ca4, "GAME.EXE");
     /* Preserve original V0 on an empty region set, not a native pointer */
@@ -525,7 +525,7 @@ GDB_CALL uint32 regions_apply_actor(sint32 idx)
     return result;
 }
 
-GDB_CALL sint32 regions_apply_radial_hit(const FIXED_VEC3 *pos, sint32 radius, uint32 retained_word)
+sint32 regions_apply_radial_hit(const FIXED_VEC3 *pos, sint32 radius, uint32 retained_word)
 {
     FUNCTION_MARKER(0x8002ba88u, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
@@ -569,7 +569,7 @@ GDB_CALL sint32 regions_apply_radial_hit(const FIXED_VEC3 *pos, sint32 radius, u
     return 0;
 }
 
-GDB_CALL void regions_disable_object(const MODEL_OBJECT *object)
+void regions_disable_object(const MODEL_OBJECT *object)
 {
     FUNCTION_MARKER(0x800292a4u, "GAME.EXE");
     COLLISION_REGION *entry = col_regions.data;
@@ -591,7 +591,7 @@ GDB_CALL void regions_disable_object(const MODEL_OBJECT *object)
     entry->col_kind = 0;
 }
 
-GDB_CALL sint32 regions_find_projectile_obstacle(uint32 world_x, uint32 world_z)
+sint32 regions_find_projectile_obstacle(uint32 world_x, uint32 world_z)
 {
     FUNCTION_MARKER(0x800199acu, "GAME.EXE");
     sint32 x = (sint32)world_x >> 16, z = (sint32)world_z >> 16, i, shape, lx, lz;
@@ -631,7 +631,7 @@ GDB_CALL sint32 regions_find_projectile_obstacle(uint32 world_x, uint32 world_z)
     return -1;
 }
 
-GDB_CALL sint32 regions_query_alternate_attack(uint32 x, uint32 z)
+sint32 regions_query_alternate_attack(uint32 x, uint32 z)
 {
     FUNCTION_MARKER(0x80023fd0u, "GAME.EXE");
     if (!regions_find_obstacle(x, z))

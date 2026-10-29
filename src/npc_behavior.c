@@ -37,10 +37,15 @@ static const NPC_BEHAVIOR_ACTION actions[NPC_BEHAVIOR_ACTION_COUNT] = {
 };
 
 /* Load stage AI command streams and behavior parameters */
-GDB_CALL void npc_behavior_load(void)
+void npc_behavior_load(void)
 {
     FUNCTION_MARKER(0x8004c1cc, "GAME.EXE");
-    uint32 p = 0; uint32 end; uint32 table_idx = 0; uint32 block_end; uint32 count; sint32 initial_count;
+    uint32 p = 0;
+    uint32 end;
+    uint32 table_idx = 0;
+    uint32 block_end;
+    uint32 count;
+    sint32 initial_count;
     uint32 code_offset, j, q, flags, size, val;
     uint32 *choices;
     resource_load(game_session.stage + 120, 0x116000, npc_behavior_file, sizeof(npc_behavior_file), NULL, NULL);

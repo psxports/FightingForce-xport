@@ -74,7 +74,7 @@ static sint32 read_status(uint8 *status)
     return control_transport(1, NULL, status);
 }
 
-GDB_CALL sint32 cd_music_init(void)
+sint32 cd_music_init(void)
 {
     FUNCTION_MARKER(0x800675FC, "GAME.EXE");
     sint32 count = read_disc_toc((uint8 *)cd_music.toc);
@@ -136,7 +136,7 @@ sint32 cd_music_stop(void)
     return -1;
 }
 
-GDB_CALL sint32 cd_music_pause(void)
+sint32 cd_music_pause(void)
 {
     FUNCTION_MARKER(0x80067758u, "GAME.EXE");
     uint32 result = cd_music.paused;
@@ -151,7 +151,7 @@ GDB_CALL sint32 cd_music_pause(void)
     return result;
 }
 
-GDB_CALL sint32 cd_music_resume(void)
+sint32 cd_music_resume(void)
 {
     FUNCTION_MARKER(0x800677a0u, "GAME.EXE");
     uint32 result = cd_music.paused;
@@ -172,19 +172,19 @@ GDB_CALL sint32 cd_music_resume(void)
     return result;
 }
 
-GDB_CALL sint32 cd_music_pause_playback(void)
+sint32 cd_music_pause_playback(void)
 {
     FUNCTION_MARKER(0x800678e8u, "GAME.EXE");
     return cd_music_pause();
 }
 
-GDB_CALL sint32 cd_music_resume_playback(void)
+sint32 cd_music_resume_playback(void)
 {
     FUNCTION_MARKER(0x80067908u, "GAME.EXE");
     return cd_music_resume();
 }
 
-GDB_CALL sint32 cd_music_poll(void)
+sint32 cd_music_poll(void)
 {
     FUNCTION_MARKER(0x80067820u, "GAME.EXE");
     uint32 track = cd_music.track, result;
@@ -212,7 +212,7 @@ GDB_CALL sint32 cd_music_poll(void)
     return result;
 }
 
-GDB_CALL sint32 cd_music_start_scene(sint32 track)
+sint32 cd_music_start_scene(sint32 track)
 {
     FUNCTION_MARKER(0x800638b8u, "GAME.EXE");
     cd_music_set_volume(0);

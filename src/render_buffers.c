@@ -5,7 +5,7 @@
 RENDER_BUFFERS render_buffers;
 
 /* Forward links preserve the supplied physical or KSEG alias bits */
-GDB_CALL sint32 render_ot_init(uint32 table_addr)
+sint32 render_ot_init(uint32 table_addr)
 {
     FUNCTION_MARKER(0x80011d50, "GAME.EXE");
     uint32 *table = psx_addr(table_addr, RENDER_OT_COUNT * sizeof(*table));
@@ -17,7 +17,7 @@ GDB_CALL sint32 render_ot_init(uint32 table_addr)
 }
 
 /* The final empty run links its last node, not the terminal address */
-GDB_CALL sint32 render_ot_compact(void)
+sint32 render_ot_compact(void)
 {
     FUNCTION_MARKER(0x80011d9c, "GAME.EXE");
     uint32 cur = render_buffers.ot_addr, tag, next, node;
@@ -50,7 +50,7 @@ GDB_CALL sint32 render_ot_compact(void)
     }
 }
 
-GDB_CALL uint32 render_ot_insert_flags(uint32 bucket_addr, uint32 packet_addr, uint32 flags)
+uint32 render_ot_insert_flags(uint32 bucket_addr, uint32 packet_addr, uint32 flags)
 {
     FUNCTION_MARKER(0x80011e28, "GAME.EXE");
     uint32 *ot_entry = psx_addr(bucket_addr, sizeof(*ot_entry));
@@ -62,7 +62,7 @@ GDB_CALL uint32 render_ot_insert_flags(uint32 bucket_addr, uint32 packet_addr, u
 }
 
 /* Read the signed tag byte before the bucket, including when both alias */
-GDB_CALL uint32 render_ot_insert(uint32 bucket_addr, uint32 packet_addr)
+uint32 render_ot_insert(uint32 bucket_addr, uint32 packet_addr)
 {
     FUNCTION_MARKER(0x80011e40, "GAME.EXE");
     uint32 *packet_tag = psx_addr(packet_addr, sizeof(*packet_tag));
@@ -75,7 +75,7 @@ GDB_CALL uint32 render_ot_insert(uint32 bucket_addr, uint32 packet_addr)
     return prev;
 }
 
-GDB_CALL uint32 render_buffers_select(void)
+uint32 render_buffers_select(void)
 {
     FUNCTION_MARKER(0x80064684, "GAME.EXE");
     uint32 parity = disp_buffers.frame & 1;

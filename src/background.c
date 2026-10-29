@@ -142,7 +142,7 @@ static uint32 draw_occluder(uint32 left, uint32 right)
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
-GDB_CALL uint32 background_draw_ground(void)
+uint32 background_draw_ground(void)
 {
     POLY_F4 *poly;
     FUNCTION_MARKER(0x80064380u, "GAME.EXE");
@@ -186,7 +186,7 @@ GDB_CALL uint32 background_draw_ground(void)
 
 /* 6494C: sky gradient and three horizontally wrapping sprites. MIPS keeps
  * coordinates in 32 bits until SH; the stage-4 horizon offset is +132. */
-GDB_CALL uint32 background_draw_gradient_sky(void)
+uint32 background_draw_gradient_sky(void)
 {
     POLY_G4 *poly;
     SPRT *spr;
@@ -239,19 +239,19 @@ GDB_CALL uint32 background_draw_gradient_sky(void)
     return render_ot_insert(render_buffers.ot_addr, a);
 }
 
-GDB_CALL uint32 background_draw_black_to_horizon(void)
+uint32 background_draw_black_to_horizon(void)
 {
     FUNCTION_MARKER(0x80064c1cu, "GAME.EXE");
     return draw_black_quad(0, 0, 1);
 }
 
-GDB_CALL uint32 background_draw_lower_black(void)
+uint32 background_draw_lower_black(void)
 {
     FUNCTION_MARKER(0x80064cacu, "GAME.EXE");
     return draw_black_quad(160, 255, 0);
 }
 
-GDB_CALL uint32 background_draw_tall_sky(void)
+uint32 background_draw_tall_sky(void)
 {
     FUNCTION_MARKER(0x80064f38u, "GAME.EXE");
     uint32 bias = 160, scroll, i, stage;
@@ -279,7 +279,7 @@ GDB_CALL uint32 background_draw_tall_sky(void)
     return render_insert_tex_page(142, 0);
 }
 
-GDB_CALL uint32 background_draw_split_sky(void)
+uint32 background_draw_split_sky(void)
 {
     SPRT *spr;
     FUNCTION_MARKER(0x80065274u, "GAME.EXE");
@@ -313,7 +313,7 @@ GDB_CALL uint32 background_draw_split_sky(void)
     return render_insert_tex_page(142, 0);
 }
 
-GDB_CALL uint32 background_draw_two_row_sky(void)
+uint32 background_draw_two_row_sky(void)
 {
     FUNCTION_MARKER(0x800655c0u, "GAME.EXE");
     uint32 scroll = ((camera.angles.yaw >> 5) + 160) & 255, i;
@@ -325,13 +325,13 @@ GDB_CALL uint32 background_draw_two_row_sky(void)
     return render_insert_tex_page(142, 0);
 }
 
-GDB_CALL uint32 background_draw_black_to_horizon_alt(void)
+uint32 background_draw_black_to_horizon_alt(void)
 {
     FUNCTION_MARKER(0x80065918u, "GAME.EXE");
     return draw_black_quad(0, 0, 1);
 }
 
-GDB_CALL sint32 background_draw_lightning(void)
+sint32 background_draw_lightning(void)
 {
     POLY_F4 *poly;
     FUNCTION_MARKER(0x800659a8u, "GAME.EXE");
@@ -365,7 +365,7 @@ GDB_CALL sint32 background_draw_lightning(void)
     return sound_voice_volume(stage_audio_slots[1].voice, volume);
 }
 
-GDB_CALL uint32 background_draw_wave_sky(void)
+uint32 background_draw_wave_sky(void)
 {
     POLY_F4 *poly;
     FUNCTION_MARKER(0x80065b3cu, "GAME.EXE");
@@ -405,13 +405,13 @@ GDB_CALL uint32 background_draw_wave_sky(void)
     return render_insert_tex_page(142, 0);
 }
 
-GDB_CALL uint32 background_draw_black(void)
+uint32 background_draw_black(void)
 {
     FUNCTION_MARKER(0x800660dcu, "GAME.EXE");
     return draw_black_quad(0, 256, 0);
 }
 
-GDB_CALL uint32 background_draw_lift_sky(void)
+uint32 background_draw_lift_sky(void)
 {
     POLY_G4 *poly0;
     SPRT *spr;
@@ -483,7 +483,7 @@ GDB_CALL uint32 background_draw_lift_sky(void)
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
-GDB_CALL uint32 background_draw_high_sky(void)
+uint32 background_draw_high_sky(void)
 {
     FUNCTION_MARKER(0x800664f0u, "GAME.EXE");
     uint32 scroll, i;
@@ -495,7 +495,7 @@ GDB_CALL uint32 background_draw_high_sky(void)
     return render_insert_tex_page(142, 0);
 }
 
-GDB_CALL uint32 background_draw_fixed_gradient(void)
+uint32 background_draw_fixed_gradient(void)
 {
     POLY_G4 *poly;
     FUNCTION_MARKER(0x800667b8u, "GAME.EXE");
@@ -519,7 +519,7 @@ GDB_CALL uint32 background_draw_fixed_gradient(void)
 }
 
 /* Original signed shifts and low-halfword parallax coordinates */
-GDB_CALL uint32 background_draw_parallax_sky(void)
+uint32 background_draw_parallax_sky(void)
 {
     POLY_F4 *poly;
     SPRT *spr;

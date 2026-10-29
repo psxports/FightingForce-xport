@@ -37,8 +37,8 @@ typedef struct OPTIONS_MENU
 extern OPTIONS_MENU options_menu;
 extern const OPTIONS_MENU options_menu_defaults;
 
-GDB_CALL sint32 options_menu_update(void);
+sint32 options_menu_update(void);
 
-GDB_CALL uint32 options_draw_slider(sint32 x, sint32 y, sint32 val);
+uint32 options_draw_slider(sint32 x, sint32 y, sint32 val);
 
 #endif

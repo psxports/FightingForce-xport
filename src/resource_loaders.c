@@ -168,7 +168,7 @@ static uint32 load_stage24_surface(void)
     return terrain_load("STG73.PBL", "STG73.MPD");
 }
 
-GDB_CALL uint32 resource_load_frontend_surface(void)
+uint32 resource_load_frontend_surface(void)
 {
     FUNCTION_MARKER(0x8005e7c0, "GAME.EXE");
     tex_load_background("STGFE.PDT", "STGFE.PPL", 1);
@@ -2072,7 +2072,7 @@ const RESOURCE_LOADER *const player_resource_loaders[PLAYER_RESOURCE_COUNT] = {
 };
 
 /* Consolidated model, player and texture dispatch; numeric targets stay in diagnostics */
-GDB_CALL uint32 resource_loader_call(RESOURCE_LOADER_DOMAIN domain, const RESOURCE_LOADER *loader)
+uint32 resource_loader_call(RESOURCE_LOADER_DOMAIN domain, const RESOURCE_LOADER *loader)
 {
     /* TODO: Investigate a missing or wrong-domain loader without a raw-code fallback */
     XASSERT(loader && loader->domain == domain);

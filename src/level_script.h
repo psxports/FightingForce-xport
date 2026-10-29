@@ -61,7 +61,7 @@ extern const LEVEL_WAVE level_wave_defaults;
 extern uint32 level_script_starts[LEVEL_SCRIPT_STAGE_COUNT];
 extern uint32 level_script_cursor;
 
-GDB_CALL sint32 level_script_count_enemies(void);
-GDB_CALL sint32 level_script_update(void);
+sint32 level_script_count_enemies(void);
+sint32 level_script_update(void);
 
 #endif

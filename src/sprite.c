@@ -17,7 +17,7 @@ static sint32 divide(sint32 dividend, sint32 divisor)
 }
 
 /* Preserve deferred tag writes and packed command bits; early initialization changes aliases */
-GDB_CALL uint32 spr_draw(const PROJECTION_POINT *pos, sint32 spr_idx)
+uint32 spr_draw(const PROJECTION_POINT *pos, sint32 spr_idx)
 {
     FUNCTION_MARKER(0x80012390, "GAME.EXE");
     uint32 packet = render_buffers.packet_addr;
@@ -74,7 +74,7 @@ GDB_CALL uint32 spr_draw(const PROJECTION_POINT *pos, sint32 spr_idx)
     return 0x8008d4b0;
 }
 
-GDB_CALL uint32 spr_draw_quad(const PROJECTION_POINT *pos, uint32 tex)
+uint32 spr_draw_quad(const PROJECTION_POINT *pos, uint32 tex)
 {
     FUNCTION_MARKER(0x800124a0u, "GAME.EXE");
     uint32 packet = render_buffers.packet_addr;
@@ -125,7 +125,7 @@ GDB_CALL uint32 spr_draw_quad(const PROJECTION_POINT *pos, uint32 tex)
     return 0x8008d4b0;
 }
 
-GDB_CALL uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
+uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
 {
     FUNCTION_MARKER(0x80012594, "GAME.EXE");
     uint32 packet = render_buffers.packet_addr;
@@ -196,7 +196,7 @@ GDB_CALL uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
     return 0x8008d4b0;
 }
 
-GDB_CALL void spr_set_gradient_quad(uint32 packet, sint32 spr, sint32 x, sint32 y)
+void spr_set_gradient_quad(uint32 packet, sint32 spr, sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80012a00u, "GAME.EXE");
     XASSERT(spr >= 0 && spr < TEXTURE_DESCRIPTOR_CAPACITY);
@@ -220,7 +220,7 @@ GDB_CALL void spr_set_gradient_quad(uint32 packet, sint32 spr, sint32 x, sint32 
 }
 
 /* Rejected ribbons still write color/UV and reset the shared color */
-GDB_CALL uint32 spr_draw_ribbon(const PROJECTION_POINT *a, const PROJECTION_POINT *b, sint32 spr)
+uint32 spr_draw_ribbon(const PROJECTION_POINT *a, const PROJECTION_POINT *b, sint32 spr)
 {
     FUNCTION_MARKER(0x8006a1b4u, "GAME.EXE");
     uint32 packet = render_buffers.packet_addr, depth = (sint32)(a->depth + (uint32)b->depth) >> 3, color, tex_flags;
@@ -286,7 +286,7 @@ GDB_CALL uint32 spr_draw_ribbon(const PROJECTION_POINT *a, const PROJECTION_POIN
     return render_ot_insert_flags(render_buffers.ot_addr + 4u * ot, packet, 0x09000000);
 }
 
-GDB_CALL uint32 spr_draw_height(const PROJECTION_POINT *pos, sint32 spr)
+uint32 spr_draw_height(const PROJECTION_POINT *pos, sint32 spr)
 {
     FUNCTION_MARKER(0x800128f4, "GAME.EXE");
     uint32 packet;

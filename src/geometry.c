@@ -6,7 +6,7 @@
 
 RENDER_STYLE render_style;
 
-GDB_CALL sint32 packet_color_half(const uint16 packet[9])
+sint32 packet_color_half(const uint16 packet[9])
 {
     FUNCTION_MARKER(0x80064638u, "GAME.EXE");
     /* Original color-split callee64620 leaves the return carrier unchanged */
@@ -28,7 +28,7 @@ static sint32 lightning_jitter(sint32 divisor)
     return random & 1u ? (sint32)((uint32)(-(sint64)((uint32)val))) : val;
 }
 
-GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *dst)
+uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *dst)
 {
     FUNCTION_MARKER(0x80057788u, "GAME.EXE");
     FIXED_VEC3 start, end, step, cur, point;
@@ -133,7 +133,7 @@ GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *ds
     return 1;
 }
 
-GDB_CALL uint32 object_draw_scene_gated(const MODEL_OBJECT *model)
+uint32 object_draw_scene_gated(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80046ef0u, "GAME.EXE");
     /* TODO: Investigate rotation common fields outside both native object pools */
@@ -210,7 +210,7 @@ draw_model:
     return model_draw_static(model_refs[model->kind], 0, bias);
 }
 
-GDB_CALL void object_draw_depth_bob(const MODEL_OBJECT *model)
+void object_draw_depth_bob(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002c55cu, "GAME.EXE");
     uint32 x, y, z, color, offset, camera_x, camera_y, camera_z;
@@ -252,7 +252,7 @@ GDB_CALL void object_draw_depth_bob(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL void object_draw_repeated_pair(const MODEL_OBJECT *model)
+void object_draw_repeated_pair(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80032c4cu, "GAME.EXE");
     transform_push();
@@ -272,7 +272,7 @@ GDB_CALL void object_draw_repeated_pair(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL uint32 object_draw_shadowed_model(const MODEL_OBJECT *model)
+uint32 object_draw_shadowed_model(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8005ad54u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -296,7 +296,7 @@ GDB_CALL uint32 object_draw_shadowed_model(const MODEL_OBJECT *model)
     return model_draw_static(model_refs[model->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_phase_gated(const MODEL_OBJECT *model)
+uint32 object_draw_phase_gated(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80032818u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -381,7 +381,7 @@ draw_model:
     return model_draw_static(model_refs[model->kind], 0, bias);
 }
 
-GDB_CALL uint32 object_draw_player_facing(MODEL_OBJECT *model)
+uint32 object_draw_player_facing(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80032a48u, "GAME.EXE");
     /* TODO: Investigate phase drawing without a native position */
@@ -396,7 +396,7 @@ GDB_CALL uint32 object_draw_player_facing(MODEL_OBJECT *model)
     return object_draw_phase_gated(model);
 }
 
-GDB_CALL uint32 object_draw_stage_gated(const MODEL_OBJECT *item)
+uint32 object_draw_stage_gated(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032d70u, "GAME.EXE");
     if ((sint32)stage_animation.phase[0] <= 0 && !players_past_z(-0x12000000))
@@ -407,7 +407,7 @@ GDB_CALL uint32 object_draw_stage_gated(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_rotated_packets(const MODEL_OBJECT *item)
+uint32 object_draw_rotated_packets(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b71cu, "GAME.EXE");
     object_apply_rotations(item);
@@ -416,7 +416,7 @@ GDB_CALL uint32 object_draw_rotated_packets(const MODEL_OBJECT *item)
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_depth_rotated_packets(const MODEL_OBJECT *item)
+uint32 object_draw_depth_rotated_packets(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005c0e8u, "GAME.EXE");
     transform_origin_depth();
@@ -426,7 +426,7 @@ GDB_CALL uint32 object_draw_depth_rotated_packets(const MODEL_OBJECT *item)
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_scene_active(const MODEL_OBJECT *item)
+uint32 object_draw_scene_active(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x800428ecu, "GAME.EXE");
     uint32 state = game_session.scene_phase;
@@ -438,7 +438,7 @@ GDB_CALL uint32 object_draw_scene_active(const MODEL_OBJECT *item)
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_scene_early(const MODEL_OBJECT *item)
+uint32 object_draw_scene_early(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80042848u, "GAME.EXE");
     if (game_session.scene_phase >= 2u)
@@ -449,13 +449,13 @@ GDB_CALL uint32 object_draw_scene_early(const MODEL_OBJECT *item)
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_faded_fixed_model(void)
+uint32 object_draw_faded_fixed_model(void)
 {
     FUNCTION_MARKER(0x80032d44u, "GAME.EXE");
     return model_draw_faded(model_refs[281], 0, 1024);
 }
 
-GDB_CALL uint32 object_draw_raised(const MODEL_OBJECT *item)
+uint32 object_draw_raised(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b4f8u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
@@ -473,7 +473,7 @@ GDB_CALL uint32 object_draw_raised(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_base_raised(const MODEL_OBJECT *item)
+uint32 object_draw_base_raised(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b350u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
@@ -494,7 +494,7 @@ GDB_CALL uint32 object_draw_base_raised(const MODEL_OBJECT *item)
 
 /* Project model vertices and submit distance-faded quads and lines */
 
-GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bias)
+uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bias)
 {
     FUNCTION_MARKER(0x80011594u, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -719,7 +719,7 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
     return 0x8008d4b0;
 }
 
-GDB_CALL uint32 object_draw_depth_fade(const MODEL_OBJECT *item)
+uint32 object_draw_depth_fade(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b684u, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -735,7 +735,7 @@ GDB_CALL uint32 object_draw_depth_fade(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[model], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_near_fade(const MODEL_OBJECT *item)
+uint32 object_draw_near_fade(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b7acu, "GAME.EXE");
     PROJECTION_POINT pos;
@@ -755,7 +755,7 @@ GDB_CALL uint32 object_draw_near_fade(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_depth_pair(const MODEL_OBJECT *item)
+uint32 object_draw_depth_pair(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005d7a4u, "GAME.EXE");
     if (transform_origin_depth() - 257u >= 0xeffu)
@@ -766,7 +766,7 @@ GDB_CALL uint32 object_draw_depth_pair(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[1 + (item->kind)], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_visible_yaw(const MODEL_OBJECT *item)
+uint32 object_draw_visible_yaw(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005ab18u, "GAME.EXE");
     sint32 angle;
@@ -780,7 +780,7 @@ GDB_CALL uint32 object_draw_visible_yaw(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_camera_x_gated_fixed_model(void)
+uint32 object_draw_camera_x_gated_fixed_model(void)
 {
     FUNCTION_MARKER(0x8002a858u, "GAME.EXE");
     if ((sint32)camera.tracking.center.x.bits > 0x0fffffff)
@@ -788,7 +788,7 @@ GDB_CALL uint32 object_draw_camera_x_gated_fixed_model(void)
     return model_draw_static(model_refs[360], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_side_spin(const MODEL_OBJECT *model)
+uint32 object_draw_side_spin(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002a8fcu, "GAME.EXE");
     uint32 angle;
@@ -804,7 +804,7 @@ GDB_CALL uint32 object_draw_side_spin(const MODEL_OBJECT *model)
     return model_draw_static(model_refs[400], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_camera_yaw_outer(const MODEL_OBJECT *item)
+uint32 object_draw_camera_yaw_outer(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032680u, "GAME.EXE");
     if ((uint16)(camera.angles.yaw_bits + 16384) <= 32768)
@@ -814,7 +814,7 @@ GDB_CALL uint32 object_draw_camera_yaw_outer(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_kind_bias(const MODEL_OBJECT *item)
+uint32 object_draw_kind_bias(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x800326dcu, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -823,7 +823,7 @@ GDB_CALL uint32 object_draw_kind_bias(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[kind], 0, kind - 133u < 2u ? 1024 : 512);
 }
 
-GDB_CALL uint32 object_draw_stage_bias(const MODEL_OBJECT *item)
+uint32 object_draw_stage_bias(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032728u, "GAME.EXE");
     if (!stage_animation.phase[0])
@@ -833,7 +833,7 @@ GDB_CALL uint32 object_draw_stage_bias(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 512);
 }
 
-GDB_CALL uint32 object_draw_timed_scale(void)
+uint32 object_draw_timed_scale(void)
 {
     FUNCTION_MARKER(0x800327b0u, "GAME.EXE");
     sint32 phase = game_session.tick - 270u;
@@ -845,7 +845,7 @@ GDB_CALL uint32 object_draw_timed_scale(void)
     return model_draw_static(model_refs[678], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_flag_256(const MODEL_OBJECT *item)
+uint32 object_draw_flag_256(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002a00cu, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -853,7 +853,7 @@ GDB_CALL uint32 object_draw_flag_256(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 256);
 }
 
-GDB_CALL uint32 object_draw_flag_512(const MODEL_OBJECT *item)
+uint32 object_draw_flag_512(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032774u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -861,7 +861,7 @@ GDB_CALL uint32 object_draw_flag_512(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 512);
 }
 
-GDB_CALL uint32 object_draw_fixed_pair(void)
+uint32 object_draw_fixed_pair(void)
 {
     FUNCTION_MARKER(0x8002a89cu, "GAME.EXE");
     model_draw_static(model_refs[784], 0, 0);
@@ -870,7 +870,7 @@ GDB_CALL uint32 object_draw_fixed_pair(void)
     return model_draw_static(model_refs[515], 0, 0);
 }
 
-GDB_CALL void object_draw_height_offset(const MODEL_OBJECT *model)
+void object_draw_height_offset(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002aa6cu, "GAME.EXE");
     uint32 x, y, z, camera_x, camera_y, camera_z, kind, height;
@@ -897,7 +897,7 @@ GDB_CALL void object_draw_height_offset(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL uint32 object_draw_scene_variant(const MODEL_OBJECT *item)
+uint32 object_draw_scene_variant(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002c294u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -908,7 +908,7 @@ GDB_CALL uint32 object_draw_scene_variant(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_quarter_turn(const MODEL_OBJECT *item)
+uint32 object_draw_quarter_turn(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8003ee7cu, "GAME.EXE");
     transform_yaw(49152);
@@ -917,7 +917,7 @@ GDB_CALL uint32 object_draw_quarter_turn(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL void object_draw_dimmed_yaw(const MODEL_OBJECT *item)
+void object_draw_dimmed_yaw(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005bf0cu, "GAME.EXE");
     transform_push();
@@ -929,7 +929,7 @@ GDB_CALL void object_draw_dimmed_yaw(const MODEL_OBJECT *item)
     transform_pop();
 }
 
-GDB_CALL void object_draw_inverted_roll(const MODEL_OBJECT *item)
+void object_draw_inverted_roll(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005bf7cu, "GAME.EXE");
     transform_push();
@@ -942,7 +942,7 @@ GDB_CALL void object_draw_inverted_roll(const MODEL_OBJECT *item)
     transform_pop();
 }
 
-GDB_CALL void object_draw_offset_spinning_pair(const MODEL_OBJECT *model)
+void object_draw_offset_spinning_pair(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8005bff4u, "GAME.EXE");
     transform_push();
@@ -968,7 +968,7 @@ GDB_CALL void object_draw_offset_spinning_pair(const MODEL_OBJECT *model)
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
 
 /* Exact original leaf, including its return delay slot; see leaf-batch.json. */
-GDB_CALL uint32 object_update_yaw(MODEL_OBJECT *item)
+uint32 object_update_yaw(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002eb58u, "GAME.EXE");
     /* TODO: Investigate common fields outside the native model pools */
@@ -1026,7 +1026,7 @@ static void model_apply_pose_rotations(const void *src, int halfwords)
 
 /* Model stream transform phase through 80010AB8
  * FUN_8001060C performs the final matrix pop and shared packet phase */
-GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
+void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
 {
     uint32 idx = 0, command;
     const uint32 *stream, *counts, *end;
@@ -1184,7 +1184,7 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
 
 /* Shared polygon phase. Signed packed XY tests and line bucket alias behavior
  * deliberately follow MIPS rather than a generic polygon clipping policy. */
-GDB_CALL uint32 model_draw_packets(uint32 count, const MODEL_FACE_RECORD *recs, const uint32 *xy, const sint16 *depths, sint32 bias, sint32 depth_carrier)
+uint32 model_draw_packets(uint32 count, const MODEL_FACE_RECORD *recs, const uint32 *xy, const sint16 *depths, sint32 bias, sint32 depth_carrier)
 {
     uint32 packet, ot, color, blend, blend_override;
     const sint16 *depth_offsets;
@@ -1325,7 +1325,7 @@ GDB_CALL uint32 model_draw_packets(uint32 count, const MODEL_FACE_RECORD *recs, 
     return 0x8008d4b0;
 }
 
-GDB_CALL uint32 model_draw_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
+uint32 model_draw_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
 {
     FUNCTION_MARKER(0x8001060cu, "GAME.EXE");
     uint32 count;
@@ -1344,7 +1344,7 @@ GDB_CALL uint32 model_draw_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
 
 /* Static entry pipelines depth stores behind the next RTPT triple
  * The original always projects at least two triples */
-GDB_CALL uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 bias)
+uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 bias)
 {
     sint32 count, below127, below193, below385 = 0;
     const POSE_MATRIX *matrix;
@@ -1418,13 +1418,13 @@ GDB_CALL uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 b
     return model_draw_packets(packets, recs, xy, depths, bias, (sint32)words[7] >> 16);
 }
 
-GDB_CALL uint32 model_draw_menu(MODEL_REFERENCE model, uint32 unused, sint32 bias)
+uint32 model_draw_menu(MODEL_REFERENCE model, uint32 unused, sint32 bias)
 {
     FUNCTION_MARKER(0x80067b8cu, "GAME.EXE");
     return model_draw_static(model, unused, bias);
 }
 
-GDB_CALL uint32 object_draw_rotated(const MODEL_OBJECT *item)
+uint32 object_draw_rotated(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002a0c4, "GAME.EXE");
     object_apply_rotations(item);
@@ -1433,7 +1433,7 @@ GDB_CALL uint32 object_draw_rotated(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_phase_yaw_variant(void)
+uint32 object_draw_phase_yaw_variant(void)
 {
     FUNCTION_MARKER(0x80029f48, "GAME.EXE");
     uint32 model;
@@ -1446,7 +1446,7 @@ GDB_CALL uint32 object_draw_phase_yaw_variant(void)
     return model_draw_static(model_refs[model], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_yaw_flag_128(const MODEL_OBJECT *item)
+uint32 object_draw_yaw_flag_128(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8003262c, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -1455,7 +1455,7 @@ GDB_CALL uint32 object_draw_yaw_flag_128(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 128);
 }
 
-GDB_CALL uint32 object_draw_camera_yaw_inner(const MODEL_OBJECT *item)
+uint32 object_draw_camera_yaw_inner(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002a048, "GAME.EXE");
     sint32 angle;
@@ -1469,7 +1469,7 @@ GDB_CALL uint32 object_draw_camera_yaw_inner(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_wave(MODEL_OBJECT *item)
+uint32 object_draw_wave(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002ab40, "GAME.EXE");
     uint32 phase, tick;
@@ -1486,7 +1486,7 @@ GDB_CALL uint32 object_draw_wave(MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_visible_player_facing(MODEL_OBJECT *model)
+uint32 object_draw_visible_player_facing(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8005ab84, "GAME.EXE");
     sint16 angle;
@@ -1505,7 +1505,7 @@ GDB_CALL uint32 object_draw_visible_player_facing(MODEL_OBJECT *model)
     return model_draw_static(model_refs[model->kind], 0, 0);
 }
 
-GDB_CALL void object_draw_raised_spinning_pair(const MODEL_OBJECT *model)
+void object_draw_raised_spinning_pair(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002a97c, "GAME.EXE");
     transform_push();
@@ -1532,7 +1532,7 @@ GDB_CALL void object_draw_raised_spinning_pair(const MODEL_OBJECT *model)
 /* 5AE3C: model transforms and six/two flashing sprites, actual MIPS order. */
 
 /* 800451A0: compound scene model, spinning component and ground shadow. */
-GDB_CALL void object_draw_pitched_spinning_pair(const MODEL_OBJECT *model)
+void object_draw_pitched_spinning_pair(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x800451a0, "GAME.EXE");
     sint32 angle;
@@ -1558,7 +1558,7 @@ GDB_CALL void object_draw_pitched_spinning_pair(const MODEL_OBJECT *model)
 }
 
 /* 800452AC: static object with three phase-offset effect attachments. */
-GDB_CALL void object_draw_phased_effects(const MODEL_OBJECT *model)
+void object_draw_phased_effects(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x800452ac, "GAME.EXE");
     uint32 phase[3];
@@ -1597,7 +1597,7 @@ GDB_CALL void object_draw_phased_effects(const MODEL_OBJECT *model)
     transform_pop();
 }
 
-GDB_CALL uint32 model_draw_pulsing_marker(void)
+uint32 model_draw_pulsing_marker(void)
 {
     FUNCTION_MARKER(0x80059394u, "GAME.EXE");
     uint32 shade = 64u - 16u * (game_session.tick & 1u);
@@ -1606,7 +1606,7 @@ GDB_CALL uint32 model_draw_pulsing_marker(void)
 }
 
 /* 5AC08 compound roadside model, depth shade and alternating shadow. */
-GDB_CALL uint32 object_draw_offset_shadow(const MODEL_OBJECT *item)
+uint32 object_draw_offset_shadow(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005ac08, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
@@ -1639,7 +1639,7 @@ GDB_CALL uint32 object_draw_offset_shadow(const MODEL_OBJECT *item)
 }
 
 /* 2B28C: remove the impact sprite at age6, then increment its unsigned age. */
-GDB_CALL uint32 object_update_impact_spr(MODEL_OBJECT *item)
+uint32 object_update_impact_spr(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002b28cu, "GAME.EXE");
     uint32 result;
@@ -1661,7 +1661,7 @@ GDB_CALL uint32 object_update_impact_spr(MODEL_OBJECT *item)
 
 /* 11FEC: original JR RA/NOP; no result or side effects. */
 
-GDB_CALL void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *effect)
+void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *effect)
 {
     FUNCTION_MARKER(0x8005c740, "GAME.EXE");
     uint32 x, y, z, camera_x, camera_y, camera_z, type, height;

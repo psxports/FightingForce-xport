@@ -33,7 +33,7 @@ SOUND_VOICES sound_voices;
 SOUND_ATTRIBUTE_RING sound_attributes;
 
 /* Return the old packet after advancing and wrapping the signed cursor */
-GDB_CALL SpuVoiceAttr *sound_voice_next_attributes(void)
+SpuVoiceAttr *sound_voice_next_attributes(void)
 {
     FUNCTION_MARKER(0x80056640, "GAME.EXE");
     uint32 old = sound_attributes.cur, next = old + 1;
@@ -45,7 +45,7 @@ GDB_CALL SpuVoiceAttr *sound_voice_next_attributes(void)
 }
 
 /* Search circularly past reserved voices; all-reserved has no original termination */
-GDB_CALL sint32 sound_voice_play(sint32 effect, sint32 volume, sint32 pitch)
+sint32 sound_voice_play(sint32 effect, sint32 volume, sint32 pitch)
 {
     FUNCTION_MARKER(0x80056670, "GAME.EXE");
     uint32 master = sound_settings.effects_volume;
@@ -93,7 +93,7 @@ GDB_CALL sint32 sound_voice_play(sint32 effect, sint32 volume, sint32 pitch)
 }
 
 /* Clear mode before muting and key-off */
-GDB_CALL sint32 sound_voice_stop(sint32 voice)
+sint32 sound_voice_stop(sint32 voice)
 {
     FUNCTION_MARKER(0x800567f8, "GAME.EXE");
     XASSERT(voice >= 0 && voice < SOUND_VOICE_COUNT);
@@ -104,7 +104,7 @@ GDB_CALL sint32 sound_voice_stop(sint32 voice)
 }
 
 /* Divide the wrapped signed pitch product toward zero */
-GDB_CALL sint32 sound_voice_pitch(sint32 voice, sint32 pitch)
+sint32 sound_voice_pitch(sint32 voice, sint32 pitch)
 {
     FUNCTION_MARKER(0x80056840u, "GAME.EXE");
     SpuVoiceAttr *attr = sound_voice_next_attributes();
@@ -117,7 +117,7 @@ GDB_CALL sint32 sound_voice_pitch(sint32 voice, sint32 pitch)
 }
 
 /* Cache signed channel bytes before publishing spatial SPU attributes */
-GDB_CALL sint32 sound_voice_pan(sint32 voice_idx, sint32 volume, sint32 pan)
+sint32 sound_voice_pan(sint32 voice_idx, sint32 volume, sint32 pan)
 {
     FUNCTION_MARKER(0x800568c8, "GAME.EXE");
     uint32 master = sound_settings.effects_volume;
@@ -140,7 +140,7 @@ GDB_CALL sint32 sound_voice_pan(sint32 voice_idx, sint32 volume, sint32 pan)
 }
 
 /* Stop every SPU voice, then clear modes without resetting cached volumes */
-GDB_CALL void sound_voices_stop_all(void)
+void sound_voices_stop_all(void)
 {
     FUNCTION_MARKER(0x80056ecc, "GAME.EXE");
     uint32 i;
@@ -151,7 +151,7 @@ GDB_CALL void sound_voices_stop_all(void)
 }
 
 /* Publish SPU attributes before caching signed channel bytes */
-GDB_CALL sint32 sound_voice_volume(sint32 voice_idx, sint32 volume)
+sint32 sound_voice_volume(sint32 voice_idx, sint32 volume)
 {
     FUNCTION_MARKER(0x80056f08, "GAME.EXE");
     sint32 product = (uint32)volume * sound_settings.effects_volume, result;
@@ -171,7 +171,7 @@ GDB_CALL sint32 sound_voice_volume(sint32 voice_idx, sint32 volume)
 }
 
 /* Preserve the original two successive master products; the second argument is ignored */
-GDB_CALL sint32 sound_voice_restore_volume(sint32 voice_idx, sint32 unused, sint32 right)
+sint32 sound_voice_restore_volume(sint32 voice_idx, sint32 unused, sint32 right)
 {
     FUNCTION_MARKER(0x80056f94, "GAME.EXE");
     uint32 master = sound_settings.effects_volume;
@@ -193,7 +193,7 @@ GDB_CALL sint32 sound_voice_restore_volume(sint32 voice_idx, sint32 unused, sint
     return result;
 }
 
-GDB_CALL sint32 sound_voices_pause(void)
+sint32 sound_voices_pause(void)
 {
     FUNCTION_MARKER(0x8005703c, "GAME.EXE");
     sint32 i, type;
@@ -217,7 +217,7 @@ GDB_CALL sint32 sound_voices_pause(void)
     return 0;
 }
 
-GDB_CALL sint32 sound_voices_resume(void)
+sint32 sound_voices_resume(void)
 {
     FUNCTION_MARKER(0x800570f0, "GAME.EXE");
     sint32 i, left, right;

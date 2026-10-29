@@ -3,10 +3,16 @@
 LEVEL_START level_starts[LEVEL_START_COUNT];
 
 /* Place players and camera using stage coordinates in Q16 */
-GDB_CALL uint32 level_start_players(void)
+uint32 level_start_players(void)
 {
     FUNCTION_MARKER(0x80014808, "GAME.EXE");
-    uint32 stage = game_session.stage; uint32 x; uint32 z; uint32 dx; uint32 dz; uint32 i = 0; sint32 count;
+    uint32 stage = game_session.stage;
+    uint32 x;
+    uint32 z;
+    uint32 dx;
+    uint32 dz;
+    uint32 i = 0;
+    sint32 count;
     sint32 angle;
     XASSERT(stage < LEVEL_START_COUNT);
     const LEVEL_START *start = level_starts + stage;
@@ -56,7 +62,7 @@ GDB_CALL uint32 level_start_players(void)
     return 0xfe800000u;
 }
 
-GDB_CALL void level_reset(void)
+void level_reset(void)
 {
     FUNCTION_MARKER(0x80018318, "GAME.EXE");
     uint32 i, stage, shade;
@@ -141,7 +147,7 @@ static const sint16 loading_steps[LEVEL_LOADING_STAGE_COUNT] = {389, 357, 332, 3
 
 static const sint16 bonus_item_types[LEVEL_BONUS_ITEM_CHOICE_COUNT] = {499, 504, 500, 501};
 
-GDB_CALL void level_start_playback(void)
+void level_start_playback(void)
 {
     sint32 i, type, slot, track;
     uint32 stage = game_session.stage;
@@ -227,7 +233,7 @@ GDB_CALL void level_start_playback(void)
     }
 }
 
-GDB_CALL uint32 level_initialize(void)
+uint32 level_initialize(void)
 {
     const RESOURCE_LOADER *tex;
     uint32 stage = game_session.stage;

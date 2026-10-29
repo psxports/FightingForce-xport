@@ -45,7 +45,7 @@ static uint32 copy_scores(int load)
     return words[0];
 }
 
-GDB_CALL uint32 game_settings_restore_card(void)
+uint32 game_settings_restore_card(void)
 {
     FUNCTION_MARKER(0x80067bacu, "GAME.EXE");
     uint32 settings = card_files.save.data.sound;
@@ -60,7 +60,7 @@ GDB_CALL uint32 game_settings_restore_card(void)
     return copy_scores(1);
 }
 
-GDB_CALL uint32 game_settings_capture_card(void)
+uint32 game_settings_capture_card(void)
 {
     FUNCTION_MARKER(0x80067c84u, "GAME.EXE");
     uint32 settings = sound_settings.flags | ((uint32)sound_settings.effects_volume << 16) | ((uint32)sound_settings.music_volume << 24);

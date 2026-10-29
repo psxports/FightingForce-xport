@@ -25,11 +25,11 @@ extern NPC_TARGET npc_targets[NPC_BEHAVIOR_ACTOR_COUNT];
 extern sint32 npc_target_distances[NPC_BEHAVIOR_ACTOR_COUNT];
 extern sint32 npc_target_priorities[NPC_TARGET_PRIORITY_COUNT];
 
-GDB_CALL sint32 npc_find_target_conflict(sint32 idx, sint32 target);
-GDB_CALL void npc_reset_target_priorities(sint32 idx);
-GDB_CALL sint32 npc_select_target(sint32 idx);
-GDB_CALL sint32 npc_rank_targets(sint32 idx);
-GDB_CALL sint32 npc_update_target(sint32 idx);
-GDB_CALL uint32 npc_balance_targets(void);
+sint32 npc_find_target_conflict(sint32 idx, sint32 target);
+void npc_reset_target_priorities(sint32 idx);
+sint32 npc_select_target(sint32 idx);
+sint32 npc_rank_targets(sint32 idx);
+sint32 npc_update_target(sint32 idx);
+uint32 npc_balance_targets(void);
 
 #endif

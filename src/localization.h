@@ -139,6 +139,6 @@ typedef struct LOCALIZATION
 
 extern LOCALIZATION localization;
 
-GDB_CALL uint32 localization_load(void);
+uint32 localization_load(void);
 
 #endif

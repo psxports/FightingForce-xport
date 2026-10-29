@@ -65,13 +65,13 @@ extern CARD_DIALOG card_dialog;
 
 sint32 card_menu_load_game(uint32 retained_s3);
 sint32 card_menu_load_settings(uint32 retained_s3);
-GDB_CALL sint32 card_menu_save_settings(void);
+sint32 card_menu_save_settings(void);
 
-GDB_CALL sint32 card_format_description(char *out, uint32 capacity);
+sint32 card_format_description(char *out, uint32 capacity);
 
-GDB_CALL sint32 card_save_dialog(void);
-GDB_CALL uint32 card_settings_load_dialog(void);
-GDB_CALL sint32 card_confirm_dialog(CARD_PROMPT prompt, sint32 choice, sint32 monitor_card);
+sint32 card_save_dialog(void);
+uint32 card_settings_load_dialog(void);
+sint32 card_confirm_dialog(CARD_PROMPT prompt, sint32 choice, sint32 monitor_card);
 sint32 card_draw_pending_notice(uint32 retained_s3);
 
 #endif

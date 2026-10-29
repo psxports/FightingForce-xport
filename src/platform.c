@@ -71,19 +71,19 @@ sint32 card_backend_read(sint32 slot, void *data, uint32 bytes)
     return -1;
 }
 
-GDB_CALL void platform_interrupts_disable(void)
+void platform_interrupts_disable(void)
 {
     FUNCTION_MARKER(0x8006ce80u, "GAME.EXE");
     platform_interrupts_enabled = 0;
 }
 
-GDB_CALL void platform_interrupts_enable(void)
+void platform_interrupts_enable(void)
 {
     FUNCTION_MARKER(0x8006ce90u, "GAME.EXE");
     platform_interrupts_enabled = 1;
 }
 
-GDB_CALL void card_backend_init(uint32 mode)
+void card_backend_init(uint32 mode)
 {
     FUNCTION_MARKER(0x8006de48u, "GAME.EXE");
     ++platform_boundary_calls[0]; /* WIP ChangeClearPAD(0). */
@@ -98,7 +98,7 @@ GDB_CALL void card_backend_init(uint32 mode)
     platform_interrupts_enable();
 }
 
-GDB_CALL void card_backend_start(void)
+void card_backend_start(void)
 {
     FUNCTION_MARKER(0x8006de9cu, "GAME.EXE");
     platform_interrupts_disable();
@@ -107,21 +107,21 @@ GDB_CALL void card_backend_start(void)
     platform_interrupts_enable();
 }
 
-GDB_CALL void card_pad_init(uint32 mode)
+void card_pad_init(uint32 mode)
 {
     FUNCTION_MARKER(0x8006df04u, "GAME.EXE");
     /* WIP BIOS B0:4A InitCARD: no physical card controller on the host. */
     ++platform_boundary_calls[0];
 }
 
-GDB_CALL void card_pad_start(void)
+void card_pad_start(void)
 {
     FUNCTION_MARKER(0x8006df14u, "GAME.EXE");
     /* WIP BIOS B0:4B StartCARD; requests use the no-media event backend. */
     ++platform_boundary_calls[0];
 }
 
-GDB_CALL DIRENTRY *card_backend_first_file(const char *path, DIRENTRY *entry)
+DIRENTRY *card_backend_first_file(const char *path, DIRENTRY *entry)
 {
     FUNCTION_MARKER(0x8006cef0u, "GAME.EXE");
     /* BIOS B0:42 firstfile, WIP empty card directory. */
@@ -129,7 +129,7 @@ GDB_CALL DIRENTRY *card_backend_first_file(const char *path, DIRENTRY *entry)
     return NULL;
 }
 
-GDB_CALL sint32 card_backend_erase(const char *path)
+sint32 card_backend_erase(const char *path)
 {
     FUNCTION_MARKER(0x8006cf10u, "GAME.EXE");
     /* BIOS B0:45 erase, WIP absent card. */

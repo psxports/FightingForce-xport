@@ -5,7 +5,7 @@
 DISPLAY_BUFFERS disp_buffers;
 
 /* Existing setup phase of original5748C, not a new original function */
-GDB_CALL void disp_setup(void)
+void disp_setup(void)
 {
     TILE clear = {0};
     uint16 offset;
@@ -44,7 +44,7 @@ static void vblank_callback(void)
 /* 5717C. IRQ/card BIOS lifecycle calls do not execute on Windows; card events
  * are WIP. Host polling replaces InitPAD/StartPAD and ChangeClearPAD(0).
  * _bu_init and InitCARD/StartCARD have no storage behind them. */
-GDB_CALL sint32 game_init_devices(void)
+sint32 game_init_devices(void)
 {
     FUNCTION_MARKER(0x8005717c, "GAME.EXE");
     static const uint32 spec[4] = {4, 0x8000, 0x100, 0x2000};
@@ -72,7 +72,7 @@ GDB_CALL sint32 game_init_devices(void)
     return result;
 }
 
-GDB_CALL void disp_initialize(void)
+void disp_initialize(void)
 {
     FUNCTION_MARKER(0x8005748C, "GAME.EXE");
     game_init_devices();
@@ -81,7 +81,7 @@ GDB_CALL void disp_initialize(void)
     disp_setup();
 }
 
-GDB_CALL uint32 disp_apply_offsets(void)
+uint32 disp_apply_offsets(void)
 {
     FUNCTION_MARKER(0x800575f8, "GAME.EXE");
     uint16 x = game_settings.scr_offset.x, y;
@@ -94,7 +94,7 @@ GDB_CALL uint32 disp_apply_offsets(void)
 }
 
 /* Existing offset phase of original58634, retaining the captured parity */
-GDB_CALL uint32 disp_update_offsets(void)
+uint32 disp_update_offsets(void)
 {
     uint32 shake = disp_buffers.shake_ticks, parity;
     sint32 denominator = (sint32)(18u - shake), delta;
@@ -131,7 +131,7 @@ uint32 disp_begin_frame(void)
 }
 
 /* 80011CCC: NEG/ADDI are trapping instructions; retain that domain explicitly */
-GDB_CALL uint32 disp_set_fade(sint32 r, sint32 g, sint32 b)
+uint32 disp_set_fade(sint32 r, sint32 g, sint32 b)
 {
     FUNCTION_MARKER(0x80011ccc, "GAME.EXE");
     sint32 vals[3] = {r, g, b};
@@ -147,7 +147,7 @@ GDB_CALL uint32 disp_set_fade(sint32 r, sint32 g, sint32 b)
     return 0x8001000c;
 }
 
-GDB_CALL uint32 disp_fade_from_origin(sint32 level)
+uint32 disp_fade_from_origin(sint32 level)
 {
     FUNCTION_MARKER(0x8005ee58, "GAME.EXE");
     sint32 color[3];
@@ -206,7 +206,7 @@ uint32 disp_draw_flash(void)
     return finish_overlay(p, 174);
 }
 
-GDB_CALL sint32 disp_update_pulse(void)
+sint32 disp_update_pulse(void)
 {
     FUNCTION_MARKER(0x80058238u, "GAME.EXE");
     uint32 phase;
@@ -225,7 +225,7 @@ GDB_CALL sint32 disp_update_pulse(void)
     return shade;
 }
 
-GDB_CALL sint32 disp_draw_scene(void)
+sint32 disp_draw_scene(void)
 {
     FUNCTION_MARKER(0x8005c2a0u, "GAME.EXE");
     world_objects_draw();
@@ -235,7 +235,7 @@ GDB_CALL sint32 disp_draw_scene(void)
     return effects_draw();
 }
 
-GDB_CALL sint32 disp_wait_vblank(void)
+sint32 disp_wait_vblank(void)
 {
     FUNCTION_MARKER(0x80061120u, "GAME.EXE");
     return VSync(0);

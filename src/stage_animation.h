@@ -21,13 +21,13 @@ typedef struct STAGE_ANIMATION
 extern STAGE_ANIMATION stage_animation;
 
 void stage_animation_update_stage14(void);
-GDB_CALL uint32 stage_animation_update_stage4(void);
-GDB_CALL uint32 stage_animation_scroll_stage0(void);
-GDB_CALL uint32 stage_animation_scroll_stage1(void);
-GDB_CALL uint32 stage_animation_scroll_lift(void);
-GDB_CALL uint32 stage_animation_scroll_stage12(void);
-GDB_CALL sint32 stage_animation_scroll_stage14(void);
-GDB_CALL sint32 stage_animation_scroll_stage17(void);
+uint32 stage_animation_update_stage4(void);
+uint32 stage_animation_scroll_stage0(void);
+uint32 stage_animation_scroll_stage1(void);
+uint32 stage_animation_scroll_lift(void);
+uint32 stage_animation_scroll_stage12(void);
+sint32 stage_animation_scroll_stage14(void);
+sint32 stage_animation_scroll_stage17(void);
 
 extern const OBJECT_CALLBACK callback_stage_animation_slide_x;
 extern const OBJECT_CALLBACK callback_stage_animation_slide_z;

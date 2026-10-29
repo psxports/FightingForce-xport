@@ -13,7 +13,7 @@ static const char game_over_text[] = " GAME  OVER";
 HUD hud;
 
 /* Five original signed quotient phases; the eighth byte is retained */
-GDB_CALL sint32 hud_format_score(sint32 player)
+sint32 hud_format_score(sint32 player)
 {
     FUNCTION_MARKER(0x8005e9e8, "GAME.EXE");
     uint32 started = 0;
@@ -66,7 +66,7 @@ GDB_CALL sint32 hud_format_score(sint32 player)
 }
 
 /* Original 61E6C keeps its formatted continue prompt on the native stack */
-GDB_CALL uint32 hud_continue_prompt(uint32 player)
+uint32 hud_continue_prompt(uint32 player)
 {
     uint32 partner;
     const char *name;
@@ -148,7 +148,7 @@ static void hud_ammo(uint32 player, ACTOR_ITEM_HAND hand)
 }
 
 /* Left health bar with a textured border */
-GDB_CALL uint32 hud_draw_health_left(uint32 xy, uint32 idx)
+uint32 hud_draw_health_left(uint32 xy, uint32 idx)
 {
     FUNCTION_MARKER(0x80063100, "GAME.EXE");
     const ACTOR_HEALTH *health = actor_health + idx;
@@ -229,7 +229,7 @@ GDB_CALL uint32 hud_draw_health_left(uint32 xy, uint32 idx)
 }
 
 /* Right health bar with a segmented sprite border */
-GDB_CALL uint32 hud_draw_health_right(uint32 xy, uint32 idx)
+uint32 hud_draw_health_right(uint32 xy, uint32 idx)
 {
     FUNCTION_MARKER(0x8006351c, "GAME.EXE");
     const ACTOR_HEALTH *health = actor_health + idx;
@@ -295,7 +295,7 @@ GDB_CALL uint32 hud_draw_health_right(uint32 xy, uint32 idx)
 }
 
 /* Original 620BC player HUD, branch choices and completion display */
-GDB_CALL uint32 hud_draw(void)
+uint32 hud_draw(void)
 {
     uint32 i;
     const char *name;
@@ -448,7 +448,7 @@ GDB_CALL uint32 hud_draw(void)
 }
 
 /* Original 58634 scene tail, shared by gameplay, menu and all sequences */
-GDB_CALL uint32 frame_draw_scene(void)
+uint32 frame_draw_scene(void)
 {
     sint32 fade;
     sint32 r, g, b;
@@ -473,7 +473,7 @@ GDB_CALL uint32 frame_draw_scene(void)
     return disp_set_fade(fade, fade, fade);
 }
 
-GDB_CALL uint32 hud_update(void)
+uint32 hud_update(void)
 {
     FUNCTION_MARKER(0x80058C14, "GAME.EXE");
     int i, k;

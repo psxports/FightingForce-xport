@@ -101,14 +101,14 @@ enum
 extern REGION_TRIGGER_REFERENCE region_triggers[REGION_KIND_COUNT];
 extern const REGION_TRIGGER region_trigger_catalog[REGION_TRIGGER_COUNT];
 
-GDB_CALL sint32 regions_find_obstacle(uint32 x, uint32 z);
-GDB_CALL uint32 regions_apply_actor(sint32 idx);
-GDB_CALL uint32 regions_update_pickup(sint32 idx, uint32 retained_xyz[3]);
+sint32 regions_find_obstacle(uint32 x, uint32 z);
+uint32 regions_apply_actor(sint32 idx);
+uint32 regions_update_pickup(sint32 idx, uint32 retained_xyz[3]);
 
-GDB_CALL void regions_disable_object(const MODEL_OBJECT *object);
+void regions_disable_object(const MODEL_OBJECT *object);
 
-GDB_CALL sint32 regions_find_projectile_obstacle(uint32 world_x, uint32 world_z);
+sint32 regions_find_projectile_obstacle(uint32 world_x, uint32 world_z);
 
-GDB_CALL sint32 regions_query_alternate_attack(uint32 x, uint32 z);
+sint32 regions_query_alternate_attack(uint32 x, uint32 z);
 
 #endif

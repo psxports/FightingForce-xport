@@ -52,7 +52,7 @@ sint32 math_divide(sint32 dividend, sint32 divisor)
 }
 
 /* Return the bit-pair root with the original forced low bit */
-GDB_CALL sint32 math_sqrt_odd(uint32 val)
+sint32 math_sqrt_odd(uint32 val)
 {
     FUNCTION_MARKER(0x80012b5c, "GAME.EXE");
     uint32 root = 0, remainder = 0, trial;
@@ -72,7 +72,7 @@ GDB_CALL sint32 math_sqrt_odd(uint32 val)
 }
 
 /* Publish distance before resolving the signed full-turn direction */
-GDB_CALL sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1)
+sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1)
 {
     FUNCTION_MARKER(0x8001614c, "GAME.EXE");
     sint32 dy = y1 - (uint32)y0, dx = x1 - (uint32)x0;
@@ -103,7 +103,7 @@ GDB_CALL sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1)
 }
 
 /* Keep the alternate 2048-unit direction and the distance side effect */
-GDB_CALL sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
+sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 {
     FUNCTION_MARKER(0x8001627c, "GAME.EXE");
     uint32 x = x1 - (uint32)x0, z = z1 - (uint32)z0, q = 0, n, d, v;
@@ -131,7 +131,7 @@ GDB_CALL sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 }
 
 /* Approximate distance without updating dir_distance */
-GDB_CALL sint32 math_distance_approx(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
+sint32 math_distance_approx(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 {
     FUNCTION_MARKER(0x800163f4, "GAME.EXE");
     uint32 x = x1 - (uint32)x0, z = z1 - (uint32)z0;
@@ -143,7 +143,7 @@ GDB_CALL sint32 math_distance_approx(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 }
 
 /* Wrap both squared components before taking the four-step root */
-GDB_CALL sint32 math_distance_newton(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
+sint32 math_distance_newton(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 {
     FUNCTION_MARKER(0x80016478, "GAME.EXE");
     uint32 x = x1 - (uint32)x0, z = z1 - (uint32)z0;
@@ -155,7 +155,7 @@ GDB_CALL sint32 math_distance_newton(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 }
 
 /* Keep the original OR seed and exactly four signed Newton steps */
-GDB_CALL sint32 math_sqrt_newton(sint32 val)
+sint32 math_sqrt_newton(sint32 val)
 {
     FUNCTION_MARKER(0x800164cc, "GAME.EXE");
     uint32 mask = 0x80000000;
@@ -187,7 +187,7 @@ uint32 math_add_checked(uint32 val, sint32 delta)
     return n;
 }
 
-GDB_CALL sint32 math_distance_xz(uint32 x0, uint32 z0, uint32 x1, uint32 z1)
+sint32 math_distance_xz(uint32 x0, uint32 z0, uint32 x1, uint32 z1)
 {
     FUNCTION_MARKER(0x80016438u, "GAME.EXE");
     uint32 dx = x1 - x0, dz = z1 - z0;

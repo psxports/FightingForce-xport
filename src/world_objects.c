@@ -86,7 +86,7 @@ static sint32 read_coord(const uint8 *data)
     return high * 256 + (sint32)low;
 }
 
-GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uint32 z)
+uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uint32 z)
 {
     FUNCTION_MARKER(0x80034244, "GAME.EXE");
     uint32 idx = next_idx, i, newtype = 0, angle = 0;
@@ -257,7 +257,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     return 0;
 }
 
-GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uint32 z)
+uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uint32 z)
 {
     FUNCTION_MARKER(0x8003EECC, "GAME.EXE");
     uint32 idx = next_idx - 1, i;
@@ -306,7 +306,7 @@ GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uin
     return 0;
 }
 
-GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
+uint32 world_objects_init_special(uint32 next_idx, uint32 type)
 {
     FUNCTION_MARKER(0x800406C4, "GAME.EXE");
     uint32 idx = next_idx - 1, angle_idx, coord;
@@ -517,7 +517,7 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
 }
 
 /* MPD objects, pooled items and named gameplay regions */
-GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
+uint32 world_objects_load_map(RESOURCE_VIEW map)
 {
     FUNCTION_MARKER(0x800173B0, "GAME.EXE");
     uint32 cursor = 8192, object_idx = 0, i, stage;
@@ -818,7 +818,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
     return 0xffffffffu;
 }
 
-GDB_CALL uint32 world_objects_bob(MODEL_OBJECT *item)
+uint32 world_objects_bob(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002e7f0u, "GAME.EXE");
     uint32 tick = game_session.tick, type, height, delta;
@@ -834,7 +834,7 @@ GDB_CALL uint32 world_objects_bob(MODEL_OBJECT *item)
 }
 
 /* Preserve per-object transforms and fail on missing render callbacks */
-GDB_CALL sint32 world_objects_draw(void)
+sint32 world_objects_draw(void)
 {
     FUNCTION_MARKER(0x8005c17c, "GAME.EXE");
     sint32 i, count;
@@ -875,7 +875,7 @@ GDB_CALL sint32 world_objects_draw(void)
 }
 
 /* Roll a launched world object and rebuild its retained collision bounds */
-GDB_CALL void world_objects_roll(MODEL_OBJECT *item)
+void world_objects_roll(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x800469a4u, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
@@ -1030,7 +1030,7 @@ static sint32 update_exit_doors(MODEL_OBJECT *item)
 const OBJECT_CALLBACK callback_world_objects_update_exit_doors = {OBJECT_CALL_S32_MUTABLE_MODEL, {.s32_mutable_model = update_exit_doors}, 0};
 
 /* Build model collision regions in world-slot order */
-GDB_CALL uint32 world_objects_build_regions(void)
+uint32 world_objects_build_regions(void)
 {
     FUNCTION_MARKER(0x80017bb0, "GAME.EXE");
     COLLISION_REGION *region;
@@ -1061,7 +1061,7 @@ GDB_CALL uint32 world_objects_build_regions(void)
     return result;
 }
 
-GDB_CALL uint32 world_objects_update_traffic(MODEL_OBJECT *model)
+uint32 world_objects_update_traffic(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002f59cu, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
@@ -1111,7 +1111,7 @@ GDB_CALL uint32 world_objects_update_traffic(MODEL_OBJECT *model)
     return actors_collide_vehicle(region, model);
 }
 
-GDB_CALL uint32 world_objects_draw_tank(const MODEL_OBJECT *item)
+uint32 world_objects_draw_tank(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002a7dcu, "GAME.EXE");
     /* TODO: Investigate a tank draw without the matching native owner */
@@ -1123,7 +1123,7 @@ GDB_CALL uint32 world_objects_draw_tank(const MODEL_OBJECT *item)
     return model_draw_static(model_refs[777], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_base_compressed(MODEL_OBJECT *item)
+uint32 object_draw_base_compressed(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b404u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
@@ -1154,7 +1154,7 @@ GDB_CALL uint32 object_draw_base_compressed(MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 object_draw_compressed(MODEL_OBJECT *item)
+uint32 object_draw_compressed(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b598u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
@@ -1184,7 +1184,7 @@ GDB_CALL uint32 object_draw_compressed(MODEL_OBJECT *item)
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
-GDB_CALL uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item)
+uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b178u, "GAME.EXE");
     /* TODO: Investigate a model callback outside its native object domain */
@@ -1230,7 +1230,7 @@ GDB_CALL uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item)
     return model_draw_static(model_refs[2 + (item->kind)], 0, 0);
 }
 
-GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model)
+uint32 world_objects_draw_car(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8005ae3cu, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
@@ -1312,7 +1312,7 @@ GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 world_objects_start_army_trucks(void)
+sint32 world_objects_start_army_trucks(void)
 {
     FUNCTION_MARKER(0x8003efecu, "GAME.EXE");
     sint32 count = world_objects.count;
@@ -1336,7 +1336,7 @@ GDB_CALL sint32 world_objects_start_army_trucks(void)
     return 0;
 }
 
-GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
+sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f088u, "GAME.EXE");
     COLLISION_REGION *region;
@@ -1446,7 +1446,7 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
     return actors_collide_vehicle(region, model);
 }
 
-GDB_CALL uint32 world_objects_update_army_truck_wreck(MODEL_OBJECT *model)
+uint32 world_objects_update_army_truck_wreck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f388u, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
@@ -1471,7 +1471,7 @@ GDB_CALL uint32 world_objects_update_army_truck_wreck(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachment)
+sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachment)
 {
     FUNCTION_MARKER(0x8001f0b4, "GAME.EXE");
     FIXED_VEC3 point;
@@ -1527,7 +1527,7 @@ GDB_CALL sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachmen
     return 0;
 }
 
-GDB_CALL uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model)
+uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8004322cu, "GAME.EXE");
     uint32 tick, factor, offset, base, x, y, z, volume, pan, result, angle;
@@ -1576,7 +1576,7 @@ GDB_CALL uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model)
     return 190;
 }
 
-GDB_CALL uint32 world_objects_draw_moving_emitter(const MODEL_OBJECT *item)
+uint32 world_objects_draw_moving_emitter(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x800454e0u, "GAME.EXE");
     sint32 angle;
@@ -1605,7 +1605,7 @@ enum
     BURNING_BIN_SMOKE_OFFSET = 32 << 16
 };
 
-GDB_CALL intptr world_objects_update_burning_bin(MODEL_OBJECT *model)
+intptr world_objects_update_burning_bin(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x800419d4u, "GAME.EXE");
     uint32 volume, pan, random, offset, x, z, result;
@@ -1644,7 +1644,7 @@ static const uint32 truck_fire_offsets[TRUCK_FIRE_POINT_COUNT][3] = {
     {0x01000000u, 0xfe500000u, 0xff800000u}, {0x01320000u, 0xfe540000u, 0xff850000u}, {0x01650000u, 0xfe580000u, 0xff8a0000u}, {0x01970000u, 0xfe5c0000u, 0xff8f0000u}, {0x01ca0000u, 0xfe600000u, 0xff950000u}, {0x01fc0000u, 0xfe640000u, 0xff9a0000u}, {0x02300000u, 0xfe680000u, 0xffa00000u}, {0x02300000u, 0xfeb80000u, 0xff200000u}, {0x01fc0000u, 0xfeb80000u, 0xff200000u}, {0x01ca0000u, 0xfeb80000u, 0xff200000u}, {0x01970000u, 0xfeb80000u, 0xff200000u}, {0x01650000u, 0xfeb80000u, 0xff200000u}, {0x01320000u, 0xfeb80000u, 0xff200000u}, {0x01000000u, 0xfeb80000u, 0xff200000u}, {0x01000000u, 0xff200000u, 0xff200000u}, {0x00c00000u, 0xff200000u, 0xff200000u}, {0x00800000u, 0xff200000u, 0xff200000u}, {0x00400000u, 0xff200000u, 0xff200000u}, {0x00000000u, 0xff200000u, 0xff200000u}, {0xffc00000u, 0xff200000u, 0xff200000u}, {0xff800000u, 0xff200000u, 0xff200000u},
 };
 
-GDB_CALL sint32 world_objects_update_water_cannon(MODEL_OBJECT *model)
+sint32 world_objects_update_water_cannon(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80041dd8u, "GAME.EXE");
     uint32 angle;
@@ -1667,7 +1667,7 @@ GDB_CALL sint32 world_objects_update_water_cannon(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL intptr world_objects_update_truck_fire(MODEL_OBJECT *model)
+intptr world_objects_update_truck_fire(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80041e6cu, "GAME.EXE");
     sint32 random, divisor;
@@ -1698,7 +1698,7 @@ GDB_CALL intptr world_objects_update_truck_fire(MODEL_OBJECT *model)
     return (intptr)effect_spawn_timed(880, x, y, z, 0, 0, 0);
 }
 
-GDB_CALL sint32 world_objects_update_falling_door(MODEL_OBJECT *item)
+sint32 world_objects_update_falling_door(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002e37cu, "GAME.EXE");
     /* TODO: Investigate common fields outside the native model pools */
@@ -1729,7 +1729,7 @@ GDB_CALL sint32 world_objects_update_falling_door(MODEL_OBJECT *item)
     return result;
 }
 
-GDB_CALL uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model)
+uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e444u, "GAME.EXE");
     /* TODO: Investigate a bus wreck with a foreign native owner */
@@ -1807,7 +1807,7 @@ GDB_CALL uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL sint32 world_objects_update_lifting_door(MODEL_OBJECT *model)
+sint32 world_objects_update_lifting_door(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x800429f0u, "GAME.EXE");
     sint32 state, result;
@@ -1866,7 +1866,7 @@ GDB_CALL sint32 world_objects_update_lifting_door(MODEL_OBJECT *model)
     return 3;
 }
 
-GDB_CALL uint32 world_objects_update_aircraft(MODEL_OBJECT *model)
+uint32 world_objects_update_aircraft(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f410u, "GAME.EXE");
     /* TODO: Investigate an aircraft timer/phase access with a foreign native owner */
@@ -1911,7 +1911,7 @@ GDB_CALL uint32 world_objects_update_aircraft(MODEL_OBJECT *model)
     return 0xfffff000u;
 }
 
-GDB_CALL uint32 world_objects_update_scrolling_wall(MODEL_OBJECT *model)
+uint32 world_objects_update_scrolling_wall(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e7c4u, "GAME.EXE");
     /* TODO: Investigate an object operation without a native position */
@@ -1926,7 +1926,7 @@ GDB_CALL uint32 world_objects_update_scrolling_wall(MODEL_OBJECT *model)
     return result;
 }
 
-GDB_CALL uint32 world_objects_update_radar(MODEL_OBJECT *item)
+uint32 world_objects_update_radar(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002e870u, "GAME.EXE");
     sint32 result = sin_table[((game_session.tick << 4) & 0xff0u) >> 1] >> 1;
@@ -1936,7 +1936,7 @@ GDB_CALL uint32 world_objects_update_radar(MODEL_OBJECT *item)
     return result;
 }
 
-GDB_CALL struct EFFECT *world_objects_update_hydrant_spray(const MODEL_OBJECT *model)
+struct EFFECT *world_objects_update_hydrant_spray(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80041d60u, "GAME.EXE");
     uint32 x = (random_next() & 31u) << 16, z;

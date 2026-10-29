@@ -6,7 +6,7 @@
 uint32 proj_horizon;
 
 /* RTPT retains V1/V2 and exposes V0 through SXY0/SZ1 */
-GDB_CALL sint32 proj_local(sint32 x, sint32 y, sint32 z, PROJECTION_POINT *dest)
+sint32 proj_local(sint32 x, sint32 y, sint32 z, PROJECTION_POINT *dest)
 {
     FUNCTION_MARKER(0x800120bc, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
@@ -36,7 +36,7 @@ GDB_CALL sint32 proj_local(sint32 x, sint32 y, sint32 z, PROJECTION_POINT *dest)
 }
 
 /* Existing 58844..5887C phase of original58634, not a new original function */
-GDB_CALL void proj_update_horizon(void)
+void proj_update_horizon(void)
 {
     PROJECTION_POINT pos;
     transform_identity();

@@ -118,7 +118,7 @@ uint32 actors_reset_health(void)
 }
 
 /* Damage preserves low-word products, signed shifts and halfword wrapping */
-GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage)
+uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage)
 {
     FUNCTION_MARKER(0x8001f230, "GAME.EXE");
     uint32 amount, entry, stun, mode;
@@ -199,7 +199,7 @@ GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage
 }
 
 /* Record the last target and preserve attacker death bookkeeping */
-GDB_CALL sint32 actors_rec_hit(sint32 idx, sint32 victim)
+sint32 actors_rec_hit(sint32 idx, sint32 victim)
 {
     FUNCTION_MARKER(0x8001b850, "GAME.EXE");
     if (victim < 2 && game_session.mode != 2)
@@ -212,7 +212,7 @@ GDB_CALL sint32 actors_rec_hit(sint32 idx, sint32 victim)
 }
 
 /* Capture a local offset in the shared paired-action coordinates */
-GDB_CALL sint32 actors_capture_pair_offset(sint32 idx, sint32 partner)
+sint32 actors_capture_pair_offset(sint32 idx, sint32 partner)
 {
     FUNCTION_MARKER(0x800235c4u, "GAME.EXE");
     ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
@@ -224,7 +224,7 @@ GDB_CALL sint32 actors_capture_pair_offset(sint32 idx, sint32 partner)
     return x;
 }
 
-GDB_CALL uint32 actors_apply_pair_offset(sint32 idx, sint32 partner)
+uint32 actors_apply_pair_offset(sint32 idx, sint32 partner)
 {
     FUNCTION_MARKER(0x80023664u, "GAME.EXE");
     const ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
@@ -243,7 +243,7 @@ GDB_CALL uint32 actors_apply_pair_offset(sint32 idx, sint32 partner)
     return v;
 }
 
-GDB_CALL sint32 actors_update_pair_motion(sint32 idx)
+sint32 actors_update_pair_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x80023c80, "GAME.EXE");
     const ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
@@ -280,7 +280,7 @@ GDB_CALL sint32 actors_update_pair_motion(sint32 idx)
 }
 
 /* Hold the captive opposite the captor and release after collision correction */
-GDB_CALL sint32 actors_update_grapple(sint32 idx, sint32 victim)
+sint32 actors_update_grapple(sint32 idx, sint32 victim)
 {
     FUNCTION_MARKER(0x8004ada8u, "GAME.EXE");
     uint32 state, distance, s, c, x, z, original_x, original_z;
@@ -319,7 +319,7 @@ GDB_CALL sint32 actors_update_grapple(sint32 idx, sint32 victim)
 }
 
 /* Acquire a mutually facing eligible actor for the paired grapple animations */
-GDB_CALL sint32 actors_try_grapple(sint32 idx, sint32 victim)
+sint32 actors_try_grapple(sint32 idx, sint32 victim)
 {
     FUNCTION_MARKER(0x80047ac0u, "GAME.EXE");
     uint32 table, other_table, angle, state;
@@ -354,7 +354,7 @@ GDB_CALL sint32 actors_try_grapple(sint32 idx, sint32 victim)
     return 1;
 }
 
-GDB_CALL uint32 actors_emit_arc(sint32 idx)
+uint32 actors_emit_arc(sint32 idx)
 {
     FUNCTION_MARKER(0x80040cf4u, "GAME.EXE");
     uint32 v = actor_status[idx].flags & ACTOR_CULLED, rule_idx, mask;
@@ -377,7 +377,7 @@ GDB_CALL uint32 actors_emit_arc(sint32 idx)
     return v;
 }
 
-GDB_CALL intptr actors_emit_link(sint32 idx, sint32 other_idx)
+intptr actors_emit_link(sint32 idx, sint32 other_idx)
 {
     FUNCTION_MARKER(0x80040e14u, "GAME.EXE");
     uint32 rule_idx, flags, mask;
@@ -408,7 +408,7 @@ GDB_CALL intptr actors_emit_link(sint32 idx, sint32 other_idx)
 
 /* 49864: nearest eligible front/rear target. Preserve the original right-hand
  * test: only505/506 extend reach; the signed comparison against -503 is dead */
-GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
+uint32 actors_find_facing_targets(sint32 idx)
 {
     FUNCTION_MARKER(0x80049864, "GAME.EXE");
     /* TODO: Investigate a facing search outside the native actor pool */
@@ -479,7 +479,7 @@ GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
     return 0;
 }
 
-GDB_CALL sint32 actors_detach_companion(sint32 idx)
+sint32 actors_detach_companion(sint32 idx)
 {
     FUNCTION_MARKER(0x8001ce14, "GAME.EXE");
     sint32 type = actor_types[idx], partner;
@@ -497,7 +497,7 @@ GDB_CALL sint32 actors_detach_companion(sint32 idx)
 }
 
 /* Running attack voice and ground effect with two offset RNG draws */
-GDB_CALL struct EFFECT *actors_emit_running_attack(sint32 idx)
+struct EFFECT *actors_emit_running_attack(sint32 idx)
 {
     FUNCTION_MARKER(0x80033374, "GAME.EXE");
     ACTOR_COMBAT *combat = actor_combat + idx;
@@ -526,7 +526,7 @@ GDB_CALL struct EFFECT *actors_emit_running_attack(sint32 idx)
     return effect_spawn_timed(871, x, 0, z, 0, 0, 0);
 }
 
-GDB_CALL uint32 actors_init_score_vals(void)
+uint32 actors_init_score_vals(void)
 {
     FUNCTION_MARKER(0x8003ed10, "GAME.EXE");
     actor_score_vals[0] = 100;     /* 8003ED1C */
@@ -583,7 +583,7 @@ GDB_CALL uint32 actors_init_score_vals(void)
 }
 
 /* Clear HP before the death latch; retain attribution and release order */
-GDB_CALL sint32 actors_rec_death(sint32 idx)
+sint32 actors_rec_death(sint32 idx)
 {
     FUNCTION_MARKER(0x8001b8dc, "GAME.EXE");
     uint32 wave, val, points, age;
@@ -631,7 +631,7 @@ static sint32 target_distance(uint32 x, uint32 z, uint32 ox, uint32 oz)
     return (sint32)dz < (sint32)dx ? dx + (uint32)((sint32)dz >> 1) : dz + (uint32)((sint32)dx >> 1);
 }
 
-GDB_CALL sint32 actors_find_nearest_targets(sint32 idx)
+sint32 actors_find_nearest_targets(sint32 idx)
 {
     FUNCTION_MARKER(0x80049b78u, "GAME.EXE");
     const FIXED_VEC3 *pos = actor_positions + idx;
@@ -687,7 +687,7 @@ GDB_CALL sint32 actors_find_nearest_targets(sint32 idx)
     return 0;
 }
 
-GDB_CALL intptr actor_process_attack_effects(sint32 idx)
+intptr actor_process_attack_effects(sint32 idx)
 {
     FUNCTION_MARKER(0x8003314c, "GAME.EXE");
     uint32 state, x, z;
@@ -737,7 +737,7 @@ GDB_CALL intptr actor_process_attack_effects(sint32 idx)
     return 2;
 }
 
-GDB_CALL intptr actor_process_shock_attack(sint32 idx)
+intptr actor_process_shock_attack(sint32 idx)
 {
     const POSE_MATRIX *matrix;
     FUNCTION_MARKER(0x80040facu, "GAME.EXE");
@@ -783,7 +783,7 @@ GDB_CALL intptr actor_process_shock_attack(sint32 idx)
     return result;
 }
 
-GDB_CALL uint32 actor_transform_point(const POSE_MATRIX *matrix, uint32 point[3])
+uint32 actor_transform_point(const POSE_MATRIX *matrix, uint32 point[3])
 {
     FUNCTION_MARKER(0x800234e8u, "GAME.EXE");
     uint32 x, y, z;
@@ -813,7 +813,7 @@ GDB_CALL uint32 actor_transform_point(const POSE_MATRIX *matrix, uint32 point[3]
     return z;
 }
 
-GDB_CALL EFFECT *actor_emit_ground_effect(sint32 idx)
+EFFECT *actor_emit_ground_effect(sint32 idx)
 {
     FUNCTION_MARKER(0x80032ee0u, "GAME.EXE");
     uint32 x, z;
@@ -823,7 +823,7 @@ GDB_CALL EFFECT *actor_emit_ground_effect(sint32 idx)
     return effect_spawn(607, x, 0, z);
 }
 
-GDB_CALL intptr actor_ground_effect_event(sint32 idx)
+intptr actor_ground_effect_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033008u, "GAME.EXE");
     if (actor_animations[idx].motion.events & 0x800u)
@@ -831,7 +831,7 @@ GDB_CALL intptr actor_ground_effect_event(sint32 idx)
     return sound_play_action_voice(idx);
 }
 
-GDB_CALL intptr actor_ground_effect_voice_event(sint32 idx)
+intptr actor_ground_effect_voice_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033068u, "GAME.EXE");
     if (actor_animations[idx].motion.events & 0x800u)
@@ -839,7 +839,7 @@ GDB_CALL intptr actor_ground_effect_voice_event(sint32 idx)
     return sound_voice_play(187, 255, 6144);
 }
 
-GDB_CALL uint32 players_past_x(sint32 x)
+uint32 players_past_x(sint32 x)
 {
     FUNCTION_MARKER(0x800472a8u, "GAME.EXE");
     uint32 result = 1;
@@ -852,7 +852,7 @@ GDB_CALL uint32 players_past_x(sint32 x)
     return result;
 }
 
-GDB_CALL uint32 players_before_x(sint32 x)
+uint32 players_before_x(sint32 x)
 {
     FUNCTION_MARKER(0x8004732cu, "GAME.EXE");
     uint32 result = 1;
@@ -865,7 +865,7 @@ GDB_CALL uint32 players_before_x(sint32 x)
     return result;
 }
 
-GDB_CALL uint32 players_before_z(sint32 z)
+uint32 players_before_z(sint32 z)
 {
     FUNCTION_MARKER(0x80047434u, "GAME.EXE");
     uint32 result = 1;
@@ -878,7 +878,7 @@ GDB_CALL uint32 players_before_z(sint32 z)
     return result;
 }
 
-GDB_CALL sint32 actor_is_defeated(sint32 idx)
+sint32 actor_is_defeated(sint32 idx)
 {
     FUNCTION_MARKER(0x800196a4u, "GAME.EXE");
     if (idx < 2)
@@ -893,7 +893,7 @@ GDB_CALL sint32 actor_is_defeated(sint32 idx)
     return actor_health[idx].hp <= 0;
 }
 
-GDB_CALL sint32 players_past_z(sint32 z)
+sint32 players_past_z(sint32 z)
 {
     FUNCTION_MARKER(0x800473b0u, "GAME.EXE");
     sint32 result = 1;
@@ -906,7 +906,7 @@ GDB_CALL sint32 players_past_z(sint32 z)
     return result;
 }
 
-GDB_CALL uint32 actor_apply_animation_damage(uint32 attacker, uint32 victim, uint32 state)
+uint32 actor_apply_animation_damage(uint32 attacker, uint32 victim, uint32 state)
 {
     FUNCTION_MARKER(0x8001f41cu, "GAME.EXE");
     uint32 damage;
