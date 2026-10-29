@@ -109,8 +109,6 @@
       <PreprocessorDefinitions>SHORT_NAME="FF";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)xport_main.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\audit\audit_input.c" />
-    <ClCompile Include="..\..\audit\audit_sound.c" />
     <ClCompile Include="..\..\..\..\xport\src\psx_spu.c" />
     <ClCompile Include="..\..\..\..\xport\src\xport_fmv.c" />
     

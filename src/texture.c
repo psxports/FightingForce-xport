@@ -72,17 +72,15 @@ uint32 tex_allocator_reset(void)
 static uint32 region_free(sint32 x, sint32 y, sint32 width, sint32 height)
 {
     FUNCTION_MARKER(0x80066E4C, "GAME.EXE");
-    sint32 row, col, yend = (sint32)((uint32)y + (uint32)height), xend = (uint32)x + (uint32)width;
-    for (row = y; row < yend; row = (sint32)((uint32)row + 1))
+    sint32 row, col, yend = y + (uint32)height, xend = x + (uint32)width;
+    for (row = y; row < yend; row = row + 1u)
     {
-        if (row < 0 || row >= TEXTURE_ALLOC_ROWS)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(row >= 0 && row < TEXTURE_ALLOC_ROWS);
         if ((sint16)tex_allocator.row_used[row] == 256)
             return 0;
-        for (col = x; col < xend; col = (sint32)((uint32)col + 1))
+        for (col = x; col < xend; col = col + 1u)
         {
-            if (col < 0 || col >= TEXTURE_ALLOC_COLS)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(col >= 0 && col < TEXTURE_ALLOC_COLS);
             if (tex_allocator.used[row][col])
                 return 0;
         }
@@ -112,8 +110,8 @@ uint32 tex_alloc_pal(void)
             return 8 * y;
         }
     }
-    DIAGNOSTIC(fprintf(stderr, "WIP: texture palette allocation exhausted (original fatal loop)\n"));
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+    XASSERT(0);
     return 0;
 }
 
@@ -133,37 +131,35 @@ uint32 tex_load_background(const char *tex_name, const char *pal_name, sint32 up
     PSX_RECT *rect = &tex_upload_rects.background;
     uint32 bytes, available = tex.storage_len - (uint32)(tex.data - tex.storage);
     uint8 first, last;
-    if (available < 32800)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(available >= 32800);
     first = tex.data[32];
     last = tex.data[32799];
     rect->y = 0;
     if (upload_pixels)
     {
-        if (rect->w < 0 || rect->h < 0)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        bytes = (uint32)rect->w * (uint32)rect->h * sizeof(uint16);
-        if (bytes > available - 32 || ((uintptr_t)(tex.data + 32) & 3))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        if (LoadImagePSX(rect, (uint32 *)(tex.data + 32)) != 0)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(rect->w >= 0 && rect->h >= 0);
+        bytes = rect->w * (uint32)rect->h * sizeof(uint16);
+        XASSERT(bytes <= available - 32 && !((uintptr_t)(tex.data + 32) & 3));
+        {
+            sint32 checked_result = LoadImagePSX(rect, (uint32 *)(tex.data + 32));
+            XASSERT(checked_result == 0);
+        }
     }
     DrawSync(0);
     rect->y = 128;
     if (upload_pixels)
     {
-        if (rect->w < 0 || rect->h < 0 || available < 32832)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        bytes = (uint32)rect->w * (uint32)rect->h * sizeof(uint16);
-        if (bytes > available - 32832 || ((uintptr_t)(tex.data + 32832) & 3))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        if (LoadImagePSX(rect, (uint32 *)(tex.data + 32832)) != 0)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(rect->w >= 0 && rect->h >= 0 && available >= 32832);
+        bytes = rect->w * (uint32)rect->h * sizeof(uint16);
+        XASSERT(bytes <= available - 32832 && !((uintptr_t)(tex.data + 32832) & 3));
+        {
+            sint32 checked_result = LoadImagePSX(rect, (uint32 *)(tex.data + 32832));
+            XASSERT(checked_result == 0);
+        }
     }
     DrawSync(0);
     pal = resource_find(pal_name);
-    if (pal.byte_len < sizeof(tex_pals.color[0]) || ((uintptr_t)pal.data & 1))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(pal.byte_len >= sizeof(tex_pals.color[0]) && !((uintptr_t)pal.data & 1));
     colors = (const uint16 *)pal.data;
     background.first_color = colors[first] & 0x7fff;
     background.last_color = colors[last] & 0x7fff;
@@ -214,13 +210,11 @@ TEXTURE_DESCRIPTOR *tex_build_desc(uint32 width, uint32 height, uint32 mode, uin
 {
     uint32 idx = tex_count, count = (uint16)tex_desc_count, x, y, page, abr;
     TEXTURE_DESCRIPTOR *desc;
-    if (idx >= TEXTURE_MAP_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(idx < TEXTURE_MAP_COUNT);
     tex_map[idx] = count;
     count = tex_desc_count;
     uint32 desc_idx = count + 1 - allocated;
-    if (desc_idx >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(desc_idx < TEXTURE_DESCRIPTOR_CAPACITY);
     desc = tex_desc.item + desc_idx;
     tex_desc_count = count + allocated;
     desc->clut = (pal_slot + 496) << 6;
@@ -228,8 +222,7 @@ TEXTURE_DESCRIPTOR *tex_build_desc(uint32 width, uint32 height, uint32 mode, uin
         desc->clut = (uint32)(pal_x >> 4) + (((uint32)pal_y_next - 1) << 6);
     x = tex_allocator.x;
     y = tex_allocator.y;
-    if (flags >= 4)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(flags < 4);
     abr = blend_mode[flags];
     page = (uint16)getTPage(mode, abr, ((sint32)((x & 0xff00) << 16)) >> 17, y & 256);
     desc->tpage = page;
@@ -328,17 +321,14 @@ uint32 tex_load_grps(uint32 all_characters)
         if (name && resource_exists(name))
         {
             RESOURCE_VIEW pal = resource_find(grp->pal_name);
-            if (pal.byte_len < sizeof(tex_pals.color[0]))
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(pal.byte_len >= sizeof(tex_pals.color[0]));
             if (i == TEXTURE_GROUP_EFFECTS)
             {
-                if ((uintptr_t)pal.data & 1)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(!((uintptr_t)pal.data & 1));
                 tex_build_effect_pals((uint16 *)pal.data);
             }
             ++slot;
-            if (slot >= TEXTURE_PAL_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(slot < TEXTURE_PAL_COUNT);
             resource_copy_block(pal.data, (uint8 *)tex_pals.color[slot]);
         }
         name = grp->img_name;
@@ -355,21 +345,16 @@ uint32 tex_load_grps(uint32 all_characters)
             sint32 w, h, mode;
             uint32 flags, size, allocated = 1, pixels;
             TEXTURE_DESCRIPTOR *d;
-            if (offset > available || sizeof(*file) > available - offset || ((uintptr_t)(image.data + offset) & 1))
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(offset <= available && sizeof(*file) <= available - offset && !((uintptr_t)(image.data + offset) & 1));
             file = (const TEXTURE_FILE_HEADER *)(image.data + offset);
             w = file->w;
             h = file->h;
             flags = file->flags & 3;
-            pixels = (uint32)(w * h);
+            pixels = w * h;
             mode = file->mode;
             offset += 32;
-            if (w >= 258 || h >= 258)
-            {
-                DIAGNOSTIC(fprintf(stderr, "WIP: malformed texture record\n"));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
-            size = ((mode == 0 ? (uint32)((sint32)pixels >> 1) + 32 : mode == 1 ? pixels : pixels << 1) + 31) & ~31u;
+            XASSERT(w < 258 && h < 258);
+            size = ((mode == 0 ? ((sint32)pixels >> 1) + 32u : mode == 1 ? pixels : pixels << 1) + 31) & ~31u;
             if (w == 8 && h == 8)
             {
                 flags = 0;
@@ -389,22 +374,21 @@ uint32 tex_load_grps(uint32 all_characters)
                         paly = (sint16)tex_allocator.y;
                         left = 8;
                     }
-                    if (offset > available || 32 > available - offset || ((uintptr_t)(image.data + offset) & 3))
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(offset <= available && 32 <= available - offset && !((uintptr_t)(image.data + offset) & 3));
                     LoadClut((uint32 *)(image.data + offset), (sint16)palx, (sint16)paly);
-                    paly = (uint32)paly + 1;
+                    paly = paly + 1u;
                     left--;
                     offset += 32;
                     size -= 32;
                 }
                 tex_alloc_image(w, h, mode, &rect);
-                if (rect.w < 0 || rect.h < 0)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                uint32 bytes = (uint32)rect.w * (uint32)rect.h * sizeof(uint16);
-                if (offset > available || bytes > available - offset || ((uintptr_t)(image.data + offset) & 3))
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                if (LoadImagePSX(&rect, (uint32 *)(image.data + offset)) != 0)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(rect.w >= 0 && rect.h >= 0);
+                uint32 bytes = rect.w * (uint32)rect.h * sizeof(uint16);
+                XASSERT(offset <= available && bytes <= available - offset && !((uintptr_t)(image.data + offset) & 3));
+                {
+                    sint32 checked_result = LoadImagePSX(&rect, (uint32 *)(image.data + offset));
+                    XASSERT(checked_result == 0);
+                }
                 DrawSync(0);
                 offset += size;
             }
@@ -421,36 +405,46 @@ uint32 tex_load_grps(uint32 all_characters)
 uint32 tex_alloc_image(sint32 width, sint32 height, sint32 mode, PSX_RECT *rect)
 {
     FUNCTION_MARKER(0x80066ACC, "GAME.EXE");
-    sint32 w = width, h, y, band, page, x, row, col, step, ylimit, xlimit, row_end;
-    step = (uint32)16 << ((uint32)mode & 31);
+    sint32 w = width;
+    sint32 h;
+    sint32 y;
+    sint32 band;
+    sint32 page;
+    sint32 x;
+    sint32 row;
+    sint32 col;
+    uint32 step;
+    sint32 ylimit;
+    sint32 xlimit;
+    sint32 row_end;
+    step = 16u << (mode & 31u);
     if (mode == 0)
         w >>= 1;
     if (mode == 2)
         w = (uint32)w << 1;
-    w = (sint32)((uint32)w + 7) >> 3;
-    h = (sint32)((uint32)height + 7) >> 3;
+    w = (sint32)(w + 7u) >> 3;
+    h = (sint32)(height + 7u) >> 3;
     if (w > 32)
         w = 32;
     if (h > 32)
         h = 32;
     for (band = 0; band < 64; band += 32)
     {
-        ylimit = (uint32)band + 33 - (uint32)h;
-        for (y = band; y < ylimit; y = (sint32)((uint32)y + 1))
+        ylimit = band + 33u - h;
+        for (y = band; y < ylimit; y = y + 1u)
         {
-            if (y < 0 || y >= TEXTURE_ALLOC_ROWS)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(y >= 0 && y < TEXTURE_ALLOC_ROWS);
             if ((sint16)tex_allocator.row_used[y] == 256)
                 continue;
-            for (page = 0; page < 256; page = (sint32)((uint32)page + (uint32)step))
+            for (page = 0; page < 256; page = page + step)
             {
-                xlimit = (uint32)page + (uint32)step - ((uint32)w - 1);
-                for (x = page; x < xlimit; x = (sint32)((uint32)x + 1))
+                xlimit = page + step - (w - 1u);
+                for (x = page; x < xlimit; x = x + 1u)
                 {
                     if (!region_free(x, y, w, h))
                         continue;
-                    row_end = (uint32)y + (uint32)h;
-                    for (row = y; row < row_end; row = (sint32)((uint32)row + 1))
+                    row_end = y + (uint32)h;
+                    for (row = y; row < row_end; row = row + 1u)
                     {
                         /* Original byte fill does nothing for a nonpositive count */
                         for (col = 0; col < w; ++col)
@@ -468,8 +462,8 @@ uint32 tex_alloc_image(sint32 width, sint32 height, sint32 mode, PSX_RECT *rect)
             }
         }
     }
-    DIAGNOSTIC(fprintf(stderr, "WIP: texture allocation exhausted (original fatal loop)\n"));
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+    XASSERT(0);
     return 0;
 }
 
@@ -477,7 +471,9 @@ uint32 tex_upload_pals(void)
 {
     FUNCTION_MARKER(0x800645E8, "GAME.EXE");
     PSX_RECT rect = {0, 496, TEXTURE_PAL_COLORS, TEXTURE_PAL_COUNT};
-    if (LoadImagePSX(&rect, tex_pals.words) != 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        sint32 checked_result = LoadImagePSX(&rect, tex_pals.words);
+        XASSERT(checked_result == 0);
+    }
     return 0;
 }

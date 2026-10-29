@@ -6,16 +6,15 @@ LEVEL_START level_starts[LEVEL_START_COUNT];
 GDB_CALL uint32 level_start_players(void)
 {
     FUNCTION_MARKER(0x80014808, "GAME.EXE");
-    uint32 stage = game_session.stage, x, z, dx, dz, i = 0, count;
+    uint32 stage = game_session.stage; uint32 x; uint32 z; uint32 dx; uint32 dz; uint32 i = 0; sint32 count;
     sint32 angle;
-    if (stage >= LEVEL_START_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stage < LEVEL_START_COUNT);
     const LEVEL_START *start = level_starts + stage;
     x = (uint32)(sint32)start->x << 16;
     z = (uint32)(sint32)start->z << 16;
     angle = start->angle;
     count = game_session.player_count;
-    if ((sint32)count > 0)
+    if (count > 0)
         do
         {
             pad_action_clear(i);
@@ -29,7 +28,7 @@ GDB_CALL uint32 level_start_players(void)
             movement->desired_yaw = (uint16)((uint32)angle << 5);
             orientation->roll_rate = 0;
             orientation->roll = 0;
-        } while ((sint32)i < (sint32)count);
+        } while ((sint32)i < count);
     if (game_session.player_count == 1)
     {
         actor_positions[0].x.bits = x;
@@ -38,8 +37,8 @@ GDB_CALL uint32 level_start_players(void)
     }
     else
     {
-        dx = 192 * (sint32)sin_table[MATH_QUARTER_TURN + angle];
-        dz = 192 * (sint32)sin_table[angle];
+        dx = 192 * sin_table[MATH_QUARTER_TURN + angle];
+        dz = 192 * sin_table[angle];
         actor_positions[0].x.bits = x + dx;
         actor_positions[0].z.bits = z + dz;
         actor_positions[1].x.bits = x - dx;
@@ -69,8 +68,7 @@ GDB_CALL void level_reset(void)
     for (i = 0; i < DYNAMIC_OBJECT_COUNT; i++)
         dynamic_objects[i].kind = 0xffffffff;
     stage = game_session.stage;
-    if (stage >= LEVEL_SCRIPT_STAGE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stage < LEVEL_SCRIPT_STAGE_COUNT);
     level_script_cursor = level_script_starts[stage];
     level_wave.population_gate = 1;
     level_wave.spawn_delay = 0;
@@ -214,12 +212,8 @@ GDB_CALL void level_start_playback(void)
         for (i = 0; i < (sint32)game_session.player_count; i++)
         {
             type = bonus_item_types[random_next() & (LEVEL_BONUS_ITEM_CHOICE_COUNT - 1)];
-            if (i >= ACTOR_COUNT)
-            {
-                /* TODO: Investigate a bonus grant outside the native actor pool */
-                DIAGNOSTIC(fprintf(stderr, "Invalid bonus actor slot %d player count %u stage %u tick %u\n", i, game_session.player_count, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            /* TODO: Investigate a bonus grant outside the native actor pool */
+            XASSERT(i < ACTOR_COUNT);
             if (actor_health[i].hp > 0)
             {
                 if (type != 504)
@@ -238,12 +232,8 @@ GDB_CALL uint32 level_initialize(void)
     const RESOURCE_LOADER *tex;
     uint32 stage = game_session.stage;
     WORLD_OBJECT_TYPE_GROUP_ID types;
-    if (stage >= LEVEL_LOADING_STAGE_COUNT)
-    {
-        /* TODO: Investigate a level initialization outside the original step table */
-        DIAGNOSTIC(fprintf(stderr, "Invalid level loading stage %u tick %u\n", stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate a level initialization outside the original step table */
+    XASSERT(stage < LEVEL_LOADING_STAGE_COUNT);
     loading_begin((sint32)loading_steps[stage]);
     npc_behavior_load();
     level_reset();
@@ -251,8 +241,7 @@ GDB_CALL uint32 level_initialize(void)
     stage = game_session.stage;
     resource_load(stage + 5, 0x116000, NULL, TEXTURE_ARCHIVE_CAPACITY, &tex_file, NULL);
     stage = game_session.stage;
-    if (stage >= WORLD_OBJECT_STAGE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stage < WORLD_OBJECT_STAGE_COUNT);
     types = world_object_type_grps[stage];
     tex = stage_resource_loaders[STAGE_RESOURCE_TEX][stage];
     world_object_active_types = types;
@@ -261,8 +250,7 @@ GDB_CALL uint32 level_initialize(void)
     sound_samples_load(game_session.stage + 171);
     level_load_common_models();
     stage = game_session.stage;
-    if (stage >= RESOURCE_STAGE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stage < RESOURCE_STAGE_COUNT);
     resource_loader_call(RESOURCE_LOADER_STAGE, stage_resource_loaders[STAGE_RESOURCE_ACTORS][stage]);
     character_load_players();
     world_objects_build_regions();

@@ -65,11 +65,7 @@ GDB_CALL void transform_pop(void)
 {
     FUNCTION_MARKER(0x80010028, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     geometry_workspace.matrix++;
 }
 
@@ -79,21 +75,17 @@ GDB_CALL void transform_push(void)
     FUNCTION_MARKER(0x80010040, "GAME.EXE");
     uint32 words[8];
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     const POSE_MATRIX *src = geometry_workspace.matrix;
     POSE_MATRIX *dst;
     int i;
     for (i = 0; i < 8; i++)
-        words[i] = i < 5 ? src->rotation_words[i] : (uint32)src->t[i - 5];
+        words[i] = i < 5 ? src->rotation_words[i] : src->t[i - 5];
     dst = geometry_workspace.matrix - 1;
     for (i = 0; i < 5; i++)
         dst->rotation_words[i] = words[i];
     for (i = 5; i < 8; i++)
-        dst->t[i - 5] = (sint32)words[i];
+        dst->t[i - 5] = words[i];
     load_gte(words);
     geometry_workspace.matrix = dst;
 }
@@ -104,24 +96,20 @@ GDB_CALL void transform_translate(sint32 x, sint32 y, sint32 z)
 {
     FUNCTION_MARKER(0x800100c4, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
     uint32 words[8], result[3];
     int i;
     for (i = 0; i < 8; i++)
-        words[i] = i < 5 ? matrix->rotation_words[i] : (uint32)matrix->t[i - 5];
+        words[i] = i < 5 ? matrix->rotation_words[i] : matrix->t[i - 5];
     load_gte(words);
-    xport_gte_write_data(0, ((uint32)x >> 16) | ((uint32)y & 0xffff0000));
+    xport_gte_write_data(0, ((uint32)x >> 16) | (y & 0xffff0000));
     xport_gte_write_data(1, z >> 16);
     xport_gte_execute(0x480012);
     for (i = 0; i < 3; i++)
         result[i] = xport_gte_read_data(25 + i) << 16;
     for (i = 0; i < 3; i++)
-        matrix->t[i] = (sint32)result[i];
+        matrix->t[i] = result[i];
 }
 
 /* 80010170: reload geometry registers from the current matrix, without moving
@@ -130,16 +118,12 @@ GDB_CALL void transform_reload(void)
 {
     FUNCTION_MARKER(0x80010170, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     const POSE_MATRIX *src = geometry_workspace.matrix;
     uint32 words[8];
     int i;
     for (i = 0; i < 8; i++)
-        words[i] = i < 5 ? src->rotation_words[i] : (uint32)src->t[i - 5];
+        words[i] = i < 5 ? src->rotation_words[i] : src->t[i - 5];
     load_gte(words);
 }
 
@@ -147,9 +131,8 @@ GDB_CALL void transform_pitch(sint32 angle)
 {
     FUNCTION_MARKER(0x800101cc, "GAME.EXE");
     uint32 idx;
-    if ((uint32)angle == 0x80000000u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    idx = ((0u - (uint32)angle) >> 2) & 0x3ffc;
+    XASSERT((uint32)angle != 0x80000000u);
+    idx = (((uint32)(-(sint64)(angle))) >> 2) & 0x3ffc;
     if (idx)
         transform_pitch_idx(idx);
 }
@@ -158,9 +141,8 @@ GDB_CALL void transform_yaw(sint32 angle)
 {
     FUNCTION_MARKER(0x8001033c, "GAME.EXE");
     uint32 idx;
-    if ((uint32)angle == 0x80000000u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    idx = ((0u - (uint32)angle) >> 2) & 0x3ffc;
+    XASSERT((uint32)angle != 0x80000000u);
+    idx = (((uint32)(-(sint64)(angle))) >> 2) & 0x3ffc;
     if (idx)
         transform_yaw_idx(idx);
 }
@@ -169,9 +151,8 @@ GDB_CALL void transform_roll(sint32 angle)
 {
     FUNCTION_MARKER(0x800104a0, "GAME.EXE");
     uint32 idx;
-    if ((uint32)angle == 0x80000000u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    idx = ((0u - (uint32)angle) >> 2) & 0x3ffc;
+    XASSERT((uint32)angle != 0x80000000u);
+    idx = (((uint32)(-(sint64)(angle))) >> 2) & 0x3ffc;
     if (idx)
         transform_roll_idx(idx);
 }
@@ -183,15 +164,10 @@ GDB_CALL void transform_pitch_idx(uint32 idx)
     POSE_MATRIX *rotation = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 1];
     sint32 s, c;
     /* Reject invalid packed Q12 offsets before accessing the table */
-    if ((idx & 3u) != 0 || idx > 16380u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((idx & 3u) == 0 && idx <= 16380u);
     rsincos(idx >> 2, &s, &c);
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
     rotation->rotation_words[0] = ONE;
     rotation->rotation_words[1] = 0;
@@ -211,15 +187,10 @@ GDB_CALL void transform_yaw_idx(uint32 idx)
     POSE_MATRIX *rotation = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 1];
     sint32 s, c;
     /* Reject invalid packed Q12 offsets before accessing the table */
-    if ((idx & 3u) != 0 || idx > 16380u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((idx & 3u) == 0 && idx <= 16380u);
     rsincos(idx >> 2, &s, &c);
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
     /* Packed halfwords remain zero-extended in the original word stores */
     rotation->rotation_words[0] = (uint16)c;
@@ -237,15 +208,10 @@ GDB_CALL void transform_roll_idx(uint32 idx)
     POSE_MATRIX *rotation = &geometry_workspace.scratch.matrix[GEOMETRY_MATRIX_COUNT - 1];
     sint32 s, c;
     /* Reject invalid packed Q12 offsets before accessing the table */
-    if ((idx & 3u) != 0 || idx > 16380u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((idx & 3u) == 0 && idx <= 16380u);
     rsincos(idx >> 2, &s, &c);
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
     rotation->m[0][0] = (sint16)c;
     rotation->m[0][1] = (sint16)-s;
@@ -263,19 +229,15 @@ GDB_CALL void transform_scale(sint32 x, sint32 y, sint32 z)
 {
     FUNCTION_MARKER(0x80010f94, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
     uint32 row;
     for (row = 0; row < 3; row++)
     {
         sint16 col0 = matrix->m[row][0], col1 = matrix->m[row][1], col2 = matrix->m[row][2];
-        matrix->m[row][0] = (sint16)((sint32)((uint32)x * (uint32)(sint32)col0) >> 14);
-        matrix->m[row][1] = (sint16)((sint32)((uint32)y * (uint32)(sint32)col1) >> 14);
-        matrix->m[row][2] = (sint16)((sint32)((uint32)z * (uint32)(sint32)col2) >> 14);
+        matrix->m[row][0] = (sint16)((sint32)(x * (uint32)(sint32)col0) >> 14);
+        matrix->m[row][1] = (sint16)((sint32)(y * (uint32)(sint32)col1) >> 14);
+        matrix->m[row][2] = (sint16)((sint32)(z * (uint32)(sint32)col2) >> 14);
     }
 }
 
@@ -301,18 +263,14 @@ GDB_CALL sint32 transform_identity(void)
 {
     FUNCTION_MARKER(0x80011d20, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
     int i;
     for (i = 0; i < 5; i++)
         matrix->rotation_words[i] = (i == 0 || i == 2 || i == 4) ? ONE : 0;
     for (i = 0; i < 3; i++)
         matrix->t[i] = 0;
-    return 4096;
+    return ONE;
 }
 
 /* Test the transformed origin against the original near and horizontal gates */
@@ -320,11 +278,7 @@ GDB_CALL sint32 transform_origin_visible(void)
 {
     FUNCTION_MARKER(0x80011e5c, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     const POSE_MATRIX *matrix = geometry_workspace.matrix;
     uint32 words[8];
     sint32 x, z;
@@ -337,9 +291,9 @@ GDB_CALL sint32 transform_origin_visible(void)
     xport_gte_write_data(0, 0);
     xport_gte_write_data(1, 0);
     xport_gte_execute(0x480012);
-    x = (sint32)xport_gte_read_data(25);
+    x = xport_gte_read_data(25);
     xport_gte_read_data(26);
-    z = (sint32)xport_gte_read_data(27);
+    z = xport_gte_read_data(27);
     /* Zero-vector MACs equal signed 16-bit translations, so ADD/SUB cannot overflow */
     if (z - 80 < 0)
         return 0;
@@ -354,11 +308,7 @@ GDB_CALL void transform_load(const POSE_MATRIX *src)
 {
     FUNCTION_MARKER(0x80011f74, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *dst = geometry_workspace.matrix;
     uint32 words[8];
     int i;
@@ -367,7 +317,7 @@ GDB_CALL void transform_load(const POSE_MATRIX *src)
     for (i = 0; i < 5; i++)
         dst->rotation_words[i] = words[i];
     for (i = 5; i < 8; i++)
-        dst->t[i - 5] = (sint32)words[i];
+        dst->t[i - 5] = words[i];
     load_gte(words);
 }
 
@@ -375,11 +325,7 @@ GDB_CALL sint16 transform_origin_depth(void)
 {
     FUNCTION_MARKER(0x80012190u, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     const POSE_MATRIX *matrix = geometry_workspace.matrix;
     return matrix->t[2] >> 16;
 }

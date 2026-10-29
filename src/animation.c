@@ -14,14 +14,9 @@ ANIMATION_BANK_ID animation_type_banks[ANIMATION_TYPE_COUNT];
 GDB_CALL ACTOR_ANIMATION_SOURCE animation_stream(ANIMATION_BANK_ID table, sint32 animation)
 {
     FUNCTION_MARKER(0x8001a068, "GAME.EXE");
-    if (table == ANIMATION_BANK_NONE)
-    {
-        /* TODO: Resolve a missing animation bank after the full CDB playthrough */
-        DIAGNOSTIC(fprintf(stderr, "Animation read has no bank: animation %d stage %u tick %u\n", animation, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    if (table >= ANIMATION_BANK_COUNT || (uint32)animation >= ANIMATION_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    /* TODO: Resolve a missing animation bank after the full CDB playthrough */
+    XASSERT(table != ANIMATION_BANK_NONE);
+    XASSERT(table < ANIMATION_BANK_COUNT && (uint32)animation < ANIMATION_COUNT);
     return animation_banks[table].stream[animation];
 }
 
@@ -42,7 +37,7 @@ GDB_CALL sint32 animation_scale_vertical_motion(sint32 idx)
     if (!stage)
         result = v << 1;
     else if (stage == 15)
-        result = (v + (uint32)((sint32)v >> 1)) << 1;
+        result = (v + ((sint32)v >> 1)) << 1;
     else
     {
         result = v << 2;
@@ -64,7 +59,7 @@ GDB_CALL sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 anim
     ACTOR_FRAME_MOTION *motion = &playback->motion;
     if ((old == 205 || old == 203) && (sint32)actor_positions[idx].y.bits < 0 && old != (uint32)animation)
         animation_fall_exit = 1;
-    playback->id = (uint32)animation;
+    playback->id = animation;
     ACTOR_ANIMATION_SOURCE src = animation_stream(table, animation);
     playback->frame = 0;
     playback->hit_flags = 0;
@@ -72,8 +67,7 @@ GDB_CALL sint32 animation_start(sint32 idx, ANIMATION_BANK_ID table, sint32 anim
     motion->events = 0;
     playback->event_step = 0;
     playback->src = src;
-    if ((uint32)animation >= ANIMATION_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)animation < ANIMATION_COUNT);
     if ((uint32)idx < 2)
     {
         flags = animation_flags[animation];
@@ -118,8 +112,19 @@ GDB_CALL sint32 animation_movement_state(uint32 state)
 GDB_CALL sint32 animation_update_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x8001aef4, "GAME.EXE");
-    uint32 stage = game_session.stage, side, forward, state, x, z, other_idx;
-    sint32 prev_distance, limit, sn, cs, distance, yaw;
+    uint32 stage = game_session.stage;
+    sint32 side;
+    uint32 forward;
+    uint32 state;
+    uint32 x;
+    uint32 z;
+    uint32 other_idx;
+    sint32 prev_distance;
+    sint32 limit;
+    uint32 sn;
+    uint32 cs;
+    sint32 distance;
+    sint32 yaw;
     uint32 dx, dz;
     ACTOR_ANIMATION *playback = actor_animations + idx;
     ACTOR_FRAME_MOTION *motion = &playback->motion;
@@ -128,19 +133,18 @@ GDB_CALL sint32 animation_update_motion(sint32 idx)
     {
         limit = stage == 4 ? 47185920 : 78643200;
         if ((sint32)pos->x.bits < -limit)
-            pos->x.bits = (uint32)-limit;
+            pos->x.bits = -limit;
         if ((sint32)pos->x.bits > limit)
-            pos->x.bits = (uint32)limit;
+            pos->x.bits = limit;
     }
     prev_distance = math_distance_newton(actor_positions[0].x.whole, actor_positions[0].z.whole, actor_positions[1].x.whole, actor_positions[1].z.whole);
     side = motion->bits[1];
     forward = motion->bits[2];
     actor_pose_decode(model_refs[(uint32)actor_types[idx]], idx, &actor_poses[idx]);
-    state = (uint32)animation_movement_state(playback->id);
+    state = animation_movement_state(playback->id);
     if (actor_contacts[idx].captor != -1 && state != 139 && state != 172 && state != 77)
         return 77;
-    if (state >= ANIMATION_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(state < ANIMATION_COUNT);
     if (animation_flags[state] & 1)
     {
         motion->forward_offset_bits += forward;
@@ -149,22 +153,14 @@ GDB_CALL sint32 animation_update_motion(sint32 idx)
         return actors_resolve_overlaps(idx);
     }
     yaw = actor_orientation[idx].yaw;
-    if (yaw < 0 || yaw >= MATH_SIN_COUNT)
-    {
-        /* TODO: Investigate animation motion headings outside the sine table */
-        DIAGNOSTIC(fprintf(stderr, "Invalid animation motion sine heading %d actor %d animation %u stage %u tick %u\n", yaw, idx, playback->id, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate animation motion headings outside the sine table */
+    XASSERT(yaw >= 0 && yaw < MATH_SIN_COUNT);
     sn = sin_table[yaw];
-    if (yaw < -MATH_QUARTER_TURN || yaw >= MATH_ANGLE_COUNT)
-    {
-        /* TODO: Investigate animation motion headings outside the cosine view */
-        DIAGNOSTIC(fprintf(stderr, "Invalid animation motion cosine heading %d actor %d animation %u stage %u tick %u\n", yaw, idx, playback->id, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate animation motion headings outside the cosine view */
+    XASSERT(yaw >= -MATH_QUARTER_TURN && yaw < MATH_ANGLE_COUNT);
     cs = sin_table[MATH_QUARTER_TURN + yaw];
-    x = pos->x.bits + (uint32)sn * (uint32)((sint32)forward >> 15) + (uint32)cs * (uint32)((sint32)side >> 15);
-    z = pos->z.bits - (uint32)cs * (uint32)((sint32)forward >> 15) + (uint32)sn * (uint32)((sint32)side >> 15);
+    x = pos->x.bits + sn * ((sint32)forward >> 15) + cs * (side >> 15);
+    z = pos->z.bits - cs * ((sint32)forward >> 15) + sn * (side >> 15);
     animation_scale_vertical_motion(idx);
     if (playback->id == 65 && actors_update_pair_motion(idx))
     {
@@ -175,7 +171,7 @@ GDB_CALL sint32 animation_update_motion(sint32 idx)
         actor_correct_obstacles(idx, &x, &z);
     if ((sint32)game_session.player_count >= 2 && idx < 2)
     {
-        other_idx = 1u - (uint32)idx;
+        other_idx = 1u - idx;
         distance = math_distance_newton((sint32)x >> 16, (sint32)z >> 16, actor_positions[other_idx].x.whole, actor_positions[other_idx].z.whole);
         dx = x - actor_positions[other_idx].x.bits;
         dz = z - actor_positions[other_idx].z.bits;

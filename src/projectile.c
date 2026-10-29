@@ -11,11 +11,7 @@ static sint32 query_actor(uint32 world_x, uint32 world_z, const MODEL_OBJECT *mo
         if (actor_animation_blocks_hits(actor_animations[i].id))
             continue;
         /* TODO: Investigate an absent or foreign native projectile owner */
-        if (!projectile && (!model || !(model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER)))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid projectile query model %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(projectile || model && (model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER));
         owner = projectile ? projectile->owner : model && model->payload_kind == MODEL_PAYLOAD_PHYSICS ? model->physics.actor_idx : (model && model->payload_kind == MODEL_PAYLOAD_AIR_BIKE ? model->air_bike.target[1].z : (model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE ? model->scene_vehicle.voice_plus_one[0] : (model && model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER ? model->scene_helicopter.active : (model && model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER ? model->helicopter.voice_plus_one[0] : model->patrol.rotor_angle))));
         if (owner == i)
             continue;
@@ -27,7 +23,7 @@ static sint32 query_actor(uint32 world_x, uint32 world_z, const MODEL_OBJECT *mo
             continue;
         x = actor_positions[i].x.whole;
         z = actor_positions[i].z.whole;
-        if ((sint32)math_distance_approx((sint32)world_x >> 16, (sint32)world_z >> 16, x, z) < 64)
+        if (math_distance_approx((sint32)world_x >> 16, (sint32)world_z >> 16, x, z) < 64)
             return i;
     }
     return -1;
@@ -49,17 +45,12 @@ static sint32 apply_contact(sint32 idx, const MODEL_OBJECT *model, uintptr_t ret
 {
     FUNCTION_MARKER(0x8001f004u, "GAME.EXE");
     COLLISION_REGION *obstacle;
-    if ((uint32)idx >= COLLISION_REGION_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)idx < COLLISION_REGION_COUNT);
     obstacle = col_regions.data + idx;
     /* TODO: Investigate projectile common fields outside both native object pools */
-    if (!native_pos && !model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile model object %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(native_pos || model);
     uint32 kind = native_pos ? native_kind : model->kind;
-    MODEL_OBJECT *target_model = (obstacle->object.present == 1 && obstacle->object.idx < WORLD_OBJECT_COUNT ? world_objects.object + obstacle->object.idx : NULL);
+    MODEL_OBJECT *target_model = obstacle->object.present == 1 && obstacle->object.idx < WORLD_OBJECT_COUNT ? world_objects.object + obstacle->object.idx : NULL;
     COLLISION_POINT point;
     if (kind == 17)
         return 51;
@@ -69,18 +60,13 @@ static sint32 apply_contact(sint32 idx, const MODEL_OBJECT *model, uintptr_t ret
         obstacle->hits = 0xffff;
     const uint32 *pos_bits = native_pos ? native_pos : model ? model->pos.bits : NULL;
     /* TODO: Investigate a projectile source without a native position */
-    if (!pos_bits)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(pos_bits);
     point.pos.bits[0] = pos_bits[0];
     point.pos.bits[1] = pos_bits[1];
     point.pos.bits[2] = pos_bits[2];
     point.impact_sound = retained_word;
     sint32 handler_idx = obstacle->col_kind;
-    if (handler_idx < 0 || handler_idx >= COLLISION_SLOT_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(handler_idx >= 0 && handler_idx < COLLISION_SLOT_COUNT);
     return col_call(col_callbacks[handler_idx], obstacle, target_model, &point, -1);
 }
 
@@ -100,21 +86,13 @@ static sint32 trace(MODEL_OBJECT *model, sint32 idx, uint32 native_pos[3], uint1
 {
     FUNCTION_MARKER(0x8002fd90u, "GAME.EXE");
     /* TODO: Investigate projectile common fields outside both native object pools */
-    if (!native_pos && !model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile model object %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(native_pos || model);
     uint32 angle = (native_pos ? native_angle : model->angles.yaw_bits) >> 5;
     uint32 dx = (uint32)(sint32)sin_table[angle] << 7;
     uint32 dz = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + angle] << 7;
     uint32 *pos_bits = native_pos ? native_pos : model ? model->pos.bits : NULL;
     /* TODO: Investigate a projectile source without a native position */
-    if (!pos_bits)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(pos_bits);
     uint32 x = pos_bits[0];
     uint32 z = pos_bits[2];
     uint32 kind, effect_x, effect_y, effect_z;
@@ -193,32 +171,20 @@ GDB_CALL intptr projectile_update_accelerating(MODEL_OBJECT *model)
     sint32 slot, speed, hit, src_x, src_z, target_x, target_z;
     int i;
     /* TODO: Investigate motion callbacks without a native world or dynamic position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid object motion position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.bits;
     y = model->pos.y.bits;
     z = model->pos.z.bits;
     dynamic_objects_spawn(575, x, y, z);
     /* TODO: Investigate projectile callbacks with a foreign payload owner */
-    if (model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile payload %p kind %u owner %u stage %u tick %u\n", (void *)model, model->kind, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     slot = model->physics.target_idx;
     if (slot != -1)
     {
         src_x = model->pos.x.whole;
         src_z = model->pos.z.whole;
         /* TODO: Investigate a projectile target outside the actor pool */
-        if (slot < 0 || slot >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid projectile target %d object %p stage %u tick %u\n", slot, (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(slot >= 0 && slot < ACTOR_COUNT);
         target_x = actor_positions[slot].x.whole;
         target_z = actor_positions[slot].z.whole;
         model->angles.yaw_bits = (uint16)math_dir16(src_x, src_z, target_x, target_z);
@@ -295,41 +261,29 @@ GDB_CALL uint32 projectile_update_ballistic(MODEL_OBJECT *model, uint32 retained
     uint32 angle, speed, x, y, z, dx, dz, result;
     sint32 hit, contact, target, src_x, src_z, target_x, target_z;
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.bits;
     y = model->pos.y.bits;
     z = model->pos.z.bits;
     dynamic_objects_spawn(575, x, y, z);
     /* TODO: Investigate projectile callbacks with a foreign payload owner */
-    if (model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile payload %p kind %u owner %u stage %u tick %u\n", (void *)model, model->kind, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     target = model->physics.target_idx;
     if (target != -1)
     {
         src_x = model->pos.x.whole;
         src_z = model->pos.z.whole;
         /* TODO: Investigate projectile target indices outside the native actor pool */
-        if (target < 0 || target >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid projectile target %d object %p stage %u tick %u\n", target, (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(target >= 0 && target < ACTOR_COUNT);
         const FIXED_VEC3 *target_pos = actor_positions + target;
         target_x = target_pos->x.whole;
         target_z = target_pos->z.whole;
         model->angles.yaw_bits = (uint16)math_dir16(src_x, src_z, target_x, target_z);
     }
     angle = (model->angles.yaw_bits >> 5) * 2;
-    speed = (uint32)(sint32)model->physics.speed;
-    dx = speed * (uint32)(sint32)sin_table[angle >> 1];
-    dz = speed * (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (angle >> 1)];
+    speed = model->physics.speed;
+    dx = speed * (sin_table[angle >> 1]);
+    dz = speed * (sin_table[MATH_QUARTER_TURN + (angle >> 1)]);
     x = model->pos.x.bits + dx;
     model->pos.x.bits = x;
     z = model->pos.z.bits - dz;

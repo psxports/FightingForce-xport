@@ -88,8 +88,7 @@ GDB_CALL sint32 level_script_count_enemies(void)
 static sint32 script_word(void)
 {
     uint32 word_idx = level_script_cursor;
-    if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 1)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 1);
     level_script_cursor = word_idx + 1;
     return script_code[word_idx];
 }
@@ -105,7 +104,7 @@ static sint32 script_weapon(sint32 type, const NPC_AI_CAPABILITY *capability, ui
     else if (item_idx == DYNAMIC_ITEM_TYPE_COUNT)
         bits = npc_ai_capabilities[0].choice_count;
     else
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(0);
     if ((bits & capability->weapon_flags) != (bits & 0xffffu))
         return -1;
     return dynamic_objects_spawn_item(type, x, 1, z, 0);
@@ -118,8 +117,7 @@ static void script_create(void)
     const NPC_AI_CAPABILITY *capability;
     sint32 relative;
     word_idx = level_script_cursor;
-    if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 6)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 6);
     level_script_cursor = word_idx + 1;
     type = script_code[word_idx];
     level_script_cursor = word_idx + 2;
@@ -143,26 +141,17 @@ static void script_create(void)
     table = animation_type_banks[(uint32)type];
     idx = npc_create(type, x, z, yaw, flag, timer, 0);
     // TODO Increase the NPC slot count
-    if (idx < 0)
-    {
-        DIAGNOSTIC(fprintf(stderr, "NPC pool exhausted in script_create: record_word=%u type=%d allocation=primary slots=2..7\n", word_idx, type));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0);
     if (type == 44 || type == 45 || type == 46)
     {
         companion = npc_create(51, x, z, yaw, 0, 0, 0);
-        if (companion < 0)
-        {
-            DIAGNOSTIC(fprintf(stderr, "NPC pool exhausted in script_create: record_word=%u type=%d allocation=companion primary=%d slots=2..7\n", word_idx, type, idx));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(companion >= 0);
         actor_companions[idx] = companion;
         actor_companions[companion] = idx;
     }
     npc_action_actors[idx] = (NPC_ACTION_BANK_REFERENCE){npc_actions[type == 28 ? NPC_ACTION_TYPE28 : type == 32 ? NPC_ACTION_TYPE32 : type == 48 ? NPC_ACTION_JETPACK : type == 50 ? NPC_ACTION_VULKAN : NPC_ACTION_DEFAULT], 0};
     word_idx = level_script_cursor;
-    if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 2)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 2);
     level_script_cursor = word_idx + 1;
     role = script_code[word_idx];
     level_script_cursor = word_idx + 2;
@@ -178,8 +167,7 @@ static void script_create(void)
         }
     }
     word_idx = level_script_cursor;
-    if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 2)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 2);
     NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[idx].profile;
     npc_targets[idx].role = (uint32)role;
     level_script_cursor = word_idx + 1;
@@ -188,10 +176,8 @@ static void script_create(void)
     behavior = (sint32)npc_behavior_actors[idx].behavior;
     npc_behavior_actors[idx].command = 0;
     uint32 row_idx = (profile.first + (uint32)behavior) & NPC_BEHAVIOR_ROW_MASK;
-    if (!profile.rows || row_idx >= profile.row_count)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (profile.rows[row_idx].capability >= NPC_AI_CAPABILITY_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(profile.rows && row_idx < profile.row_count);
+    XASSERT(profile.rows[row_idx].capability < NPC_AI_CAPABILITY_COUNT);
     capability = npc_ai_capabilities + profile.rows[row_idx].capability;
     level_script_cursor = word_idx + 2;
     item = script_code[word_idx + 1];
@@ -243,7 +229,7 @@ static void script_create(void)
             actor_positions[idx].y.bits = period - phase;
             val = actor_positions[idx].y.bits;
             actor_lifecycle[idx].delay = 10;
-            actor_positions[idx].y.bits = 0u - (val << 16) + 1968u;
+            actor_positions[idx].y.bits = (uint32)(-(sint64)(val << 16)) + 1968u;
         }
         npc_start_animation(idx, table, animation);
         actor_pose_decode(model_refs[(uint32)actor_types[idx]], idx, &actor_poses[idx]);
@@ -252,11 +238,7 @@ static void script_create(void)
     if (level_script_scene.relative)
     {
         /* TODO: Investigate an absent or invalid relative-scene object before access */
-        if (world_objects.relative_scene.present != 1 || world_objects.relative_scene.idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid relative-scene reference slot %u present %u\n", world_objects.relative_scene.idx, (uint32)world_objects.relative_scene.present));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(world_objects.relative_scene.present == 1 && world_objects.relative_scene.idx < WORLD_OBJECT_COUNT);
         const MODEL_OBJECT *relative_object = world_objects.object + world_objects.relative_scene.idx;
         if (relative_object->kind == 782 && game_session.scene_phase == 1)
         {
@@ -283,8 +265,7 @@ static uint32 activate_scene(void)
     }
     else
     {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene object pool %u slot %u\n", (uint32)level_script_scene.object.pool, level_script_scene.object.idx));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(0);
     }
     if (model->payload_kind == MODEL_PAYLOAD_PANEL || model->payload_kind == MODEL_PAYLOAD_SIDE_PANEL)
         model->panel.pitch_step = 1;
@@ -343,8 +324,8 @@ static uint32 activate_scene(void)
     else
     {
         /* TODO: Investigate an unpublished generic model field owner */
-        DIAGNOSTIC(fprintf(stderr, "Invalid model field owner %p kind %u payload %u field 28 stage %u tick %u\n", (void *)model, model->kind, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+        XASSERT(0);
     }
     return 1;
 }
@@ -354,12 +335,20 @@ GDB_CALL sint32 level_script_update(void)
     FUNCTION_MARKER(0x8004B228, "GAME.EXE");
     uint32 word_idx, remaining;
     FIXED_VEC3 *scene_pos;
-    sint32 timer, command, a, b, c, count, kind, slot;
-    timer = (sint32)level_transition.restart_timer;
+    sint32 timer;
+    sint32 command;
+    sint32 operand;
+    sint32 next_operand;
+    uint32 attacker_limit;
+    sint32 count;
+    sint32 kind;
+    sint32 slot;
+    /* Complete the pending restart before advancing the wave script */
+    timer = level_transition.restart_timer;
     if (timer > 0)
     {
-        timer = (uint32)timer + 1u;
-        level_transition.restart_timer = (uint32)timer;
+        timer = timer + 1u;
+        level_transition.restart_timer = timer;
         if (timer >= 31)
         {
             game_session.scene_phase = 1;
@@ -375,6 +364,7 @@ GDB_CALL sint32 level_script_update(void)
     count = level_script_count_enemies();
     if ((uint32)count == level_wave.population_gate)
         return 0;
+    /* Dispatch scene commands only after the active wave has emptied */
     if (!level_wave.remaining_enemies)
     {
         /* Pending van passengers still belong to the current wave */
@@ -384,29 +374,25 @@ GDB_CALL sint32 level_script_update(void)
                 return 0;
         }
         word_idx = level_script_cursor;
-        if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 1)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 1);
         command = script_code[word_idx];
         if (command == -1)
             return -1;
         level_script_cursor = word_idx + 1;
-        command = script_code[word_idx];
         switch (command)
         {
             case 1:
                 break;
             case 2:
-                a = (sint32)game_session.stage;
                 level_wave.paused = 1;
                 level_transition.exit_requested = 1;
                 level_transition.finish_tick = 1;
-                if (a != 3)
+                if (game_session.stage != 3)
                     col_regions.named[0]->col_kind = 0;
                 break;
             case 3:
-                a = (sint32)game_session.stage;
                 level_wave.paused = 1;
-                if (a == 6)
+                if (game_session.stage == 6)
                     level_transition.restart_timer = 1;
                 else
                     game_session.scene_phase = 1;
@@ -426,19 +412,11 @@ GDB_CALL sint32 level_script_update(void)
             {
                 COLLISION_REGION *region = col_regions.named[1];
                 /* TODO: Investigate a missing original scene activation region */
-                if (!region)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Missing script activation region stage %u tick %u\n", game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(region);
                 region->col_kind = 0;
                 level_wave.paused = 1;
                 /* TODO: Investigate the original activation through an invalid object */
-                if (region->object.present != 1 || region->object.idx >= WORLD_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid script activation object slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(region->object.present == 1 && region->object.idx < WORLD_OBJECT_COUNT);
                 MODEL_OBJECT *model = world_objects.object + region->object.idx;
                 if (model->payload_kind == MODEL_PAYLOAD_PANEL || model->payload_kind == MODEL_PAYLOAD_SIDE_PANEL)
                     model->panel.initialized = 1;
@@ -497,8 +475,8 @@ GDB_CALL sint32 level_script_update(void)
                 else
                 {
                     /* TODO: Investigate an unpublished generic model field owner */
-                    DIAGNOSTIC(fprintf(stderr, "Invalid model field owner %p kind %u payload %u field 26 stage %u tick %u\n", (void *)model, model->kind, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+                    XASSERT(0);
                 }
                 break;
             }
@@ -514,17 +492,16 @@ GDB_CALL sint32 level_script_update(void)
                 level_wave.paused = 1;
                 activate_scene();
                 word_idx = level_script_cursor;
-                if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < (command == 16 ? 3u : 2u))
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= (command == 16 ? 3u : 2u));
                 level_script_cursor = word_idx + 1;
-                a = (uint16)script_code[word_idx];
+                operand = (uint16)script_code[word_idx];
                 level_script_cursor = word_idx + 2;
-                level_script_scene.target_x = (uint16)a;
+                level_script_scene.target_x = (uint16)operand;
                 level_script_scene.target_z = (uint16)script_code[word_idx + 1];
                 if (command == 16)
                 {
                     level_script_cursor = word_idx + 3;
-                    a = script_code[word_idx + 2];
+                    operand = script_code[word_idx + 2];
                     /* TODO: Investigate an invalid scene object before access */
                     if (level_script_scene.object.pool == SCENE_OBJECT_WORLD && level_script_scene.object.idx < WORLD_OBJECT_COUNT)
                         scene_pos = &world_objects.object[level_script_scene.object.idx].pos;
@@ -532,10 +509,9 @@ GDB_CALL sint32 level_script_update(void)
                         scene_pos = &dynamic_objects[level_script_scene.object.idx].pos;
                     else
                     {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid scene object pool %u slot %u\n", (uint32)level_script_scene.object.pool, level_script_scene.object.idx));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        XASSERT(0);
                     }
-                    level_script_scene.remaining_landings = (uint32)a;
+                    level_script_scene.remaining_landings = operand;
                 }
                 else
                 {
@@ -546,8 +522,7 @@ GDB_CALL sint32 level_script_update(void)
                         scene_pos = &dynamic_objects[level_script_scene.object.idx].pos;
                     else
                     {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid scene object pool %u slot %u\n", (uint32)level_script_scene.object.pool, level_script_scene.object.idx));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        XASSERT(0);
                     }
                     game_session.scene_phase = 2;
                 }
@@ -556,17 +531,16 @@ GDB_CALL sint32 level_script_update(void)
             case 12:
                 activate_scene();
                 word_idx = level_script_cursor;
-                if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 2)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 2);
                 level_script_cursor = word_idx + 1;
-                a = (uint16)script_code[word_idx];
+                operand = (uint16)script_code[word_idx];
                 level_script_cursor = word_idx + 2;
-                level_script_scene.target_x = (uint16)a;
-                b = (uint16)script_code[word_idx + 1];
+                level_script_scene.target_x = (uint16)operand;
+                next_operand = (uint16)script_code[word_idx + 1];
                 level_script_scene.relative = 0;
                 level_script_scene.oz = 0;
                 level_script_scene.ox = 0;
-                level_script_scene.target_z = (uint16)b;
+                level_script_scene.target_z = (uint16)next_operand;
                 break;
             case 14:
                 level_script_scene.relative = 1;
@@ -593,8 +567,7 @@ GDB_CALL sint32 level_script_update(void)
             case 17:
             case 18:
                 word_idx = level_script_cursor;
-                if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 1)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 1);
                 level_wave.paused = 1;
                 level_script_cursor = word_idx + 1;
                 count = script_code[word_idx];
@@ -604,81 +577,70 @@ GDB_CALL sint32 level_script_update(void)
                 {
                     MODEL_OBJECT *bike;
                     word_idx = level_script_cursor;
-                    if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 2)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 2);
                     level_script_cursor = word_idx + 1;
-                    a = script_code[word_idx];
+                    operand = script_code[word_idx];
                     level_script_cursor = word_idx + 2;
-                    b = script_code[word_idx + 1];
+                    next_operand = script_code[word_idx + 1];
                     kind = 460;
                     if ((count & 1) && command == 18)
                         kind = 462;
-                    slot = dynamic_objects_spawn_oriented(kind, (uint32)a << 16, 0, (uint32)b << 16, 0x8000);
+                    slot = dynamic_objects_spawn_oriented(kind, (uint32)operand << 16, 0, (uint32)next_operand << 16, 0x8000);
                     word_idx = level_script_cursor;
-                    if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 4)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 4);
                     level_script_cursor = word_idx + 1;
-                    a = (uint16)script_code[word_idx];
+                    operand = (uint16)script_code[word_idx];
                     level_script_cursor = word_idx + 2;
                     /* TODO: Investigate original pre-pool writes after scene-item allocation failure */
-                    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid script item allocation command %d word %u kind %d slot %d remaining %d stage %u tick %u\n", command, word_idx, kind, slot, count, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
                     bike = dynamic_objects + slot;
                     /* TODO: Investigate an air bike constructor with a foreign owner */
-                    if (bike->payload_kind != MODEL_PAYLOAD_AIR_BIKE)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid script air bike owner command %d word %u kind %d slot %d owner %u stage %u tick %u\n", command, word_idx, kind, slot, (uint32)bike->payload_kind, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
-                    bike->air_bike.target[0].x = (uint16)a;
-                    a = (uint16)script_code[word_idx + 1];
+                    XASSERT(bike->payload_kind == MODEL_PAYLOAD_AIR_BIKE);
+                    bike->air_bike.target[0].x = (uint16)operand;
+                    operand = (uint16)script_code[word_idx + 1];
                     level_script_cursor = word_idx + 3;
-                    bike->air_bike.target[0].z = (uint16)a;
-                    a = (uint16)script_code[word_idx + 2];
+                    bike->air_bike.target[0].z = (uint16)operand;
+                    operand = (uint16)script_code[word_idx + 2];
                     level_script_cursor = word_idx + 4;
-                    bike->air_bike.target[1].x = (uint16)a;
-                    a = (uint16)script_code[word_idx + 3];
-                    bike->air_bike.target[1].z = (uint16)a;
+                    bike->air_bike.target[1].x = (uint16)operand;
+                    operand = (uint16)script_code[word_idx + 3];
+                    bike->air_bike.target[1].z = (uint16)operand;
                     --count;
-                    a = (sint32)random_next();
-                    bike->air_bike.phase = (uint16)a;
+                    bike->air_bike.phase = random_next();
                     camera.tracking.pitch_control_bits = 1;
                 } while (count > 0);
                 return 0;
             default:
                 break;
         }
+        /* Publish the next wave header in original word order */
         word_idx = level_script_cursor;
-        if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 3)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 3);
         level_script_cursor = word_idx + 1;
-        a = script_code[word_idx];
+        operand = script_code[word_idx];
         level_script_cursor = word_idx + 2;
-        level_wave.remaining_enemies = (uint32)a;
-        b = script_code[word_idx + 1];
+        level_wave.remaining_enemies = operand;
+        next_operand = script_code[word_idx + 1];
         level_script_cursor = word_idx + 3;
-        level_wave.population_gate = (uint32)b;
-        c = script_code[word_idx + 2];
+        level_wave.population_gate = next_operand;
+        attacker_limit = script_code[word_idx + 2];
         level_wave.attacker_decay_tick = 0xffffffffu;
         level_wave.attacker_trigger_count = 0;
-        level_wave.pending_spawns = (uint32)a;
-        level_wave.attacker_limit = (uint32)c;
-        level_wave.base_attacker_limit = (uint32)c;
+        level_wave.pending_spawns = operand;
+        level_wave.attacker_limit = attacker_limit;
+        level_wave.base_attacker_limit = attacker_limit;
         return 0;
     }
+    /* Consume the spawn delay before creating the next actor */
     if ((sint32)level_wave.pending_spawns <= 0)
         return 0;
     remaining = level_wave.spawn_delay;
     if (!remaining)
     {
         word_idx = level_script_cursor;
-        if (word_idx > LEVEL_SCRIPT_WORD_COUNT || LEVEL_SCRIPT_WORD_COUNT - word_idx < 1)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(word_idx <= LEVEL_SCRIPT_WORD_COUNT && LEVEL_SCRIPT_WORD_COUNT - word_idx >= 1);
         level_script_cursor = word_idx + 1;
-        level_wave.spawn_delay = (uint32)(sint32)script_code[word_idx];
+        level_wave.spawn_delay = script_code[word_idx];
         return 0;
     }
     --remaining;

@@ -1,8 +1,5 @@
-#include <stdio.h>
 #include <string.h>
 #include <setjmp.h>
-#include <stdlib.h>
-#include <stdint.h>
 
 #include "game.h"
 #include "psx_gpu.h"
@@ -16,8 +13,6 @@ GAME_SESSION game_session;
 static jmp_buf menu_exit;
 static jmp_buf gameplay_exit;
 static int gameplay_exit_active;
-static int menu_input_published;
-static int frontend_full_run;
 static uint32 menu_scene_context = 0xffffffff;
 
 enum
@@ -32,40 +27,37 @@ static void return_to_frontend(void)
     longjmp(menu_exit, 2);
 }
 
-GDB_CALL void pause_refresh_pad(void)
+static void poll_host_pads(void)
 {
-    uint32 pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
+    uint32 pad0 = PadRead(0), pad1 = PadRead(1);
     if (xport_isquit())
         longjmp(menu_exit, 1);
-    pad_host_publish(1, buttons, 0);
+    pad_host_publish(2, ((pad0 & 255) << 8) | ((pad0 >> 8) & 255), ((pad1 & 255) << 8) | ((pad1 >> 8) & 255));
+}
+
+GDB_CALL void pause_refresh_pad(void)
+{
+    poll_host_pads();
 }
 
 static void title_host_frame(void)
 {
-    uint32 pad = PadRead(0), buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
-    if (xport_isquit())
-        longjmp(menu_exit, 1);
-    pad_host_publish(1, buttons, 0);
+    poll_host_pads();
 }
 
 GDB_CALL uint32 frame_prepare(void)
 {
-    uint32 pad, buttons, parity;
+    uint32 parity;
     DISPENV *disp;
     PSX_RECT effects_rect = {0, 499, TEXTURE_PAL_COLORS, 1};
     FUNCTION_MARKER(0x80058634, "GAME.EXE");
-    pad = PadRead(0);
-    buttons = ((pad & 255) << 8) | ((pad >> 8) & 255);
-    if (xport_isquit())
-        longjmp(menu_exit, 1);
-    if (!menu_input_published)
-        pad_host_publish(1, buttons, 0);
+    poll_host_pads();
     DrawSync(0);
     if (LoadImagePSX(&effects_rect, tex_pals.words + TEXTURE_PAL_EFFECTS * TEXTURE_PAL_WORDS) != 0)
         longjmp(menu_exit, 1);
     DrawSync(0);
     PSX_RECT *strip_rect = &tex_upload_rects.terrain_strip;
-    if (strip_rect->w < 0 || strip_rect->h < 0 || (uint32)strip_rect->w * (uint32)strip_rect->h > sizeof(background_img.pix) / sizeof(uint16) || LoadImagePSX(strip_rect, background_img.words) != 0)
+    if (strip_rect->w < 0 || strip_rect->h < 0 || strip_rect->w * (uint32)strip_rect->h > sizeof(background_img.pix) / sizeof(uint16) || LoadImagePSX(strip_rect, background_img.words) != 0)
         longjmp(menu_exit, 1);
     cd_music_poll();
     render_ot_compact();
@@ -214,44 +206,11 @@ static int run_native_levels(void)
     }
 }
 
-static int run_loaded_game(int sequence, uint32 limit)
+static int run_loaded_game(int sequence)
 {
-    volatile uint32 frame;
-    int result = 9;
     if (sequence)
         sequence_run(0, sequence_prepare_frame);
-    if (!limit)
-        return run_native_levels();
-    if (game_session.stage == 25)
-    {
-        sequence_run(6, sequence_prepare_frame);
-        sequence_run(7, sequence_prepare_frame);
-        return 1;
-    }
-    level_initialize();
-    level_start_playback();
-    for (frame = 0; frame < limit; frame++)
-    {
-        if (setjmp(gameplay_exit))
-        {
-            gameplay_exit_active = 0;
-            return 1;
-        }
-        gameplay_exit_active = 1;
-        result = game_update_frame_prefix();
-        if (!result)
-            result = level_transition_update();
-        gameplay_exit_active = 0;
-        if (result)
-        {
-            if (gameplay_continue(result))
-                return 1;
-            level_initialize();
-            level_start_playback();
-            result = 0;
-        }
-    }
-    return result;
+    return run_native_levels();
 }
 
 static void game_initialize(void)
@@ -302,47 +261,27 @@ GDB_CALL int game_run(void)
     }
 }
 
-static int frontend_start(void)
-{
-    if (!frontend_full_run)
-    {
-        menu_scene_context = 0xffffffff;
-        return (int)menu_initialize();
-    }
-    return menu_run() ? 1 : FRONTEND_GAME_READY;
-}
-
 static int finish_game_to_menu(void)
 {
     int result;
     sound_voices_stop_all();
     disp_buffers.shake_ticks = 0;
     loading_clear();
-    result = frontend_start();
+    result = menu_run() ? 1 : FRONTEND_GAME_READY;
     game_services.frontend_frame = NULL;
     return result;
 }
 
-static int menu_runtime_impl(const char *script, uint32 limit, int headless)
+static int frontend_run_impl(void)
 {
-    FILE *input = NULL;
-    volatile uint32 frame = 0;
     int result = 0;
-    menu_input_published = 0;
     menu_scene_context = 0xffffffff;
-    frontend_full_run = !script && !limit;
     if (!game_cold_reset())
         return 2;
     gpu_init_empty();
     sound_core_init();
-    if (script)
-    {
-        input = xport_fopen(script, "rb");
-        if (!input)
-            return 4;
-    }
-    xport_set_headless(headless);
-    xport_input_override(script != NULL, 0);
+    xport_set_headless(0);
+    xport_input_override(0, 0);
     ResetGraph(0);
     InitGeom();
     if (!xport_audio_init())
@@ -351,23 +290,20 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless)
         goto done;
     }
 #if !defined(AP_WEB)
-    if (!script && !limit && !headless)
+    movie_play_intro();
+    if (xport_isquit())
+        goto done;
+    /* Reset native owners after the original loader's movie handoff */
+    if (!game_cold_reset())
     {
-        movie_play_intro();
-        if (xport_isquit())
-            goto done;
-        /* Reset native owners after the original loader's movie handoff */
-        if (!game_cold_reset())
-        {
-            result = 2;
-            goto done;
-        }
-        gpu_init_empty();
-        sound_core_init();
-        ResetCallbackPSX();
-        ResetGraph(0);
-        InitGeom();
+        result = 2;
+        goto done;
     }
+    gpu_init_empty();
+    sound_core_init();
+    ResetCallbackPSX();
+    ResetGraph(0);
+    InitGeom();
 #endif
     game_services.return_to_frontend = return_to_frontend;
     menu.callback = &menu_callback_main;
@@ -385,25 +321,11 @@ static int menu_runtime_impl(const char *script, uint32 limit, int headless)
             result = 9;
             goto done;
     }
-    if (!script && !limit)
-    {
-        result = game_run();
-        goto done;
-    }
-    game_initialize();
-    game_services.frontend_frame = title_host_frame;
-    title_host_frame();
-    sound_voices_stop_all();
-    disp_buffers.shake_ticks = 0;
-    loading_clear();
-    result = frontend_start();
-    game_services.frontend_frame = NULL;
-    if (result != 0 && result != 1 && result != FRONTEND_GAME_READY)
-        goto done;
+    result = game_run();
+    goto done;
 frontend_ready:
-    while (!xport_isquit() && (!limit || frame < limit))
+    while (!xport_isquit())
     {
-        uint32 job[3] = {1, 0, 0};
         int cleanup;
         if (result == FRONTEND_GAME_READY)
             goto start_game;
@@ -412,24 +334,15 @@ frontend_ready:
             demo_select_next();
             goto start_game;
         }
-        if (input)
-        {
-            if (fread(job, sizeof(job), 1, input) != 1)
-                break;
-            pad_host_publish(job[0], job[1], job[2]);
-        }
-        menu_input_published = input != NULL;
         menu_prepare_frame();
-        menu_input_published = 0;
         cleanup = menu_update_selection_frame(&menu_scene_context);
-        ++frame;
         if (cleanup)
         {
             pad_stream_reset();
             sound_voices_stop_all();
         start_game:
             game_services.frontend_frame = title_host_frame;
-            result = run_loaded_game(game_session.stage == 0 && demo.cur_idx == 0xffffffffu, script ? 900 : 0);
+            result = run_loaded_game(game_session.stage == 0 && demo.cur_idx == 0xffffffffu);
             if (result == 1 || result == 4)
             {
                 result = finish_game_to_menu();
@@ -441,22 +354,14 @@ frontend_ready:
         }
     }
 done:
-    menu_input_published = 0;
     game_services.frontend_frame = NULL;
     xport_audio_shutdown();
-    if (input)
-        fclose(input);
     return result;
 }
 
-int frontend_run(uint32 limit, int headless)
+int frontend_run(void)
 {
-    int result = menu_runtime_impl(NULL, limit, headless);
+    int result = frontend_run_impl();
     /* A host quit is not a failed game initialization */
     return result == 9 && xport_isquit() ? 0 : result;
-}
-
-int frontend_run_script(const char *script, int headless)
-{
-    return menu_runtime_impl(script, 0, headless);
 }

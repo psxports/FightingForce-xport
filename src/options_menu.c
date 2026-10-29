@@ -30,12 +30,12 @@ GDB_CALL sint32 scores_menu_update(void)
     uint32 i = 0, raw, edge;
     sint32 result;
     high_scores_draw();
-    result = (sint32)game_session.player_count;
+    result = game_session.player_count;
     if (result <= 0)
         return result;
     for (;;)
     {
-        raw = (uint32)pad_decode_buttons(pad_game.port[i]);
+        raw = pad_decode_buttons(pad_game.port[i]);
         edge = (raw ^ pad_menu.prev[i]) & raw;
         pad_menu.pressed[i] = edge;
         pad_menu.prev[i] = raw;
@@ -84,8 +84,7 @@ GDB_CALL sint32 pad_menu_update(void)
                 scheme = (sint8)pad_action.cfg[player];
                 action = pad_bindings[scheme][k];
                 prefix = pad_glyph[k];
-                if (action < 0 || action >= LOCALIZED_ACTION_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(action >= 0 && action < LOCALIZED_ACTION_COUNT);
                 label = localization.action[action];
                 snprintf(buffer, 256, action_label_format, prefix, label);
                 text_draw(buffer, x - 16, y);
@@ -236,22 +235,18 @@ GDB_CALL sint32 options_menu_update(void)
     text_center(localization.text[LOCAL_TEXT_OPTIONS], 20);
     sel = options_menu.sel_row;
     text_center((sel == options_menu.row[OPTION_LOAD_GAME] || sel == options_menu.row[OPTION_LOAD_SETTINGS] || sel == options_menu.row[OPTION_SAVE_SETTINGS] || sel == options_menu.row[OPTION_CONTROLLER] || sel == options_menu.row[OPTION_SCREEN] || sel == options_menu.row[OPTION_SCORES] || sel == options_menu.row[OPTION_EXIT]) ? localization.hint[TEXT_HINT_CHOOSE_SELECT_EXIT] : localization.hint[TEXT_HINT_CHOOSE_CHANGE_EXIT], 214);
-    count = (sint32)options_menu.row_count;
-    y = 128 - 6 * (uint32)count;
+    count = options_menu.row_count;
+    y = 128 - 6u * count;
     if (game_settings.language == GAME_LANGUAGE_GERMAN)
-        y = (uint32)y - 6;
+        y = y - 6u;
     for (i = 0; i < count; i++)
     {
-        uint32 row = (uint32)i;
+        uint32 row = i;
         const char *native_text = NULL;
         int slider = 0, has_label = 1;
         if (row == options_menu.row[OPTION_STAGE])
         {
-            if (game_settings.start_stage >= LEVEL_NAME_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Start stage name outside catalog: %u\n", game_settings.start_stage));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(game_settings.start_stage < LEVEL_NAME_COUNT);
             native_text = level_names[game_settings.start_stage];
         }
         else if (row == options_menu.row[OPTION_INVULNERABILITY])
@@ -260,8 +255,7 @@ GDB_CALL sint32 options_menu_update(void)
         {
             sint32 difficulty = game_settings.difficulty;
             const char *label = localization.text[LOCAL_TEXT_DIFFICULTY];
-            if (difficulty < 0 || difficulty >= GAME_DIFFICULTY_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(difficulty >= 0 && difficulty < GAME_DIFFICULTY_COUNT);
             const char *name = localization.difficulty[difficulty];
             snprintf(buffer, sizeof(buffer), difficulty_format, label, name);
             native_text = buffer;
@@ -272,22 +266,22 @@ GDB_CALL sint32 options_menu_update(void)
             width = text_width(native_text);
             a = game_settings.language;
             b = sound_settings.effects_volume;
-            width = (uint32)width + 64;
+            width = width + 64u;
             slider = 1;
             if (a == 2)
             {
-                options_draw_slider(240, (uint32)y + 12, b);
-                width = (uint32)width - 64;
+                options_draw_slider(240, y + 12u, b);
+                width = width - 64u;
             }
             else
-                options_draw_slider((uint32)(width >> 1) + 96, (uint32)y + 1, b);
+                options_draw_slider((width >> 1) + 96u, y + 1u, b);
         }
         else if (row == options_menu.row[OPTION_MUSIC_VOLUME])
         {
             native_text = localization.text[LOCAL_TEXT_MUSIC_VOLUME];
-            width = (uint32)text_width(native_text) + 64;
+            width = text_width(native_text) + 64u;
             slider = 1;
-            options_draw_slider((uint32)(width >> 1) + 96, (uint32)y + 2, sound_settings.music_volume);
+            options_draw_slider((width >> 1) + 96u, y + 2u, sound_settings.music_volume);
         }
         else if (row == options_menu.row[OPTION_STEREO])
             native_text = sound_settings.flags & SOUND_FLAG_STEREO ? stereo_text : mono_text;
@@ -305,19 +299,19 @@ GDB_CALL sint32 options_menu_update(void)
         }
         if (!slider && has_label)
             width = text_width(native_text);
-        text_draw_gradient(native_text, 160 - (uint32)(width >> 1), y, options_menu.sel_row == row ? &active : &inactive);
-        y = (uint32)y + 12;
+        text_draw_gradient(native_text, 160u - (width >> 1), y, options_menu.sel_row == row ? &active : &inactive);
+        y = y + 12u;
         if (row == options_menu.row[OPTION_EFFECTS_VOLUME] && game_settings.language == GAME_LANGUAGE_GERMAN)
-            y = (uint32)y + 6;
-        count = (sint32)options_menu.row_count;
+            y = y + 6u;
+        count = options_menu.row_count;
     }
-    count = (sint32)game_session.player_count;
+    count = game_session.player_count;
     result = count;
     for (i = 0; i < count; i++)
     {
         uint32 *pressed = &pad_menu.pressed[i];
         uint32 *prev = &pad_menu.prev[i];
-        raw = (uint32)pad_decode_buttons(pad_game.port[i]);
+        raw = pad_decode_buttons(pad_game.port[i]);
         edge = (raw ^ *prev) & raw;
         *pressed = edge;
         *prev = raw;
@@ -514,7 +508,7 @@ GDB_CALL sint32 options_menu_update(void)
                 }
             }
         }
-        count = (sint32)game_session.player_count;
+        count = game_session.player_count;
         result = i + 1 < count;
     }
     return result;
@@ -524,7 +518,7 @@ GDB_CALL uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
 {
     FUNCTION_MARKER(0x80062ab4u, "GAME.EXE");
     sint32 width = val >> 2;
-    uint32 a, ux = (uint32)x, uy = y;
+    uint32 a, ux = x, uy = y;
     int i;
     if (width > 0)
     {
@@ -542,9 +536,9 @@ GDB_CALL uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
         poly->p[0].xy.y = (uint16)(uy + 1);
         poly->p[1].xy.x = (uint16)(ux + 1);
         poly->p[1].xy.y = (uint16)(uy + 5);
-        poly->p[2].xy.x = (uint16)(ux + (uint32)width + 1);
+        poly->p[2].xy.x = (uint16)(ux + width + 1);
         poly->p[2].xy.y = (uint16)(uy + 1);
-        poly->p[3].xy.x = (uint16)(ux + (uint32)width + 1);
+        poly->p[3].xy.x = (uint16)(ux + width + 1);
         poly->p[3].xy.y = (uint16)(uy + 5);
         render_ot_insert(render_buffers.ot_addr + 8188, a);
     }

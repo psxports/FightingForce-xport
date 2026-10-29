@@ -90,11 +90,7 @@ static sint32 read_disc_file(const char *disc_name, void *dst, uint32 capacity, 
             if (size > file->capacity)
             {
                 uint8 *data = realloc(file->data, size);
-                if (!data)
-                {
-                    fclose(f);
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(data);
                 file->data = data;
                 file->capacity = size;
             }
@@ -117,9 +113,9 @@ static sint32 resource_disc_read(const char *name, void *dst, uint32 capacity, R
     sint32 size;
     /* Native synchronous transport retains the agreed physical-CD WIP boundary */
     size = read_disc_file(name, dst, capacity, file);
+    XASSERT(size > 0);
     if (size <= 0)
     {
-        diagnostic_branch(0x80067580, "cd", __FUNCTION__, __FILE__, __LINE__, 1, "archive unavailable; return failure instead of original infinite error loop");
         resource_io.result_size = 0;
         return -1;
     }
@@ -132,24 +128,18 @@ GDB_CALL uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_d
     FUNCTION_MARKER(0x80061448, "GAME.EXE");
     uint32 attempt, capacity;
     void *dst;
-    if (idx >= RESOURCE_FILE_COUNT || !resource_file_names[idx])
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(idx < RESOURCE_FILE_COUNT && resource_file_names[idx]);
     if (arena)
     {
         uintptr_t ptr = (uintptr_t)arena->data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a load without a valid native allocation span */
-        if (file || native_dst || native_capacity || !arena->data || (ptr & 3) || ptr < base || ptr - base >= RESOURCE_STORAGE_CAPACITY || !arena->available || arena->available > RESOURCE_STORAGE_CAPACITY - (ptr - base))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Resource load %u invalid native cursor context %08X available %u stage %u tick %u\n", idx, relocation_base, arena->available, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(!file && !native_dst && !native_capacity && arena->data && !(ptr & 3) && ptr >= base && ptr - base < RESOURCE_STORAGE_CAPACITY && arena->available && arena->available <= RESOURCE_STORAGE_CAPACITY - (ptr - base));
         dst = arena->data;
         capacity = arena->available;
     }
     else if (file)
     {
-        if (native_dst || native_capacity > 0x7fffffff || file->byte_len > file->capacity || (file->capacity && !file->data) || (!file->capacity && file->data))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(!native_dst && native_capacity <= 0x7fffffff && file->byte_len <= file->capacity && (!file->capacity || file->data) && (file->capacity || !file->data));
         dst = NULL;
         capacity = native_capacity ? native_capacity : 0x7fffffff;
     }
@@ -161,8 +151,8 @@ GDB_CALL uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_d
     else
     {
         /* TODO: Investigate a caller without a native file, buffer or allocation owner */
-        DIAGNOSTIC(fprintf(stderr, "Resource load %u missing native destination context %08X stage %u tick %u\n", idx, relocation_base, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+        XASSERT(0);
         return 0;
     }
     /* Preserve original context bits without treating native storage as a numeric address */
@@ -171,17 +161,16 @@ GDB_CALL uint32 resource_load(uint32 idx, uint32 relocation_base, void *native_d
     {
         sint32 size;
         resource_disc_read(resource_file_names[idx], dst, capacity, file);
-        size = (sint32)resource_io.result_size;
+        size = resource_io.result_size;
         if (size > 0)
         {
-            size = (sint32)resource_io.result_size;
             resource_io.file_size = size;
             resource_archive.dir = file ? (RESOURCE_DIRECTORY *)file->data : dst;
             resource_archive.byte_len = size;
             return size;
         }
     }
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(0);
     return 0;
 }
 
@@ -197,21 +186,14 @@ static const RESOURCE_ENTRY *find_entry(const char *name)
     uint8 key[RESOURCE_NAME_SIZE] = {0};
     uint32 n = 0, i;
     sint32 count;
-    if (!resource_archive.dir || resource_archive.byte_len < sizeof(uint32) || ((uintptr_t)resource_archive.dir & 3))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(resource_archive.dir && resource_archive.byte_len >= sizeof(uint32) && !((uintptr_t)resource_archive.dir & 3));
     count = (sint32)resource_swap32(resource_archive.dir->count_be);
-    if (count > 0 && (uint32)count > (resource_archive.byte_len - sizeof(uint32)) / sizeof(RESOURCE_ENTRY))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (!name)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(count <= 0 || (uint32)count <= (resource_archive.byte_len - sizeof(uint32)) / sizeof(RESOURCE_ENTRY));
+    XASSERT(name);
     for (;;)
     {
         uint8 c;
-        if (n >= sizeof(key))
-        {
-            DIAGNOSTIC(fprintf(stderr, "WIP: oversized archive name\n"));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(n < sizeof(key));
         c = name[n];
         key[n++] = c;
         if (!c)
@@ -229,15 +211,10 @@ RESOURCE_VIEW resource_find_quiet(const char *name)
     const RESOURCE_ENTRY *entry = find_entry(name);
     uint32 offset;
     RESOURCE_VIEW view;
-    if (!entry)
-    {
-        DIAGNOSTIC(fprintf(stderr, "WIP: archive resource not found\n"));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(entry);
     resource_io.result_size = resource_swap32(entry->size_be);
     offset = resource_swap32(entry->offset_be);
-    if (offset > resource_archive.byte_len || resource_io.result_size > resource_archive.byte_len - offset)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(offset <= resource_archive.byte_len && resource_io.result_size <= resource_archive.byte_len - offset);
     view.storage = (uint8 *)resource_archive.dir;
     view.storage_len = resource_archive.byte_len;
     view.data = view.storage + offset;
@@ -251,11 +228,10 @@ sint32 resource_exists(const char *name)
     FUNCTION_MARKER(0x80061140, "GAME.EXE");
     const RESOURCE_ENTRY *entry = find_entry(name);
     /* TODO: Investigate a found entry whose original encoded result becomes zero */
-    if (entry && !resource_swap32(resource_archive.relocation_base + entry->offset_be))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Zero encoded resource result for %s base %08X raw offset %08X\n", name, resource_archive.relocation_base, entry->offset_be));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+#if defined(_DEBUG)
+    sint32 encoded_result_valid = !entry || resource_swap32(resource_archive.relocation_base + entry->offset_be);
+    XASSERT(encoded_result_valid);
+#endif
     return entry != NULL;
 }
 
@@ -268,18 +244,19 @@ RESOURCE_VIEW resource_find(const char *name)
     {
         POLY_G4 p;
         uint32 i, parity;
-        sint32 count = (sint32)loading.count, width;
+        sint32 count = loading.count;
+        uint32 width;
         if (count > total)
             count = total;
         /* Preserve MIPS wrapping shifts/adds BEFORE signed division. */
-        width = (sint32)((uint32)count * 170u) / total;
+        width = (sint32)(count * 170u) / total;
         memset(&p, 0, sizeof(p));
         setPolyG4(&p);
         p.p[0].rgbc.r = p.p[1].rgbc.r = 255;
         p.p[2].rgbc.r = p.p[3].rgbc.r = 216;
         p.p[2].rgbc.b = p.p[3].rgbc.b = 178;
         p.p[0].xy.x = p.p[1].xy.x = 77;
-        p.p[2].xy.x = p.p[3].xy.x = (sint16)((uint32)width + 77);
+        p.p[2].xy.x = p.p[3].xy.x = (sint16)(width + 77);
         p.p[0].xy.y = p.p[2].xy.y = 203;
         p.p[1].xy.y = p.p[3].xy.y = 214;
         for (i = 0; i < 2; i++)
@@ -328,18 +305,15 @@ uint32 resource_load_model(const char *name, uint32 type, uint32 tex_grp)
     MODEL_FILE_HEADER *file;
     SVECTOR *v;
     MODEL_FACE_RECORD *face_recs;
-    if (((uintptr_t)view.data & 3) || byte_len < sizeof(MODEL_FILE_HEADER))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!((uintptr_t)view.data & 3) && byte_len >= sizeof(MODEL_FILE_HEADER));
     file = (MODEL_FILE_HEADER *)view.data;
-    if (type >= MODEL_TYPE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(type < MODEL_TYPE_COUNT);
     model_height[type] = file->height;
     nv = file->mesh.vertex_count;
     nf = file->mesh.face_count;
-    if (nv < 0 || nf < 0 || (uint32)nv > (byte_len - sizeof(MODEL_FILE_HEADER)) / sizeof(SVECTOR) || (uint32)nf > (byte_len - sizeof(MODEL_FILE_HEADER) - sizeof(SVECTOR) * (uint32)nv) / sizeof(MODEL_FACE_RECORD))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(nv >= 0 && nf >= 0 && (uint32)nv <= (byte_len - sizeof(MODEL_FILE_HEADER)) / sizeof(SVECTOR) && (uint32)nf <= (byte_len - sizeof(MODEL_FILE_HEADER) - sizeof(SVECTOR) * (uint32)nv) / sizeof(MODEL_FACE_RECORD));
     vertices = p + 20;
-    faces = vertices + 8 * (uint32)nv;
+    faces = vertices + 8u * nv;
     file->mesh.vertices_wire = vertices;
     file->mesh.faces_wire = faces;
     v = nv > 0 ? (SVECTOR *)(view.data + sizeof(MODEL_FILE_HEADER)) : NULL;
@@ -355,13 +329,11 @@ uint32 resource_load_model(const char *name, uint32 type, uint32 tex_grp)
         MODEL_FACE_RECORD *face = face_recs + i;
         if ((sint16)face->vertex_offset[2] != -1 || (sint16)face->vertex_offset[3] != -1)
         {
-            if (tex_grp >= TEXTURE_GROUP_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(tex_grp < TEXTURE_GROUP_COUNT);
             sint32 grp = tex_grps[tex_grp].first_tex;
             sint32 offset = (sint16)face->tex_offset / 12;
             sint32 idx = grp + offset;
-            if (idx < 0 || idx >= TEXTURE_MAP_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(idx >= 0 && idx < TEXTURE_MAP_COUNT);
             face->tex_offset = 12 * tex_map[idx];
         }
     }
@@ -384,11 +356,7 @@ static uint32 relocate_offset(uint32 *offset, uint32 base)
 {
     FUNCTION_MARKER(0x80011D74, "GAME.EXE");
     int64_t sum = (int64_t)(sint32)*offset + (sint32)base;
-    if (sum > 2147483647LL || sum < (-2147483647LL - 1))
-    {
-        DIAGNOSTIC(fprintf(stderr, "MIPS add overflow in relocation\n"));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(sum <= 2147483647LL && sum >= (-2147483647LL - 1));
     *offset = (uint32)sum;
     return sum;
 }
@@ -404,50 +372,32 @@ uint32 resource_load_character(const char *name, uint32 type, uint32 grp)
     CHARACTER_FILE_HEADER *file;
     MODEL_BODY_HEADER *copy;
     MODEL_FACE_RECORD *face_recs;
-    if (((uintptr_t)view.data & 3) || byte_len < sizeof(CHARACTER_FILE_HEADER))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!((uintptr_t)view.data & 3) && byte_len >= sizeof(CHARACTER_FILE_HEADER));
     file = (CHARACTER_FILE_HEADER *)view.data;
-    if (type >= MODEL_TYPE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(type < MODEL_TYPE_COUNT);
     model_height[type] = file->model.height;
     size = file->copy_size_or_end;
-    if ((sint32)size < 0 || size < sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32) || size > byte_len - sizeof(uint32))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (file->model.mesh.vertex_count < 0 || file->model.mesh.face_count < 0 || file->model.mesh.vertices_wire > size || file->model.mesh.faces_wire > size || (uint32)file->model.mesh.vertex_count > (size - file->model.mesh.vertices_wire) / sizeof(SVECTOR) || (uint32)file->model.mesh.face_count > (size - file->model.mesh.faces_wire) / sizeof(MODEL_FACE_RECORD))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if ((file->model.mesh.vertices_wire & 3) || (file->model.mesh.faces_wire & 3) || (file->commands_offset & 3) || file->part_count > (size - (sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32))) / sizeof(uint32) || file->commands_offset < sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32) + file->part_count * sizeof(uint32) || file->commands_offset > size - sizeof(uint32))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((sint32)size >= 0 && size >= sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32) && size <= byte_len - sizeof(uint32));
+    XASSERT(file->model.mesh.vertex_count >= 0 && file->model.mesh.face_count >= 0 && file->model.mesh.vertices_wire <= size && file->model.mesh.faces_wire <= size && (uint32)file->model.mesh.vertex_count <= (size - file->model.mesh.vertices_wire) / sizeof(SVECTOR) && (uint32)file->model.mesh.face_count <= (size - file->model.mesh.faces_wire) / sizeof(MODEL_FACE_RECORD));
+    XASSERT(!(file->model.mesh.vertices_wire & 3) && !(file->model.mesh.faces_wire & 3) && !(file->commands_offset & 3) && file->part_count <= (size - (sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32))) / sizeof(uint32) && file->commands_offset >= sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32) + file->part_count * sizeof(uint32) && file->commands_offset <= size - sizeof(uint32));
     relocate_offset(&file->copy_size_or_end, src);
     dst = resource_arenas.persistent.context;
     uint8 *copy_data = resource_arenas.persistent.data;
     uintptr_t copy_addr = (uintptr_t)copy_data, pool = (uintptr_t)resource_storage.data;
     /* TODO: Investigate invalid or overlapping ACH copies without guessing copy semantics */
-    if (!copy_data || (copy_addr & 3) || copy_addr < pool || copy_addr - pool > RESOURCE_STORAGE_CAPACITY || resource_arenas.persistent.available > RESOURCE_STORAGE_CAPACITY - (copy_addr - pool) || size > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Character %s type %u copy %08X size %u stage %u tick %u\n", name, type, dst, size, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(copy_data && !(copy_addr & 3) && copy_addr >= pool && copy_addr - pool <= RESOURCE_STORAGE_CAPACITY && resource_arenas.persistent.available <= RESOURCE_STORAGE_CAPACITY - (copy_addr - pool) && size <= resource_arenas.persistent.available);
     copy = (MODEL_BODY_HEADER *)copy_data;
     uintptr_t copy_begin = (uintptr_t)copy, src_begin = (uintptr_t)(view.data + sizeof(uint32));
-    if (copy_begin < src_begin + size && src_begin < copy_begin + size)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Overlapping character copy %s type %u context %08X destination %08X size %u\n", name, type, src, dst, size));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(copy_begin >= src_begin + size || src_begin >= copy_begin + size);
     memcpy(copy, view.data + sizeof(uint32), size);
     dst = resource_arenas.persistent.context;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (size) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(size), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (size) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += size;
     resource_arenas.persistent.available -= size;
     resource_arenas.persistent.context = dst + size;
     /* The destination begins at the vertices field, after the file height */
-    if (dst & 3)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!(dst & 3));
     /* The original reload cannot change across the synchronous native copy */
     copy = (MODEL_BODY_HEADER *)copy_data;
     count = copy->face_count;
@@ -457,27 +407,20 @@ uint32 resource_load_character(const char *name, uint32 type, uint32 grp)
     relocate_offset(&copy->vertices_wire, dst);
     relocate_offset(&copy->faces_wire, dst);
     faces_wire = copy->faces_wire;
-    if (count > 0 && ((faces_wire & 3) || face_offset > size || (uint32)count > (size - face_offset) / sizeof(*face_recs)))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(count <= 0 || (!(faces_wire & 3) && face_offset <= size && (uint32)count <= (size - face_offset) / sizeof(*face_recs)));
     face_recs = count > 0 ? (MODEL_FACE_RECORD *)((uint8 *)copy + face_offset) : NULL;
     for (i = 0; (sint32)i < count; i++)
     {
         MODEL_FACE_RECORD *face = face_recs + i;
-        if (grp >= TEXTURE_GROUP_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(grp < TEXTURE_GROUP_COUNT);
         sint32 tex_grp = tex_grps[grp].first_tex;
         sint32 offset = (sint16)face->tex_offset / 12;
         sint32 idx = tex_grp + offset;
-        if (idx < 0 || idx >= TEXTURE_MAP_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(idx >= 0 && idx < TEXTURE_MAP_COUNT);
         face->tex_offset = 12 * tex_map[idx];
     }
     /* TODO: Investigate face data aliasing the relocated mesh prefix before supporting it */
-    if (copy->vertices_wire != dst + vertex_offset || copy->faces_wire != faces_wire || copy->face_count != count)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Character mesh header changed during face relocation: %s type %u destination %08X vertices %u faces %u count %d stage %u tick %u\n", name, type, dst, vertex_offset, face_offset, count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(copy->vertices_wire == dst + vertex_offset && copy->faces_wire == faces_wire && copy->face_count == count);
     model_refs[type].byte_len = size;
     model_refs[type].header = copy;
     model_refs[type].vertices = (SVECTOR *)((uint8 *)copy + vertex_offset);
@@ -575,8 +518,7 @@ uint32 resource_load_animations(const char *name, sint32 type)
         table = ANIMATION_BANK_SHARED8;
     else
     {
-        if ((uint32)type >= ANIMATION_TYPE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
         table = animation_type_banks[type];
     }
     view = resource_find(name);
@@ -588,15 +530,16 @@ uint32 resource_load_animations(const char *name, sint32 type)
         const ANIMATION_FILE_ENTRY *rec;
         size_t len;
         uint32 step;
-        if (!remaining)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(remaining);
         if (!*cursor)
             break;
-        if (remaining < sizeof(ANIMATION_FILE_ENTRY) || ((uintptr_t)cursor & 3) || !memchr(cursor, 0, remaining))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+#if defined(_DEBUG)
+        XASSERT(remaining >= sizeof(ANIMATION_FILE_ENTRY) && !((uintptr_t)cursor & 3));
+        const void *name_end = memchr(cursor, 0, remaining);
+        XASSERT(name_end);
+#endif
         rec = (const ANIMATION_FILE_ENTRY *)cursor;
-        if (rec->size < sizeof(uint32) || rec->size > remaining - 8)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(rec->size >= sizeof(uint32) && rec->size <= remaining - 8);
         len = strlen((const char *)cursor);
         if (len > 8)
             len = 8;
@@ -608,13 +551,12 @@ uint32 resource_load_animations(const char *name, sint32 type)
                 if (table == ANIMATION_BANK_NONE)
                 {
                     /* TODO: Resolve a missing animation bank after the full CDB playthrough */
-                    DIAGNOSTIC(fprintf(stderr, "Animation load has no bank: archive %s type %d entry %.*s animation %u stage %u tick %u\n", name, type, 8, rec->name, (uint32)def->idx, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+                    XASSERT(0);
                 }
                 else
                 {
-                    if (table >= ANIMATION_BANK_COUNT)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(table < ANIMATION_BANK_COUNT);
                     uintptr_t data = (uintptr_t)rec->data, base = (uintptr_t)resource_storage.data;
                     uint32 in_arena = data >= base && data - base < RESOURCE_STORAGE_CAPACITY;
                     uint32 capacity = in_arena ? RESOURCE_STORAGE_CAPACITY - (uint32)(data - base) : view.storage_len - (uint32)(rec->data - view.storage);
@@ -623,11 +565,7 @@ uint32 resource_load_animations(const char *name, sint32 type)
                     {
                         uint32 context = p + 12, offset = context & 0x1fffffff, seg = context & 0xe0000000;
                         /* TODO: Investigate a serialized identity that disagrees with its actual native stream */
-                        if ((seg && seg != 0x80000000 && seg != 0xa0000000) || offset < RESOURCE_STORAGE_ORIGIN || data - base != offset - RESOURCE_STORAGE_ORIGIN)
-                        {
-                            DIAGNOSTIC(fprintf(stderr, "Animation identity disagrees with native stream: archive %s type %d animation %u context %08X stage %u tick %u\n", name, type, (uint32)def->idx, context, game_session.stage, game_session.tick));
-                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                        }
+                        XASSERT((!seg || seg == 0x80000000 || seg == 0xa0000000) && offset >= RESOURCE_STORAGE_ORIGIN && data - base == offset - RESOURCE_STORAGE_ORIGIN);
                         domain = seg == 0x80000000 ? ANIMATION_STREAM_CACHED : seg == 0xa0000000 ? ANIMATION_STREAM_UNCACHED : ANIMATION_STREAM_PHYSICAL;
                     }
                     ANIMATION_STREAM stream = {(const ANIMATION_STREAM_HEADER *)rec->data, capacity, domain};
@@ -637,8 +575,7 @@ uint32 resource_load_animations(const char *name, sint32 type)
             }
         }
         /* Reload the record size after all binding writes, as in the original */
-        if (rec->size < sizeof(uint32) || rec->size > remaining - 8)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(rec->size >= sizeof(uint32) && rec->size <= remaining - 8);
         step = rec->size + 8;
         p += step;
         cursor += step;
@@ -666,11 +603,7 @@ uint32 resource_load_frontend_models(void)
     uint32 i, result = 0;
     resource_load(66, resource_arenas.persistent.context, NULL, 0, NULL, &resource_arenas.persistent);
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (resource_io.file_size) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(resource_io.file_size), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (resource_io.file_size) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += resource_io.file_size;
     resource_arenas.persistent.available -= resource_io.file_size;
     resource_arenas.persistent.context = resource_arenas.persistent.context + resource_io.file_size;
@@ -688,11 +621,7 @@ uint32 resource_copy_block(const uint8 *src, uint8 *dst)
 {
     uint32 offset, idx, words[4];
     /* TODO: Investigate invalid native copy pointers without substituting a buffer */
-    if (!src || !dst)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid fixed resource copy src %p dst %p stage %u tick %u\n", (const void *)src, (void *)dst, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(src && dst);
     for (offset = 0; offset < 512; offset += 16)
     {
         for (idx = 0; idx < 4; ++idx)
@@ -709,11 +638,7 @@ GDB_CALL uint32 resource_copy_words(uint8 *dst, const uint8 *src, uint32 count)
     FUNCTION_MARKER(0x80011F50, "GAME.EXE");
     uint32 result;
     /* TODO: Investigate counts0/1 before the original do-while countdown underflows */
-    if (!src || !dst || count < 2)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid resource word copy src %p dst %p halfwords %u stage %u tick %u\n", (const void *)src, (void *)dst, count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(src && dst && count >= 2);
     count >>= 1;
     do
     {
@@ -730,11 +655,7 @@ GDB_CALL sint32 model_vertex_dir(MODEL_REFERENCE mesh, uint32 v0, uint32 v1)
 {
     FUNCTION_MARKER(0x800163acu, "GAME.EXE");
     /* TODO: Investigate original vertex indices outside the retained resource */
-    if (!mesh.vertices || v0 >= mesh.vertex_byte_len / sizeof(*mesh.vertices) || v1 >= mesh.vertex_byte_len / sizeof(*mesh.vertices))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model direction vertices %p bytes %u indices %u/%u stage %u tick %u\n", (void *)mesh.vertices, mesh.vertex_byte_len, v0, v1, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(mesh.vertices && v0 < mesh.vertex_byte_len / sizeof(*mesh.vertices) && v1 < mesh.vertex_byte_len / sizeof(*mesh.vertices));
     sint32 x0 = mesh.vertices[v0].vx;
     sint32 z0 = mesh.vertices[v0].vz;
     sint32 x1 = mesh.vertices[v1].vx;

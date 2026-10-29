@@ -4,7 +4,7 @@
 
 GDB_CALL void stage_update(void)
 {
-    uint32 stage, phase, step, base, i, timer;
+    uint32 stage, phase, step, i, timer;
     COLLISION_REGION *region;
     sint32 actor;
     uint32 y;
@@ -55,9 +55,9 @@ GDB_CALL void stage_update(void)
                 }
                 else if (state == 1)
                 {
-                    uint32 limit = level_wave.remaining_enemies;
+                    sint32 limit = level_wave.remaining_enemies;
                     level_wave.paused = 0;
-                    if ((sint32)limit > 0)
+                    if (limit > 0)
                         lift.stop_phase = 2;
                 }
                 else if (state == 2 && (sint32)game_session.tick >= 61)
@@ -136,25 +136,17 @@ GDB_CALL void stage_update(void)
             lift.cycle = flags + 1;
             phase = lift.pos;
         }
-        y = ((uint32)((sint32)((phase * 3) << 9) / 4096) - 3600) << 15;
-        base = world_objects.linked_first;
+        y = (((sint32)((phase * 3) << 9) / 4096) - 3600u) << 15;
+        uint32 linked_first = world_objects.linked_first;
         for (i = 0; i < 4; i++, y += 0x03000000)
         {
-            uint32 idx = base + i;
+            uint32 idx = linked_first + i;
             /* TODO: Investigate a lift link outside the world object pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid lift object %u base %u pair %u stage %u tick %u\n", idx, base, i, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             world_objects.object[idx].pos.y.bits = y;
             idx += 4;
             /* TODO: Investigate a paired lift link outside the world object pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid paired lift object %u base %u pair %u stage %u tick %u\n", idx, base, i, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             world_objects.object[idx].pos.y.bits = y;
         }
         stage_animation_scroll_lift();
@@ -185,7 +177,7 @@ GDB_CALL void stage_update(void)
                 for (i = 0; i < 16; i++)
                 {
                     kind = (random_next() & 3) + 902;
-                    height = (0 - (random_next() & 255)) << 16;
+                    height = ((uint32)(-(sint64)(random_next() & 255))) << 16;
                     effect_spawn_debris_aimed(kind, side ? 0x03000000 : 0xfd000000, height, 0x03c00000, side ? 512 : 1536);
                 }
             sound_voice_play(19, 128, 3584);
@@ -201,7 +193,10 @@ GDB_CALL void stage_update(void)
     }
     if (stage == 6)
     {
-        uint32 result, tick, count, hits = 0;
+        uint32 result;
+        uint32 tick;
+        sint32 count;
+        uint32 hits = 0;
         tick = game_session.tick;
         result = (sint32)tick < 61;
         if (result)
@@ -216,18 +211,14 @@ GDB_CALL void stage_update(void)
         for (i = 0;; i++)
         {
             /* TODO: Investigate stage destruction scanning outside the world pool */
-            if (i >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid stage destruction object %u count %u stage %u tick %u\n", i, world_objects.count, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(i < WORLD_OBJECT_COUNT);
             MODEL_OBJECT *item = world_objects.object + i;
             if (item->kind - 200 < 2)
             {
                 sound_voice_play(19, 255, 6144);
                 disp_buffers.shake_ticks = 16;
                 disp_buffers.flash_ticks = 4;
-                for (base = 0; base < 4; base++)
+                for (uint32 debris_idx = 0; debris_idx < 4; debris_idx++)
                 {
                     uint32 kind = (random_next() & 3) + 902;
                     const FIXED_VEC3 *pos = &item->pos;
@@ -240,7 +231,7 @@ GDB_CALL void stage_update(void)
                     return;
             }
             count = world_objects.count;
-            result = (sint32)(i + 1) < (sint32)count;
+            result = (sint32)(i + 1) < count;
             if (!result)
                 return;
         }
@@ -275,13 +266,13 @@ GDB_CALL void stage_update(void)
                 region->col_kind = 0;
                 return;
             }
-            result = (uint32)players_past_z(-0xed80000);
+            result = players_past_z(-0xed80000);
             if (result)
             {
                 target = col_regions.named[2];
                 stage_animation.phase[0] = 1;
                 target->col_kind = 3;
-                result = (uint32)sound_voice_play(124, 192, 5632);
+                result = sound_voice_play(124, 192, 5632);
             }
             return;
         }
@@ -301,14 +292,14 @@ GDB_CALL void stage_update(void)
                 }
                 return;
             }
-            result = (uint32)players_before_x(phase == 2 ? 0x07800000 : (sint32)0xf3d00000);
+            result = players_before_x(phase == 2 ? 0x07800000 : (sint32)0xf3d00000);
             if (result)
             {
                 col_regions.named[phase == 2 ? 6 : 4]->col_kind = 3;
-                result = (uint32)sound_voice_play(124, 192, 5632);
+                result = sound_voice_play(124, 192, 5632);
                 if (phase == 4)
                 {
-                    result = (uint32)sound_voice_play(231, 112, 6144) + 1;
+                    result = sound_voice_play(231, 112, 6144) + 1u;
                     stage_audio_slots[0].voice_plus_one = result;
                 }
                 stage_animation.phase[0] = 1;
@@ -317,17 +308,17 @@ GDB_CALL void stage_update(void)
         }
         if (phase == 1)
         {
-            result = (uint32)players_past_z(-0x9d80000);
+            result = players_past_z(-0x9d80000);
             target_slot = &col_regions.named[1];
         }
         else if (phase == 3)
         {
-            result = (uint32)players_before_x(0x04200000);
+            result = players_before_x(0x04200000);
             target_slot = &col_regions.named[5];
         }
         else if (phase == 5)
         {
-            result = (uint32)players_before_x(-0xe880000);
+            result = players_before_x(-0xe880000);
             target_slot = &col_regions.named[3];
         }
         else
@@ -344,13 +335,13 @@ GDB_CALL void stage_update(void)
     }
     if (stage == 10)
     {
-        uint32 result = (uint32)(sint32)level_wave.paused;
+        uint32 result = level_wave.paused;
         if (result)
         {
             result = game_session.scene_phase;
             if (result == 1)
             {
-                result = (uint32)players_past_z(-0x19800000);
+                result = players_past_z(-0x19800000);
                 if (result)
                 {
                     level_wave.paused = 0;
@@ -362,7 +353,7 @@ GDB_CALL void stage_update(void)
     }
     if (stage == 11)
     {
-        uint32 result = (uint32)(sint32)level_wave.paused;
+        uint32 result = level_wave.paused;
         if (!result)
             return;
         result = game_session.scene_phase;
@@ -403,7 +394,7 @@ GDB_CALL void stage_update(void)
     }
     if (stage == 20)
     {
-        uint32 result = (uint32)(sint32)level_wave.paused;
+        uint32 result = level_wave.paused;
         if (result)
         {
             if (players_before_x(0x11d00000))
@@ -423,29 +414,25 @@ GDB_CALL void stage_update_world(void)
     uint32 i, object, result, tick = 0, stage, phase, prev_car = 0;
     const OBJECT_CALLBACK *target;
     sint32 count, timer;
-    timer = (sint32)disp_buffers.flash_ticks;
+    timer = disp_buffers.flash_ticks;
     if (timer > 0)
-        disp_buffers.flash_ticks = (uint32)timer - 1;
-    timer = (sint32)disp_buffers.shake_ticks;
+        disp_buffers.flash_ticks = timer - 1u;
+    timer = disp_buffers.shake_ticks;
     if (timer > 0)
-        disp_buffers.shake_ticks = (uint32)timer - 1;
-    count = (sint32)game_session.player_count;
+        disp_buffers.shake_ticks = timer - 1u;
+    count = game_session.player_count;
     if (count > 0)
         tick = game_session.tick;
     for (i = 0; (sint32)i < count; i++)
     {
         /* TODO: Investigate a player count beyond the native actor pool */
-        if (i >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid sequence player %u count %d stage %u tick %u\n", i, count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < ACTOR_COUNT);
         ACTOR_POSE *pose = &actor_poses[i];
         sint32 goal = 0, val;
         if (actor_animations[i].id == 69)
             goal = (sint32)((uint32)sin_table[((tick << 5) & 0xfe0) >> 1] << 16) >> 22;
         val = (sint32)(pose->sway_yaw << 20) >> 20;
-        pose->sway_yaw = ((uint32)val + (uint32)((goal - val) >> 3)) & 0xffe;
+        pose->sway_yaw = (val + (uint32)((goal - val) >> 3)) & 0xffe;
     }
     for (i = 0; i < 8; i++)
     {
@@ -497,24 +484,16 @@ GDB_CALL void stage_update_world(void)
             lift.sound_mark = 30;
         }
     }
-    count = (sint32)world_objects.count;
+    count = world_objects.count;
     for (i = 0; (sint32)i < count; i++)
     {
         object = 0x800b89f0 + 36u * i;
         /* TODO: Investigate world dispatch beyond the native object pool */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid sequence object %u count %d stage %u tick %u\n", i, count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         MODEL_OBJECT *item = world_objects.object + i;
         uint32 callback_type = item->kind;
         /* TODO: Investigate a world kind outside the native callback table */
-        if (callback_type >= MODEL_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid sequence callback kind %u object %u stage %u tick %u\n", callback_type, i, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(callback_type < MODEL_TYPE_COUNT);
         target = object_callbacks[OBJECT_CALLBACK_UPDATE][callback_type];
         /* Original 1D730 initializes S3=-1 before this callback loop. */
         if (target == &callback_projectile_update_ballistic)
@@ -532,7 +511,7 @@ GDB_CALL void stage_update_world(void)
             object_call(target, item, NULL);
             prev_car = target == &callback_scene_vehicle_update_traffic ? object : 0;
         }
-        count = (sint32)world_objects.count;
+        count = world_objects.count;
     }
     result = 1;
     if (level_wave.paused == 1 && game_session.stage == 1)
@@ -540,34 +519,29 @@ GDB_CALL void stage_update_world(void)
         result = game_session.scene_phase;
         if (result != 1)
             return;
-        result = (uint32)players_before_z(-0x1000000);
+        result = players_before_z(-0x1000000);
         if (!result)
             return;
         phase = game_session.scene_phase;
         count = world_objects.count - 1u;
         level_wave.paused = 0;
         game_session.scene_phase = phase + 1;
-        world_objects.count = (uint32)count;
+        world_objects.count = count;
         for (i = 0; (sint32)i < count; i++)
         {
             /* TODO: Investigate stage exit beyond the native object pool */
-            if (i >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid exit object %u count %d stage %u tick %u\n", i, count, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(i < WORLD_OBJECT_COUNT);
             MODEL_OBJECT *item = world_objects.object + i;
             if (item->kind == 124)
                 item->kind = 55;
         }
-        count = (sint32)col_regions.count;
+        count = col_regions.count;
         for (i = 0; (sint32)i < count; i++)
         {
             COLLISION_REGION *region;
-            if (i >= COLLISION_REGION_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(i < COLLISION_REGION_COUNT);
             region = col_regions.data + i;
-            result = (uint32)(sint32)region->col_kind;
+            result = region->col_kind;
             if (!result)
                 region->col_kind = 3;
         }
@@ -622,8 +596,7 @@ GDB_CALL sint32 game_update_frame_prefix(void)
     {
         camera_update_focus();
         uint32 stage = game_session.stage;
-        if (stage >= CAMERA_STAGE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(stage < CAMERA_STAGE_COUNT);
         camera_update_stage(camera_stage_refs[stage]);
     }
     if (pad_stream.mode == PAD_STREAM_PLAY)

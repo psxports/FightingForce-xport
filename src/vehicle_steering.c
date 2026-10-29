@@ -6,21 +6,13 @@ GDB_CALL sint32 vehicle_steering_draw(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032e20u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     sint32 result, angle = item->angles.yaw;
     if (angle)
         transform_yaw(angle);
     model_draw_faded(model_refs[item->kind], 0, 0);
     /* TODO: Investigate forklift payload access with a foreign native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid forklift owner %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_PHYSICS);
     transform_translate(0, (uint32)(sint32)item->physics.fork_height << 16, 0x00d00000);
     model_draw_faded(model_refs[393], 0, 0);
     result = sin_table[((game_session.tick << 5) & 0x7e0u) >> 1] >> 7;
@@ -36,15 +28,10 @@ static sint32 vehicle_steering_hit_obstacle(MODEL_OBJECT *model, uint32 x, uint3
     FIXED_VEC3 pos;
     if (hit < 0)
         return (uint32)hit << 1;
-    if ((uint32)hit >= COLLISION_REGION_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)hit < COLLISION_REGION_COUNT);
     WORLD_OBJECT_REFERENCE ref = col_regions.data[hit].object;
     /* TODO: Investigate a projectile contact with a corrupt world reference */
-    if (ref.present > 1 || (ref.present && ref.idx >= WORLD_OBJECT_COUNT))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid projectile contact region %d world %u present %u stage %u tick %u\n", hit, ref.idx, (uint32)ref.present, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(ref.present <= 1 && (!ref.present || ref.idx < WORLD_OBJECT_COUNT));
     target = ref.present ? world_objects.object + ref.idx : NULL;
     if (!target || target->kind != 367)
         return 367;
@@ -55,11 +42,7 @@ static sint32 vehicle_steering_hit_obstacle(MODEL_OBJECT *model, uint32 x, uint3
     /* 31C50 saves S3=x at entry-SP-12, consumed by 1F004 */
     projectile_contact_vals(hit, 0, pos.bits, x);
     /* TODO: Investigate forklift payload access with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid forklift owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     model->physics.reverse_ticks = 40;
     model->physics.reverse = 1;
     model->physics.speed = 15;
@@ -80,11 +63,7 @@ static sint32 vehicle_steering_hit_actor(sint32 idx, MODEL_OBJECT *model, sint32
         return 147;
     animation_start_held(idx, animation_type_banks[(uint32)actor_types[idx]], 147);
     /* TODO: Investigate forklift payload access with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid forklift owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     model->physics.reverse_ticks = 60;
     model->physics.reverse = 1;
     model->physics.speed = 10;
@@ -95,11 +74,7 @@ static sint32 vehicle_steering_probe(MODEL_OBJECT *model, uint32 dx, uint32 dz)
 {
     FUNCTION_MARKER(0x8003f670u, "GAME.EXE");
     /* TODO: Investigate forklift payload access with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid forklift owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     uint32 x = model->pos.x.bits + dx;
     uint32 z = model->pos.z.bits + dz;
     uint32 y;
@@ -116,29 +91,18 @@ GDB_CALL sint32 vehicle_steering_move(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f6ecu, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid moving model object %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     /* TODO: Investigate forklift payload access with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid forklift owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    uint32 angle = (uint32)(model->angles.yaw >> 5) & 2047u, dx, dz;
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
+    uint32 angle = (model->angles.yaw >> 5) & 2047u, dx, dz;
     sint32 speed = model->physics.speed, result;
-    dx = (uint32)speed * (uint32)(sint32)sin_table[angle];
-    dz = (uint32)speed * (uint32)(sint32)sin_table[(angle + 512u) & 2047u];
+    const uint32 speed_word = speed;
+    dx = speed_word * (sin_table[angle]);
+    dz = speed_word * (sin_table[(angle + 512u) & 2047u]);
     if (model->physics.reverse == 1)
     {
         /* TODO: Investigate vehicle or movement callbacks without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->pos.x.bits = model->pos.x.bits - dx;
         model->physics.reverse_ticks = (uint16)(model->physics.reverse_ticks - 1);
         result = (uint32)(uint16)model->physics.reverse_ticks << 16;
@@ -148,11 +112,7 @@ GDB_CALL sint32 vehicle_steering_move(MODEL_OBJECT *model)
         return result;
     }
     /* TODO: Investigate vehicle or movement callbacks without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     model->pos.x.bits = model->pos.x.bits + dx;
     model->pos.z.bits = model->pos.z.bits - dz;
     result = speed + 2;
@@ -165,11 +125,7 @@ static sint32 apply_turn(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f81cu, "GAME.EXE");
     /* TODO: Investigate forklift payload access with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid forklift owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     uint32 input = vehicle_steering.hit_flags, probe_idx, delta;
     sint32 error, result;
     if (input)
@@ -205,7 +161,7 @@ static sint32 apply_turn(MODEL_OBJECT *model)
         model->physics.speed = 30;
     }
     result = vehicle_steering.turn_error >> (vehicle_steering.hit_flags ? 4 : 6);
-    model->angles.yaw_bits = (uint16)((uint32)(uint16)model->angles.yaw + (uint32)result);
+    model->angles.yaw_bits = (uint16)(((uint16)model->angles.yaw) + (uint32)result);
     return result;
 }
 
@@ -219,64 +175,60 @@ GDB_CALL uint32 vehicle_steering_update(MODEL_OBJECT *model)
     vehicle_steering.target.x.bits = x;
     vehicle_steering.target.z.bits = z;
     /* TODO: Investigate vehicle steering without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid steering position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     distance = math_distance_approx((sint32)x >> 16, (sint32)z >> 16, model->pos.x.whole, model->pos.z.whole);
     vehicle_steering_move(model);
     if (distance >= 65)
     {
         probe = vehicle_steering.probe + VEHICLE_PROBE_NEAR_LEFT;
-        offset = 2u * ((uint32)((model->angles.yaw >> 5) - 64) & 2047);
-        dx = (uint32)(sint32)sin_table[offset >> 1] * 512;
-        dz = 0u - (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (offset >> 1)] * 512;
+        offset = 2u * (((model->angles.yaw >> 5) - 64) & 2047);
+        dx = (sin_table[offset >> 1]) * 512u;
+        dz = (uint32)(-(sint64)((sin_table[MATH_QUARTER_TURN + (offset >> 1)]) * 512u));
         probe->x.bits = dx;
         probe->z.bits = dz;
         if (model->physics.reverse == 1)
         {
-            probe->x.bits = 0u - dx;
-            probe->z.bits = 0u - dz;
+            probe->x.bits = (uint32)(-(sint64)(dx));
+            probe->z.bits = (uint32)(-(sint64)(dz));
         }
         if (vehicle_steering_probe(model, probe->x.bits, probe->z.bits))
             vehicle_steering.hit_flags |= VEHICLE_HIT_NEAR;
         probe = vehicle_steering.probe + VEHICLE_PROBE_NEAR_RIGHT;
-        offset = 2u * ((uint32)((model->angles.yaw >> 5) + 64) & 2047);
-        dx = (uint32)(sint32)sin_table[offset >> 1] * 512;
-        dz = 0u - (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (offset >> 1)] * 512;
+        offset = 2u * (((model->angles.yaw >> 5) + 64) & 2047);
+        dx = (sin_table[offset >> 1]) * 512u;
+        dz = (uint32)(-(sint64)((sin_table[MATH_QUARTER_TURN + (offset >> 1)]) * 512u));
         probe->x.bits = dx;
         probe->z.bits = dz;
         if (model->physics.reverse == 1)
         {
-            probe->x.bits = 0u - dx;
-            probe->z.bits = 0u - dz;
+            probe->x.bits = (uint32)(-(sint64)(dx));
+            probe->z.bits = (uint32)(-(sint64)(dz));
         }
         if (vehicle_steering_probe(model, probe->x.bits, probe->z.bits))
             vehicle_steering.hit_flags |= VEHICLE_HIT_NEAR;
         probe = vehicle_steering.probe + VEHICLE_PROBE_FAR_LEFT;
-        offset = 2u * ((uint32)((model->angles.yaw >> 5) - 112) & 2047);
-        dx = (uint32)(sint32)sin_table[offset >> 1] * 900;
-        dz = 0u - (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (offset >> 1)] * 900;
+        offset = 2u * (((model->angles.yaw >> 5) - 112) & 2047);
+        dx = (sin_table[offset >> 1]) * 900u;
+        dz = (uint32)(-(sint64)((sin_table[MATH_QUARTER_TURN + (offset >> 1)]) * 900u));
         probe->x.bits = dx;
         probe->z.bits = dz;
         if (model->physics.reverse == 1)
         {
-            probe->x.bits = 0u - dx;
-            probe->z.bits = 0u - dz;
+            probe->x.bits = (uint32)(-(sint64)(dx));
+            probe->z.bits = (uint32)(-(sint64)(dz));
         }
         if (vehicle_steering_probe(model, probe->x.bits, probe->z.bits))
             vehicle_steering.hit_flags |= VEHICLE_HIT_FAR_LEFT;
         probe = vehicle_steering.probe + VEHICLE_PROBE_FAR_RIGHT;
-        offset = 2u * ((uint32)((model->angles.yaw >> 5) + 112) & 2047);
-        dx = (uint32)(sint32)sin_table[offset >> 1] * 900;
-        dz = 0u - (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (offset >> 1)] * 900;
+        offset = 2u * (((model->angles.yaw >> 5) + 112) & 2047);
+        dx = (sin_table[offset >> 1]) * 900u;
+        dz = (uint32)(-(sint64)((sin_table[MATH_QUARTER_TURN + (offset >> 1)]) * 900u));
         probe->x.bits = dx;
         probe->z.bits = dz;
         if (model->physics.reverse == 1)
         {
-            probe->x.bits = 0u - dx;
-            probe->z.bits = 0u - dz;
+            probe->x.bits = (uint32)(-(sint64)(dx));
+            probe->z.bits = (uint32)(-(sint64)(dz));
         }
         if (vehicle_steering_probe(model, probe->x.bits, probe->z.bits))
             vehicle_steering.hit_flags |= VEHICLE_HIT_FAR_RIGHT;

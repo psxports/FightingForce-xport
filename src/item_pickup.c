@@ -10,47 +10,32 @@ GDB_CALL uint32 item_pickup_select(sint32 idx, sint32 radius)
     FUNCTION_MARKER(0x80017fe0, "GAME.EXE");
     uint32 type, i;
     /* TODO: Investigate original pickup actor inputs outside the native pool */
-    if (idx < 0 || idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid pickup actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0 && idx < ACTOR_COUNT);
     const FIXED_VEC3 *actor_pos = actor_positions + idx;
     sint32 actor_type = actor_types[idx];
     uint32 actor_x = actor_pos->x.bits;
     sint32 x = (sint32)actor_x >> 16;
     uint32 actor_z = actor_pos->z.bits;
     sint32 z = (sint32)actor_z >> 16;
-    sint32 left = actor_items[idx].slot[ACTOR_ITEM_LEFT];
+    uint32 left = actor_items[idx].slot[ACTOR_ITEM_LEFT];
     sint32 right = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     sint32 yaw = actor_orientation[idx].yaw;
     /* TODO: Investigate original pickup sine reads beyond the native table */
-    if (yaw < 0 || yaw >= MATH_SIN_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid pickup sine yaw %d actor %d stage %u tick %u\n", yaw, idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 fx = (sint32)(actor_x + 192u * (uint32)(sint32)sin_table[yaw]) >> 16;
+    XASSERT(yaw >= 0 && yaw < MATH_SIN_COUNT);
+    sint32 fx = (sint32)(actor_x + 192u * (sin_table[yaw])) >> 16;
     /* TODO: Investigate original pickup cosine reads beyond the native table */
-    if (yaw < 0 || yaw >= MATH_SIN_COUNT - MATH_QUARTER_TURN)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid pickup cosine yaw %d actor %d stage %u tick %u\n", yaw, idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 fz = (sint32)(actor_z - 192u * (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw]) >> 16;
-    sint32 sel = -1, limit;
+    XASSERT(yaw >= 0 && yaw < MATH_SIN_COUNT - MATH_QUARTER_TURN);
+    sint32 fz = (sint32)(actor_z - 192u * (sin_table[MATH_QUARTER_TURN + yaw])) >> 16;
+    uint32 sel = (uint32)(-1);
+    sint32 limit;
     for (i = 0; i < DYNAMIC_OBJECT_COUNT; i++)
     {
-        if (i == (uint32)left || i == (uint32)right)
+        if (i == left || i == (uint32)right)
             continue;
         if (game_session.player_count == 2)
         {
             /* TODO: Investigate pickup calls outside the two-player slot domain */
-            if (idx >= ITEM_PICKUP_PLAYER_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid pickup peer actor %d item %u stage %u tick %u\n", idx, i, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < ITEM_PICKUP_PLAYER_COUNT);
             if (i == (uint32)(sint32)actor_items[1 - idx].slot[ACTOR_ITEM_LEFT] || i == (uint32)(sint32)actor_items[1 - idx].slot[ACTOR_ITEM_RIGHT] || i == item_pickup.nearby[1 - idx])
                 continue;
         }
@@ -111,37 +96,27 @@ GDB_CALL uint32 item_pickup_select(sint32 idx, sint32 radius)
         }
     }
     /* TODO: Investigate original pickup selection writes beyond the player array */
-    if (idx >= ITEM_PICKUP_PLAYER_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid pickup selection actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    item_pickup.nearby[idx] = (uint32)sel;
-    return 4u * (uint32)idx;
+    XASSERT(idx < ITEM_PICKUP_PLAYER_COUNT);
+    item_pickup.nearby[idx] = sel;
+    return 4u * idx;
 }
 
 GDB_CALL void item_pickup_draw(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005d820, "GAME.EXE");
     /* TODO: Investigate an absent native dynamic draw receiver */
-    if (!item)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(item);
     uint32 type = item->kind, slot, sel;
     sint32 flags, timer;
     transform_push();
     object_transform_camera(item, NULL);
     /* TODO: Investigate a dynamic draw without its original native payload */
-    if ((type == 302 && item->payload_kind != MODEL_PAYLOAD_TRAIN) || (type == 896 && item->payload_kind != MODEL_PAYLOAD_SUSPENDED) || ((type == 125 || type == 126) && item->payload_kind != MODEL_PAYLOAD_PANEL) || ((type - 129u < 3u || type - 350u < 9u || type - 758u < 12u) && item->payload_kind != MODEL_PAYLOAD_SIDE_PANEL) || ((type - 575u < 2u || type - 862u < 5u || type == 869 || type - 881u < 5u) && item->payload_kind != MODEL_PAYLOAD_SPRITE) || (type - 679u < 4u && item->payload_kind != MODEL_PAYLOAD_BALLISTIC) || (type - 675u < 3u && item->payload_kind != MODEL_PAYLOAD_DRIFT) || ((type == 70 || type == 71 || type - 74u < 3u || type == 124 || type - 127u < 2u || type - 348u < 2u) && item->payload_kind != MODEL_PAYLOAD_SHAKE) || (type == 77 && item->payload_kind != MODEL_PAYLOAD_GATE_FALL) || (type - 72u < 2u && item->payload_kind != MODEL_PAYLOAD_GATE_FRAGMENT) || (type == 696 && item->payload_kind != MODEL_PAYLOAD_ROTATION) ||
-        (type - 473u < 3u && item->payload_kind != MODEL_PAYLOAD_BOUNCING_DROP) || ((type == 67 || type - 85u < 4u || type == 92 || type - 99u < 2u) && item->payload_kind != MODEL_PAYLOAD_BOUNCING_PART) || (type - 78u < 7u && item->payload_kind != MODEL_PAYLOAD_TRAFFIC) || (type == 776 && item->payload_kind != MODEL_PAYLOAD_TANK) || ((type == 17 || type - 62u < 3u || type == 66 || type == 90 || type - 94u < 3u || type - 108u < 3u || type - 720u < 3u || type == 739 || type == 731 || type == 204 || type == 693 || type == 405 || type == 137) && item->payload_kind != MODEL_PAYLOAD_OSCILLATION) || (type == 65 && item->payload_kind != MODEL_PAYLOAD_COMPANION) || (type == 433 && item->payload_kind != MODEL_PAYLOAD_LAB_TANK) ||
-        ((type - 295u < 7u || type == 326 || type == 367 || type - 371u < 12u || type - 409u < 24u || type - 608u < 6u || type - 642u < 5u || type == 649 || type - 655u < 2u || type - 672u < 3u || type - 718u < 2u || type == 737 || type == 748 || type - 786u < 12u || type - 804u < 8u) && item->payload_kind != MODEL_PAYLOAD_WOBBLE) || ((type - 587u < 10u || type == 69 || type == 105 || type == 724 || type == 448 || type == 717 || type - 269u < 2u || type == 392 || type == 359 || type == 695 || type - 708u < 3u || type == 408 || type - 572u < 3u || type - DYNAMIC_ITEM_TYPE_FIRST < DYNAMIC_ITEM_TYPE_COUNT || type == 713 || type == 715 || type - 735u < 2u || type - 784u < 2u || type - 828u < 4u) && item->payload_kind != MODEL_PAYLOAD_PHYSICS) || (type - 781u < 2u && item->payload_kind != MODEL_PAYLOAD_ARMY_TRUCK) || (type - 460u < 4u && item->payload_kind != MODEL_PAYLOAD_AIR_BIKE) ||
-        ((type == 160 || type == 166 || type == 168 || type == 740 || type == 749 || type - 175u < 8u || type == 754) && item->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE) || ((type == 341 || type == 146) && item->payload_kind != MODEL_PAYLOAD_SCENE_HELICOPTER) || (type == 687 && item->payload_kind != MODEL_PAYLOAD_COMBAT_HELICOPTER) || (type == 268 && item->payload_kind != MODEL_PAYLOAD_PATROL_HELICOPTER))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid dynamic draw payload %p kind %u payload %u stage %u tick %u\n", (void *)item, type, item->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((type != 302 || item->payload_kind == MODEL_PAYLOAD_TRAIN) && (type != 896 || item->payload_kind == MODEL_PAYLOAD_SUSPENDED) && (type != 125 && type != 126 || item->payload_kind == MODEL_PAYLOAD_PANEL) && (type - 129u >= 3u && type - 350u >= 9u && type - 758u >= 12u || item->payload_kind == MODEL_PAYLOAD_SIDE_PANEL) && (type - 575u >= 2u && type - 862u >= 5u && type != 869 && type - 881u >= 5u || item->payload_kind == MODEL_PAYLOAD_SPRITE) && (type - 679u >= 4u || item->payload_kind == MODEL_PAYLOAD_BALLISTIC) && (type - 675u >= 3u || item->payload_kind == MODEL_PAYLOAD_DRIFT) && (type != 70 && type != 71 && type - 74u >= 3u && type != 124 && type - 127u >= 2u && type - 348u >= 2u || item->payload_kind == MODEL_PAYLOAD_SHAKE) && (type != 77 || item->payload_kind == MODEL_PAYLOAD_GATE_FALL) && (type - 72u >= 2u || item->payload_kind == MODEL_PAYLOAD_GATE_FRAGMENT) && (type != 696 || item->payload_kind == MODEL_PAYLOAD_ROTATION) &&
+            (type - 473u >= 3u || item->payload_kind == MODEL_PAYLOAD_BOUNCING_DROP) && (type != 67 && type - 85u >= 4u && type != 92 && type - 99u >= 2u || item->payload_kind == MODEL_PAYLOAD_BOUNCING_PART) && (type - 78u >= 7u || item->payload_kind == MODEL_PAYLOAD_TRAFFIC) && (type != 776 || item->payload_kind == MODEL_PAYLOAD_TANK) && (type != 17 && type - 62u >= 3u && type != 66 && type != 90 && type - 94u >= 3u && type - 108u >= 3u && type - 720u >= 3u && type != 739 && type != 731 && type != 204 && type != 693 && type != 405 && type != 137 || item->payload_kind == MODEL_PAYLOAD_OSCILLATION) && (type != 65 || item->payload_kind == MODEL_PAYLOAD_COMPANION) && (type != 433 || item->payload_kind == MODEL_PAYLOAD_LAB_TANK) &&
+            (type - 295u >= 7u && type != 326 && type != 367 && type - 371u >= 12u && type - 409u >= 24u && type - 608u >= 6u && type - 642u >= 5u && type != 649 && type - 655u >= 2u && type - 672u >= 3u && type - 718u >= 2u && type != 737 && type != 748 && type - 786u >= 12u && type - 804u >= 8u || item->payload_kind == MODEL_PAYLOAD_WOBBLE) && (type - 587u >= 10u && type != 69 && type != 105 && type != 724 && type != 448 && type != 717 && type - 269u >= 2u && type != 392 && type != 359 && type != 695 && type - 708u >= 3u && type != 408 && type - 572u >= 3u && type - DYNAMIC_ITEM_TYPE_FIRST >= DYNAMIC_ITEM_TYPE_COUNT && type != 713 && type != 715 && type - 735u >= 2u && type - 784u >= 2u && type - 828u >= 4u || item->payload_kind == MODEL_PAYLOAD_PHYSICS) && (type - 781u >= 2u || item->payload_kind == MODEL_PAYLOAD_ARMY_TRUCK) && (type - 460u >= 4u || item->payload_kind == MODEL_PAYLOAD_AIR_BIKE) &&
+            (type != 160 && type != 166 && type != 168 && type != 740 && type != 749 && type - 175u >= 8u && type != 754 || item->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE) && (type != 341 && type != 146 || item->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER) && (type != 687 || item->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER) && (type != 268 || item->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER));
     /* TODO: Investigate dynamic draw payload tags outside the native owner catalog */
-    if (item->payload_kind > MODEL_PAYLOAD_SUSPENDED)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(item->payload_kind <= MODEL_PAYLOAD_SUSPENDED);
     /* Keep the signed flag word of each original payload variant */
     if (item->payload_kind == MODEL_PAYLOAD_UNMIGRATED)
         flags = item->pending_motion.flags;
@@ -232,15 +207,13 @@ GDB_CALL void item_pickup_draw(MODEL_OBJECT *item)
             transform_translate(0, 2621440, -2097152);
         slot = item_pickup.nearby[0];
         /* TODO: Investigate pickup selections outside the native dynamic pool */
-        if (slot != 0xffffffffu && slot >= DYNAMIC_OBJECT_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(slot == 0xffffffffu || slot < DYNAMIC_OBJECT_COUNT);
         sel = slot != 0xffffffffu && dynamic_objects + slot == item;
         if (!sel)
         {
             slot = item_pickup.nearby[1];
             /* TODO: Investigate pickup selections outside the native dynamic pool */
-            if (slot != 0xffffffffu && slot >= DYNAMIC_OBJECT_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(slot == 0xffffffffu || slot < DYNAMIC_OBJECT_COUNT);
             sel = slot != 0xffffffffu && dynamic_objects + slot == item;
         }
         if (sel && !(sint8)game_pause_flags && !(hud.tick & 31))
@@ -251,14 +224,13 @@ GDB_CALL void item_pickup_draw(MODEL_OBJECT *item)
     {
         model_draw_static(model_refs[type], 0, 0);
         /* TODO: Investigate a timed attachment draw with a foreign native owner */
-        if (type == 683 && item->payload_kind != MODEL_PAYLOAD_UNMIGRATED)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(type != 683 || item->payload_kind == MODEL_PAYLOAD_UNMIGRATED);
         if (type == 683 && (timer = item->pending_motion.render_ticks) > 0)
         {
             item->pending_motion.render_ticks = (uint16)(timer - 1);
             transform_roll(8192);
             transform_translate(0, 0, 9437184);
-            model_draw_static(model_refs[685 + ((uint32)(sint32)item->pending_motion.render_ticks)], 0, 0);
+            model_draw_static(model_refs[685u + (item->pending_motion.render_ticks)], 0, 0);
         }
     }
     transform_pop();
@@ -273,11 +245,7 @@ GDB_CALL uint32 item_draw_explosive_countdown(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002bdd0u, "GAME.EXE");
     PROJECTION_POINT pos;
     /* TODO: Investigate explosive callbacks without a compatible native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid explosive owner object %p callback %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_PHYSICS);
     sint32 timer = item->physics.life;
     sint32 grp = (timer + 29) / 30;
     /* Groups 2 and above take the unconditional path */
@@ -285,10 +253,10 @@ GDB_CALL uint32 item_draw_explosive_countdown(const MODEL_OBJECT *item)
         return 2;
     proj_local(0, 0, 0, &pos);
     if (pos.depth >= 65)
-        pos.depth = (sint32)((uint32)pos.depth - 64);
+        pos.depth = pos.depth - 64u;
     if (pos.status)
         return (uint32)grp << 1;
-    return spr_draw(&pos, tex_map[(121 + ((uint32)grp))]);
+    return spr_draw(&pos, tex_map[(121u + (grp))]);
 }
 
 GDB_CALL void item_draw_explosive(const MODEL_OBJECT *item)
@@ -296,19 +264,11 @@ GDB_CALL void item_draw_explosive(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8005dad4u, "GAME.EXE");
     PROJECTION_POINT pos;
     /* TODO: Investigate a dynamic callback outside its native pool */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid dynamic model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_push();
     object_transform_camera(item, NULL);
     /* TODO: Investigate explosive callbacks without a compatible native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid explosive owner object %p callback %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_PHYSICS);
     model_draw_static(model_refs[item->kind], 0, 0);
     if ((item->physics.life) > 0)
     {
@@ -335,15 +295,11 @@ GDB_CALL sint32 item_pickup_find_for_npc(sint32 x, sint32 z)
     for (i = 0; i < DYNAMIC_OBJECT_COUNT; i++)
     {
         const MODEL_OBJECT *model = dynamic_objects + i;
-        kind = (sint32)model->kind;
+        kind = model->kind;
         if (kind < 522 || kind >= 563)
             continue;
         /* TODO: Investigate an NPC pickup candidate with a foreign native owner */
-        if (model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid NPC pickup owner slot %u kind %u owner %u stage %u tick %u\n", i, model->kind, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model->payload_kind == MODEL_PAYLOAD_PHYSICS);
         if (!model->physics.speed && model->pos.y.bits != 1 && math_distance_approx(x, z, model->pos.x.whole, model->pos.z.whole) < 64)
             return i;
     }

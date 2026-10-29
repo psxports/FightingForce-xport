@@ -29,11 +29,7 @@ void movie_play_intro(void)
         sint32 result = movie_play(paths[i], video_y[i]);
         if (xport_isquit())
             return;
-        if (result < 0)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Fullscreen movie failed: %s\n", paths[i]));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(result >= 0);
         if (result != 1)
             return;
     }

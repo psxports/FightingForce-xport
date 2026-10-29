@@ -2,7 +2,7 @@ PROJECT_ROOT := $(abspath ../../..)
 SHORT_NAME := FF
 FULL_NAME := Fighting Force
 CONFIG ?= Release
-APP_SOURCES := $(wildcard $(PROJECT_ROOT)/src/*.c) $(wildcard $(PROJECT_ROOT)/src/audit/*.c)
+APP_SOURCES := $(wildcard $(PROJECT_ROOT)/src/*.c)
 APP_DEFINES := -DWND_TITLE='"Fighting Force (xport)"' -DWND_WIDTH=960 -DWND_HEIGHT=720 -DFIELD_RATE=60
 WEB_EXCLUDE_FILES := DATA/LOGO.FMV DATA/FFNEW7.FMV
 

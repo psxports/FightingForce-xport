@@ -4,13 +4,9 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80043978u, "GAME.EXE");
     /* TODO: Investigate a scene vehicle with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene vehicle owner in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 start = model->scene_vehicle.start_tick;
-    sint32 age = (sint32)(game_session.tick - (uint32)start), pitch, count, voice, wave;
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
+    uint32 start = model->scene_vehicle.start_tick;
+    sint32 age = game_session.tick - start, pitch, count, voice, wave;
     COLLISION_REGION *region;
     uint32 volume, pan, angle, multiplier, target_idx, scan_count, random, x, y, z;
     intptr result = 0;
@@ -19,17 +15,13 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
     if (model->scene_vehicle.voice_plus_one[1] > 0)
     {
         /* TODO: Investigate a scene callback without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid impact or suspended position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         sound_spatial(&model->pos, &volume, &pan);
         if (age > 0)
         {
             sound_voice_pitch(model->scene_vehicle.voice_plus_one[1] - 1, ((uint32)(age >> 3) << 3) + 6400);
             if (age < 65)
-                volume = (sint32)((uint32)age * volume) >> 6;
+                volume = (sint32)(age * volume) >> 6;
         }
         volume = sound_volume_adjust(volume, -80);
         sound_voice_pan(model->scene_vehicle.voice_plus_one[1] - 1, volume, pan);
@@ -48,11 +40,7 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
     if (age < 90)
     {
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         angle = model->angles.yaw_bits;
         if (age < 40)
         {
@@ -68,16 +56,12 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
         }
         wave = sin_table[angle >> 1];
         /* TODO: Investigate a scene callback without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid impact or suspended position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         x = model->pos.x.bits;
-        model->pos.x.bits = x - (uint32)wave * multiplier;
+        model->pos.x.bits = x - wave * multiplier;
         wave = sin_table[MATH_QUARTER_TURN + (angle >> 1)];
         z = model->pos.z.bits;
-        model->pos.z.bits = z + (uint32)wave * multiplier;
+        model->pos.z.bits = z + wave * multiplier;
         if (age == 69)
             model->scene_vehicle.voice_plus_one[0] = (uint16)(sound_voice_play(131, 255, 5632) + 1);
         if (age >= 70 && (age & 1))
@@ -125,11 +109,7 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
             while (target_idx < scan_count)
             {
                 /* TODO: Investigate an impact search exceeding the world object pool */
-                if (target_idx >= WORLD_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid impact world search slot %u count %u object %p age %d stage %u tick %u\n", target_idx, world_objects.count, (void *)model, age, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(target_idx < WORLD_OBJECT_COUNT);
                 if (world_objects.object[target_idx].kind == 162)
                     break;
                 target_idx++;
@@ -191,47 +171,27 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
         }
         pitch = -((sint32)((uint32)sin_table[((uint32)(age - 90) << 8) >> 1] << 16) >> 20);
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->angles.pitch_bits = (uint16)pitch;
         /* TODO: Investigate a scene callback without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid impact or suspended position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->pos.y.bits = (uint32)(pitch >> 6) << 15;
     }
     else if (age < 107)
     {
         pitch = -((sint32)((uint32)sin_table[((uint32)(age - 98) << 8) >> 1] << 16) >> 21);
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->angles.pitch_bits = (uint16)pitch;
         /* TODO: Investigate a scene callback without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid impact or suspended position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->pos.y.bits = (uint32)(pitch >> 6) << 14;
     }
     else
     {
         random = random_next() & 31;
         /* TODO: Investigate a scene callback without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid impact or suspended position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         x = (random << 16) + model->pos.x.bits;
         random = random_next();
         z = model->pos.z.bits;
@@ -247,28 +207,19 @@ GDB_CALL intptr scene_vehicle_update_taxi(MODEL_OBJECT *model)
     }
 region_update:
     region = col_regions.data;
-    count = (sint32)col_regions.count;
+    count = col_regions.count;
     if (count > 0)
-        count = (sint32)col_regions.count;
+        count = col_regions.count;
     for (i = 0; i < count; ++i, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx && region->shape == 1)
             break;
     }
     /* TODO: Investigate the original collision call without a matching region */
-    if (i >= count)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing taxi collision region object %p count %d age %d stage %u tick %u\n", (void *)model, count, age, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(i < count);
     return actors_collide_vehicle(region, model);
 }
 
@@ -276,12 +227,13 @@ GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80044334u, "GAME.EXE");
     /* TODO: Investigate a scene vehicle with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene vehicle owner in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 start = model->scene_vehicle.start_tick, elapsed = (sint32)(game_session.tick - (uint32)start), count, i, voice, wave;
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
+    sint32 start = model->scene_vehicle.start_tick;
+    sint32 elapsed = game_session.tick - start;
+    sint32 count;
+    sint32 i;
+    sint32 voice;
+    uint32 wave;
     COLLISION_REGION *region;
     uint32 angle, offset, speed, x, y, z;
     FIXED_VEC3 point;
@@ -313,19 +265,11 @@ GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
                         break;
                     }
             /* TODO: Investigate scene publications outside both native object pools */
-            if (!ref.pool)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scene object publication %p\n", (void *)model));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(ref.pool);
             level_script_scene.object = ref;
         }
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         offset = 2 * (model->angles.yaw_bits >> 5);
         speed = 88;
     }
@@ -334,11 +278,7 @@ GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
         if (elapsed == 50)
             sound_voice_play(233, 120, 7168);
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         angle = model->angles.yaw_bits - 512;
         model->angles.yaw_bits = (uint16)angle;
         offset = (angle >> 4) & 0xffe;
@@ -349,15 +289,11 @@ GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
         if (elapsed == 65)
             sound_voice_play(233, 162, 7168);
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         angle = model->angles.yaw_bits - 256;
         model->angles.yaw_bits = (uint16)angle;
         offset = (angle >> 4) & 0xffe;
-        speed = 160u - 2u * ((uint32)elapsed - 60u);
+        speed = 160u - 2u * (elapsed - 60u);
     }
     else
     {
@@ -371,16 +307,12 @@ GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
     }
     wave = sin_table[offset >> 1];
     /* TODO: Investigate a transport callback without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid transport position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.bits;
-    model->pos.x.bits = x - speed * (uint32)wave;
+    model->pos.x.bits = x - speed * wave;
     wave = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
     z = model->pos.z.bits;
-    model->pos.z.bits = z + speed * (uint32)wave;
+    model->pos.z.bits = z + speed * wave;
     if (elapsed >= 60)
     {
         if (elapsed == 85)
@@ -411,19 +343,14 @@ GDB_CALL uint32 scene_vehicle_update_truck(MODEL_OBJECT *model)
     }
 region_update:
     region = col_regions.data;
-    count = (sint32)col_regions.count;
+    count = col_regions.count;
     if (count <= 0)
         return count;
     for (i = 0; i < count; ++i, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }
@@ -436,17 +363,9 @@ GDB_CALL sint32 scene_vehicle_update_accelerating_truck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80043128u, "GAME.EXE");
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     /* TODO: Investigate scripted motion with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
     uint32 volume, pan;
     if (!model->scene_vehicle.motion_active)
     {
@@ -478,13 +397,10 @@ GDB_CALL uint32 scene_vehicle_update_traffic(MODEL_OBJECT *model)
     FUNCTION_MARKER(0x8004471cu, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
     uint32 angle, pos, i = 0;
-    sint32 count, wave;
+    sint32 count;
+    uint32 wave;
     /* TODO: Investigate a scene-traffic callback with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid transport position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
     if (model->pos.x.bits + 0x18000000u > 0x30000000u)
     {
         model->angles.yaw_bits = model->angles.yaw_bits ^ 0x8000;
@@ -493,32 +409,23 @@ GDB_CALL uint32 scene_vehicle_update_traffic(MODEL_OBJECT *model)
     angle = 2 * (model->angles.yaw_bits >> 5);
     wave = sin_table[angle >> 1];
     pos = model->pos.x.bits;
-    model->pos.x.bits = pos - 192 * (uint32)wave;
+    model->pos.x.bits = pos - 192 * wave;
     wave = sin_table[MATH_QUARTER_TURN + (angle >> 1)];
     pos = model->pos.z.bits;
-    model->pos.z.bits = pos + 192 * (uint32)wave;
-    count = (sint32)col_regions.count;
+    model->pos.z.bits = pos + 192 * wave;
+    count = col_regions.count;
     while ((sint32)i < count)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
         i++;
         ++region;
     }
     /* TODO: Investigate the original traffic collision call without a matching region */
-    if ((sint32)i >= count || i >= COLLISION_REGION_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing scene traffic region object %p slot %u count %d stage %u tick %u\n", (void *)model, i, count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((sint32)i < count && i < COLLISION_REGION_COUNT);
     return actors_collide_vehicle(region, model);
 }
 
@@ -537,31 +444,22 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
     FIXED_VEC3 pos;
     uint32 volume, pan, quiet, step, z;
     sint32 voice;
-    sint32 tick, count = (sint32)col_regions.count, i;
+    sint32 tick, count = col_regions.count, i;
     for (i = 0; i < count; ++i, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }
-    tick = (sint32)game_session.tick;
+    tick = game_session.tick;
     if (tick == 1)
     {
         stage_audio_slots[0].voice = sound_voice_play(147, 0, 6144);
         stage_audio_slots[2].voice = sound_voice_play(132, 0, 6400);
         /* TODO: Investigate emitter operands outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         pos.x.bits = model->pos.x.bits;
         pos.y.bits = model->pos.y.bits;
         pos.z.bits = 0x01000000;
@@ -582,11 +480,7 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
                 uint32 random, x, y, z;
                 random = random_next();
                 /* TODO: Investigate exhaust emission without a native scene-car position */
-                if (!model)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid scene car exhaust object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(model);
                 x = model->pos.x.bits - SCENE_CAR_IDLE_EXHAUST_WIDTH - ((random & 63u) << 16);
                 z = model->pos.z.bits + SCENE_CAR_EXHAUST_Z;
                 y = model->pos.y.bits;
@@ -602,11 +496,7 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
             if ((sint32)game_session.tick >= 111)
             {
                 /* TODO: Investigate emitter operands outside both native object pools */
-                if (!model)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(model);
                 sound_spatial(&model->pos, &volume, &pan);
                 sound_voice_pan(stage_audio_slots[1].voice, volume, pan);
             }
@@ -614,11 +504,7 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
         else if ((sint32)game_session.tick < 200)
         {
             /* TODO: Investigate emitter operands outside both native object pools */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             sound_spatial(&model->pos, &volume, &pan);
             sound_voice_pan(stage_audio_slots[1].voice, volume, pan);
             if (game_session.tick & 2)
@@ -626,11 +512,7 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
                 uint32 random, x, y, z;
                 random = random_next();
                 /* TODO: Investigate exhaust emission without a native scene-car position */
-                if (!model)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid scene car exhaust object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(model);
                 x = model->pos.x.bits - SCENE_CAR_MOVING_EXHAUST_WIDTH - ((random & 63u) << 16);
                 z = model->pos.z.bits + SCENE_CAR_EXHAUST_Z;
                 y = model->pos.y.bits;
@@ -642,12 +524,8 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
                 effect_spawn_timed(871, x, y, z, 0, 0, 0);
             }
             /* TODO: Investigate a departure step with a foreign native owner */
-            if (model->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scene car payload object %p kind %u owner %u stage %u tick %u\n", (void *)model, model->kind, model->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
-            step = (uint32)(sint32)model->scene_vehicle.departure_step * 196608;
+            XASSERT(model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
+            step = (model->scene_vehicle.departure_step) * 196608u;
             z = model->pos.z.bits;
             model->pos.z.bits = z - step;
             model->scene_vehicle.departure_step = (uint16)((uint16)model->scene_vehicle.departure_step + 1);
@@ -656,29 +534,17 @@ GDB_CALL uint32 scene_vehicle_start_departure(MODEL_OBJECT *model)
         {
             sound_voice_stop(stage_audio_slots[1].voice);
             /* TODO: Investigate common fields outside both native object pools */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid emitter model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             model->kind = 749;
             model->pos.z.bits = 0x01000000;
             /* TODO: Investigate the original scene-car collision access without a match */
-            if ((sint32)i >= (sint32)count || (uint32)i >= COLLISION_REGION_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Missing scene car region object %p slot %u count %d stage %u tick %u\n", (void *)model, (uint32)i, (sint32)count, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT((sint32)i < (sint32)count && (uint32)i < COLLISION_REGION_COUNT);
             col_region_configure(region, model->kind);
             col_regions.count = col_regions.count - 1;
         }
     }
     /* TODO: Investigate the original scene-car collision access without a match */
-    if ((sint32)i >= (sint32)count || (uint32)i >= COLLISION_REGION_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing scene car region object %p slot %u count %d stage %u tick %u\n", (void *)model, (uint32)i, (sint32)count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((sint32)i < (sint32)count && (uint32)i < COLLISION_REGION_COUNT);
     return actors_collide_vehicle(region, model);
 }
 
@@ -691,30 +557,17 @@ GDB_CALL sint32 scene_vehicle_update_departure(MODEL_OBJECT *model)
     count = col_regions.count;
     for (i = 0; (sint32)i < (sint32)count; i++, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }
     /* TODO: Investigate the original scene-car collision access without a match */
-    if ((sint32)i >= (sint32)count || (uint32)i >= COLLISION_REGION_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing scene car region object %p slot %u count %d stage %u tick %u\n", (void *)model, (uint32)i, (sint32)count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((sint32)i < (sint32)count && (uint32)i < COLLISION_REGION_COUNT);
     actors_collide_vehicle(region, model);
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     z = model->pos.z.bits - 0x800000u;
     model->pos.z.bits = z;
     if (z == 0xc7000000u)
@@ -736,23 +589,14 @@ GDB_CALL sint32 scene_vehicle_update_departure(MODEL_OBJECT *model)
     count = col_regions.count;
     for (i = 0; (sint32)i < (sint32)count; i++, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }
     /* TODO: Investigate the original scene-car collision access without a match */
-    if ((sint32)i >= (sint32)count || (uint32)i >= COLLISION_REGION_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing scene car region object %p slot %u count %d stage %u tick %u\n", (void *)model, (uint32)i, (sint32)count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((sint32)i < (sint32)count && (uint32)i < COLLISION_REGION_COUNT);
     actors_collide_vehicle(region, model);
     if ((sint32)model->pos.z.bits < (sint32)0xbb000000u)
     {
@@ -767,28 +611,20 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80044844u, "GAME.EXE");
     /* TODO: Investigate a scene vehicle with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene vehicle owner in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 start = model->scene_vehicle.start_tick;
-    sint32 elapsed = (sint32)(game_session.tick - (uint32)start), count, i, bounce, voice, wave;
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
+    uint32 start = model->scene_vehicle.start_tick;
+    sint32 elapsed = game_session.tick - start, count, i, bounce, voice, wave;
     COLLISION_REGION *region;
     uint32 volume, pan, angle, offset, speed, world_idx, scan_count, pos;
     if (model->scene_vehicle.voice_plus_one[1])
     {
         /* TODO: Investigate a vehicle exit scene without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle exit position %p elapsed %d stage %u tick %u\n", (void *)model, elapsed, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         sound_spatial(&model->pos, &volume, &pan);
-        volume = sound_volume_adjust(volume, (uint32)elapsed - 130u);
+        volume = sound_volume_adjust(volume, elapsed - 130u);
         sound_voice_pan(model->scene_vehicle.voice_plus_one[1] - 1, volume, pan);
         if (elapsed >= 96)
-            sound_voice_pitch(model->scene_vehicle.voice_plus_one[1] - 1, 6912u - 8u * ((uint32)elapsed - 95u));
+            sound_voice_pitch(model->scene_vehicle.voice_plus_one[1] - 1, 6912u - 8u * (elapsed - 95u));
     }
     if (model->scene_vehicle.start_tick == -1)
     {
@@ -813,11 +649,7 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
                         break;
                     }
             /* TODO: Investigate scene publications outside both native object pools */
-            if (!ref.pool)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scene object publication %p\n", (void *)model));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(ref.pool);
             level_script_scene.object = ref;
         }
     }
@@ -826,22 +658,14 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
     if (elapsed < 16)
     {
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         offset = 2 * (model->angles.yaw_bits >> 5);
         speed = 96;
     }
     else if (elapsed < 59)
     {
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         angle = model->angles.yaw_bits - 256;
         model->angles.yaw_bits = (uint16)angle;
         offset = (angle >> 4) & 0xffe;
@@ -853,13 +677,9 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
         if (wave < 192)
             model->scene_vehicle.speed = (uint16)(wave + 8);
         /* TODO: Investigate transport common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         offset = 2 * (model->angles.yaw_bits >> 5);
-        speed = (uint32)(sint32)model->scene_vehicle.speed;
+        speed = model->scene_vehicle.speed;
     }
     else
     {
@@ -869,11 +689,7 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
             for (world_idx = 0; world_idx < scan_count; world_idx++)
             {
                 /* TODO: Investigate a scene scan exceeding the world object pool */
-                if (world_idx >= WORLD_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid exit scene world scan slot %u count %u object %p elapsed %d stage %u tick %u\n", world_idx, world_objects.count, (void *)model, elapsed, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(world_idx < WORLD_OBJECT_COUNT);
                 MODEL_OBJECT *world = world_objects.object + world_idx;
                 if (world->kind == 173)
                     world->kind = 174;
@@ -897,38 +713,22 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
         }
         else if (elapsed < 120)
         {
-            bounce = -((sint32)((uint32)sin_table[(((uint32)elapsed - 112) << 8) >> 1] << 16) >> 20);
+            bounce = -((sint32)((uint32)sin_table[((elapsed - 112u) << 8) >> 1] << 16) >> 20);
             /* TODO: Investigate transport common fields outside both native object pools */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             model->angles.pitch_bits = (uint16)bounce;
             /* TODO: Investigate a vehicle exit scene without a native position */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid vehicle exit position %p elapsed %d stage %u tick %u\n", (void *)model, elapsed, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             model->pos.y.bits = (uint32)(bounce >> 6) << 15;
         }
         else if (elapsed < 129)
         {
-            bounce = -((sint32)((uint32)sin_table[(((uint32)elapsed - 120) << 8) >> 1] << 16) >> 21);
+            bounce = -((sint32)((uint32)sin_table[((elapsed - 120u) << 8) >> 1] << 16) >> 21);
             /* TODO: Investigate transport common fields outside both native object pools */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid transport model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             model->angles.pitch_bits = (uint16)bounce;
             /* TODO: Investigate a vehicle exit scene without a native position */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid vehicle exit position %p elapsed %d stage %u tick %u\n", (void *)model, elapsed, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             model->pos.y.bits = (uint32)(bounce >> 6) << 14;
         }
         else
@@ -942,37 +742,28 @@ GDB_CALL uint32 scene_vehicle_update_car(MODEL_OBJECT *model)
     }
     wave = sin_table[offset >> 1];
     /* TODO: Investigate a vehicle exit scene without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid vehicle exit position %p elapsed %d stage %u tick %u\n", (void *)model, elapsed, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     pos = model->pos.x.bits;
-    model->pos.x.bits = pos - speed * (uint32)wave;
+    model->pos.x.bits = pos - speed * wave;
     if (elapsed >= 59)
-        speed = (uint32)(sint32)model->scene_vehicle.speed;
+        speed = model->scene_vehicle.speed;
     wave = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
     pos = model->pos.z.bits;
-    model->pos.z.bits = pos + speed * (uint32)wave;
+    model->pos.z.bits = pos + speed * wave;
     if (elapsed >= 16 && elapsed < 59)
         model->scene_vehicle.speed = 129;
     if (elapsed == 90)
         model->scene_vehicle.voice_plus_one[0] = (uint16)(sound_voice_play(131, 255, 5632) + 1);
 region_update:
     region = col_regions.data;
-    count = (sint32)col_regions.count;
+    count = col_regions.count;
     if (count <= 0)
         return count;
     for (i = 0; i < count; ++i, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }

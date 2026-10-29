@@ -32,8 +32,7 @@ static sint32 file_create(const char *name, uint32 available)
     uint32 i, n;
     static int registered;
     /* TODO: Investigate missing or unterminated native screenshot names */
-    if (!name || !available)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(name && available);
     for (n = 0; n < sizeof(path) - 1 && n < available; ++n)
     {
         path[n] = name[n];
@@ -42,11 +41,7 @@ static sint32 file_create(const char *name, uint32 available)
         if (path[n] == '/' || path[n] == '\\' || path[n] == ':')
             return -1;
     }
-    if (n == available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Unterminated screenshot filename capacity %u stage %u tick %u\n", available, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(n != available);
     if (n == sizeof(path) - 1 || !n || !strcmp(path, ".") || !strcmp(path, ".."))
         return -1;
     for (i = 0; i < 16; ++i)
@@ -86,8 +81,7 @@ static sint32 file_write_chunk(uint32 handle, uint32 bytes, const uint8 *src)
         return -1;
     file = files[handle - 1];
     /* TODO: Investigate an invalid native write span without guest-address fallback */
-    if (bytes && !src)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!bytes || src);
     written = fwrite(src, 1, bytes, file);
 #if defined(XPORT_XCRT)
     /* XCRT writes synchronously and returns the actual native byte count */
@@ -120,41 +114,28 @@ static uint32 file_write(uint32 handle, const uint8 *src, uint32 bytes)
 GDB_CALL uint32 screenshot_capture(void)
 {
     FUNCTION_MARKER(0x80067940u, "GAME.EXE");
-    uint32 handle = (uint32)file_create((const char *)screenshot.filename, sizeof(screenshot.filename)), block, row, offset, val;
+    uint32 handle = file_create((const char *)screenshot.filename, sizeof(screenshot.filename)), block, row, offset, val;
     uint32 words[4], idx, capture_bytes;
     uint8 *pix, *src, *dst;
     uint16 pixel;
     if (!handle)
         return 0; /* Original tests zero, so the -1 error also enters. */
     /* TODO: Investigate the original -1 create result instead of using an invalid handle */
-    if (handle == 0xffffffff)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Screenshot create failed for %.*s stage %u tick %u\n", SCREENSHOT_NAME_BYTES, (const char *)screenshot.filename, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(handle != 0xffffffff);
     file_write(handle, screenshot.tga_header, sizeof(screenshot.tga_header));
     for (block = 0; block < 256; block += 16)
     {
         DrawSync(0);
         screenshot.rect.y = (sint16)(240 - block);
         /* TODO: Investigate invalid imported capture geometry before device access */
-        if (screenshot.rect.w < 0 || screenshot.rect.h < 0)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid screenshot rectangle %d,%d %dx%d stage %u tick %u\n", screenshot.rect.x, screenshot.rect.y, screenshot.rect.w, screenshot.rect.h, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        capture_bytes = (uint32)screenshot.rect.w * (uint32)screenshot.rect.h * sizeof(uint16);
+        XASSERT(screenshot.rect.w >= 0 && screenshot.rect.h >= 0);
+        capture_bytes = screenshot.rect.w * (uint32)screenshot.rect.h * sizeof(uint16);
         /* TODO: Investigate capture buffers shorter than the original fixed pixel operation */
-        if (!resource_arenas.scratch.data || resource_arenas.scratch.available < capture_bytes || resource_arenas.scratch.available < 10240)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Screenshot scratch span %u capture %u context %08X stage %u tick %u\n", resource_arenas.scratch.available, capture_bytes, resource_arenas.scratch.context, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(resource_arenas.scratch.data && resource_arenas.scratch.available >= capture_bytes && resource_arenas.scratch.available >= 10240);
         StoreImage(&screenshot.rect, (uint32 *)resource_arenas.scratch.data);
         DrawSync(0);
         /* Reload after the device synchronization, as in the original */
-        if (!resource_arenas.scratch.data || resource_arenas.scratch.available < 10240)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(resource_arenas.scratch.data && resource_arenas.scratch.available >= 10240);
         pix = resource_arenas.scratch.data;
         for (offset = 0; offset < 5120; ++offset, pix += 2)
         {
@@ -165,11 +146,7 @@ GDB_CALL uint32 screenshot_capture(void)
         }
         for (row = 0; row < 16; ++row)
         {
-            if (!resource_arenas.scratch.data || resource_arenas.scratch.available < 10240 || !resource_arenas.persistent.data || resource_arenas.persistent.available < 10240)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Screenshot row %u scratch %08X/%u persistent %08X/%u stage %u tick %u\n", row, resource_arenas.scratch.context, resource_arenas.scratch.available, resource_arenas.persistent.context, resource_arenas.persistent.available, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(resource_arenas.scratch.data && resource_arenas.scratch.available >= 10240 && resource_arenas.persistent.data && resource_arenas.persistent.available >= 10240);
             dst = resource_arenas.persistent.data + 640 * row;
             src = resource_arenas.scratch.data + 640 * (15 - row);
             for (offset = 0; offset < 640; offset += 16)

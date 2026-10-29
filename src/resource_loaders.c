@@ -225,11 +225,7 @@ static uint32 load_stage0_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy.context_address), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy.context_address};
     }
     resource_load_animations("GENMALE.ADT", -1);
@@ -249,11 +245,7 @@ static uint32 load_stage0_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -361,11 +353,7 @@ static uint32 load_stage1_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -382,11 +370,7 @@ static uint32 load_stage1_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -440,11 +424,7 @@ static uint32 load_stage2_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -463,11 +443,7 @@ static uint32 load_stage2_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -498,11 +474,7 @@ static uint32 load_stage3_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -520,11 +492,7 @@ static uint32 load_stage3_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -553,11 +521,7 @@ static uint32 load_stage4_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENFMALE.ADT", 0xfffffffeu);
@@ -574,11 +538,7 @@ static uint32 load_stage4_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -612,11 +572,7 @@ static uint32 load_stage5_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -638,11 +594,7 @@ static uint32 load_stage5_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -700,11 +652,7 @@ static uint32 load_stage6_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     return character_load_driver();
@@ -719,11 +667,7 @@ static uint32 load_stage6_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -779,11 +723,7 @@ static uint32 load_stage7_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -804,11 +744,7 @@ static void load_stage7_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -927,11 +863,7 @@ static uint32 load_stage8_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -956,11 +888,7 @@ static uint32 load_stage8_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1009,11 +937,7 @@ static uint32 load_stage9_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1038,11 +962,7 @@ static uint32 load_stage9_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1091,11 +1011,7 @@ static uint32 load_stage10_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1114,11 +1030,7 @@ static void load_stage10_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1175,11 +1087,7 @@ static uint32 load_stage11_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1198,11 +1106,7 @@ static void load_stage11_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1286,11 +1190,7 @@ static uint32 load_stage12_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1309,11 +1209,7 @@ static uint32 load_stage12_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1377,11 +1273,7 @@ static uint32 load_stage13_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     return character_load_exc();
@@ -1398,11 +1290,7 @@ static uint32 load_stage14_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1424,11 +1312,7 @@ static void load_stage14_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1465,11 +1349,7 @@ static uint32 load_stage15_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1556,11 +1436,7 @@ static uint32 load_stage15_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1578,11 +1454,7 @@ static uint32 load_stage16_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1601,11 +1473,7 @@ static uint32 load_stage16_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1656,11 +1524,7 @@ static uint32 load_stage17_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1681,11 +1545,7 @@ static void load_stage17_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1743,11 +1603,7 @@ static uint32 load_stage18_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1769,11 +1625,7 @@ static uint32 load_stage18_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1819,11 +1671,7 @@ static uint32 load_stage19_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -1841,11 +1689,7 @@ static void load_stage19_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1875,11 +1719,7 @@ static uint32 load_stage20_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     return character_load_jet();
@@ -1894,11 +1734,7 @@ static uint32 load_stage20_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1916,11 +1752,7 @@ static uint32 load_stage21_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     return character_load_vulkan();
@@ -1935,11 +1767,7 @@ static uint32 load_stage21_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -1983,11 +1811,7 @@ static uint32 load_stage22_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -2007,11 +1831,7 @@ static void load_stage22_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -2069,11 +1889,7 @@ static uint32 load_stage23_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     resource_load_animations("GENMALE.ADT", 0xffffffffu);
@@ -2091,11 +1907,7 @@ static uint32 load_stage23_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -2123,11 +1935,7 @@ static uint32 load_stage24_actors(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy_context), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy_context};
     }
     return character_load_zeng();
@@ -2143,11 +1951,7 @@ static void load_stage24_models(void)
     alloc_context = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = alloc_context + byte_len;
@@ -2270,12 +2074,8 @@ const RESOURCE_LOADER *const player_resource_loaders[PLAYER_RESOURCE_COUNT] = {
 /* Consolidated model, player and texture dispatch; numeric targets stay in diagnostics */
 GDB_CALL uint32 resource_loader_call(RESOURCE_LOADER_DOMAIN domain, const RESOURCE_LOADER *loader)
 {
-    if (!loader || loader->domain != domain)
-    {
-        /* TODO: Investigate a missing or wrong-domain loader without a raw-code fallback */
-        DIAGNOSTIC(fprintf(stderr, "Invalid native resource loader %p requested domain %u stage %u tick %u\n", (const void *)loader, (uint32)domain, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate a missing or wrong-domain loader without a raw-code fallback */
+    XASSERT(loader && loader->domain == domain);
     if (loader->load_void)
     {
         loader->load_void();

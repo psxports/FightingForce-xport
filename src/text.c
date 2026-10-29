@@ -42,8 +42,7 @@ GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
         do
         {
             ch = (uint8)text[i];
-            if (i >= capacity)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(i < capacity);
             buffer[i++] = ch;
         } while (ch);
     }
@@ -51,8 +50,7 @@ GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
     text_layout.line[0] = buffer;
     for (;;)
     {
-        if (p >= buffer + capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(p < buffer + capacity);
         sint32 letter = (sint8)*p;
         if (letter == 32 || !letter)
         {
@@ -61,12 +59,10 @@ GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
                 line_width = word_width;
                 word_width = 0;
                 i = ++text_layout.line_count;
-                if (i > TEXT_LINE_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(i <= TEXT_LINE_COUNT);
                 if (text_layout.line[i - 1] != word)
                 {
-                    if (i == TEXT_LINE_COUNT)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(i != TEXT_LINE_COUNT);
                     text_layout.line[i] = word;
                 }
                 word[-1] = 0;
@@ -86,8 +82,7 @@ GDB_CALL sint32 text_wrap(const char *text, char *buffer, uint32 capacity)
         }
         letter = (sint8)*p++;
         sint32 glyph = text_glyph(letter);
-        if (glyph < 0 || glyph >= TEXT_FONT_WIDTH_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(glyph >= 0 && glyph < TEXT_FONT_WIDTH_COUNT);
         word_width += font_width[glyph];
     }
     text_layout.line_count = 0;
@@ -106,10 +101,13 @@ GDB_CALL sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 pha
 {
     FUNCTION_MARKER(0x8006159cu, "GAME.EXE");
     PROJECTION_POINT pos;
-    sint32 letter, spr, offset, step, width;
+    sint32 letter;
+    sint32 spr;
+    sint32 offset;
+    uint32 step;
+    sint32 width;
     /* TODO: Investigate missing native intro text at the original first read */
-    if (!text)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(text);
     uint8 character = (uint8)*text;
     pos.y = y;
     pos.depth = 128;
@@ -120,7 +118,7 @@ GDB_CALL sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 pha
         letter = (sint8)character;
         text++;
         if (letter == 32)
-            x = (uint32)x + 6u;
+            x = x + 6u;
         else
         {
             letter -= 65;
@@ -130,20 +128,19 @@ GDB_CALL sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 pha
             else
             {
                 step = phase > 16 ? 16 : phase;
-                offset = (32767 - sin_table[(uint32)step << 5]) >> 5;
+                offset = (32767 - sin_table[step << 5]) >> 5;
             }
-            pos.x = (sint32)((uint32)x + (uint32)offset);
+            pos.x = x + (uint32)offset;
             pos.size = 3 * offset + 64;
             if (offset != 400)
                 spr_draw_scaled(&pos, spr);
-            if (letter < 0 || letter >= TEXT_FONT_WIDTH_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(letter >= 0 && letter < TEXT_FONT_WIDTH_COUNT);
             width = font_width[letter];
-            x = (uint32)x + (uint32)(width + (width >> 3));
+            x = x + (uint32)(width + (width >> 3));
         }
         character = (uint8)*text;
         letter = (sint8)*text;
-        phase = (uint32)phase - 3;
+        phase = phase - 3u;
     } while (letter);
     return 0;
 }
@@ -152,10 +149,12 @@ GDB_CALL sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint
 {
     FUNCTION_MARKER(0x800616dcu, "GAME.EXE");
     PROJECTION_POINT pos;
-    sint32 letter, spr, offset, step;
+    sint32 letter;
+    sint32 spr;
+    sint32 offset;
+    uint32 step;
     /* TODO: Investigate missing native intro text at the original first read */
-    if (!text)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(text);
     uint8 character = (uint8)*text;
     pos.y = y;
     pos.depth = 128;
@@ -165,24 +164,23 @@ GDB_CALL sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint
     {
         letter = (sint8)character - 65;
         text++;
-        spr = letter + tex_map[(60 + ((uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))];
+        spr = letter + tex_map[(60u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))];
         if (phase < 0)
             offset = 400;
         else
         {
             step = phase > 16 ? 16 : phase;
-            offset = (32767 - sin_table[(uint32)step << 5]) >> 5;
+            offset = (32767 - sin_table[step << 5]) >> 5;
         }
-        pos.x = (sint32)((uint32)x + (uint32)offset);
+        pos.x = x + (uint32)offset;
         pos.size = 3 * offset + 64;
         if (offset != 400)
             spr_draw_scaled(&pos, spr);
-        if (letter < 0 || letter >= TEXT_LARGE_WIDTH_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(letter >= 0 && letter < TEXT_LARGE_WIDTH_COUNT);
         x = (uint32)x + large_width[letter];
         character = (uint8)*text;
         letter = (sint8)*text;
-        phase = (uint32)phase - 4;
+        phase = phase - 4u;
     } while (letter);
     return 0;
 }
@@ -190,7 +188,7 @@ GDB_CALL sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint
 GDB_CALL sint32 text_draw_lines(sint32 y)
 {
     FUNCTION_MARKER(0x800619e8, "GAME.EXE");
-    sint32 count = (sint32)text_layout.line_count;
+    sint32 count = text_layout.line_count;
     uint32 i = 0;
     if (count <= 0)
         return count;
@@ -198,19 +196,17 @@ GDB_CALL sint32 text_draw_lines(sint32 y)
     {
         do
         {
-            if (i >= TEXT_LINE_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            text_center(text_layout.line[i], 16 * i + 120 - 8 * (uint32)count);
+            XASSERT(i < TEXT_LINE_COUNT);
+            text_center(text_layout.line[i], 16 * i + 120 - 8u * count);
             ++i;
-            count = (sint32)text_layout.line_count;
+            count = text_layout.line_count;
         } while ((sint32)i < count);
         return 4 * i;
     }
     do
     {
-        if (i >= TEXT_LINE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        text_center(text_layout.line[i], (uint32)y + 10 * i);
+        XASSERT(i < TEXT_LINE_COUNT);
+        text_center(text_layout.line[i], y + 10 * i);
         ++i;
     } while ((sint32)i < (sint32)text_layout.line_count);
     return 0;
@@ -219,8 +215,8 @@ GDB_CALL sint32 text_draw_lines(sint32 y)
 GDB_CALL sint32 text_draw_right(const char *text, sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80061cb8u, "GAME.EXE");
-    uint32 width = (uint32)text_width(text);
-    return text_draw(text, (uint32)x + 10u - width, y);
+    uint32 width = text_width(text);
+    return text_draw(text, x + 10u - width, y);
 }
 
 /* Original stack-local XYZ crosses the host ABI as a native pointer,
@@ -235,8 +231,8 @@ GDB_CALL sint32 text_draw_right(const char *text, sint32 x, sint32 y)
 GDB_CALL sint32 text_glyph(sint32 character)
 {
     FUNCTION_MARKER(0x80018670, "GAME.EXE");
-    if ((uint32)character - 97u < 26u)
-        character = (uint32)character - 32u;
+    if (character - 97u < 26u)
+        character = character - 32u;
     switch (character)
     {
         case 91:
@@ -286,7 +282,7 @@ GDB_CALL sint32 text_glyph(sint32 character)
         case 61:
             return 58;
         default:
-            return (uint32)character - (character >= 65 ? 65u : 10u);
+            return character - (character >= 65 ? 65u : 10u);
     }
 }
 
@@ -296,8 +292,7 @@ GDB_CALL sint32 text_width(const char *text)
     FUNCTION_MARKER(0x8005efb8, "GAME.EXE");
     uint32 width = 0;
     /* TODO: Investigate missing native text at the original first read */
-    if (!text)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(text);
     uint8 character = (uint8)*text;
     if (character)
     {
@@ -310,12 +305,11 @@ GDB_CALL sint32 text_width(const char *text)
             else
             {
                 sint32 glyph = text_glyph(ch);
-                if (glyph < 0 || glyph >= TEXT_FONT_WIDTH_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(glyph >= 0 && glyph < TEXT_FONT_WIDTH_COUNT);
                 width += font_width[glyph];
             }
             character = (uint8)*text;
-        } while ((sint8)*text);
+        } while (character);
     }
     return width + 10;
 }
@@ -326,28 +320,27 @@ GDB_CALL sint32 text_draw(const char *text, sint32 x, sint32 y)
     FUNCTION_MARKER(0x80061b7c, "GAME.EXE");
     PROJECTION_POINT pos = {.v = {x, y, 0, 0}};
     /* TODO: Investigate missing native text at the original first read */
-    if (!text)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(text);
     uint8 character = (uint8)*text;
     if (!character)
-        return (uint32)pos.x + 10;
+        return pos.x + 10u;
     do
     {
         sint32 ch = (sint8)character;
         text++;
         if (ch == 32)
-            pos.x = (sint32)((uint32)pos.x + 6u);
+            pos.x = pos.x + 6u;
         else
         {
-            sint32 glyph = text_glyph(ch), font = tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex;
-            spr_draw(&pos, (uint32)glyph + (sint32)tex_map[(uint32)font]);
-            if (glyph < 0 || glyph >= TEXT_FONT_WIDTH_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            pos.x = (sint32)((uint32)pos.x + font_width[glyph]);
+            sint32 glyph = text_glyph(ch);
+            uint32 font = tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex;
+            spr_draw(&pos, (uint32)glyph + tex_map[font]);
+            XASSERT(glyph >= 0 && glyph < TEXT_FONT_WIDTH_COUNT);
+            pos.x = (uint32)pos.x + font_width[glyph];
         }
         character = (uint8)*text;
-    } while ((sint8)*text);
-    return (uint32)pos.x + 10u;
+    } while (character);
+    return pos.x + 10u;
 }
 
 /* Original GAME.EXE:80061ADC..80061B28. SRA width/2, not C signed division. */
@@ -355,7 +348,7 @@ GDB_CALL sint32 text_center(const char *text, sint32 y)
 {
     FUNCTION_MARKER(0x80061adc, "GAME.EXE");
     sint32 width = text_width(text);
-    return text_draw(text, 160u - (uint32)(width >> 1), y);
+    return text_draw(text, 160u - (width >> 1), y);
 }
 
 /* GAME.EXE:80061C68. Logo font bank, fixed depth 16. */
@@ -392,7 +385,7 @@ GDB_CALL sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const T
     }
     character = *text;
     if (!character)
-        return (uint32)x + 170;
+        return x + 170u;
     do
     {
         sint32 ch = (sint8)character;
@@ -409,29 +402,27 @@ GDB_CALL sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const T
             setPolyGT4(poly);
             for (i = 0; i < 6; i++)
             {
-                sint32 product = (sint32)((uint32)(sint32)delta[i] * advance);
+                sint32 product = (delta[i]) * advance;
                 int row = i / 3 * 2, channel = i % 3;
                 /* Original BREAK 6 on signed division overflow */
-                if (width == -1 && (uint32)product == 0x80000000u)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(width != -1 || (uint32)product != 0x80000000u);
                 uint8 base = colors->color[row].v[channel];
-                next[i] = (uint32)base + (uint32)(product / width);
+                next[i] = base + (uint32)(product / width);
             }
             setRGB0(poly, (uint8)(prev[0] * 8u - 128u), (uint8)(prev[1] * 8u - 128u), (uint8)(prev[2] * 8u - 128u));
             setRGB1(poly, (uint8)(next[0] * 8u - 128u), (uint8)(next[1] * 8u - 128u), (uint8)(next[2] * 8u - 128u));
             setRGB2(poly, (uint8)(next[3] * 8u - 128u), (uint8)(next[4] * 8u - 128u), (uint8)(next[5] * 8u - 128u));
             setRGB3(poly, (uint8)(prev[3] * 8u - 128u), (uint8)(prev[4] * 8u - 128u), (uint8)(prev[5] * 8u - 128u));
-            spr_set_gradient_quad(packet, (uint32)glyph + (sint32)tex_map[(uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex], (uint32)x + advance, y);
-            if (glyph < 0 || glyph >= TEXT_FONT_WIDTH_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            spr_set_gradient_quad(packet, (uint32)glyph + tex_map[(uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex], x + advance, y);
+            XASSERT(glyph >= 0 && glyph < TEXT_FONT_WIDTH_COUNT);
             advance += font_width[glyph];
             render_ot_insert(render_buffers.ot_addr + 8188, packet);
             for (i = 0; i < 6; i++)
                 prev[i] = next[i];
         }
         character = *text;
-    } while ((sint8)*text);
-    return advance + (uint32)x + 170u;
+    } while (character);
+    return advance + x + 170u;
 }
 
 /* Score digits retain separate carried-character and continuation reads */
@@ -440,8 +431,7 @@ GDB_CALL uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, si
     FUNCTION_MARKER(0x80061d0c, "GAME.EXE");
     PROJECTION_POINT pos = {.v = {x, y, 0, 0}};
     uint32 character, idx = 0;
-    if (!text || !capacity)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(text && capacity);
     character = (uint8)text[idx];
     if (character)
         do
@@ -449,20 +439,17 @@ GDB_CALL uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, si
             sint32 digit = (sint8)character;
             ++idx;
             if (digit == 32)
-                pos.x = (sint32)((uint32)pos.x + 6u);
+                pos.x = pos.x + 6u;
             else
             {
                 digit -= 48;
-                spr_draw(&pos, digit + tex_map[(38 + ((uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))]);
-                if (idx >= capacity)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                uint32 pair = 10 * (uint32)digit + ((uint8)text[idx] & 15);
-                if (pair >= TEXT_DIGIT_WIDTH_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                pos.x = (sint32)((uint32)pos.x + digit_width[pair]);
+                spr_draw(&pos, digit + tex_map[(38u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))]);
+                XASSERT(idx < capacity);
+                uint32 pair = 10u * digit + ((uint8)text[idx] & 15);
+                XASSERT(pair < TEXT_DIGIT_WIDTH_COUNT);
+                pos.x = (uint32)pos.x + digit_width[pair];
             }
-            if (idx >= capacity)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(idx < capacity);
             character = (uint8)text[idx];
         } while ((sint8)text[idx]);
     return character << 24;
@@ -472,7 +459,7 @@ GDB_CALL uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, si
 GDB_CALL uint32 text_format_digits(sint32 val, char *dst)
 {
     FUNCTION_MARKER(0x80061e0c, "GAME.EXE");
-    uint32 result = (uint32)val + 48u;
+    uint32 result = val + 48u;
     if (val < 10)
     {
         dst[0] = (char)result;
@@ -481,7 +468,7 @@ GDB_CALL uint32 text_format_digits(sint32 val, char *dst)
     else
     {
         dst[0] = (char)(val / 10 + 48);
-        result = (uint32)(val % 10) + 48;
+        result = (val % 10) + 48;
         dst[1] = (char)result;
         dst[2] = 0;
     }
@@ -493,7 +480,7 @@ GDB_CALL sint32 text_center_gradient(const char *text, sint32 y)
 {
     FUNCTION_MARKER(0x80061b28u, "GAME.EXE");
     sint32 width = text_width(text);
-    return text_draw_gradient(text, 160u - (uint32)(width >> 1), y, &text_active_gradient);
+    return text_draw_gradient(text, 160u - (width >> 1), y, &text_active_gradient);
 }
 
 GDB_CALL sint32 text_gradient_update(void)

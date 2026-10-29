@@ -19,14 +19,13 @@ static sint32 lightning_jitter(sint32 divisor)
     uint32 random;
     sint32 val;
     if (divisor < 0)
-        divisor = 0u - (uint32)divisor;
+        divisor = (uint32)(-(sint64)(divisor));
     random = random_next();
     val = (sint32)random >> 1;
-    val = (uint32)val + (uint32)(val >> 1);
-    if (!divisor || (divisor == -1 && (uint32)val == 0x80000000u))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    val = val + (uint32)(val >> 1);
+    XASSERT(divisor && (divisor != -1 || (uint32)val != 0x80000000u));
     val /= divisor;
-    return random & 1u ? (sint32)(0u - (uint32)val) : val;
+    return random & 1u ? (sint32)((uint32)(-(sint64)((uint32)val))) : val;
 }
 
 GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *dst)
@@ -36,8 +35,13 @@ GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *ds
     uint32 camera_x, camera_y, camera_z;
     PROJECTION_POINT prev, proj;
     uint16 packet[9];
-    sint32 count, idx, depth, old_depth, width, new_width;
-    sint32 delta;
+    sint32 count;
+    sint32 idx;
+    sint32 depth;
+    sint32 old_depth;
+    uint32 width;
+    uint32 new_width;
+    uint32 delta;
     start.x = src->x;
     start.y = src->y;
     start.z = src->z;
@@ -82,18 +86,17 @@ GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *ds
         {
             old_depth = prev.depth;
             depth = proj.depth;
-            if (!old_depth || !depth)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__); /* Original57A2C/57A60 BREAK */
+            XASSERT(old_depth && depth); /* Original57A2C/57A60 BREAK */
             width = 65536 / old_depth;
             new_width = 65536 / depth;
             packet[2] = (uint16)prev.x;
-            packet[3] = (uint16)((uint16)prev.y - (uint32)width);
+            packet[3] = (uint16)((uint16)prev.y - width);
             packet[4] = (uint16)proj.x;
-            packet[5] = (uint16)((uint16)proj.y - (uint32)new_width);
+            packet[5] = (uint16)((uint16)proj.y - new_width);
             packet[6] = (uint16)proj.x;
-            packet[7] = (uint16)((uint16)proj.y + (uint32)new_width);
+            packet[7] = (uint16)((uint16)proj.y + new_width);
             packet[0] = (uint16)prev.x;
-            packet[1] = (uint16)((uint16)prev.y + (uint32)width);
+            packet[1] = (uint16)((uint16)prev.y + width);
             if (idx != 1 && idx != count)
                 random_next(); /* Unused result is still an RNG advance */
             packet[8] = 831;
@@ -101,27 +104,27 @@ GDB_CALL uint32 lightning_draw_strip(const FIXED_VEC3 *src, const FIXED_VEC3 *ds
             packet[0] = (uint16)proj.x;
             packet[1] = (uint16)proj.y;
             delta = lightning_jitter(depth);
-            packet[2] = (uint16)(packet[0] + (uint32)delta);
+            packet[2] = (uint16)(packet[0] + delta);
             delta = lightning_jitter(depth);
-            packet[3] = (uint16)(packet[1] + (uint32)delta);
+            packet[3] = (uint16)(packet[1] + delta);
             packet[8] = 1373;
             packet_color_half(packet);
             delta = lightning_jitter(depth);
-            packet[0] = (uint16)(packet[2] + (uint32)delta);
+            packet[0] = (uint16)(packet[2] + delta);
             delta = lightning_jitter(depth);
-            packet[1] = (uint16)(packet[3] + (uint32)delta);
+            packet[1] = (uint16)(packet[3] + delta);
             packet[8] = 827;
             packet_color_half(packet);
             delta = lightning_jitter(depth);
-            packet[2] = (uint16)(packet[0] + (uint32)delta);
+            packet[2] = (uint16)(packet[0] + delta);
             delta = lightning_jitter(depth);
-            packet[3] = (uint16)(packet[1] + (uint32)delta);
+            packet[3] = (uint16)(packet[1] + delta);
             packet[8] = 1647;
             packet_color_half(packet);
             delta = lightning_jitter(depth);
-            packet[0] = (uint16)(packet[2] + (uint32)delta);
+            packet[0] = (uint16)(packet[2] + delta);
             delta = lightning_jitter(depth);
-            packet[1] = (uint16)(packet[3] + (uint32)delta);
+            packet[1] = (uint16)(packet[3] + delta);
             packet[8] = 553;
             packet_color_half(packet);
         }
@@ -134,11 +137,7 @@ GDB_CALL uint32 object_draw_scene_gated(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80046ef0u, "GAME.EXE");
     /* TODO: Investigate rotation common fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rotating model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     uint32 kind = model->kind, bias, state;
     sint32 angle = model->angles.yaw, x, z;
     if (angle)
@@ -154,11 +153,7 @@ GDB_CALL uint32 object_draw_scene_gated(const MODEL_OBJECT *model)
     if (!state)
     {
         /* TODO: Investigate object drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene or spinning draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         z = model->pos.z.val;
         if (z <= (sint32)0xf2900000)
             goto draw_model;
@@ -173,11 +168,7 @@ GDB_CALL uint32 object_draw_scene_gated(const MODEL_OBJECT *model)
     if (state - 1 < 2)
     {
         /* TODO: Investigate object drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene or spinning draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         z = model->pos.z.val;
         goto test_front;
     }
@@ -187,11 +178,7 @@ test_front:
     if (z > (sint32)0xf2900000)
     {
         /* TODO: Investigate object drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene or spinning draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         x = model->pos.x.val;
         if (x > 0x06000000)
             goto draw_model;
@@ -201,13 +188,9 @@ select_middle:
     if ((state == 2 && stage_animation.phase[0]) || state - 3 < 2 || state == 5)
     {
         /* TODO: Investigate object drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene or spinning draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         x = model->pos.x.val;
-        if ((uint32)x + 0x0dffffff <= 0x13fffffe)
+        if (x + 0x0dffffffu <= 0x13fffffe)
             goto draw_model;
     }
     state = game_session.scene_phase;
@@ -218,11 +201,7 @@ select_middle:
         return 0;
 test_left:
     /* TODO: Investigate object drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene or spinning draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.val;
     if (x >= (sint32)0xf2000000)
         return 0;
@@ -235,25 +214,19 @@ GDB_CALL void object_draw_depth_bob(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002c55cu, "GAME.EXE");
     uint32 x, y, z, color, offset, camera_x, camera_y, camera_z;
-    sint32 shade, wave, angle;
+    sint32 shade;
+    uint32 wave;
+    sint32 angle;
     transform_push();
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     y = model->pos.y.bits;
     /* TODO: Investigate a falling debris callback with a foreign native payload */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_DRIFT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid falling debris payload object %p callback %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_DRIFT);
     const DRIFTING_DEBRIS *debris = &model->drift;
     offset = ((uint32)(sint32)debris->phase << 3) & 0xff8;
     wave = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
-    z = model->pos.z.bits - ((uint32)wave << 9);
+    z = model->pos.z.bits - (wave << 9);
     x = model->pos.x.bits;
     camera_x = camera.pos.x.bits;
     camera_y = camera.pos.y.bits;
@@ -273,7 +246,7 @@ GDB_CALL void object_draw_depth_bob(const MODEL_OBJECT *model)
         shade >>= 2;
     if (shade > 128)
         shade = 128;
-    color = 128u - (uint32)shade;
+    color = 128u - shade;
     render_style.color.rgbc = 0x2c000000u + color * 0x10101u;
     model_draw_static(model_refs[model->kind], 0, 0);
     transform_pop();
@@ -284,11 +257,7 @@ GDB_CALL void object_draw_repeated_pair(const MODEL_OBJECT *model)
     FUNCTION_MARKER(0x80032c4cu, "GAME.EXE");
     transform_push();
     /* TODO: Investigate phase drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     if (model->pos.x.val > 0x13000000)
         transform_yaw(32768);
     model_draw_faded(model_refs[model->kind], 0, 0);
@@ -307,22 +276,14 @@ GDB_CALL uint32 object_draw_shadowed_model(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8005ad54u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     uint32 kind = model->kind;
     sint32 angle = model->angles.yaw;
     if (angle)
         transform_yaw(angle);
     transform_push();
     /* TODO: Investigate a shadow draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing shadow draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_translate(0, model->pos.y.val, 0);
     model_draw_static(model_refs[(kind == 87 ? 89u : 106u)], 0, 8192);
     transform_pop();
@@ -339,11 +300,7 @@ GDB_CALL uint32 object_draw_phase_gated(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80032818u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     uint32 kind = model->kind, state, mode;
     sint32 x, z, bias;
     object_apply_rotations(model);
@@ -352,11 +309,7 @@ GDB_CALL uint32 object_draw_phase_gated(const MODEL_OBJECT *model)
     if (!state)
     {
         /* TODO: Investigate phase drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         z = model->pos.z.val;
         if (z <= (sint32)0xf2900000)
             goto draw_model;
@@ -372,11 +325,7 @@ GDB_CALL uint32 object_draw_phase_gated(const MODEL_OBJECT *model)
     if (state - 1 < 2 || state == 3)
     {
         /* TODO: Investigate phase drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         z = model->pos.z.val;
         goto test_front;
     }
@@ -386,11 +335,7 @@ test_front:
     if (z > (sint32)0xf2900000)
     {
         /* TODO: Investigate phase drawing without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         x = model->pos.x.val;
         if (x > 0x06000000)
             goto draw_model;
@@ -410,13 +355,9 @@ select_middle:
 
 test_middle:
     /* TODO: Investigate phase drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.val;
-    if ((uint32)x + 0x0dffffff <= 0x13fffffe)
+    if (x + 0x0dffffffu <= 0x13fffffe)
         goto draw_model;
     state = game_session.scene_phase;
 select_left:
@@ -431,11 +372,7 @@ select_left:
         return 0;
 test_left:
     /* TODO: Investigate phase drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.val;
     if (x >= (sint32)0xf2000000)
         return 0;
@@ -448,17 +385,13 @@ GDB_CALL uint32 object_draw_player_facing(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x80032a48u, "GAME.EXE");
     /* TODO: Investigate phase drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing phase draw position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     sint32 x = model->pos.x.whole;
     sint32 z = model->pos.z.whole;
     sint32 player_x = actor_positions[0].x.whole;
     sint32 player_z = actor_positions[0].z.whole;
     sint16 angle = (sint16)math_dir16(x, z, player_x, player_z);
-    model->angles.yaw_bits = (uint16)angle;
+    model->angles.yaw_bits = angle;
     transform_yaw(angle);
     return object_draw_phase_gated(model);
 }
@@ -470,11 +403,7 @@ GDB_CALL uint32 object_draw_stage_gated(const MODEL_OBJECT *item)
         return 0;
     object_apply_rotations(item);
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
@@ -483,11 +412,7 @@ GDB_CALL uint32 object_draw_rotated_packets(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8005b71cu, "GAME.EXE");
     object_apply_rotations(item);
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
@@ -497,11 +422,7 @@ GDB_CALL uint32 object_draw_depth_rotated_packets(const MODEL_OBJECT *item)
     transform_origin_depth();
     object_apply_rotations(item);
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
@@ -513,11 +434,7 @@ GDB_CALL uint32 object_draw_scene_active(const MODEL_OBJECT *item)
         return state;
     object_apply_rotations(item);
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
@@ -528,11 +445,7 @@ GDB_CALL uint32 object_draw_scene_early(const MODEL_OBJECT *item)
         return 0;
     object_apply_rotations(item);
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_faded(model_refs[item->kind], 0, 0);
 }
 
@@ -546,11 +459,7 @@ GDB_CALL uint32 object_draw_raised(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b4f8u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     sint32 angle = item->angles.yaw;
     if (angle)
         transform_yaw(angle);
@@ -568,11 +477,7 @@ GDB_CALL uint32 object_draw_base_raised(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b350u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     sint32 angle = item->angles.yaw;
     if (angle)
         transform_yaw(angle);
@@ -593,11 +498,7 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
 {
     FUNCTION_MARKER(0x80011594u, "GAME.EXE");
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
     uint32 words[8];
     uint32 *xy, *xy_output;
@@ -615,27 +516,22 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
     for (i = 0; i < 5; i++)
         xport_gte_write_control(i, words[i]);
     for (i = 5; i < 8; i++)
-        words[i] = (uint32)matrix->t[i - 5];
+        words[i] = matrix->t[i - 5];
     for (i = 5; i < 8; i++)
         xport_gte_write_control(i, (sint32)words[i] >> 16);
     depth_carrier = (sint32)words[7] >> 16;
-    if (!model.header || model.byte_len < sizeof(*header))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(model.header && model.byte_len >= sizeof(*header));
     header = model.header;
     count = header->vertex_count;
-    proj_count = count > 6 ? ((uint32)count + 2) / 3 * 3 : 6;
+    proj_count = count > 6 ? (count + 2u) / 3 * 3 : 6;
     /* TODO: Investigate an original RTPT read extending beyond its model resource */
-    if (!model.vertices || ((uintptr_t)model.vertices & 3) || proj_count > model.vertex_byte_len / sizeof(SVECTOR))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Model RTPT span: vertices %d projected %u bytes %u\n", count, proj_count, model.vertex_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model.vertices && !((uintptr_t)model.vertices & 3) && proj_count <= model.vertex_byte_len / sizeof(SVECTOR));
     /* RTPT consumes complete packed triples, including real adjacent file bytes */
     vertices = (const uint32 *)model.vertices;
-    below127 = (sint32)math_add_checked(count, -127);
-    below193 = (sint32)math_add_checked(count, -193);
+    below127 = math_add_checked(count, -127);
+    below193 = math_add_checked(count, -193);
     if (below127 >= 0)
-        below385 = (sint32)math_add_checked(count, -385);
+        below385 = math_add_checked(count, -385);
     xy = below127 < 0 || below193 < 0 ? geometry_workspace.scratch.xy : geometry_workspace.model.proj.xy;
     depths = below127 < 0 ? geometry_workspace.scratch.depth + 256 : below193 < 0 ? geometry_workspace.model.depth : below385 < 0 ? geometry_workspace.scratch.depth : geometry_workspace.model.depth;
     xy_output = xy + 3;
@@ -644,7 +540,7 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
         xport_gte_write_data(i, vertices[i]);
     xport_gte_execute(0x280030);
     vertices += 6;
-    count = (sint32)math_add_checked(count, -3);
+    count = math_add_checked(count, -3);
     for (i = 0; i < 3; i++)
         xy_output[i - 3] = xport_gte_read_data(12 + i);
     for (i = 0; i < 3; i++)
@@ -660,7 +556,7 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
             depth_output[i - 3] = (sint16)saved_depths[i];
         xy_output += 3;
         depth_output += 3;
-        count = (sint32)math_add_checked(count, -3);
+        count = math_add_checked(count, -3);
         for (i = 0; i < 3; i++)
             xy_output[i - 3] = xport_gte_read_data(12 + i);
         for (i = 0; i < 3; i++)
@@ -670,11 +566,7 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
         depth_output[i - 3] = (sint16)saved_depths[i];
     left = header->face_count;
     /* TODO: Investigate an original empty or out-of-resource face stream */
-    if (!left || !model.faces || ((uintptr_t)model.faces & 3) || left > model.face_byte_len / sizeof(*face))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Model face span: count %u bytes %u\n", left, model.face_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(left && model.faces && !((uintptr_t)model.faces & 3) && left <= model.face_byte_len / sizeof(*face));
     face = model.faces;
     cutoff = RENDER_FADE_CUTOFF;
     depth_offsets = depth_table;
@@ -738,16 +630,15 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
                 sint64 difference;
                 depth = (sint32)math_add_checked(d0 + d1, bias) >> 1;
                 difference = (sint64)depth - cutoff;
-                if (difference < -2147483647LL - 1 || difference > 2147483647LL)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(difference >= -2147483647LL - 1 && difference <= 2147483647LL);
                 delta = (sint32)difference;
-                fade = (sint32)math_add_checked(delta, 2048);
+                fade = math_add_checked(delta, 2048);
                 depth_carrier = fade;
                 if (delta <= 0)
                 {
                     if (fade >= 0)
                     {
-                        uint32 shade = 128u - (uint32)(fade >> 4);
+                        uint32 shade = 128u - (fade >> 4);
                         color = 0x2c000000u | shade | (shade << 8) | (shade << 16);
                     }
                     depth_carrier = depth >>= 2;
@@ -778,12 +669,11 @@ GDB_CALL uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bi
                             depth_carrier = offset;
                             xport_gte_execute(0x140006);
                             flags = face->words[2];
-                            area = (sint32)xport_gte_read_data(24);
+                            area = xport_gte_read_data(24);
                             if ((flags & 1u) || area >= 0)
                             {
                                 uint32 tex_offset = flags >> 16, uv, mode, end, semi, bucket, next;
-                                if ((tex_offset & 3) || tex_offset > sizeof(tex_desc.words) - 12)
-                                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                                XASSERT(!(tex_offset & 3) && tex_offset <= sizeof(tex_desc.words) - 12);
                                 const uint32 *tex = tex_desc.words + tex_offset / 4;
                                 POLY_FT4 *poly = psx_addr(packet, sizeof(*poly));
                                 if (flags & 2u)
@@ -836,15 +726,11 @@ GDB_CALL uint32 object_draw_depth_fade(const MODEL_OBJECT *item)
     uint32 model, color;
     proj_local(0, 0, 0, &pos);
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     model = item->kind;
-    if ((uint32)pos.depth - 1u >= 0x2fffu)
+    if (pos.depth - 1u >= 0x2fffu)
         return 0;
-    color = 128u - (uint32)(pos.depth >> 7);
+    color = 128u - (pos.depth >> 7);
     render_style.color.rgbc = 0x2c000000u + (color << 16) + (color << 8) + color;
     return model_draw_static(model_refs[model], 0, 0);
 }
@@ -865,25 +751,17 @@ GDB_CALL uint32 object_draw_near_fade(const MODEL_OBJECT *item)
         render_style.color.rgbc = 0x2c000000u + (color << 16) + (color << 8) + color;
     }
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
 GDB_CALL uint32 object_draw_depth_pair(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005d7a4u, "GAME.EXE");
-    if ((uint32)transform_origin_depth() - 257u >= 0xeffu)
+    if (transform_origin_depth() - 257u >= 0xeffu)
         return 0;
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     model_draw_static(model_refs[item->kind], 0, 0);
     return model_draw_static(model_refs[1 + (item->kind)], 0, 0);
 }
@@ -895,11 +773,7 @@ GDB_CALL uint32 object_draw_visible_yaw(const MODEL_OBJECT *item)
     if (!transform_origin_visible())
         return 0;
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     angle = item->angles.yaw;
     if (angle)
         transform_yaw(angle);
@@ -921,15 +795,11 @@ GDB_CALL uint32 object_draw_side_spin(const MODEL_OBJECT *model)
     sint32 x;
     transform_translate(0, 0x02800000, 0);
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.val;
     angle = game_session.tick;
     if (x > 0)
-        angle = 0u - angle;
+        angle = (uint32)(-(sint64)(angle));
     transform_roll(angle << 12);
     return model_draw_static(model_refs[400], 0, 0);
 }
@@ -940,11 +810,7 @@ GDB_CALL uint32 object_draw_camera_yaw_outer(const MODEL_OBJECT *item)
     if ((uint16)(camera.angles.yaw_bits + 16384) <= 32768)
         return 0;
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
@@ -952,11 +818,7 @@ GDB_CALL uint32 object_draw_kind_bias(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x800326dcu, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     uint32 kind = item->kind;
     return model_draw_static(model_refs[kind], 0, kind - 133u < 2u ? 1024 : 512);
 }
@@ -967,11 +829,7 @@ GDB_CALL uint32 object_draw_stage_bias(const MODEL_OBJECT *item)
     if (!stage_animation.phase[0])
         return 0;
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 512);
 }
 
@@ -991,11 +849,7 @@ GDB_CALL uint32 object_draw_flag_256(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002a00cu, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 256);
 }
 
@@ -1003,11 +857,7 @@ GDB_CALL uint32 object_draw_flag_512(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x80032774u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 512);
 }
 
@@ -1026,21 +876,13 @@ GDB_CALL void object_draw_height_offset(const MODEL_OBJECT *model)
     uint32 x, y, z, camera_x, camera_y, camera_z, kind, height;
     transform_push();
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x = model->pos.x.bits;
     camera_x = camera.pos.x.bits;
     kind = model->kind;
     y = model->pos.y.bits;
     /* TODO: Investigate a model kind outside the native height table */
-    if (kind >= MODEL_TYPE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model height kind %u object %p stage %u tick %u\n", kind, (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(kind < MODEL_TYPE_COUNT);
     height = model_height[kind];
     y += height;
     camera_y = camera.pos.y.bits;
@@ -1059,11 +901,7 @@ GDB_CALL uint32 object_draw_scene_variant(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002c294u, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     uint32 kind = item->kind;
     if (game_session.scene_phase == 2)
         ++kind;
@@ -1075,11 +913,7 @@ GDB_CALL uint32 object_draw_quarter_turn(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8003ee7cu, "GAME.EXE");
     transform_yaw(49152);
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
@@ -1088,11 +922,7 @@ GDB_CALL void object_draw_dimmed_yaw(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8005bf0cu, "GAME.EXE");
     transform_push();
     /* TODO: Investigate common fields outside the native model pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid remaining model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_yaw(item->angles.yaw);
     render_style.color.rgbc = 0x2c404040;
     model_draw_static(model_refs[item->kind], 0, 0);
@@ -1104,11 +934,7 @@ GDB_CALL void object_draw_inverted_roll(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8005bf7cu, "GAME.EXE");
     transform_push();
     /* TODO: Investigate common fields outside the native model pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid remaining model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_yaw(item->angles.yaw);
     transform_pitch(item->angles.pitch);
     transform_roll(-item->angles.roll);
@@ -1121,11 +947,7 @@ GDB_CALL void object_draw_offset_spinning_pair(const MODEL_OBJECT *model)
     FUNCTION_MARKER(0x8005bff4u, "GAME.EXE");
     transform_push();
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_yaw(model->angles.yaw);
     transform_pitch(model->angles.pitch);
     transform_roll(-model->angles.roll);
@@ -1136,11 +958,7 @@ GDB_CALL void object_draw_offset_spinning_pair(const MODEL_OBJECT *model)
     transform_pop();
     transform_push();
     /* TODO: Investigate a shadow draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing shadow draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_translate(0, model->pos.y.val, 0);
     transform_yaw(model->angles.yaw);
     model_draw_static(model_refs[834], 0, -2048);
@@ -1154,11 +972,7 @@ GDB_CALL uint32 object_update_yaw(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002eb58u, "GAME.EXE");
     /* TODO: Investigate common fields outside the native model pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid remaining model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     uint32 val = (uint16)item->angles.yaw + 1004u;
     item->angles.yaw_bits = (uint16)val;
     return val;
@@ -1199,16 +1013,14 @@ static void model_apply_pose_rotations(const void *src, int halfwords)
     yaw = halfwords ? (uint32)(sint32)((const POSE_ANGLES *)src)->yaw : ((const uint32 *)src)[1];
     if (yaw)
     {
-        if (yaw == 0x80000000u)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        transform_yaw_idx(((0u - yaw) & 0xfff) << 2);
+        XASSERT(yaw != 0x80000000u);
+        transform_yaw_idx((((uint32)(-(sint64)(yaw))) & 0xfff) << 2);
     }
     pitch = halfwords ? (uint32)(sint32)((const POSE_ANGLES *)src)->pitch : ((const uint32 *)src)[2];
     if (pitch)
     {
-        if (pitch == 0x80000000u)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        transform_pitch_idx(((0u - pitch) & 0xfff) << 2);
+        XASSERT(pitch != 0x80000000u);
+        transform_pitch_idx((((uint32)(-(sint64)(pitch))) & 0xfff) << 2);
     }
 }
 
@@ -1220,13 +1032,11 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
     const uint32 *stream, *counts, *end;
     const MODEL_RIG_HEADER *rig;
     sint32 angle;
-    if (!model.header || model.byte_len < sizeof(*rig))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(model.header && model.byte_len >= sizeof(*rig));
     rig = (const MODEL_RIG_HEADER *)model.header;
     counts = rig->part_vertex_count;
     end = (const uint32 *)model.header + model.byte_len / sizeof(uint32);
-    if ((rig->commands_offset & 3) || rig->commands_offset > model.byte_len - sizeof(uint32))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!(rig->commands_offset & 3) && rig->commands_offset <= model.byte_len - sizeof(uint32));
     stream = (const uint32 *)((const uint8 *)rig + rig->commands_offset);
     transform_push();
     angle = pose->angles[0].pitch;
@@ -1238,8 +1048,7 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
     angle = pose->angles[0].roll;
     if (angle)
         transform_roll_idx(((uint32)angle & 0xfff) << 2);
-    if (stream == end)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stream != end);
     command = *stream;
     stream++;
     for (;;)
@@ -1257,15 +1066,10 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
             transform_pop();
             goto next_command;
         }
-        if (end - stream < 4)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(end - stream >= 4);
         flag = *stream;
         /* TODO: Investigate geometry entered before its current matrix is published */
-        if (!geometry_workspace.matrix)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(geometry_workspace.matrix);
         matrix = geometry_workspace.matrix;
         for (i = 0; i < 5; i++)
             words[i] = matrix->rotation_words[i];
@@ -1282,26 +1086,19 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
         xport_gte_write_data(1, (sint32)xyz[2] >> 16);
         xport_gte_execute(0x480012);
         /* TODO: Investigate geometry entered before its current matrix is published */
-        if (!geometry_workspace.matrix)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(geometry_workspace.matrix);
         matrix = geometry_workspace.matrix;
         for (i = 0; i < 3; i++)
             xyz[i] = xport_gte_read_data(25 + i) << 16;
         for (i = 0; i < 3; i++)
             matrix->t[i] = (sint32)xyz[i];
-        if (end - stream < 3)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(end - stream >= 3);
         model_apply_pose_rotations(stream, 0);
         stream += 3;
-        if (stream == end)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(stream != end);
         bone = *stream;
         stream++;
-        if (bone >= ACTOR_POSE_BONE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(bone < ACTOR_POSE_BONE_COUNT);
         model_apply_pose_rotations(&pose->angles[bone], 1);
         if (flag == 1)
         {
@@ -1312,11 +1109,7 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
         {
             uint32 matrix_idx = flag == 2 ? 0 : flag == 3 ? 1 : flag == 10 ? 2 : 3;
             /* TODO: Investigate geometry entered before its current matrix is published */
-            if (!geometry_workspace.matrix)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(geometry_workspace.matrix);
             matrix = geometry_workspace.matrix;
             for (i = 0; i < 8; i++)
                 words[i] = i < 5 ? matrix->rotation_words[i] : (uint32)matrix->t[i - 5];
@@ -1327,19 +1120,14 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
         if (point_idx != 0xffffffff)
         {
             /* TODO: Investigate geometry entered before its current matrix is published */
-            if (!geometry_workspace.matrix)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(geometry_workspace.matrix);
             matrix = geometry_workspace.matrix;
             for (i = 0; i < 3; i++)
                 xyz[i] = (uint32)matrix->t[i];
             for (i = 0; i < 3; i++)
                 pose->point[point_idx].v[i] = xyz[i];
         }
-        if (counts == end)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(counts != end);
         count = *counts;
         counts++;
         if (count)
@@ -1349,11 +1137,7 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
             sint16 *depth_out;
             const uint32 *vertex;
             /* TODO: Investigate geometry entered before its current matrix is published */
-            if (!geometry_workspace.matrix)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(geometry_workspace.matrix);
             matrix = geometry_workspace.matrix;
             for (i = 0; i < 8; i++)
                 words[i] = i < 5 ? matrix->rotation_words[i] : (uint32)matrix->t[i - 5];
@@ -1363,11 +1147,7 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
                 xport_gte_write_control(i, (sint32)words[i] >> 16);
             proj_count = (sint32)count > 3 ? (count + 2) / 3 * 3 : 3;
             /* TODO: Investigate original rig parts reading past their model resource */
-            if (!model.vertices || ((uintptr_t)model.vertices & 3) || idx > model.vertex_byte_len / sizeof(SVECTOR) || proj_count > model.vertex_byte_len / sizeof(SVECTOR) - idx)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Rig RTPT span: index %u count %u projected %u bytes %u\n", idx, count, proj_count, model.vertex_byte_len));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model.vertices && !((uintptr_t)model.vertices & 3) && idx <= model.vertex_byte_len / sizeof(SVECTOR) && proj_count <= model.vertex_byte_len / sizeof(SVECTOR) - idx);
             vertex = (const uint32 *)(model.vertices + idx);
             xy = geometry_workspace.model.proj.xy + idx;
             depth_out = geometry_workspace.model.depth + idx;
@@ -1378,8 +1158,7 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
                     xport_gte_write_data(i, vertex[i]);
                 xport_gte_execute(0x280030);
                 vertex += 6;
-                if ((sint32)remaining < -2147483645)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT((sint32)remaining >= -2147483645);
                 remaining -= 3;
                 for (i = 0; i < 3; i++)
                     xy[i] = xport_gte_read_data(12 + i);
@@ -1391,13 +1170,11 @@ GDB_CALL void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
                 depth_out += 3;
             } while ((sint32)remaining > 0);
         }
-        if (end - stream < 3)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(end - stream >= 3);
         model_apply_pose_rotations(stream, 0);
         stream += 3;
     next_command:
-        if (stream == end)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(stream != end);
         command = *stream;
         stream++;
         if (!command)
@@ -1417,8 +1194,7 @@ GDB_CALL uint32 model_draw_packets(uint32 count, const MODEL_FACE_RECORD *recs, 
     blend_override = math_add_checked(blend, -1) << 21;
     ot = render_buffers.ot_addr;
     packet = render_buffers.packet_addr;
-    if (!count)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(count);
     do
     {
         uint32 word0, word1, i0, i1, i2, i3;
@@ -1506,8 +1282,7 @@ GDB_CALL uint32 model_draw_packets(uint32 count, const MODEL_FACE_RECORD *recs, 
             if (!(flags & 1) && clip < 0)
                 goto next_rec;
             uint32 tex_offset = flags >> 16;
-            if ((tex_offset & 3) || tex_offset > sizeof(tex_desc.words) - 12)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(!(tex_offset & 3) && tex_offset <= sizeof(tex_desc.words) - 12);
             tex = tex_desc.words + tex_offset / 4;
             POLY_FT4 *poly = psx_addr(packet, sizeof(*poly));
             if (flags & 2)
@@ -1561,11 +1336,7 @@ GDB_CALL uint32 model_draw_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
     header = model.header;
     count = header->face_count;
     /* TODO: Investigate an original empty or out-of-resource face stream */
-    if (!count || !model.faces || ((uintptr_t)model.faces & 3) || count > model.face_byte_len / sizeof(*recs))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Model face span: count %u bytes %u\n", count, model.face_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(count && model.faces && !((uintptr_t)model.faces & 3) && count <= model.face_byte_len / sizeof(*recs));
     recs = model.faces;
     /* With zero bias the overwritten ADD cannot observe the incoming carrier */
     return model_draw_packets(count, recs, geometry_workspace.model.proj.xy, geometry_workspace.model.depth, 0, 0);
@@ -1587,11 +1358,7 @@ GDB_CALL uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 b
     uint32 proj_count;
     int i;
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
     for (i = 0; i < 5; i++)
         words[i] = matrix->rotation_words[i];
@@ -1601,17 +1368,12 @@ GDB_CALL uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 b
         words[i] = (uint32)matrix->t[i - 5];
     for (i = 5; i < 8; i++)
         xport_gte_write_control(i, (sint32)words[i] >> 16);
-    if (!model.header || model.byte_len < sizeof(*header))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(model.header && model.byte_len >= sizeof(*header));
     header = model.header;
     count = header->vertex_count;
     proj_count = count > 6 ? ((uint32)count + 2) / 3 * 3 : 6;
     /* TODO: Investigate an original RTPT read extending beyond its model resource */
-    if (!model.vertices || ((uintptr_t)model.vertices & 3) || proj_count > model.vertex_byte_len / sizeof(SVECTOR))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Model RTPT span: vertices %d projected %u bytes %u\n", count, proj_count, model.vertex_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model.vertices && !((uintptr_t)model.vertices & 3) && proj_count <= model.vertex_byte_len / sizeof(SVECTOR));
     /* RTPT consumes complete packed triples, including real adjacent file bytes */
     vertices = (const uint32 *)model.vertices;
     below127 = (sint32)math_add_checked(count, -127);
@@ -1651,11 +1413,7 @@ GDB_CALL uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 b
         depth_out[i - 3] = (sint16)prev_depths[i];
     packets = header->face_count;
     /* TODO: Investigate an original empty or out-of-resource face stream */
-    if (!packets || !model.faces || ((uintptr_t)model.faces & 3) || packets > model.face_byte_len / sizeof(*recs))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Model face span: count %u bytes %u\n", packets, model.face_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(packets && model.faces && !((uintptr_t)model.faces & 3) && packets <= model.face_byte_len / sizeof(*recs));
     recs = model.faces;
     return model_draw_packets(packets, recs, xy, depths, bias, (sint32)words[7] >> 16);
 }
@@ -1671,11 +1429,7 @@ GDB_CALL uint32 object_draw_rotated(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002a0c4, "GAME.EXE");
     object_apply_rotations(item);
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
@@ -1696,11 +1450,7 @@ GDB_CALL uint32 object_draw_yaw_flag_128(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8003262c, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_yaw(item->angles.yaw);
     return model_draw_static(model_refs[item->kind], 0, 128);
 }
@@ -1712,11 +1462,7 @@ GDB_CALL uint32 object_draw_camera_yaw_inner(const MODEL_OBJECT *item)
     if (((camera.angles.yaw_bits + 16383) & 65535) >= 32767)
         return 0;
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid simple draw model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     angle = item->angles.yaw;
     if (angle)
         transform_yaw(angle);
@@ -1728,23 +1474,15 @@ GDB_CALL uint32 object_draw_wave(MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002ab40, "GAME.EXE");
     uint32 phase, tick;
     /* TODO: Investigate a wave draw with an absent or foreign native phase owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_WAVE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid wave model %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_WAVE);
     if ((sint32)game_session.tick < 2)
         item->wave.phase = (uint16)random_next();
-    phase = (uint32)(sint32)item->wave.phase;
+    phase = item->wave.phase;
     tick = game_session.tick;
     phase = ((phase + tick) << 5) & 0xfe0;
-    transform_translate(0, 0, 8 * (sint32)sin_table[phase >> 1]);
+    transform_translate(0, 0, 8 * sin_table[phase >> 1]);
     /* TODO: Investigate common fields outside the native model pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid remaining model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     return model_draw_static(model_refs[item->kind], 0, 0);
 }
 
@@ -1756,17 +1494,13 @@ GDB_CALL uint32 object_draw_visible_player_facing(MODEL_OBJECT *model)
     if (!transform_origin_visible())
         return 0;
     /* TODO: Investigate visible drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing visible facing position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     object_x = model->pos.x.whole;
     object_z = model->pos.z.whole;
     player_x = actor_positions[0].x.whole;
     player_z = actor_positions[0].z.whole;
     angle = (sint16)math_dir16(object_x, object_z, player_x, player_z);
-    model->angles.yaw_bits = (uint16)angle;
+    model->angles.yaw_bits = angle;
     transform_yaw(angle);
     return model_draw_static(model_refs[model->kind], 0, 0);
 }
@@ -1777,11 +1511,7 @@ GDB_CALL void object_draw_raised_spinning_pair(const MODEL_OBJECT *model)
     transform_push();
     transform_translate(0, 0x800000, 0);
     /* TODO: Investigate compound draw fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_yaw(model->angles.yaw);
     transform_roll(-model->angles.roll);
     transform_pitch(model->angles.pitch);
@@ -1792,11 +1522,7 @@ GDB_CALL void object_draw_raised_spinning_pair(const MODEL_OBJECT *model)
     transform_pop();
     transform_push();
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_translate(0, model->pos.y.val, 0);
     transform_yaw(model->angles.yaw);
     model_draw_static(model_refs[834], 0, 0);
@@ -1811,11 +1537,7 @@ GDB_CALL void object_draw_pitched_spinning_pair(const MODEL_OBJECT *model)
     FUNCTION_MARKER(0x800451a0, "GAME.EXE");
     sint32 angle;
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     if (model->pos.y.val <= -536870912)
         return;
     transform_push();
@@ -1843,11 +1565,7 @@ GDB_CALL void object_draw_phased_effects(const MODEL_OBJECT *model)
     sint32 angle;
     transform_push();
     /* TODO: Investigate compound draw fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_yaw(model->angles.yaw);
     angle = model->angles.roll;
     if (angle)
@@ -1872,11 +1590,7 @@ GDB_CALL void object_draw_phased_effects(const MODEL_OBJECT *model)
     transform_pop();
     transform_push();
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_translate(0, model->pos.y.val, 0);
     transform_yaw(model->angles.yaw);
     model_draw_menu(model_refs[837], 0, 0);
@@ -1896,11 +1610,7 @@ GDB_CALL uint32 object_draw_offset_shadow(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005ac08, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     uint32 type = item->kind;
     FIXED_VEC3 pos;
     sint32 depth, shade;
@@ -1915,7 +1625,7 @@ GDB_CALL uint32 object_draw_offset_shadow(const MODEL_OBJECT *item)
         if (shade > 96)
             shade = 96;
         shade = 128 - shade;
-        render_style.color.rgbc = 0x2c000000u + ((uint32)shade << 16) + ((uint32)shade << 8) + (uint32)shade;
+        render_style.color.rgbc = 0x2c000000u + ((uint32)shade << 16) + ((uint32)shade << 8) + shade;
     }
     model_draw_static(model_refs[type], 0, 0);
     model_draw_static(model_refs[type == 80 ? 89 : 106], 0, 8192);
@@ -1934,30 +1644,18 @@ GDB_CALL uint32 object_update_impact_spr(MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002b28cu, "GAME.EXE");
     uint32 result;
     /* TODO: Investigate a model sprite callback with a foreign native payload */
-    if (item && item->payload_kind != MODEL_PAYLOAD_SPRITE)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model sprite payload object %p callback %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(!item || item->payload_kind == MODEL_PAYLOAD_SPRITE);
     MODEL_SPRITE *model_spr = item ? &item->spr : NULL;
     /* TODO: Investigate an impact sprite outside the native dynamic pool */
-    if (!model_spr)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing impact sprite owner %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model_spr);
     if (model_spr->frame == 6)
     {
         /* TODO: Investigate a dynamic callback outside its native pool */
-        if (!item)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid dynamic model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(item);
         item->kind = 0xffffffff;
     }
-    result = (uint32)(uint16)model_spr->frame + 1;
-    model_spr->frame = (sint16)(uint16)result;
+    result = ((uint16)model_spr->frame) + 1;
+    model_spr->frame = (uint16)result;
     return result;
 }
 
@@ -1972,11 +1670,7 @@ GDB_CALL void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *ef
     const EFFECT_PARTICLE *debris = NULL;
     const FIXED_VEC3 *pos = NULL;
     /* TODO: Investigate foreign objects or unpublished effect positions */
-    if ((!item && !effect) || (item && effect))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid camera-transform owners model %p effect %p stage %u tick %u\n", (const void *)item, (const void *)effect, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((item || effect) && (!item || !effect));
     if (effect)
     {
         if (effect->payload_kind == EFFECT_PAYLOAD_SPRITE)
@@ -1992,8 +1686,8 @@ GDB_CALL void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *ef
         else
         {
             /* TODO: Investigate callbacks crossing native payload formats */
-            DIAGNOSTIC(fprintf(stderr, "Unsupported camera-transform effect %p tag %u\n", (const void *)effect, (uint32)effect->payload_kind));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+            XASSERT(0);
         }
     }
     else
@@ -2004,19 +1698,11 @@ GDB_CALL void object_transform_camera(const MODEL_OBJECT *item, const EFFECT *ef
     if (effect)
     {
         /* TODO: Investigate missing publication or cross-format slot reuse */
-        if ((spr && !(type - 870u < 5u || type == 877 || type == 879 || type == 880 || type - 891u < 5u || type - 575u < 2u || type - 602u < 6u) && type != 0xffffffffu) || (debris && !(type - 897u < 13u || type < 6u || type - 6u < 2u || type - 577u < 3u || type == 583 || type - 599u < 3u || type - 72u < 4u) && type != 0xffffffffu))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid native object publication %p kind %u tag %u\n", (const void *)effect, type, (uint32)effect->payload_kind));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!spr || type - 870u < 5u || type == 877 || type == 879 || type == 880 || type - 891u < 5u || type - 575u < 2u || type - 602u < 6u || type == 0xffffffffu) && (!debris || type - 897u < 13u || type < 6u || type - 6u < 2u || type - 577u < 3u || type == 583 || type - 599u < 3u || type - 72u < 4u || type == 0xffffffffu));
     }
     y = pos->y.bits;
     /* TODO: Investigate original model-height reads outside the native table */
-    if (type >= MODEL_TYPE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid camera-transform model %u for model %p effect %p\n", type, (const void *)item, (const void *)effect));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(type < MODEL_TYPE_COUNT);
     height = model_height[type];
     y += height;
     camera_y = camera.pos.y.bits;

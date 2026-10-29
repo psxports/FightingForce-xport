@@ -25,17 +25,13 @@ static void draw(const MODEL_OBJECT *item)
         phase -= 416;
         if (phase < 0)
             phase = 0;
-        color = 4u * (uint32)phase + 64u;
+        color = 4u * phase + 64u;
         render_style.color.rgbc = 0x2c000000u + (color << 16) + (color << 8) + color;
     }
     /* TODO: Investigate a model callback outside its native object domain */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model receiver %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     model_draw_static(model_refs[item->kind], 0, 2048);
-    height = 0u - lift.pos;
+    height = (uint32)(-(sint64)(lift.pos));
     draw_section(440, height);
     height += 1472u;
     draw_section(440, height);
@@ -70,11 +66,7 @@ static uint32 update_marker(struct EFFECT *effect)
 {
     FUNCTION_MARKER(0x8002da0cu, "GAME.EXE");
     /* TODO: Investigate a lift marker with an unpublished or foreign payload */
-    if (!effect || effect->payload_kind != EFFECT_PAYLOAD_PARTICLE || (!(effect->kind - 897u < 13u || effect->kind < 6u || effect->kind - 6u < 2u || effect->kind - 577u < 3u || effect->kind == 583 || effect->kind - 599u < 3u || effect->kind - 72u < 4u) && effect->kind != 0xffffffffu))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid lift marker payload %p kind %u owner %u stage %u tick %u\n", (void *)effect, effect ? effect->kind : 0xffffffffu, effect ? (uint32)effect->payload_kind : 0xffffffffu, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(effect && effect->payload_kind == EFFECT_PAYLOAD_PARTICLE && (effect->kind - 897u < 13u || effect->kind < 6u || effect->kind - 6u < 2u || effect->kind - 577u < 3u || effect->kind == 583 || effect->kind - 599u < 3u || effect->kind - 72u < 4u || effect->kind == 0xffffffffu));
     EFFECT_PARTICLE *particle = &effect->particle;
     particle->pos.x.bits = ((lift.cycle << 5) - 240u) << 16;
     particle->pos.y.bits = 0xfe300000u;

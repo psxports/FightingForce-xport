@@ -202,11 +202,7 @@ sint32 game_cold_reset(void)
     spu_native_transfer_state->dma_blocks = 0;
     spu_native_transfer_state->address_units = 0;
     /* TODO: Investigate a native completion callback surviving cold reset */
-    if (spu_native_transfer_state->completion_callback)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Unmapped native SPU completion callback at cold reset\n"));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(!spu_native_transfer_state->completion_callback);
     spu_native_transfer_state->completion_callback = NULL;
     /* Heap metadata and its zero caller records were reset above */
     *spu_key_control = (SpuKeyControl){0};

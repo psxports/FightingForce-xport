@@ -10,20 +10,12 @@ GDB_CALL uint32 train_update(MODEL_OBJECT *model)
     uint32 z, result;
     sint16 *accel;
     /* TODO: Investigate a missing or foreign native train owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_TRAIN)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid train model %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_TRAIN);
     FIXED_VEC3 *pos = &model->pos;
     if (!model->train.voice_plus_one)
         model->train.voice_plus_one = (uint16)(sound_voice_play(145, 0, 6656) + 1);
     /* TODO: Investigate a train update without a native position */
-    if (!pos)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid train position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(pos);
     side = pos->x.val > 0x0f9fffff;
     max_speed = side ? 16640 : 19200;
     val = model->train.speed;
@@ -49,9 +41,9 @@ GDB_CALL uint32 train_update(MODEL_OBJECT *model)
     {
         z = pos->z.bits;
         distance = side ? z - 0x0d800000u : 0x0d800000u - z;
-        val = distance < 0 ? (uint32)distance + 0x3e800000u : 0x3e800000u - (uint32)distance;
+        val = distance < 0 ? distance + 0x3e800000u : 0x3e800000u - distance;
         val = (val >> 8) / 16000;
-        volume = (sint32)((uint32)val * (uint32)(sint32)model->train.speed) / (max_speed >> 1);
+        volume = (sint32)(val * (uint32)(sint32)model->train.speed) / (max_speed >> 1);
         if (volume < 0)
             volume = 0;
         if (volume > 255)
@@ -60,13 +52,12 @@ GDB_CALL uint32 train_update(MODEL_OBJECT *model)
         if (state == 1)
             goto finish;
         val = (sint16)(uint16)model->train.speed;
-        if (val >= max_speed && (uint32)distance - 1u <= 0x1f3ffffe)
+        if (val >= max_speed && distance - 1u <= 0x1f3ffffe)
         {
             val >>= 7;
-            numerator = 0u - ((uint32)val * (uint32)val << 7);
+            numerator = (uint32)(-(sint64)(val * (uint32)val << 7));
             denominator = (uint32)(distance >> 16) << 1;
-            if (!denominator || (denominator == -1 && numerator == (sint32)0x80000000u))
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__); /* Original400CC/400E4 BREAK */
+            XASSERT(denominator && (denominator != -1 || numerator != (sint32)0x80000000u)); /* Original400CC/400E4 BREAK */
             *accel = (sint16)(numerator / denominator);
             model->train.state = 1;
             sound_voice_play(242, 255, 5632);
@@ -87,27 +78,19 @@ GDB_CALL uint32 train_update(MODEL_OBJECT *model)
     {
         if (side)
         {
-            val = (sint32)stage_animation.phase[0];
+            val = stage_animation.phase[0];
             if (val < 32)
-                stage_animation.phase[0] = (uint32)val + 1;
+                stage_animation.phase[0] = val + 1u;
         }
         if ((sint32)stage_animation.phase[0] >= 9)
         {
             if ((uint8)level_transition.exit_requested && game_session.stage == 13)
             {
                 /* TODO: Investigate an absent train exit collision region */
-                if (!col_regions.named[0])
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Missing train exit region 0 object %p side %d phase %u stage %u tick %u\n", (void *)model, side, stage_animation.phase[0], game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(col_regions.named[0]);
                 col_regions.named[0]->col_kind = 0;
                 /* TODO: Investigate an absent train exit collision region */
-                if (!col_regions.named[1])
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Missing train exit region 1 object %p side %d phase %u stage %u tick %u\n", (void *)model, side, stage_animation.phase[0], game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(col_regions.named[1]);
                 col_regions.named[1]->col_kind = 0;
             }
             else if ((sint32)game_session.scene_phase >= 2)
@@ -147,7 +130,7 @@ GDB_CALL uint32 train_update(MODEL_OBJECT *model)
     {
         if (!stage_animation.phase[0])
         {
-            val = (sint32)game_session.scene_phase;
+            val = game_session.scene_phase;
             model->train.state = 0;
             *accel = 50;
             if (val >= 2)
@@ -155,20 +138,20 @@ GDB_CALL uint32 train_update(MODEL_OBJECT *model)
         }
         if (side)
         {
-            val = (sint32)stage_animation.phase[0];
+            val = stage_animation.phase[0];
             if (val > 0)
-                stage_animation.phase[0] = (uint32)val - 1;
+                stage_animation.phase[0] = val - 1u;
         }
     }
 finish:
-    result = (uint32)(sint32)level_transition.route_choice;
+    result = level_transition.route_choice;
     if ((uint32)side != result)
         return result;
     result = stage_animation.phase[0];
     if (result)
         return result;
-    val = (sint32)level_transition.route_exit_tick;
-    result = (uint32)val + 1;
+    val = level_transition.route_exit_tick;
+    result = val + 1u;
     if (val > 0)
     {
         z = pos->z.bits;

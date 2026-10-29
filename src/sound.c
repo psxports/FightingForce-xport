@@ -9,18 +9,14 @@ GDB_CALL sint32 sound_spatial(const FIXED_VEC3 *pos, uint32 *volume, uint32 *pan
 {
     FUNCTION_MARKER(0x80046884, "GAME.EXE");
     /* TODO: Investigate missing native spatial-sound arguments */
-    if (!pos || !volume || !pan)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing native spatial sound position %p volume %p pan %p stage %u tick %u\n", (const void *)pos, (void *)volume, (void *)pan, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(pos && volume && pan);
     sint32 x, z, px, pz, distance, p, v;
     uint32 angle, camera_angle;
     x = camera.pos.x.whole;
     z = camera.pos.z.whole;
     px = pos->x.whole;
     pz = pos->z.whole;
-    angle = (uint32)math_dir16(x, z, px, pz);
+    angle = math_dir16(x, z, px, pz);
     camera_angle = camera.angles.yaw_bits;
     x = camera.pos.x.whole;
     z = camera.pos.z.whole;
@@ -35,9 +31,9 @@ GDB_CALL sint32 sound_spatial(const FIXED_VEC3 *pos, uint32 *volume, uint32 *pan
         p = 0;
     else if ((sint16)p >= 256)
         p = 255;
-    *pan = (uint32)(sint32)(sint16)p;
+    *pan = (sint16)p;
     v = (sin_table[511 - distance] >> 7) & 255;
-    *volume = (uint32)v;
+    *volume = v;
     return v;
 }
 
@@ -95,7 +91,7 @@ GDB_CALL uint32 sound_volume_adjust(uint32 val, sint32 delta)
     FUNCTION_MARKER(0x80042820u, "GAME.EXE");
     /* Preserve volume-word wrapping before signed saturation */
     sint32 sum = val + delta;
-    return sum <= 0 ? 0u : sum < 255 ? (uint32)sum : 255u;
+    return sum <= 0 ? 0u : sum < 255 ? sum : 255u;
 }
 
 GDB_CALL sint32 sound_play_attack_voice(sint32 idx)
@@ -210,7 +206,7 @@ GDB_CALL uint32 sound_play_death_voice(sint32 idx)
 {
     FUNCTION_MARKER(0x80029530u, "GAME.EXE");
     sint32 type = actor_types[(uint32)idx], sound, pitch = 5952;
-    sint32 volume = 192 - (sint32)(random_next() & 63u);
+    sint32 volume = 192 - (random_next() & 63u);
     switch (type)
     {
         case 0:
@@ -249,7 +245,7 @@ GDB_CALL uint32 sound_play_death_voice(sint32 idx)
             pitch = 5696;
             break;
         default:
-            sound = (sint32)(random_next() & 1u) + 12;
+            sound = (random_next() & 1u) + 12;
             break;
     }
     pitch += (sint32)(random_next() & 255u);

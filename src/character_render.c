@@ -13,17 +13,11 @@ GDB_CALL sint32 character_trail_clear(sint32 resource)
     MODEL_REFERENCE model;
     uint32 i;
     SVECTOR *vertices;
-    if (resource < 0 || resource >= MODEL_TYPE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(resource >= 0 && resource < MODEL_TYPE_COUNT);
     model = model_refs[resource];
-    if (!model.header || model.byte_len < sizeof(*model.header))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(model.header && model.byte_len >= sizeof(*model.header));
     /* TODO: Investigate an original trail mesh shorter than its fixed 18 vertices */
-    if (!model.vertices || ((uintptr_t)model.vertices & 1) || model.vertex_byte_len < 18 * sizeof(*vertices))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Trail clear model %d bytes %u\n", resource, model.vertex_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model.vertices && !((uintptr_t)model.vertices & 1) && model.vertex_byte_len >= 18 * sizeof(*vertices));
     vertices = model.vertices;
     /* The original clears exactly 18 vertices, retaining each pad halfword */
     for (i = 0; i < 18; i++)
@@ -73,17 +67,13 @@ GDB_CALL uint32 character_trail_append(sint32 idx, sint32 attachment)
         v[0].vy = (uint16)y;
         v[0].vz = (uint16)z;
         height = (sint16)(model_height[(uint32)actor_types[idx]] >> 16);
-        v[1].vx = (uint16)(((uint32)x * 5u) >> 3);
-        v[1].vy = (uint16)(((sint32)(((uint32)y - (uint32)height) * 5u) >> 3) + height);
-        v[1].vz = (uint16)(((uint32)z * 5u) >> 3);
+        v[1].vx = (uint16)((x * 5u) >> 3);
+        v[1].vy = (uint16)(((sint32)((y - (uint32)height) * 5u) >> 3) + height);
+        v[1].vz = (uint16)((z * 5u) >> 3);
     }
-    model = model_refs[867 + ((uint32)idx & 1)];
+    model = model_refs[867 + (idx & 1u)];
     /* TODO: Investigate an original trail mesh shorter than its fixed 18 vertices */
-    if (!model.header || model.byte_len < sizeof(*model.header) || !model.vertices || ((uintptr_t)model.vertices & 1) || model.vertex_byte_len < 18 * sizeof(*vertices))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Trail append actor %d model %u bytes %u\n", idx, 867 + ((uint32)idx & 1), model.vertex_byte_len));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model.header && model.byte_len >= sizeof(*model.header) && model.vertices && !((uintptr_t)model.vertices & 1) && model.vertex_byte_len >= 18 * sizeof(*vertices));
     vertices = model.vertices;
     if ((sint16)trail->phase == 1)
     {
@@ -119,17 +109,12 @@ GDB_CALL uint32 character_trail_append(sint32 idx, sint32 attachment)
         trail->phase = 0;
     }
     sint64 pal_offset = 0x6a0 + 16LL * idx;
-    if (pal_offset < 0 || pal_offset > (sint64)sizeof(tex_pals) - 32)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(pal_offset >= 0 && pal_offset <= (sint64)sizeof(tex_pals) - 32);
     sint64 fade_offset = 32LL * age + 16 * ((uint16)actor_types[idx] & 1u);
     uint8 fade_bytes[32];
     size_t copied = 0, part;
-    if (fade_offset < -(sint64)sizeof(terrain_map.tile_flat))
-    {
-        /* TODO: Investigate a trail palette source before the native tile span */
-        DIAGNOSTIC(fprintf(stderr, "Trail palette before tiles actor %d phase %u age %d type %d source %08X stage %u tick %u\n", idx, (uint32)trail->phase, age, (sint32)actor_types[idx], 0x800a1870u + (uint32)fade_offset, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate a trail palette source before the native tile span */
+    XASSERT(fade_offset >= -(sint64)sizeof(terrain_map.tile_flat));
     if (copied < sizeof(fade_bytes) && fade_offset < 0)
     {
         part = (size_t)-fade_offset;
@@ -168,12 +153,8 @@ GDB_CALL uint32 character_trail_append(sint32 idx, sint32 attachment)
         copied += part;
         fade_offset += part;
     }
-    if (copied < sizeof(fade_bytes))
-    {
-        /* TODO: Investigate a trail palette source after the native color span */
-        DIAGNOSTIC(fprintf(stderr, "Trail palette after colors actor %d phase %u age %d type %d source %08X copied %u stage %u tick %u\n", idx, (uint32)trail->phase, age, (sint32)actor_types[idx], 0x800a1870u + (uint32)fade_offset, (uint32)copied, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate a trail palette source after the native color span */
+    XASSERT(copied >= sizeof(fade_bytes));
     return resource_copy_words((uint8 *)&tex_pals + pal_offset, fade_bytes, 16);
 }
 
@@ -240,21 +221,13 @@ static void player_right_item(uint32 idx, uint32 color)
 {
     sint32 slot, type;
     /* TODO: Investigate render actors outside the native equipment domain */
-    if (idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid held render equipment actor %u stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx < ACTOR_COUNT);
     slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     uint32 kind;
     if (slot == -1)
         return;
     /* TODO: Investigate held render references outside the dynamic pool */
-    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid held render actor %u hand right slot %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     MODEL_OBJECT *item = dynamic_objects + slot;
     kind = item->kind;
     if (kind == 0xffffffffu)
@@ -316,22 +289,14 @@ static void player_right_item(uint32 idx, uint32 color)
     item->pos.x.bits = actor_pos->x.bits;
     item->pos.z.bits = actor_pos->z.bits;
     /* TODO: Investigate a held kind outside its correction table at the original read */
-    if (kind - DYNAMIC_ITEM_TYPE_FIRST >= DYNAMIC_ITEM_TYPE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid held correction actor %u kind %u stage %u tick %u\n", idx, kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(kind - DYNAMIC_ITEM_TYPE_FIRST < DYNAMIC_ITEM_TYPE_COUNT);
     item_apply_correction(item_corrections + (kind - DYNAMIC_ITEM_TYPE_FIRST));
     render_style.color.rgbc = color;
     model_draw_static(model_refs[kind], 0, 0);
     if (kind - 496u < 2u)
     {
         /* TODO: Investigate a held explosive with a foreign native owner */
-        if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid held explosive owner actor %u slot %d kind %u owner %u stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
         if (item->physics.life > 0)
             item_draw_explosive_countdown(item);
     }
@@ -344,20 +309,12 @@ static void actor_other_item(uint32 idx, uint32 color, int left, int player)
     uint32 kind;
     sint32 slot, type;
     /* TODO: Investigate render actors outside the native equipment domain */
-    if (idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid held render equipment actor %u stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx < ACTOR_COUNT);
     slot = actor_items[idx].slot[hand];
     if (slot == -1)
         return;
     /* TODO: Investigate held render references outside the dynamic pool */
-    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid held render actor %u hand %u slot %d stage %u tick %u\n", idx, (uint32)hand, slot, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     MODEL_OBJECT *item = dynamic_objects + slot;
     kind = item->kind;
     if (kind == 0xffffffffu)
@@ -391,22 +348,14 @@ static void actor_other_item(uint32 idx, uint32 color, int left, int player)
     item->pos.x.bits = actor_pos->x.bits;
     item->pos.z.bits = actor_pos->z.bits;
     /* TODO: Investigate a held kind outside its correction table at the original read */
-    if (kind - DYNAMIC_ITEM_TYPE_FIRST >= DYNAMIC_ITEM_TYPE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid held correction actor %u kind %u stage %u tick %u\n", idx, kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(kind - DYNAMIC_ITEM_TYPE_FIRST < DYNAMIC_ITEM_TYPE_COUNT);
     item_apply_correction(item_corrections + (kind - DYNAMIC_ITEM_TYPE_FIRST));
     render_style.color.rgbc = color;
     model_draw_static(model_refs[kind], 0, 0);
     if (!left && kind - 496u < 2)
     {
         /* TODO: Investigate a held explosive with a foreign native owner */
-        if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid held explosive owner actor %u slot %d kind %u owner %u stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
         if (item->physics.life > 0)
             item_draw_explosive_countdown(item);
     }
@@ -484,14 +433,13 @@ static void actor_body(uint32 idx, sint32 type, int player)
     if ((!player && type == 51) || transform_origin_visible())
     {
         status->flags = status->flags & ~ACTOR_CULLED;
-        if (idx >= ACTOR_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(idx < ACTOR_COUNT);
         light = actor_lighting + idx;
         motion = &actor_animations[idx].motion;
         color = actor_color(light, player);
         if (!player && type == 51)
             transform_yaw(32768);
-        yaw = (sint16)(0u - ((uint32)(sint32)orientation->yaw << 5)) + 32768;
+        yaw = (sint16)((uint32)(-(sint64)((uint32)(sint32)orientation->yaw << 5))) + 32768;
         transform_yaw(yaw);
         y = motion->bits[0];
         z = motion->forward_offset_bits;
@@ -511,8 +459,8 @@ static void actor_body(uint32 idx, sint32 type, int player)
         camera_y = camera.pos.y.bits;
         z = pos->z.bits;
         camera_z = camera.pos.z.bits;
-        transform_translate(x - camera_x, 0 - camera_y, z - camera_z);
-        yaw = (sint16)(0u - ((uint32)(sint32)orientation->yaw << 5)) + 32768;
+        transform_translate(x - camera_x, (uint32)(-(sint64)(camera_y)), z - camera_z);
+        yaw = (sint16)((uint32)(-(sint64)((uint32)(sint32)orientation->yaw << 5))) + 32768;
         transform_yaw(yaw);
         if (player)
             model_draw_static(model_refs[860], 0, 0);
@@ -551,12 +499,12 @@ GDB_CALL sint32 characters_draw(void)
             continue;
         if (type == 17)
         {
-            actor_van((uint32)i);
+            actor_van(i);
             continue;
         }
-        actor_body((uint32)i, type, 0);
+        actor_body(i, type, 0);
     }
-    count = (sint32)game_session.player_count;
+    count = game_session.player_count;
     if (count <= 0)
         return count;
     i = 0;
@@ -565,15 +513,11 @@ GDB_CALL sint32 characters_draw(void)
         if (level_transition.route_exit_tick == 2)
             return 2;
         /* TODO: Investigate renderer actor counts beyond the native pool */
-        if (i < 0 || i >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid character render actor %d players %u stage %u tick %u\n", i, game_session.player_count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i >= 0 && i < ACTOR_COUNT);
         type = actor_types[i];
         if (type != -1 && !(actor_lifecycle[i].death_ticks & 2))
         {
-            if (((sint16)actor_trails[i].phase))
+            if ((sint16)actor_trails[i].phase)
             {
                 transform_push();
                 x = actor_positions[i].x.bits;
@@ -583,15 +527,15 @@ GDB_CALL sint32 characters_draw(void)
                 z = actor_positions[i].z.bits;
                 camera_z = camera.pos.z.bits;
                 transform_translate(x - camera_x, y - camera_y, z - camera_z);
-                model = model_refs[867 + (((uint32)i & 1))];
+                model = model_refs[867 + (i & 1u)];
                 frame = actor_animations[i].selector;
                 model_draw_static(model, frame, 0);
                 transform_pop();
             }
-            actor_body((uint32)i, type, 1);
+            actor_body(i, type, 1);
         }
         ++i;
-        count = (sint32)game_session.player_count;
+        count = game_session.player_count;
     } while (i < count);
     return 0;
 }

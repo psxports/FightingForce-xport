@@ -18,8 +18,7 @@ GDB_CALL sint32 card_format_description(char *out, uint32 capacity)
     const char *format;
     const char *name0, *name1, *level;
     sint32 type0, type1, result;
-    if (!out || !capacity)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(out && capacity);
     if (stage == -1 || stage == -2)
     {
         format = stage == -1 ? localization.text[LOCAL_TEXT_CARD_SEARCH] : localization.text[LOCAL_TEXT_CARD_MISSING];
@@ -29,40 +28,26 @@ GDB_CALL sint32 card_format_description(char *out, uint32 capacity)
     {
         type0 = card_storage.preview.character_type[0];
         format = localization.text[LOCAL_TEXT_CARD_SAVE_INFO1];
-        if (stage < 0 || stage >= LEVEL_NAME_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Card stage name outside catalog: %d\n", stage));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(stage >= 0 && stage < LEVEL_NAME_COUNT);
         level = level_names[stage];
-        if (type0 < 0 || type0 >= CHARACTER_NAME_TYPE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(type0 >= 0 && type0 < CHARACTER_NAME_TYPE_COUNT);
         name0 = character_name_text(character_name_types[type0]);
         result = snprintf(out, capacity, format, name0, level);
     }
     else
     {
-        if (stage < 0 || stage >= LEVEL_NAME_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Card stage name outside catalog: %d\n", stage));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(stage >= 0 && stage < LEVEL_NAME_COUNT);
         level = level_names[stage];
         type0 = card_storage.preview.character_type[0];
         format = localization.text[LOCAL_TEXT_CARD_SAVE_INFO2];
         type1 = card_storage.preview.character_type[1];
-        if (type0 < 0 || type0 >= CHARACTER_NAME_TYPE_COUNT || type1 < 0 || type1 >= CHARACTER_NAME_TYPE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(type0 >= 0 && type0 < CHARACTER_NAME_TYPE_COUNT && type1 >= 0 && type1 < CHARACTER_NAME_TYPE_COUNT);
         name0 = character_name_text(character_name_types[type0]);
         name1 = character_name_text(character_name_types[type1]);
         /* The original level string is the fifth argument at SP+10 */
         result = snprintf(out, capacity, format, name0, name1, level);
     }
-    if (result < 0 || (uint32)result >= capacity)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Card description exceeds capacity: result=%d capacity=%u\n", result, capacity));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(result >= 0 && (uint32)result < capacity);
     return result;
 }
 
@@ -147,10 +132,9 @@ static sint32 status_dialog(uint32 *retained_status, uint32 retained_s3)
     uint32 buttons, prev_status, cur_status;
     draw_notice(localization.text[LOCAL_TEXT_CARD_ACCESS], retained_s3);
     /* Stop before consuming the original unwritten status local */
-    if (!card_wait_status(retained_status))
     {
-        DIAGNOSTIC(fprintf(stderr, "Card status poll returned no result in 80068180: output=%p context=%08X\n", (void *)retained_status, retained_s3));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        sint32 checked_result = card_wait_status(retained_status);
+        XASSERT(checked_result);
     }
     prev_status = *retained_status;
     cur_status = card_storage.status;
@@ -192,8 +176,7 @@ static sint32 load_dialog(uint32 retained_s3)
         do
         {
             ch = (uint8)text[i];
-            if (i >= CARD_TEXT_CAPACITY)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(i < CARD_TEXT_CAPACITY);
             card_text.title[i] = ch;
             ++i;
         } while (ch);
@@ -232,7 +215,7 @@ static sint32 load_dialog(uint32 retained_s3)
             card_format_description(card_text.load.description, CARD_TEXT_CAPACITY);
             text_wrap(card_text.load.description, card_text.load.wrapped, CARD_TEXT_CAPACITY);
             text_draw_lines(-1);
-            connected = (sint32)pad_decode.count;
+            connected = pad_decode.count;
             if (!connected)
                 connected = 1;
             if ((card_storage.status & 3) == 1 && card_storage.preview.stage >= 0 && connected >= card_storage.preview.player_count)
@@ -331,8 +314,8 @@ static sint32 save_file_dialog(uint32 retained_s3)
             card_files.save.data.player_count = (uint8)game_session.player_count;
             card_files.save.data.character_type[0] = (uint8)actor_types[0];
             card_files.save.data.character_type[1] = (uint8)actor_types[1];
-            card_files.save.data.health[0] = (uint16)actor_health[0].hp;
-            card_files.save.data.health[1] = (uint16)actor_health[1].hp;
+            card_files.save.data.health[0] = actor_health[0].hp;
+            card_files.save.data.health[1] = actor_health[1].hp;
             card_files.save.data.score[0] = player_scores[0].val;
             card_files.save.data.score[1] = player_scores[1].val;
             card_files.save.data.continue_threshold[0] = player_scores[0].continue_threshold;
@@ -366,7 +349,7 @@ static sint32 save_file_dialog(uint32 retained_s3)
     if (card_status_changed_with_context(retained_s3))
         return 2;
     text_hint = TEXT_HINT_CHOOSE_SELECT_CANCEL;
-    last = (uint32)count - 1;
+    last = count - 1u;
     memcpy(saved, card_text.list + 1, 257);
     for (;;)
     {
@@ -381,16 +364,15 @@ static sint32 save_file_dialog(uint32 retained_s3)
         text_wrap(localization.text[LOCAL_TEXT_CARD_DELETE_SELECT], card_text.list + 1, CARD_TEXT_CAPACITY);
         text_draw_lines(70);
         y = 12 * text_layout.line_count + 80;
-        for (i = 0; i < 10 && (sint32)((uint32)i + (uint32)scroll) < count; ++i, y = (sint32)((uint32)y + 10))
+        for (i = 0; i < 10 && (sint32)(i + (uint32)scroll) < count; ++i, y = y + 10u)
         {
-            uint32 name_idx = (uint32)scroll + (uint32)i;
+            uint32 name_idx = scroll + (uint32)i;
             char *name;
-            if (name_idx >= CARD_DIRECTORY_FILE_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(name_idx < CARD_DIRECTORY_FILE_COUNT);
             name = card_files.directory.titles + name_idx * CARD_DIRECTORY_TITLE_STRIDE;
             pal = sel == i ? &text_active_gradient : &text_inactive_gradient;
             name[23] = 0;
-            snprintf(card_text.list + 1, 257, "%d.", (sint32)((uint32)i + (uint32)scroll + 1));
+            snprintf(card_text.list + 1, 257, "%d.", (sint32)(i + (uint32)scroll + 1));
             text_draw_gradient(card_text.list + 1, 50 - text_width(card_text.list + 1), y, pal);
             text_draw_gradient(name, 40, y, pal);
         }
@@ -398,12 +380,12 @@ static sint32 save_file_dialog(uint32 retained_s3)
         menu_present();
         if (buttons & 0x40)
         {
-            if (sel < 9 && (sint32)((uint32)scroll + (uint32)sel) < last)
+            if (sel < 9 && (sint32)(scroll + (uint32)sel) < last)
             {
                 ++sel;
                 menu_play_move_sound();
             }
-            else if (sel == 9 && (sint32)((uint32)scroll + 9) < last)
+            else if (sel == 9 && (sint32)(scroll + 9u) < last)
             {
                 ++scroll;
                 menu_play_move_sound();
@@ -434,9 +416,8 @@ static sint32 save_file_dialog(uint32 retained_s3)
         if (card_confirm_dialog(card_prompts[CARD_PROMPT_DELETE], 1, 1))
             break;
         menu_end_dialog(retained_s3);
-        entry_idx = (uint32)scroll + (uint32)sel;
-        if (entry_idx >= CARD_DIRECTORY_FILE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        entry_idx = scroll + (uint32)sel;
+        XASSERT(entry_idx < CARD_DIRECTORY_FILE_COUNT);
         entry = card_files.directory.entry + entry_idx;
         if (!card_status_changed_with_context(retained_s3))
             card_delete_file(0, (const char *)entry, CARD_DIRECTORY_NAME_SPAN);
@@ -463,8 +444,7 @@ GDB_CALL sint32 card_save_dialog(void)
             do
             {
                 ch = (uint8)text[i];
-                if (i >= CARD_TEXT_CAPACITY)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(i < CARD_TEXT_CAPACITY);
                 card_text.title[i] = ch;
                 ++i;
             } while (ch);
@@ -480,8 +460,7 @@ GDB_CALL sint32 card_save_dialog(void)
             do
             {
                 ch = (uint8)text[i];
-                if (i >= CARD_TEXT_CAPACITY)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(i < CARD_TEXT_CAPACITY);
                 card_text.title[i] = ch;
                 ++i;
             } while (ch);
@@ -512,7 +491,7 @@ GDB_CALL sint32 card_save_dialog(void)
     {
         buttons = card_dialog_buttons();
         card_update();
-        state = (sint32)card_poll_status(&card_storage.status);
+        state = card_poll_status(&card_storage.status);
         menu_draw_dialog(2);
         if (!state)
         {
@@ -607,7 +586,7 @@ GDB_CALL sint32 card_confirm_dialog(CARD_PROMPT prompt, sint32 choice, sint32 mo
     {
         buttons = card_dialog_buttons();
         card_update();
-        result = (sint32)card_poll_status(&card_storage.status);
+        result = card_poll_status(&card_storage.status);
         if (monitor_card == 1 && !result)
         {
             menu_end_dialog(prompt.scene_context);

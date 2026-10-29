@@ -23,8 +23,7 @@ _Static_assert(sizeof(ACTOR_POSE) == 504, "Pose wire extent");
 static uint32 add_checked(uint32 left, uint32 right)
 {
     uint32 result = left + right;
-    if (~(left ^ right) & (left ^ result) & 0x80000000)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!(~(left ^ right) & (left ^ result) & 0x80000000));
     return result;
 }
 
@@ -33,8 +32,7 @@ static uint32 read_bit(const uint8 **flags, const uint8 *end, uint32 *bits, uint
     uint32 val;
     if (!*remaining)
     {
-        if (*flags >= end)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(*flags < end);
         *bits = *(*flags)++;
         *remaining = 8;
     }
@@ -57,14 +55,12 @@ GDB_CALL void actor_pose_load_initial_motion(sint32 idx)
         /* The original null-source branch returns without publishing motion */
         return;
     }
-    if (playback->src.kind != ACTOR_ANIMATION_SOURCE_STREAM || !stream->header || stream->byte_len < 8)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(playback->src.kind == ACTOR_ANIMATION_SOURCE_STREAM && stream->header && stream->byte_len >= 8);
     header = stream->header->frame[0];
     ACTOR_FRAME_MOTION *motion = &playback->motion;
     motion->events = header >> 16;
     offset = header & 65535;
-    if (offset > stream->byte_len || stream->byte_len - offset < 12)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(offset <= stream->byte_len && stream->byte_len - offset >= 12);
     /* Startup uses the stream origin, not the frame decoder's four-byte bias */
     data = (const uint8 *)stream->header + offset;
     memcpy(&val, data, sizeof(val));
@@ -85,24 +81,20 @@ GDB_CALL void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *p
     const uint8 *data, *flags, *vals, *end;
     if (playback->src.kind == ACTOR_ANIMATION_SOURCE_NONE)
         return;
-    if (playback->src.kind != ACTOR_ANIMATION_SOURCE_STREAM || !stream->header || stream->byte_len < 4)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(playback->src.kind == ACTOR_ANIMATION_SOURCE_STREAM && stream->header && stream->byte_len >= 4);
     ACTOR_FRAME_MOTION *motion = &playback->motion;
-    if (!model.header || model.byte_len < offsetof(MODEL_RIG_HEADER, bone_count) + sizeof(rig->bone_count))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(model.header && model.byte_len >= offsetof(MODEL_RIG_HEADER, bone_count) + sizeof(rig->bone_count));
     rig = (const MODEL_RIG_HEADER *)model.header;
     count = rig->bone_count;
     count = add_checked(count << 1, count);
     next = add_checked(frame, 1);
     header = stream->header->frame_count;
-    if (header > (stream->byte_len - 4) / 4 || frame >= header)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(header <= (stream->byte_len - 4) / 4 && frame < header);
     playback->frame = header == next ? 0xffffffff : next;
     header = stream->header->frame[frame];
     motion->events = header >> 16;
     offset = (header & 65535) + 4;
-    if (offset > stream->byte_len || stream->byte_len - offset < 13)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(offset <= stream->byte_len && stream->byte_len - offset >= 13);
     data = (const uint8 *)stream->header + offset;
     end = (const uint8 *)stream->header + stream->byte_len;
     for (i = 0; i < 3; i++)
@@ -114,44 +106,39 @@ GDB_CALL void actor_pose_decode(MODEL_REFERENCE model, sint32 idx, ACTOR_POSE *p
     }
     offset = *data++;
     flags = data;
-    if (offset > (uint32)(end - data))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(offset <= (uint32)(end - data));
     vals = data + offset;
     do
     {
         uint32 changed = read_bit(&flags, end, &bits, &remaining);
-        if (angle_idx >= ACTOR_POSE_BONE_COUNT * 3)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(angle_idx < ACTOR_POSE_BONE_COUNT * 3);
         sint16 *angle = &pose->angles[angle_idx / 3].v[angle_idx % 3];
         if (!frame)
         {
             uint16 val = 0;
             if (changed)
             {
-                if ((uint32)(end - vals) < sizeof(val))
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT((uint32)(end - vals) >= sizeof(val));
                 memcpy(&val, vals, sizeof(val));
                 vals += sizeof(val);
             }
             count = add_checked(count, 0xffffffff);
-            *angle = (sint16)val;
+            *angle = val;
         }
         else
         {
             if (changed)
             {
-                sint32 prev = *angle;
+                uint32 prev = *angle;
                 uint32 wide = read_bit(&flags, end, &bits, &remaining);
-                if (vals >= end)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(vals < end);
                 sint32 delta = (sint8)*vals++;
                 if (wide)
                 {
-                    if (vals >= end)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    delta = (uint8)delta + 256 * (sint32)(sint8)*vals++;
+                    XASSERT(vals < end);
+                    delta = (uint8)delta + 256 * ((sint8)*vals++);
                 }
-                *angle = ((uint32)prev + (uint32)(delta * 2)) & 0xffe;
+                *angle = (prev + (delta * 2)) & 0xffe;
             }
             count = add_checked(count, 0xffffffff);
         }
@@ -171,8 +158,7 @@ GDB_CALL void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[
     transform_identity();
     transform_yaw(-camera.angles.yaw);
     transform_pitch(-camera.angles.pitch);
-    if ((uint32)idx >= ACTOR_POSE_ACTOR_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)idx < ACTOR_POSE_ACTOR_COUNT);
     pose = &actor_poses[idx];
     if (attachment == 2)
     {
@@ -190,7 +176,7 @@ GDB_CALL void actor_attachment_pos(sint32 idx, sint32 attachment, uint32 output[
         pos = pose->point[6].v;
     else
     {
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(0);
         return;
     }
     x = pos[0];
@@ -209,11 +195,7 @@ GDB_CALL uint32 actor_place_attachment(FIXED_VEC3 *pos, sint32 idx, sint32 attac
     FIXED_VEC3 point;
     actor_attachment_pos(idx, attachment, point.bits);
     /* TODO: Investigate missing attachment destinations at the first output store */
-    if (!pos)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing attachment destination actor %d attachment %d stage %u tick %u\n", idx, attachment, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(pos);
     pos->x.bits = point.x.bits;
     pos->y.bits = point.y.bits;
     pos->z.bits = point.z.bits;

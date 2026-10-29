@@ -106,12 +106,12 @@ GDB_CALL sint32 game_pause_run(void)
     do
     {
         pause_frame();
-        buttons = (uint32)pad_decode_buttons(pad);
+        buttons = pad_decode_buttons(pad);
     } while (buttons & 8u);
     do
     {
         pause_frame();
-        buttons = (uint32)pad_decode_buttons(pad);
+        buttons = pad_decode_buttons(pad);
         flags = game_pause_flags;
         if ((sint8)pad_decode.type == -1)
             flags |= 4u << player;
@@ -126,7 +126,7 @@ GDB_CALL sint32 game_pause_run(void)
     do
     {
         pause_frame();
-        buttons = (uint32)pad_decode_buttons(pad);
+        buttons = pad_decode_buttons(pad);
         if ((sint8)pad_decode.type == -1)
             game_pause_flags = game_pause_flags | (4u << player);
     } while (buttons & 8u);

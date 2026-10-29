@@ -47,8 +47,7 @@ uint32 sound_device_reset(void)
 {
     uint32 i;
     SpuReverbControl reverb;
-    if (!audio_initialized)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(audio_initialized);
     xport_audio_lock();
     _spu_init(0);
     for (i = 0; i < SPU_VOICE_COUNT; ++i)
@@ -63,10 +62,14 @@ uint32 sound_device_reset(void)
     reverb.delay = 0;
     reverb.feedback = 0;
     reverb.work_address = spu_reverb_default_work[0];
-    if (!spu_reverb_import(&reverb, NULL, NULL))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (!spu_mmio_write(NULL, SPU_REGISTER_BASE + 0x1a2, 2, spu_reverb_default_work[0], 3))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        sint32 checked_result = spu_reverb_import(&reverb, NULL, NULL);
+        XASSERT(checked_result);
+    }
+    {
+        sint32 checked_result = spu_mmio_write(NULL, SPU_REGISTER_BASE + 0x1a2, 2, spu_reverb_default_work[0], 3);
+        XASSERT(checked_result);
+    }
     spu_bind_heap(NULL);
     sound_heap = (SpuMallocState){0};
     spu_native_transfer_state->requested_mode = 0;
@@ -86,18 +89,13 @@ sint32 sound_heap_init(sint32 entries, SpuMallocRecord *recs)
     if (entries <= 0)
         return 0;
     /* TODO: Investigate invalid caller workspace without redirecting allocation */
-    if (!recs || ((uintptr_t)recs & 3))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid SPU heap workspace %p count %d stage %u tick %u\n", (void *)recs, entries, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(recs && !((uintptr_t)recs & 3));
     xport_audio_lock();
     result = SpuInitMalloc(entries, (char *)recs);
-    if (result != entries || spu_heap_failed())
-    {
-        xport_audio_unlock();
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+#if defined(_DEBUG)
+    sint32 heap_failed = result == entries ? spu_heap_failed() : 0;
+    XASSERT(result == entries && !heap_failed);
+#endif
     /* The game binds its own table only for each allocation */
     spu_bind_heap(NULL);
     sound_heap.records = recs;
@@ -115,22 +113,14 @@ sint32 sound_heap_allocate(uint32 bytes)
     uint32 count = sound_heap.count;
     sint32 result, failed;
     /* TODO: Investigate invalid heap metadata before the shared allocator */
-    if (count >= PSX_DRAM_SIZE / sizeof(SpuMallocRecord) || !sound_heap.records || ((uintptr_t)sound_heap.records & 3))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid SPU allocation state count %u last %u records %p stage %u tick %u\n", count, sound_heap.last_index, (void *)sound_heap.records, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(count < PSX_DRAM_SIZE / sizeof(SpuMallocRecord) && sound_heap.records && !((uintptr_t)sound_heap.records & 3));
     {
         uintptr_t ptr = (uintptr_t)sound_heap.records;
         uintptr_t base = (uintptr_t)sound_heap_recs;
         uint32 span = (sound_heap.count + 1) * sizeof(SpuMallocRecord);
         uint32 capacity = sizeof(sound_heap_recs);
         /* TODO: Investigate metadata exceeding the actual caller-owned workspace */
-        if (ptr < base || ptr - base > capacity || span > capacity - (ptr - base))
-        {
-            DIAGNOSTIC(fprintf(stderr, "SPU heap backing span count %u last %u records %p capacity %u stage %u tick %u\n", sound_heap.count, sound_heap.last_index, (void *)sound_heap.records, capacity, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= capacity && span <= capacity - (ptr - base));
     }
     memset(&binding, 0, sizeof(binding));
     binding.entries = (uint32 *)sound_heap.records;
@@ -143,15 +133,16 @@ sint32 sound_heap_allocate(uint32 bytes)
     if (reverb.reserved)
         binding.reserved_bytes = (0x10000u - reverb.work_address) << binding.address_shift;
     xport_audio_lock();
-    if (!spu_bind_heap(&binding))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        sint32 checked_result = spu_bind_heap(&binding);
+        XASSERT(checked_result);
+    }
     result = SpuMalloc(bytes);
     failed = spu_heap_failed();
     /* No heap binding survives the call */
     spu_bind_heap(NULL);
     xport_audio_unlock();
-    if (failed)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!failed);
     return result;
 }
 
@@ -160,11 +151,9 @@ static sint32 attributes(SpuVoiceAttr *desc)
     /* TODO: Investigate any SDK pitch-table stop during the full CDB playthrough */
     uint32 mask = desc->mask, voices = desc->voice;
     int i;
-    if (mask != 3 && mask != 0x20 && mask != 0xe3 && mask != 0xff1f)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(mask == 3 || mask == 0x20 || mask == 0xe3 || mask == 0xff1f);
     /* Startup uses fixed volume, not hardware volume sweeps. */
-    if (mask == 0xff1f && (desc->volmode.left || desc->volmode.right))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(mask != 0xff1f || !desc->volmode.left && !desc->volmode.right);
     xport_audio_lock();
     for (i = 0; i < 24; i++)
         if (voices & (1u << i))
@@ -248,31 +237,21 @@ uint32 sound_transfer_write(const void *src, uint32 bytes, uint32 src_bytes)
     uint32 mode, rounded, shift, written, upload_bytes;
     if (bytes > 0x7eff0)
         bytes = 0x7eff0;
-    if (!audio_initialized)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(audio_initialized);
     mode = state->normalized_mode;
     shift = SPU_RAM_ADDRESS_SHIFT;
     /* TODO: Investigate a transfer outside the reset driver's DMA/PIO contract */
-    if (mode > 1 || shift != 3 || (!mode && !bytes) || state->completion_callback)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Unsupported sample transfer: mode %u shift %u bytes %u callback_set %u\n", mode, shift, bytes, state->completion_callback != NULL));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(mode <= 1 && shift == 3 && (mode || bytes) && !state->completion_callback);
     rounded = mode ? (bytes + 1) & ~1 : (bytes + 63) & ~63;
     /* Keep actual sample reads inside their native owner */
-    if (!src || ((uintptr_t)src & (mode ? 1 : 3)) || bytes > src_bytes)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Sample transfer span: bytes %u rounded %u available %u mode %u\n", bytes, rounded, src_bytes, mode));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(src && !((uintptr_t)src & (mode ? 1 : 3)) && bytes <= src_bytes);
     /* Preserve available archive padding and let the SDK zero-fill the missing tail */
     upload_bytes = src_bytes < rounded ? src_bytes : rounded;
     written = SpuWrite(src, upload_bytes);
-    if (spu_transfer_failed() || written != upload_bytes)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Shared sample transfer failed: bytes %u rounded %u available %u\n", bytes, rounded, src_bytes));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+#if defined(_DEBUG)
+    sint32 transfer_failed = spu_transfer_failed();
+    XASSERT(!transfer_failed && written == upload_bytes);
+#endif
     /* Original78D08 clears completion only without a completion callback */
     if (!state->completion_callback)
         state->completion = 0;
@@ -282,10 +261,9 @@ uint32 sound_transfer_write(const void *src, uint32 bytes, uint32 src_bytes)
 void sound_transfer_wait(void)
 {
     /* The native binding preserves requested-mode and completion-event semantics */
-    if (SpuIsTransferCompleted(1) != 1 || spu_transfer_failed())
-    {
-        DIAGNOSTIC(fprintf(stderr, "SPU transfer completion failed stage %u tick %u\n", game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    sint32 completion_result = SpuIsTransferCompleted(1);
+#if defined(_DEBUG)
+    sint32 transfer_failed = completion_result == 1 ? spu_transfer_failed() : 0;
+    XASSERT(completion_result == 1 && !transfer_failed);
+#endif
 }
-

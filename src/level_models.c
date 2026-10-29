@@ -38,8 +38,7 @@ GDB_CALL uint32 level_load_common_models(void)
     uint32 result;
     uint32 stage, v3;
     stage = game_session.stage;
-    if (stage >= RESOURCE_STAGE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stage < RESOURCE_STAGE_COUNT);
     resource_loader_call(RESOURCE_LOADER_STAGE, stage_resource_loaders[STAGE_RESOURCE_MODELS][stage]);
     result = resource_load_model("BAT.MOD", 0x000001ddu, 0x00000047u);      /* 80016C58 */
     result = resource_load_model("IRONBAR1.MOD", 0x000001ebu, 0x00000047u); /* 80016C6C */

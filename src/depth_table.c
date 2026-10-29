@@ -9,8 +9,7 @@ static uint32 divide_bits(uint32 dividend, uint32 divisor)
 {
     sint32 exponent;
     uint32 numerator, denominator, bit, quotient = 0;
-    if ((dividend | divisor) & 0x80000000u || !divisor)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!((dividend | divisor) & 0x80000000u) && divisor);
     if (!dividend)
         return 0;
     exponent = (sint32)((dividend >> 23) & 255) - (sint32)((divisor >> 23) & 255) + 126;
@@ -30,16 +29,14 @@ static uint32 divide_bits(uint32 dividend, uint32 divisor)
         }
         numerator <<= 1;
     }
-    if (exponent < 0 || exponent >= 254)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(exponent >= 0 && exponent < 254);
     return ((uint32)(exponent + 1) << 23) | (((quotient + 1) >> 1) & 0xff7fffff);
 }
 
 static uint32 add_bits(uint32 left, uint32 right)
 {
     uint32 ea = (left >> 23) & 255, eb = (right >> 23) & 255, x, y, sum;
-    if ((left | right) & 0x80000000u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(!((left | right) & 0x80000000u));
     if (!left)
         return right;
     if (!right)
@@ -74,8 +71,7 @@ static uint32 add_bits(uint32 left, uint32 right)
         sum >>= 1;
         ++ea;
     }
-    if (ea >= 255)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(ea < 255);
     return (ea << 23) | ((sum >> 6) & 0xff7fffff);
 }
 
@@ -84,8 +80,7 @@ static uint32 int_to_bits(uint32 val)
     uint32 exponent = 127, top = val;
     if (!val)
         return 0;
-    if (val > 8191)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(val <= 8191);
     while (top >> 1)
     {
         top >>= 1;
@@ -99,8 +94,7 @@ static uint32 bits_to_int(uint32 bits)
     uint32 exponent = (bits >> 23) & 255;
     if (!bits || exponent < 126)
         return 0;
-    if (exponent > 157 || bits & 0x80000000u)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(exponent <= 157 && !(bits & 0x80000000u));
     return (((bits & 0x7fffff) | 0x800000) << 7) >> (157 - exponent);
 }
 
@@ -110,7 +104,7 @@ uint32 depth_table_build(void)
     uint32 i, state = 0x3f800000;
     for (i = 0; i < DEPTH_TABLE_COUNT; i++)
     {
-        depth_table[i] = (sint16)(uint16)(bits_to_int(divide_bits(0x44ffe000, state)) << 2);
+        depth_table[i] = (uint16)(bits_to_int(divide_bits(0x44ffe000, state)) << 2);
         state = add_bits(state, divide_bits(int_to_bits(i), 0x46000000));
     }
     depth_table[0] = 8188;

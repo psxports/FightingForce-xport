@@ -93,7 +93,7 @@ static void draw_wave_occluder(void)
         camera_y = camera.pos.y.bits;
         if (i < 2)
             camera_z = camera.pos.z.bits;
-        transform_translate(xs[i] - camera_x, 0 - camera_y, i < 2 ? 0x07000000 - camera_z : 0x0fff0000);
+        transform_translate(xs[i] - camera_x, (uint32)(-(sint64)(camera_y)), i < 2 ? 0x07000000 - camera_z : 0x0fff0000);
         proj_local(0, 0, 0, &points[i]);
         transform_pop();
     }
@@ -125,7 +125,7 @@ static uint32 draw_occluder(uint32 left, uint32 right)
         transform_push();
         camera_x = camera.pos.x.bits;
         camera_y = camera.pos.y.bits;
-        transform_translate(((i & 1) ? right : left) - camera_x, 0 - camera_y, i < 2 ? 0x7fff0000 : 0x0fff0000);
+        transform_translate(((i & 1) ? right : left) - camera_x, (uint32)(-(sint64)(camera_y)), i < 2 ? 0x7fff0000 : 0x0fff0000);
         proj_local(0, 0, 0, &points[i]);
         transform_pop();
     }
@@ -147,7 +147,7 @@ GDB_CALL uint32 background_draw_ground(void)
     POLY_F4 *poly;
     FUNCTION_MARKER(0x80064380u, "GAME.EXE");
     uint32 x = camera.pos.x.bits, z = camera.pos.z.bits, rx = x & 0xffffff, rz = z & 0xffffff;
-    uint32 column = (uint32)((sint32)~x >> 24), row = (uint32)((sint32)~z >> 24), heading = (uint32)((camera.angles.yaw + 2048) >> 12) & 15;
+    uint32 column = (sint32)~x >> 24, row = (sint32)~z >> 24, heading = ((camera.angles.yaw + 2048) >> 12) & 15;
     uint32 i, p;
     uint16 horizon;
     if (camera.angles.pitch < 8192)
@@ -162,7 +162,7 @@ GDB_CALL uint32 background_draw_ground(void)
     for (i = 0; i < 4; ++i)
     {
         transform_push();
-        transform_translate(((i & 1) ? 0xf8000000u : 0x08000000u) - rx, 0u - camera.pos.y.bits, ((i & 2) ? 0xf8000000u : 0x08000000u) - rz);
+        transform_translate(((i & 1) ? 0xf8000000u : 0x08000000u) - rx, (uint32)(-(sint64)(camera.pos.y.bits)), ((i & 2) ? 0xf8000000u : 0x08000000u) - rz);
         terrain_draw_faded_grid(0, column + ((i & 1) ? 16 : 0), row + ((i & 2) ? 16 : 0));
         transform_pop();
     }
@@ -172,7 +172,7 @@ GDB_CALL uint32 background_draw_ground(void)
     setlen(poly, 5);
     poly->rgbc.rgbc = 0x28000000;
     poly->p[0].x = 0;
-    horizon = (uint16)(sint16)proj_horizon;
+    horizon = (sint16)proj_horizon;
     poly->p[0].y = horizon;
     poly->p[1].x = 320;
     poly->p[1].y = horizon;
@@ -213,7 +213,7 @@ GDB_CALL uint32 background_draw_gradient_sky(void)
         }
         render_ot_insert(render_buffers.ot_addr, a);
     }
-    x = (uint32)((sint32)camera.angles.yaw >> 5) + 160u;
+    x = (camera.angles.yaw >> 5) + 160u;
     v = (x & 256u) >> 1;
     x &= 255u;
     for (i = 0; i < 3; i++)
@@ -293,7 +293,7 @@ GDB_CALL uint32 background_draw_split_sky(void)
     if ((sint32)middle > 0)
         draw_gradient(top, middle, 0, 0);
     draw_black_quad((uint16)horizon, 256, 0);
-    angle = (uint32)(camera.angles.yaw >> 5) + 160;
+    angle = (camera.angles.yaw >> 5) + 160;
     scroll = angle & 255;
     v = (angle & 256) >> 1;
     for (i = 0; i < 3; ++i)
@@ -316,7 +316,7 @@ GDB_CALL uint32 background_draw_split_sky(void)
 GDB_CALL uint32 background_draw_two_row_sky(void)
 {
     FUNCTION_MARKER(0x800655c0u, "GAME.EXE");
-    uint32 scroll = ((uint32)(camera.angles.yaw >> 5) + 160) & 255, i;
+    uint32 scroll = ((camera.angles.yaw >> 5) + 160) & 255, i;
     for (i = 0; i < 3; ++i)
         draw_spr(scroll + 256 * i - 256, 128, 128, 128, 1);
     if ((sint32)(proj_horizon - 128) > 0)
@@ -346,7 +346,7 @@ GDB_CALL sint32 background_draw_lightning(void)
     poly->p[2].xy = 160u << 16;
     poly->p[3].xy = (160u << 16) | 320;
     render_ot_insert(render_buffers.ot_addr, p);
-    phase = (sint32)(game_session.tick & 511) - 472;
+    phase = (game_session.tick & 511) - 472;
     if (phase >= 0 && lightning_pattern[phase])
     {
         p = render_buffers.packet_addr;
@@ -369,7 +369,14 @@ GDB_CALL uint32 background_draw_wave_sky(void)
 {
     POLY_F4 *poly;
     FUNCTION_MARKER(0x80065b3cu, "GAME.EXE");
-    uint32 angle, horizon, p, color, scroll, v, i, wave_delta;
+    uint32 angle;
+    uint32 horizon;
+    uint32 p;
+    sint32 color;
+    uint32 scroll;
+    uint32 v;
+    uint32 i;
+    uint32 wave_delta;
     uint8 r, g, b;
     if ((sint32)camera.pos.z.bits < (sint32)0xf4000000u)
         draw_wave_occluder();
@@ -381,8 +388,8 @@ GDB_CALL uint32 background_draw_wave_sky(void)
         draw_gradient(horizon - 212, horizon - 84, 0, 0);
     r = (uint8)background.last_color << 3;
     color = background.last_color;
-    g = ((sint32)color >> 2) & ~7;
-    b = ((sint32)color >> 7) & ~7;
+    g = (color >> 2) & ~7;
+    b = (color >> 7) & ~7;
     p = render_buffers.packet_addr;
     render_buffers.packet_addr = p + 24;
     poly = psx_addr(p, sizeof(*poly));
@@ -390,7 +397,7 @@ GDB_CALL uint32 background_draw_wave_sky(void)
     setRGB0(poly, r, g, b);
     setXY4(poly, 0, (uint16)(horizon + 44), 320, (uint16)(horizon + 44), 0, 255, 320, 255);
     render_ot_insert(render_buffers.ot_addr, p);
-    angle = (uint32)(camera.angles.yaw >> 5) + (uint32)(sint32)(sint16)(background.wave_phase >> 16);
+    angle = (camera.angles.yaw >> 5) + (uint32)(sint32)(sint16)(background.wave_phase >> 16);
     scroll = angle & 255;
     v = (angle & 256) >> 1;
     for (i = 0; i < 3; ++i)
@@ -410,9 +417,14 @@ GDB_CALL uint32 background_draw_lift_sky(void)
     SPRT *spr;
     POLY_F4 *poly1;
     FUNCTION_MARKER(0x80066160u, "GAME.EXE");
-    uint32 height = (uint32)((sint32)lift.travel >> 9) + 64u + proj_horizon;
-    sint32 top = (sint32)(height - 256), middle = height - 128;
-    uint32 color, p, i, angle, scroll, v;
+    uint32 height = ((sint32)lift.travel >> 9) + 64u + proj_horizon;
+    sint32 top = height - 256, middle = height - 128;
+    sint32 color;
+    uint32 p;
+    uint32 i;
+    uint32 angle;
+    uint32 scroll;
+    uint32 v;
     uint8 r, g, b;
     if (top > 0)
         top = 0;
@@ -420,8 +432,8 @@ GDB_CALL uint32 background_draw_lift_sky(void)
     {
         r = (uint8)background.first_color << 3;
         color = background.first_color;
-        g = ((sint32)color >> 2) & ~7;
-        b = ((sint32)color >> 7) & ~7;
+        g = (color >> 2) & ~7;
+        b = (color >> 7) & ~7;
         p = render_buffers.packet_addr;
         render_buffers.packet_addr = p + 36;
         poly0 = psx_addr(p, sizeof(*poly0));
@@ -440,7 +452,7 @@ GDB_CALL uint32 background_draw_lift_sky(void)
         poly0->p[3].xy.y = middle;
         render_ot_insert(render_buffers.ot_addr, p);
     }
-    angle = (uint32)(camera.angles.yaw >> 5) + 256;
+    angle = (camera.angles.yaw >> 5) + 256;
     scroll = angle & 255;
     v = (angle & 256) >> 1;
     for (i = 0; i < 3; ++i)
@@ -460,8 +472,8 @@ GDB_CALL uint32 background_draw_lift_sky(void)
     render_insert_tex_page(0x8e, 0);
     r = (uint8)background.last_color << 3;
     color = background.last_color;
-    g = ((sint32)color >> 2) & ~7;
-    b = ((sint32)color >> 7) & ~7;
+    g = (color >> 2) & ~7;
+    b = (color >> 7) & ~7;
     p = render_buffers.packet_addr;
     render_buffers.packet_addr = p + 24;
     poly1 = psx_addr(p, sizeof(*poly1));
@@ -514,12 +526,12 @@ GDB_CALL uint32 background_draw_parallax_sky(void)
     DR_MODE *mode;
     FUNCTION_MARKER(0x8006686c, "GAME.EXE");
     sint32 camera_x = camera.pos.x.val;
-    sint32 yaw = camera.angles.yaw;
-    sint32 x = (sint32)((uint32)(camera_x >> 8) - (((uint32)yaw << 10) + 0x200000)) >> 16;
+    uint32 yaw = camera.angles.yaw;
+    sint32 x = (sint32)((camera_x >> 8) - ((yaw << 10) + 0x200000)) >> 16;
     uint32 horizon = proj_horizon - 256u, a, color, r;
     if ((sint32)horizon > 0)
     {
-        r = (uint32)(uint8)background.first_color << 3;
+        r = ((uint8)background.first_color) << 3;
         color = background.first_color;
         a = render_buffers.packet_addr;
         render_buffers.packet_addr = a + 24;
@@ -531,7 +543,7 @@ GDB_CALL uint32 background_draw_parallax_sky(void)
         poly->p[1].x = 320;
         poly->p[1].y = 0;
         poly->p[2].x = 0;
-        horizon = (uint32)(uint16)proj_horizon - 256;
+        horizon = ((uint16)proj_horizon) - 256;
         poly->p[2].y = horizon;
         poly->p[3].x = 320;
         poly->p[3].y = horizon;
@@ -543,8 +555,8 @@ GDB_CALL uint32 background_draw_parallax_sky(void)
     setSprt(spr);
     spr->p[0].attr = 0x7c00;
     setShadeTex(spr, 1);
-    spr->p[0].xy.x = 0u - (uint32)x;
-    horizon = (uint32)(uint16)proj_horizon - 256;
+    spr->p[0].xy.x = (uint32)(-(sint64)(x));
+    horizon = ((uint16)proj_horizon) - 256;
     spr->p[0].xy.y = horizon;
     setUV0(spr, 0, 0);
     setWH(spr, 256, 256);

@@ -61,8 +61,10 @@ GDB_CALL sint32 game_init_devices(void)
     card_backend_start();
     ++platform_boundary_calls[0]; /* WIP _bu_init. */
     pad_host.enabled = 1;         /* SKIP6D178 StartPAD wrapper */
-    if (ResetGraph(0) < 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        sint32 checked_result = ResetGraph(0);
+        XASSERT(checked_result >= 0);
+    }
     gpu_reset_graph_state();
     SetGraphDebug(0);
     for (i = 0; i < 8; i++)
@@ -82,10 +84,10 @@ GDB_CALL void disp_initialize(void)
 GDB_CALL uint32 disp_apply_offsets(void)
 {
     FUNCTION_MARKER(0x800575f8, "GAME.EXE");
-    uint16 x = (uint16)game_settings.scr_offset.x, y;
+    uint16 x = game_settings.scr_offset.x, y;
     disp_buffers.env[0].screen.x = x;
     disp_buffers.env[1].screen.x = x;
-    y = (uint16)game_settings.scr_offset.y;
+    y = game_settings.scr_offset.y;
     disp_buffers.env[0].screen.y = y;
     disp_buffers.env[1].screen.y = y;
     return y;
@@ -96,8 +98,7 @@ GDB_CALL uint32 disp_update_offsets(void)
 {
     uint32 shake = disp_buffers.shake_ticks, parity;
     sint32 denominator = (sint32)(18u - shake), delta;
-    if (!denominator)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__); /* original BREAK7 */
+    XASSERT(denominator); /* original BREAK7 */
     delta = (sint32)((shake & 1) << 5) / denominator;
     parity = disp_buffers.frame & 1;
     disp_buffers.env[parity].screen.x = (uint16)((uint32)delta + (uint16)game_settings.scr_offset.x);
@@ -138,9 +139,8 @@ GDB_CALL uint32 disp_set_fade(sint32 r, sint32 g, sint32 b)
     for (i = 0; i < 3; i++)
     {
         sint64 n = -(sint64)vals[i];
-        if (n > 2147483647 || n - 255 < -2147483647 - 1)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        vals[i] = (sint32)((n >= 255 ? 255 : (uint32)n) & 255);
+        XASSERT(n <= 2147483647 && n - 255 >= -2147483647 - 1);
+        vals[i] = (n >= 255 ? 255 : (uint32)n) & 255;
     }
     for (i = 0; i < 3; i++)
         disp_buffers.fade.channel[i] = vals[i];
@@ -151,11 +151,11 @@ GDB_CALL uint32 disp_fade_from_origin(sint32 level)
 {
     FUNCTION_MARKER(0x8005ee58, "GAME.EXE");
     sint32 color[3];
-    uint32 delta = (uint32)level - 256u;
+    uint32 delta = level - 256u;
     int i;
     for (i = 0; i < 3; i++)
     {
-        color[i] = (sint32)((uint32)(sint32)disp_buffers.fade_origin.channel[i] + delta);
+        color[i] = (disp_buffers.fade_origin.channel[i]) + delta;
         if (color[i] < -256)
             color[i] = -256;
     }
@@ -215,13 +215,13 @@ GDB_CALL sint32 disp_update_pulse(void)
         return 0;
     phase = disp_buffers.pulse_phase + 2u;
     disp_buffers.pulse_phase = phase;
-    shade = (sint32)((2u * phase + 128u) & 255u) - 128;
+    shade = ((2u * phase + 128u) & 255u) - 128;
     if (shade > 0)
         shade = -shade;
     disp_set_fade(0, shade, shade);
     disp_buffers.fade_origin.r = (sint16)(0);
-    disp_buffers.fade_origin.b = (sint16)((uint16)shade);
-    disp_buffers.fade_origin.g = (sint16)((uint16)shade);
+    disp_buffers.fade_origin.b = (uint16)shade;
+    disp_buffers.fade_origin.g = (uint16)shade;
     return shade;
 }
 

@@ -40,19 +40,21 @@ GDB_CALL sint32 high_scores_draw(void)
 {
     FUNCTION_MARKER(0x8006a968, "GAME.EXE");
     char buffer[32];
-    int i, width;
+    sint32 i; uint32 width;
     text_center(localization.text[LOCAL_TEXT_HIGH_SCORES], 32);
     for (i = 0; i < HIGH_SCORE_COUNT; i++)
     {
         const HIGH_SCORE *entry = high_scores + i;
-        if (!memchr(entry->name.text, 0, sizeof(entry->name.text)))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+#if defined(_DEBUG)
+        const void *name_end = memchr(entry->name.text, 0, sizeof(entry->name.text));
+        XASSERT(name_end);
+#endif
         text_draw(entry->name.text, 70, 56 + 14 * i);
         snprintf(buffer, 32, score_format, entry->score);
         width = text_width(buffer);
         if (entry->flags & 1)
             strcat(buffer, score_mark);
-        text_draw(buffer, 250 - (uint32)width, 56 + 14 * i);
+        text_draw(buffer, 250 - width, 56 + 14 * i);
     }
     return text_center(localization.hint[TEXT_HINT_EXIT], 214);
 }
@@ -73,7 +75,7 @@ static sint32 name_draw(uint32 rank, uint32 score, const char *name)
     sprintf(high_score_workspace.text + 1, score_format, score);
     text_center(high_score_workspace.text + 1, 88);
     width = text_width(name);
-    result = text_draw_gradient(name, 160u - (uint32)(width >> 1), 144, &text_active_gradient);
+    result = text_draw_gradient(name, 160u - (width >> 1), 144, &text_active_gradient);
     memcpy(high_score_workspace.text, saved, 129);
     return result;
 }

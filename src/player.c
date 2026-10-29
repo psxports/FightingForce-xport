@@ -21,8 +21,8 @@ GDB_CALL sint32 player_step_blocked(sint32 idx)
     else
         return 0;
     yaw = actor_orientation[idx].yaw;
-    s = (uint32)(sint32)sin_table[yaw];
-    c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw];
+    s = sin_table[yaw];
+    c = sin_table[MATH_QUARTER_TURN + yaw];
     x = actor_positions[idx].x.bits;
     z = actor_positions[idx].z.bits;
     count = game_session.player_count;
@@ -30,7 +30,7 @@ GDB_CALL sint32 player_step_blocked(sint32 idx)
     z -= c * distance;
     if (count == 2)
     {
-        other_idx = 1u - (uint32)idx;
+        other_idx = 1u - idx;
         dx = x - actor_positions[other_idx].x.bits;
         dz = z - actor_positions[other_idx].z.bits;
         if (actor_health[idx].hp <= 0 || actor_health[other_idx].hp <= 0)
@@ -44,19 +44,6 @@ GDB_CALL sint32 player_step_blocked(sint32 idx)
     return regions_find_obstacle(x, z);
 }
 
-#define player_wip_fatal(pc) \
-    do \
-    { \
-        diagnostic_branch((pc), "player", __FUNCTION__, __FILE__, __LINE__, 0, "abort"); \
-        player_wip_abort(pc); \
-    } while (0)
-
-static void player_wip_abort(uint32 pc)
-{
-    DIAGNOSTIC(fprintf(stderr, "WIP player24008 branch %08X\n", pc));
-    abort();
-}
-
 /* 199AC: first containing region, including rotated bounds and local-coordinate globals. */
 
 /* 23A48: choose a living state252/253 NPC by wrapped angular distance. */
@@ -64,32 +51,24 @@ GDB_CALL sint32 player_start_pair_motion(sint32 idx)
 {
     FUNCTION_MARKER(0x80023a48u, "GAME.EXE");
     /* TODO: Investigate pair motion outside the native actor pool */
-    if ((uint32)idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid pair-motion actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((uint32)idx < ACTOR_COUNT);
     ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
     uint32 table, delta;
     sint32 type = actor_types[idx], best = -1, best_angle = 8192, distance, mode = 8;
     int i;
     /* TODO: Investigate pair motion without a valid animation type */
-    if ((uint32)type >= ANIMATION_TYPE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid pair-motion type %d actor %d stage %u tick %u\n", type, idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
     table = animation_type_banks[(uint32)type];
     for (i = 2; i < 8; i++)
     {
         if (actor_health[i].hp <= 0 || actor_animations[i].id - 252u >= 2u)
             continue;
-        delta = (uint32)math_dir16(actor_positions[idx].x.whole, actor_positions[idx].z.whole, actor_positions[i].x.whole, actor_positions[i].z.whole);
+        delta = math_dir16(actor_positions[idx].x.whole, actor_positions[idx].z.whole, actor_positions[i].x.whole, actor_positions[i].z.whole);
         delta -= ((uint32)(uint16)actor_orientation[idx].yaw << 5);
         if (dir_distance >= 513)
             continue;
         if (delta & 0x8000u)
-            delta = 0u - delta;
+            delta = (uint32)(-(sint64)(delta));
         distance = (sint16)delta;
         if (distance < best_angle)
         {
@@ -100,8 +79,8 @@ GDB_CALL sint32 player_start_pair_motion(sint32 idx)
     if (best == -1)
         return -16;
     actor_orientation[idx].yaw = (uint16)math_dir11(actor_positions[idx].x.whole, actor_positions[idx].z.whole, actor_positions[best].x.whole, actor_positions[best].z.whole);
-    pair->x = (uint16)(((sint32)actor_positions[best].x.whole + actor_positions[idx].x.whole) >> 1);
-    pair->z = (uint16)(((sint32)actor_positions[best].z.whole + actor_positions[idx].z.whole) >> 1);
+    pair->x = (uint16)((actor_positions[best].x.whole + actor_positions[idx].x.whole) >> 1);
+    pair->z = (uint16)((actor_positions[best].z.whole + actor_positions[idx].z.whole) >> 1);
     pair->span = (uint16)math_distance_newton(actor_positions[idx].x.whole, actor_positions[idx].z.whole, actor_positions[best].x.whole, actor_positions[best].z.whole);
     if (type == 0)
         mode = 9;
@@ -152,11 +131,7 @@ static void player_action1(sint32 idx, uint32 table, sint32 state)
         return;
     slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     /* TODO: Investigate an invalid player item at the original access */
-    if (slot != -1 && (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid player action item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)slot, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot == -1 || slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     if (slot != -1 && (sint32)dynamic_objects[slot].kind >= 522)
     {
         pad_action_clear(idx);
@@ -165,11 +140,7 @@ static void player_action1(sint32 idx, uint32 table, sint32 state)
     }
     slot = actor_items[idx].slot[ACTOR_ITEM_LEFT];
     /* TODO: Investigate an invalid player item at the original access */
-    if (slot != -1 && (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid player action item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)slot, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot == -1 || slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     if (slot != -1 && (sint32)dynamic_objects[slot].kind >= 522)
     {
         pad_action_clear(idx);
@@ -208,29 +179,17 @@ static void player_action2(sint32 idx, uint32 table, sint32 state)
         {
             if (actor_targeting.front.available == 1)
             {
-                if (actor_targeting.actor_idx >= ACTOR_COUNT)
-                {
-                    /* TODO: Investigate a front target outside the native actor pool */
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player action target %d actor %d in %s stage %u tick %u\n", (sint32)actor_targeting.actor_idx, idx, __FUNCTION__, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                /* TODO: Investigate a front target outside the native actor pool */
+                XASSERT(actor_targeting.actor_idx < ACTOR_COUNT);
                 target_state = actor_animations[actor_targeting.actor_idx].id;
             }
             yaw = actor_orientation[idx].yaw;
-            if (yaw < 0 || yaw >= MATH_SIN_COUNT)
-            {
-                /* TODO: Investigate player action headings outside the sine table */
-                DIAGNOSTIC(fprintf(stderr, "Invalid player action sine heading %d actor %d in %s stage %u tick %u\n", yaw, idx, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            /* TODO: Investigate player action headings outside the sine table */
+            XASSERT(yaw >= 0 && yaw < MATH_SIN_COUNT);
             s = (uint32)(sint32)sin_table[yaw];
             x = actor_positions[idx].x.bits;
-            if (yaw < -MATH_QUARTER_TURN || yaw >= MATH_ANGLE_COUNT)
-            {
-                /* TODO: Investigate player action headings outside the cosine view */
-                DIAGNOSTIC(fprintf(stderr, "Invalid player action cosine heading %d actor %d in %s stage %u tick %u\n", yaw, idx, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            /* TODO: Investigate player action headings outside the cosine view */
+            XASSERT(yaw >= -MATH_QUARTER_TURN && yaw < MATH_ANGLE_COUNT);
             c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw];
             z = actor_positions[idx].z.bits;
             if (regions_query_alternate_attack(x + (s << 9), z - (c << 9)))
@@ -276,11 +235,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
             if (sel != 0xffffffffu)
             {
                 /* TODO: Investigate an invalid player item at the original access */
-                if (sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player selected item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)sel, __FUNCTION__, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(sel < DYNAMIC_OBJECT_COUNT);
                 uint32 kind = dynamic_objects[sel].kind;
                 item_pickup.pending[idx] = (sint8)sel; /* 25298 branch delay executes for every kind */
                 if (kind - 586u < 12u)
@@ -296,11 +251,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
         {
             /* 2530C..25504: signed halfword kind selects the held-item Cross action. */
             /* TODO: Investigate an invalid player item at the original access */
-            if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid player held action item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)slot, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
             MODEL_OBJECT *item = dynamic_objects + slot;
             sint32 kind = (sint16)(uint16)item->kind;
             if (kind >= 522)
@@ -309,11 +260,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
             {
                 animation_start_held(idx, table, 159);
                 /* TODO: Investigate an action item without a compatible native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid action item owner actor %d slot %d kind %u owner %u phase after-animation stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 if (!(item->physics.life))
                 {
                     item->physics.life = 270;
@@ -327,11 +274,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
             else if (kind == 515 || (uint16)(kind - 499) < 5u)
             {
                 /* TODO: Investigate an action item without a compatible native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid action item owner actor %d slot %d kind %u owner %u phase before-fire stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 ammo = item->physics.life;
                 if (ammo > 0)
                 {
@@ -355,11 +298,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
             else if (kind == 505)
             {
                 /* TODO: Investigate an action item without a compatible native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid action item owner actor %d slot %d kind %u owner %u phase before-fire stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 ammo = item->physics.life;
                 if (ammo > 0)
                 {
@@ -378,11 +317,7 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
             else if ((uint16)(kind - 506) < 2u)
             {
                 /* TODO: Investigate an action item without a compatible native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid action item owner actor %d slot %d kind %u owner %u phase before-fire stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 ammo = item->physics.life;
                 if (ammo > 0)
                 {
@@ -405,21 +340,13 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
         if (slot != -1)
         {
             /* TODO: Investigate an invalid player item at the original access */
-            if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid player held action item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)slot, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
             MODEL_OBJECT *item = dynamic_objects + slot;
             sint32 kind = (sint16)(uint16)item->kind;
             if (kind == 515 || kind == 504)
             {
                 /* TODO: Investigate an action item without a compatible native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid action item owner actor %d slot %d kind %u owner %u phase before-fire stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 ammo = item->physics.life;
                 if (ammo > 0)
                 {
@@ -445,29 +372,17 @@ static void player_action0(sint32 idx, uint32 table, sint32 state)
         }
         if (actor_targeting.front.available == 1)
         {
-            if (actor_targeting.actor_idx >= ACTOR_COUNT)
-            {
-                /* TODO: Investigate a front target outside the native actor pool */
-                DIAGNOSTIC(fprintf(stderr, "Invalid player action target %d actor %d in %s stage %u tick %u\n", (sint32)actor_targeting.actor_idx, idx, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            /* TODO: Investigate a front target outside the native actor pool */
+            XASSERT(actor_targeting.actor_idx < ACTOR_COUNT);
             target_state = actor_animations[actor_targeting.actor_idx].id;
         }
         yaw = actor_orientation[idx].yaw;
-        if (yaw < 0 || yaw >= MATH_SIN_COUNT)
-        {
-            /* TODO: Investigate player action headings outside the sine table */
-            DIAGNOSTIC(fprintf(stderr, "Invalid player action sine heading %d actor %d in %s stage %u tick %u\n", yaw, idx, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        /* TODO: Investigate player action headings outside the sine table */
+        XASSERT(yaw >= 0 && yaw < MATH_SIN_COUNT);
         s = (uint32)(sint32)sin_table[yaw];
         x = actor_positions[idx].x.bits;
-        if (yaw < -MATH_QUARTER_TURN || yaw >= MATH_ANGLE_COUNT)
-        {
-            /* TODO: Investigate player action headings outside the cosine view */
-            DIAGNOSTIC(fprintf(stderr, "Invalid player action cosine heading %d actor %d in %s stage %u tick %u\n", yaw, idx, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        /* TODO: Investigate player action headings outside the cosine view */
+        XASSERT(yaw >= -MATH_QUARTER_TURN && yaw < MATH_ANGLE_COUNT);
         c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw];
         z = actor_positions[idx].z.bits;
         animation = 0;
@@ -503,7 +418,7 @@ GDB_CALL void player_play_footstep(sint32 type)
 {
     static const sint32 bases[4] = {52, 72, 87, 72};
     if ((uint32)type >= 4)
-        player_wip_fatal(0x800262b4);
+        XASSERT(0 && "Original fatal branch 0x800262b4");
     sound_voice_play(bases[type] + (sint32)(random_next() & 3), 255, 6144);
 }
 
@@ -529,9 +444,9 @@ GDB_CALL sint32 player_step_exceeds_bounds(sint32 idx)
     if (game_session.player_count != 2)
         return 0;
     yaw = actor_orientation[idx].yaw;
-    other_idx = 1u - (uint32)idx;
-    x = actor_positions[idx].x.bits + (uint32)(sint32)sin_table[yaw] * step;
-    z = actor_positions[idx].z.bits - (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw] * step;
+    other_idx = 1u - idx;
+    x = actor_positions[idx].x.bits + (sin_table[yaw]) * step;
+    z = actor_positions[idx].z.bits - (sin_table[MATH_QUARTER_TURN + yaw]) * step;
     dx = x - actor_positions[other_idx].x.bits;
     dz = z - actor_positions[other_idx].z.bits;
     distance = math_distance_newton(actor_positions[other_idx].x.whole, actor_positions[other_idx].z.whole, (sint32)x >> 16, (sint32)z >> 16);
@@ -570,7 +485,7 @@ static uint32 update_dir(sint32 idx, sint32 state, uint32 *buttons, uint32 locke
         {
             analog_y = pad_decode.y;
             analog_x = pad_decode.x;
-            desired = (uint32)math_dir16(0, 0, analog_x, 0 - analog_y);
+            desired = (uint32)math_dir16(0, 0, analog_x, (uint32)(-(sint64)(analog_y)));
         }
         else
             switch (dir)
@@ -655,7 +570,7 @@ GDB_CALL void player_move_input(sint32 idx, uint32 buttons)
     {
         analog_y = pad_decode.y;
         analog_x = pad_decode.x;
-        desired = (uint32)math_dir16(0, 0, analog_x, 0 - analog_y);
+        desired = (uint32)math_dir16(0, 0, analog_x, (uint32)(-(sint64)(analog_y)));
         desired += camera.frame_angles.yaw_bits;
         dir = 1;
         analog_x = pad_decode.x;
@@ -751,7 +666,7 @@ GDB_CALL sint32 player_try_grapple(sint32 idx)
     result = actor_contacts[other_idx].captor;
     if (result != -1)
         return result;
-    if ((uint32)state != npc_behavior_actors[other_idx].idle_animation && (uint32)state - 57u >= 8u && state != 236 && state != 82 && state != 103 && state != 113 && state != 108)
+    if ((uint32)state != npc_behavior_actors[other_idx].idle_animation && state - 57u >= 8u && state != 236 && state != 82 && state != 103 && state != 113 && state != 108)
         return 108;
     actor_items_drop(actor_targeting.actor_idx);
     actor_items_drop(idx);
@@ -1093,8 +1008,7 @@ static void collect_item(MODEL_OBJECT *item, sint32 idx, uint32 kind)
     }
     if (kind - 593u < 4u)
     {
-        if (idx < 0 || idx >= PLAYER_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(idx >= 0 && idx < PLAYER_COUNT);
         player_scores[idx].val += 500u * (kind - 592u);
         hud_format_score(idx);
     }
@@ -1259,7 +1173,7 @@ static void early_contacts(sint32 idx, sint32 type, sint32 state, uint32 events)
 GDB_CALL sint32 player_update(void)
 {
     FUNCTION_MARKER(0x80024008, "GAME.EXE");
-    sint32 idx = 0, count = (sint32)game_session.player_count, type, partner, state, timer, pose_step, contact_state;
+    sint32 idx = 0, count = game_session.player_count, type, partner, state, timer, pose_step, contact_state;
     uint32 table, buttons, dir_flags, contact_events, dir_locked;
     uint8 *actions;
     uint32 pickup_words[3], pickup_context, pickup_state;
@@ -1269,11 +1183,7 @@ GDB_CALL sint32 player_update(void)
     do
     {
         /* TODO: Investigate a player count outside the native actor pool */
-        if ((uint32)idx >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid player update actor %d count %u stage %u tick %u\n", idx, game_session.player_count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((uint32)idx < ACTOR_COUNT);
         ACTOR_CONTACT *contact = actor_contacts + idx;
         ACTOR_LIFECYCLE *life = actor_lifecycle + idx;
         ACTOR_STATUS *status = actor_status + idx;
@@ -1295,6 +1205,7 @@ GDB_CALL sint32 player_update(void)
         timer = life->delay;
         if (timer)
             life->delay = (uint16)(timer - 1);
+        /* Resolve death and captivity before accepting player actions */
         if ((sint32)game_session.player_count >= 2)
         {
             timer = (sint8)life->death_ticks;
@@ -1359,17 +1270,14 @@ GDB_CALL sint32 player_update(void)
             contact->captive = ACTOR_SLOT_NONE;
             animation_start_held(idx, table, 69);
         }
+        /* Resolve nearby equipment before decoding this frame of input */
         item_pickup_select(idx, 96);
         {
-            sint32 sel = (sint32)item_pickup.nearby[idx];
+            sint32 sel = item_pickup.nearby[idx];
             if (sel >= 0)
             {
                 /* TODO: Investigate an invalid player item at the original access */
-                if (sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player nearby item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)sel, __FUNCTION__, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(sel < DYNAMIC_OBJECT_COUNT);
                 MODEL_OBJECT *nearby = dynamic_objects + sel;
                 uint32 kind = nearby->kind;
                 /* 2438C/24400: ordinary equipment stays selected for the action dispatch. */
@@ -1379,20 +1287,12 @@ GDB_CALL sint32 player_update(void)
                     if (right != -1)
                     {
                         /* TODO: Investigate an invalid player item at the original access */
-                        if (right < 0 || right >= DYNAMIC_OBJECT_COUNT)
-                        {
-                            DIAGNOSTIC(fprintf(stderr, "Invalid player ammo item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)right, __FUNCTION__, game_session.stage, game_session.tick));
-                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                        }
+                        XASSERT(right >= 0 && right < DYNAMIC_OBJECT_COUNT);
                         MODEL_OBJECT *weapon = dynamic_objects + right;
                         if (weapon->kind - 499 < 5)
                         {
                             /* TODO: Investigate a player item access with a foreign native owner */
-                            if (weapon->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                            {
-                                DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase refill stage %u tick %u\n", idx, right, weapon->kind, (uint32)weapon->payload_kind, game_session.stage, game_session.tick));
-                                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                            }
+                            XASSERT(weapon->payload_kind == MODEL_PAYLOAD_PHYSICS);
                             if (weapon->physics.life < 5)
                             {
                                 weapon->physics.life = 5;
@@ -1413,6 +1313,7 @@ GDB_CALL sint32 player_update(void)
             pad_decode.y = 0;
             pad_decode.x = 0;
         }
+        /* Preserve input sampling and action-history order */
         state = animation_movement_state(actor_animations[idx].id);
         dir_locked = player_dir_locked(idx, state);
         dir_flags = update_dir(idx, state, &buttons, dir_locked, pickup_words);
@@ -1427,6 +1328,7 @@ GDB_CALL sint32 player_update(void)
         }
         pickup_state = actor_animations[idx].id;
         pickup_context = pickup_state - 130u < 2u && dir_locked && partner == -1 && actor_items[idx].slot[ACTOR_ITEM_LEFT] == -1 && actor_items[idx].slot[ACTOR_ITEM_RIGHT] == -1;
+        /* Facing targets are selected from the pre-dispatch actor state */
         actors_find_facing_targets(idx);
         if (partner != -1 || dir_locked)
         {
@@ -1442,7 +1344,7 @@ GDB_CALL sint32 player_update(void)
                 actor_animations[idx].id = 87;
                 if (!player_step_exceeds_bounds(idx))
                 {
-                    actor_animations[idx].id = (uint32)state;
+                    actor_animations[idx].id = state;
                     animation_start_held(idx, table, 87);
                     if (animation_movement_state(actor_animations[idx].id) != 87)
                         animation_start_held(idx, table, 82);
@@ -1464,9 +1366,9 @@ GDB_CALL sint32 player_update(void)
             }
         }
         state = animation_movement_state(actor_animations[idx].id);
-        if (((sint16)actor_trails[idx].phase))
+        if ((sint16)actor_trails[idx].phase)
         {
-            sint32 attachment = (sint32)pickup_words[2];
+            sint32 attachment = pickup_words[2];
             if (type == 0)
                 attachment = 4;
             else if (type == 1)
@@ -1532,7 +1434,7 @@ GDB_CALL sint32 player_update(void)
                 animation_start_held(idx, table, 25);
             }
         }
-        contact_state = (sint32)actor_animations[idx].id;
+        contact_state = actor_animations[idx].id;
         contact_events = actor_animations[idx].motion.events; /* 25880/25884: saved across calls. */
         early_contacts(idx, type, contact_state, contact_events);
         if (contact_events & 2u)
@@ -1587,8 +1489,7 @@ GDB_CALL sint32 player_update(void)
         if (contact_events & 0x1000u)
         {
             uint32 event_state = actor_animations[idx].id & 0x3fffffff;
-            if (event_state >= ACTOR_EVENT_SLOT_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(event_state < ACTOR_EVENT_SLOT_COUNT);
             const ACTOR_EVENT *callback = actor_events[event_state];
             /* Trail geometry uses separate scratchpad matrices and stack locals
              * Pickup retains the S0/S1/S2 words saved by49864 */
@@ -1644,7 +1545,7 @@ GDB_CALL sint32 player_update(void)
                 player_start_pair_motion(idx);
                 pad_action_clear(idx);
             }
-            sint32 frame = (sint32)actor_animations[idx].frame;
+            sint32 frame = actor_animations[idx].frame;
             if (frame < 8)
             {
                 if (frame == -1)
@@ -1665,7 +1566,7 @@ GDB_CALL sint32 player_update(void)
             if (contact->captive == -1)
                 animation_start_held(idx, table, 69);
         }
-        else if ((uint32)state - 14u < 2u)
+        else if (state - 14u < 2u)
         {
             if (contact->captive == -1)
                 animation_start_held(idx, table, 18);
@@ -1732,7 +1633,7 @@ GDB_CALL sint32 player_update(void)
                 {
                     uint16 facing = (uint16)actor_orientation[idx].yaw ^ 1024u;
                     actor_orientation[idx].yaw = facing;
-                    actor_movement[idx].desired_yaw = (uint16)((uint32)facing << 5);
+                    actor_movement[idx].desired_yaw = (uint16)(facing << 5);
                 }
                 else if (state == 179 && type == 1)
                     actor_orientation[idx].yaw = (uint16)(((uint16)actor_orientation[idx].yaw - 512u) & 2047u);
@@ -1748,18 +1649,10 @@ GDB_CALL sint32 player_update(void)
                     animation_start_held(idx, table, 197);
                     sint32 slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
                     /* TODO: Investigate an invalid player item at the original access */
-                    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid player repeat item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)slot, __FUNCTION__, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
                     MODEL_OBJECT *item = dynamic_objects + slot;
                     /* TODO: Investigate a player item access with a foreign native owner */
-                    if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase repeat-after-animation stage %u tick %u\n", idx, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                     item->physics.actor_idx = 2;
                 }
                 else
@@ -1776,32 +1669,20 @@ GDB_CALL sint32 player_update(void)
                 sel = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
                 actor_items[idx].slot[ACTOR_ITEM_RIGHT] = -1;
                 /* TODO: Investigate an invalid release item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player release actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 /* TODO: Investigate a player item access with a foreign native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase release-motion stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 item->physics.speed = 128;
                 item->physics.vertical_speed = 64;
                 item->physics.spin = 6528;
-                item->angles.yaw_bits = (uint16)((uint32)(uint16)actor_orientation[idx].yaw << 5);
+                item->angles.yaw_bits = (uint16)(((uint16)actor_orientation[idx].yaw) << 5);
                 actor_attachment_pos(idx, 3, point.bits);
                 item->pos.x.bits = point.x.bits;
                 item->pos.y.bits = point.y.bits;
                 item->pos.z.bits = point.z.bits;
                 /* TODO: Investigate a player item access with a foreign native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase release-after-attachment stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 item->physics.actor_idx = idx;
             }
             else if (state == 161)
@@ -1813,32 +1694,20 @@ GDB_CALL sint32 player_update(void)
                 sel = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
                 actor_items[idx].slot[ACTOR_ITEM_RIGHT] = -1;
                 /* TODO: Investigate an invalid release item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player release actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 /* TODO: Investigate a player item access with a foreign native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase release-motion stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 item->physics.speed = 128;
                 item->physics.vertical_speed = 32;
                 item->physics.spin = 6528;
-                item->angles.yaw_bits = (uint16)((uint32)(uint16)actor_orientation[idx].yaw << 5);
+                item->angles.yaw_bits = (uint16)(((uint16)actor_orientation[idx].yaw) << 5);
                 actor_attachment_pos(idx, 3, point.bits);
                 item->pos.x.bits = point.x.bits;
                 item->pos.y.bits = point.y.bits;
                 item->pos.z.bits = point.z.bits;
                 /* TODO: Investigate a player item access with a foreign native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase release-after-attachment stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 item->physics.actor_idx = idx;
             }
             else if (state == 163)
@@ -1850,32 +1719,20 @@ GDB_CALL sint32 player_update(void)
                 sel = actor_items[idx].slot[ACTOR_ITEM_LEFT];
                 actor_items[idx].slot[ACTOR_ITEM_LEFT] = -1;
                 /* TODO: Investigate an invalid release item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player release actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 /* TODO: Investigate a player item access with a foreign native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase release-motion stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 item->physics.speed = 128;
                 item->physics.vertical_speed = 32;
                 item->physics.spin = 6528;
-                item->angles.yaw_bits = (uint16)((uint32)(uint16)actor_orientation[idx].yaw << 5);
+                item->angles.yaw_bits = (uint16)(((uint16)actor_orientation[idx].yaw) << 5);
                 actor_attachment_pos(idx, 2, point.bits);
                 item->pos.x.bits = point.x.bits;
                 item->pos.y.bits = point.y.bits;
                 item->pos.z.bits = point.z.bits;
                 /* TODO: Investigate a player item access with a foreign native owner */
-                if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase release-after-attachment stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                 item->physics.actor_idx = idx;
             }
             else if (state == 164)
@@ -1888,11 +1745,7 @@ GDB_CALL sint32 player_update(void)
                 /* 276CC..27798: claim the selected item after the pickup animation. */
                 sint32 sel = item_pickup.pending[idx];
                 /* TODO: Investigate an invalid claim item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player claim actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 uint32 kind;
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 if (item->pos.y.bits == 1)
@@ -1921,11 +1774,7 @@ GDB_CALL sint32 player_update(void)
                 /* 277AC..2781C: reserve the right-hand item, then enter state124. */
                 sint32 sel = item_pickup.pending[idx];
                 /* TODO: Investigate an invalid claim item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player claim actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 if (item->pos.y.bits == 1)
                     animation_start_held(idx, table, 119);
@@ -1942,11 +1791,7 @@ GDB_CALL sint32 player_update(void)
                 /* 27964..279FC: reserve right-hand item; convert522/524 once. */
                 sint32 sel = item_pickup.pending[idx];
                 /* TODO: Investigate an invalid claim item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player claim actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 uint32 kind;
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 if (item->pos.y.bits == 1)
@@ -1970,19 +1815,15 @@ GDB_CALL sint32 player_update(void)
             else if (state == 126)
             {
                 /* TODO: Review original 278D8 item claim before restoring the missing branch */
-                DIAGNOSTIC(fprintf(stderr, "Unreviewed player state126 claim actor %d item %d type %d stage %u tick %u\n", idx, (sint32)item_pickup.pending[idx], type, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+                XASSERT(0);
             }
             else if (state == 128)
             {
                 /* 27A08..27A60: reserve left-hand item; selection is not cleared here. */
                 sint32 sel = item_pickup.pending[idx];
                 /* TODO: Investigate an invalid claim item before expanding the pool */
-                if ((uint32)sel >= DYNAMIC_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid player claim actor %d item %d state %d stage %u tick %u\n", idx, sel, state, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)sel < DYNAMIC_OBJECT_COUNT);
                 MODEL_OBJECT *item = dynamic_objects + sel;
                 if (item->pos.y.bits == 1)
                     animation_start_held(idx, table, 119);
@@ -2000,14 +1841,14 @@ GDB_CALL sint32 player_update(void)
                 uint16 facing;
                 if (state == 181 || (state == 140 && type == 0))
                 {
-                    facing = (uint16)actor_orientation[idx].yaw;
+                    facing = actor_orientation[idx].yaw;
                     facing ^= 1024;
                     actor_orientation[idx].yaw = facing;
-                    actor_movement[idx].desired_yaw = (uint16)((uint32)facing << 5);
+                    actor_movement[idx].desired_yaw = (uint16)(facing << 5);
                 }
                 if (state == 184 || state == 141)
                 {
-                    facing = (uint16)actor_orientation[idx].yaw;
+                    facing = actor_orientation[idx].yaw;
                     facing = (uint16)((facing - 512) & 2047);
                     actor_orientation[idx].yaw = facing;
                     if (state == 141)
@@ -2015,7 +1856,7 @@ GDB_CALL sint32 player_update(void)
                 }
                 if (state == 188 || state == 189)
                 {
-                    facing = (uint16)actor_orientation[idx].yaw;
+                    facing = actor_orientation[idx].yaw;
                     actor_orientation[idx].yaw = (uint16)((facing + 512) & 2047);
                 }
                 if (state != 147 && state != 154 && state != 251 && state != 180)
@@ -2055,22 +1896,14 @@ GDB_CALL sint32 player_update(void)
                 if (sel != -1)
                 {
                     /* TODO: Investigate an invalid player item at the original access */
-                    if (sel < 0 || sel >= DYNAMIC_OBJECT_COUNT)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid player healing item actor %d slot %d in %s stage %u tick %u\n", idx, (sint32)sel, __FUNCTION__, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT(sel >= 0 && sel < DYNAMIC_OBJECT_COUNT);
                     MODEL_OBJECT *item = dynamic_objects + sel;
                     if (item->kind == 512)
                     {
                         sint32 health, maximum;
                         sound_voice_play(122, 255, 6144);
                         /* TODO: Investigate a player item access with a foreign native owner */
-                        if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                        {
-                            DIAGNOSTIC(fprintf(stderr, "Invalid player item owner actor %d slot %d kind %u owner %u phase healing-after-sound stage %u tick %u\n", idx, sel, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                        }
+                        XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                         item->physics.bounce_count = 0;
                         animation_start_held(idx, table, 132);
                         health = (sint16)(((uint16)actor_health[idx].hp) + 32);
@@ -2088,21 +1921,22 @@ GDB_CALL sint32 player_update(void)
                 {
                     uint16 facing = (uint16)actor_orientation[idx].yaw ^ 1024u;
                     actor_orientation[idx].yaw = facing;
-                    actor_movement[idx].desired_yaw = (uint16)((uint32)facing << 5);
+                    actor_movement[idx].desired_yaw = (uint16)(facing << 5);
                 }
                 /* All remaining states take the original default at27CB0 */
                 animation_start_held(idx, table, 69);
             }
         }
+        /* Publish cooldowns and previous buttons after action dispatch */
         timer = combat->repeat_ticks;
         if (timer > 0)
             combat->repeat_ticks = timer - 1;
         timer = contact->target_ticks;
         if (timer > 0)
             contact->target_ticks = (uint8)(timer - 1);
-        timer = (sint32)actor_movement[idx].speed;
+        timer = actor_movement[idx].speed;
         if (timer > 0)
-            actor_movement[idx].speed = (uint32)(timer - 1);
+            actor_movement[idx].speed = timer - 1;
         pad_game.prev[idx] = buttons;
     next_actor:
         ++idx;

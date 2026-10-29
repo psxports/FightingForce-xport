@@ -17,11 +17,9 @@ GDB_CALL uint8 *action_history_reset(void)
 GDB_CALL uint8 action_history_matched(sint32 target)
 {
     FUNCTION_MARKER(0x80052744, "GAME.EXE");
-    if ((uint32)target < ACTION_HISTORY_PLAYER_COUNT)
-        return action_history.matched[target];
     /* TODO: Investigate a non-player target reading beyond the match array */
-    DIAGNOSTIC(fprintf(stderr, "Invalid action history target %d stage %u tick %u\n", target, game_session.stage, game_session.tick));
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)target < ACTION_HISTORY_PLAYER_COUNT);
+    return action_history.matched[target];
 }
 
 GDB_CALL uint8 action_history_rec(sint32 player, sint32 action)
@@ -31,8 +29,7 @@ GDB_CALL uint8 action_history_rec(sint32 player, sint32 action)
     int end, start, len, byte;
     sint32 difference;
     uint8 val, left, right;
-    if ((uint32)player >= ACTION_HISTORY_PLAYER_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)player < ACTION_HISTORY_PLAYER_COUNT);
     history = action_history.action[player];
     for (byte = 0; byte < ACTION_HISTORY_LENGTH - 1; byte++)
         history[byte] = history[byte + 1];

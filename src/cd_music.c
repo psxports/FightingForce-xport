@@ -78,9 +78,8 @@ GDB_CALL sint32 cd_music_init(void)
 {
     FUNCTION_MARKER(0x800675FC, "GAME.EXE");
     sint32 count = read_disc_toc((uint8 *)cd_music.toc);
-    cd_music.track_count = (uint32)count;
-    if (count <= 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__); /* Original67620 spins forever; fixed disc TOC is positive. */
+    cd_music.track_count = count;
+    XASSERT(count > 0); /* Original67620 spins forever; fixed disc TOC is positive. */
     return cd_music_set_volume(0);
 }
 
@@ -102,11 +101,10 @@ sint32 cd_music_play(sint32 asynchronous, sint32 track)
     uint8 mode = 7, status = 0;
     sint32 result;
     control_transport(14, &mode, NULL);
-    if (track < 0 || track >= CD_MUSIC_TOC_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(track >= 0 && track < CD_MUSIC_TOC_COUNT);
     result = control_transport(3, (const uint8 *)(cd_music.toc + track), NULL);
-    cd_music.async_mode = (uint32)asynchronous;
-    cd_music.track = (uint32)track;
+    cd_music.async_mode = asynchronous;
+    cd_music.track = track;
     cd_music.paused = 0;
     if (!asynchronous)
     {
@@ -191,7 +189,7 @@ GDB_CALL sint32 cd_music_poll(void)
     FUNCTION_MARKER(0x80067820u, "GAME.EXE");
     uint32 track = cd_music.track, result;
     uint8 status[8];
-    sint32 cur;
+    uint32 cur;
     if (track == 0xffffffff)
         return -1;
     control_transport(1, NULL, status);
@@ -204,7 +202,7 @@ GDB_CALL sint32 cd_music_poll(void)
     cur = (status[0] & 15) + 10 * ((sint32)((uint32)status[0] << 24) >> 28);
     track = cd_music.track;
     result = track - 1;
-    if ((uint32)cur != result && (uint32)cur != track)
+    if (cur != result && cur != track)
     {
         uint32 asynchronous = cd_music.async_mode;
         if (asynchronous)

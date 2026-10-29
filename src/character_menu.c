@@ -55,8 +55,7 @@ GDB_CALL sint32 character_menu_update(void)
         text_center(localization.text[LOCAL_TEXT_SELECT_FIGHTER], 28);
         uint32 sel_idx = character_menu.sel[0];
         sint32 type = actor_types[sel_idx];
-        if (type < 0 || type >= CHARACTER_NAME_TYPE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(type >= 0 && type < CHARACTER_NAME_TYPE_COUNT);
         text_center(character_name_text(character_name_types[type]), 50);
     }
     else
@@ -68,17 +67,16 @@ GDB_CALL sint32 character_menu_update(void)
         format = language == 1 ? pair_names_french : language == 2 ? pair_names_german : pair_names_english;
         actor0 = character_menu.sel[0];
         actor1 = character_menu.sel[1];
-        type0 = (uint32)actor_types[actor0];
-        type1 = (uint32)actor_types[actor1];
-        if (type0 >= CHARACTER_NAME_TYPE_COUNT || type1 >= CHARACTER_NAME_TYPE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        type0 = actor_types[actor0];
+        type1 = actor_types[actor1];
+        XASSERT(type0 < CHARACTER_NAME_TYPE_COUNT && type1 < CHARACTER_NAME_TYPE_COUNT);
         name0 = character_name_text(character_name_types[type0]);
         name1 = character_name_text(character_name_types[type1]);
         draw_pair_names(format, name0, name1);
     }
     for (i = 0; i < (sint32)character_menu.player_count; i++)
     {
-        uint32 raw = (uint32)pad_decode_buttons(pad_game.port[i]), cancel;
+        uint32 raw = pad_decode_buttons(pad_game.port[i]), cancel;
         uint32 *sel = character_menu.sel + i;
         uint32 *edge = &pad_menu.pressed[i];
         *edge = (raw ^ pad_menu.prev[i]) & raw;
@@ -92,18 +90,18 @@ GDB_CALL sint32 character_menu_update(void)
             camera_capture(camera_menu_dst.bits, 0, -12032);
             menu_play_confirm_sound();
         }
-        if (!((character_menu.ready_mask >> ((uint32)i & 31)) & 1))
+        if (!((character_menu.ready_mask >> (i & 31u)) & 1))
         {
             if (*edge & 0x80)
             {
-                sint32 sel_val = (sint32)*sel;
-                sint32 candidate = (sint32)((uint32)sel_val - 1);
+                sint32 sel_val = *sel;
+                sint32 candidate = sel_val - 1u;
                 if (sel_val <= 0)
                     goto select_next;
                 for (; candidate >= 0; candidate--)
-                    if (character_menu_available(candidate, character_menu.sel, (sint32)character_menu.player_count))
+                    if (character_menu_available(candidate, character_menu.sel, character_menu.player_count))
                     {
-                        *sel = (uint32)candidate;
+                        *sel = candidate;
                         camera_orbit();
                         menu_play_move_sound();
                         break;
@@ -114,14 +112,14 @@ GDB_CALL sint32 character_menu_update(void)
         select_next:
             if (*edge & 0x20)
             {
-                sint32 sel_val = (sint32)*sel;
-                sint32 candidate = (sint32)((uint32)sel_val + 1);
+                sint32 sel_val = *sel;
+                sint32 candidate = sel_val + 1u;
                 if (sel_val >= 3)
                     goto select_confirm;
                 for (; candidate < 4; candidate++)
-                    if (character_menu_available(candidate, character_menu.sel, (sint32)character_menu.player_count))
+                    if (character_menu_available(candidate, character_menu.sel, character_menu.player_count))
                     {
-                        *sel = (uint32)candidate;
+                        *sel = candidate;
                         camera_orbit();
                         menu_play_move_sound();
                         break;
@@ -136,7 +134,7 @@ GDB_CALL sint32 character_menu_update(void)
                 players = character_menu.player_count;
                 ready = character_menu.ready_mask;
                 game_session.player_count = players;
-                character_menu.ready_mask = ready | (1u << ((uint32)i & 31));
+                character_menu.ready_mask = ready | (1u << (i & 31u));
             }
         }
     }
@@ -166,7 +164,9 @@ GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
     uint32 i, phase, fade, actor_x, actor_y, actor_z;
     uint32 camera_x, camera_y, camera_z, height, b, g;
     int slot, changed;
-    sint32 r, val, type;
+    sint32 r;
+    sint32 val;
+    uint32 type;
     if (camera.angles.pitch >= 4097)
         return 0;
     transform_identity();
@@ -214,7 +214,7 @@ GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
             if (fade)
             {
                 fade <<= 2;
-                val = (sint32)fade >= 129 ? -128 : (sint32)(0u - fade);
+                val = (sint32)fade >= 129 ? -128 : (sint32)((uint32)(-(sint64)(fade)));
                 light->b = val;
                 light->g = val;
                 light->r = val;
@@ -247,21 +247,21 @@ GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
         camera_x = camera.pos.x.bits;
         type = actor_types[i];
         actor_y = pos->y.bits;
-        height = model_height[(uint32)type];
+        height = model_height[type];
         camera_y = camera.pos.y.bits;
         actor_z = pos->z.bits;
         camera_z = camera.pos.z.bits;
         transform_translate(actor_x - camera_x, actor_y + height - camera_y, actor_z - camera_z);
-        transform_yaw((sint16)(0u - 32u * (uint32)(sint32)orientation->yaw) + 32768);
+        transform_yaw((sint16)((uint32)(-(sint64)(32u * (orientation->yaw)))) + 32768);
         actor_y = motion->bits[0];
         actor_z = motion->forward_offset_bits;
         transform_translate(0, actor_y, actor_z);
         b = light->b + 128;
         g = light->g + 128;
         r = light->r;
-        render_style.color.rgbc = 0x2c000000u + (uint32)(r + 128) + (g << 8) + (b << 16);
+        render_style.color.rgbc = 0x2c000000u + (r + 128) + (g << 8) + (b << 16);
         render_style.blend_mode = 0;
-        model_draw_pose(model_refs[(sint32)actor_types[i]], &actor_poses[i]);
+        model_draw_pose(model_refs[actor_types[i]], &actor_poses[i]);
         transform_pop();
         transform_push();
         actor_x = pos->x.bits;
@@ -269,9 +269,9 @@ GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
         camera_y = camera.pos.y.bits;
         actor_z = pos->z.bits;
         camera_z = camera.pos.z.bits;
-        transform_translate(actor_x - camera_x, 0u - camera_y, actor_z - camera_z);
+        transform_translate(actor_x - camera_x, (uint32)(-(sint64)(camera_y)), actor_z - camera_z);
         transform_pitch(32768);
-        transform_yaw((sint16)(32u * (uint32)(sint32)orientation->yaw));
+        transform_yaw((sint16)(32u * (orientation->yaw)));
         model_draw_menu(model_refs[860], 0, 0);
         transform_pop();
         character_menu.ring_phase = (character_menu.ring_phase + 8) & 2047;
@@ -284,7 +284,7 @@ GDB_CALL sint32 character_menu_draw(const uint32 *sel, sint32 players)
             camera_y = camera.pos.y.bits;
             actor_z = pos->z.bits;
             camera_z = camera.pos.z.bits;
-            transform_translate(actor_x - camera_x, 0u - camera_y, actor_z - camera_z);
+            transform_translate(actor_x - camera_x, (uint32)(-(sint64)(camera_y)), actor_z - camera_z);
             transform_pitch(32768);
             transform_yaw((sint16)(32u * character_menu.ring_phase));
             model_draw_menu(model_refs[slot == 0 ? 887 : 888], 0, 0);

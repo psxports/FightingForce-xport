@@ -54,9 +54,8 @@ GDB_CALL uint32 language_menu_draw(void)
     light_z = disp_buffers.fade.b;
     if (light_x + light_y + light_z)
         disp_draw_fade();
-    uint32 desc_idx = (uint32)tex_map[(uint32)tex_grps[TEXTURE_GROUP_LANGUAGE].first_tex];
-    if (desc_idx > TEXTURE_DESCRIPTOR_CAPACITY - 3)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    uint32 desc_idx = tex_map[(uint32)tex_grps[TEXTURE_GROUP_LANGUAGE].first_tex];
+    XASSERT(desc_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 3);
     desc = tex_desc.item + desc_idx;
     for (i = 0; i < 3; ++i, desc++)
     {
@@ -177,19 +176,11 @@ static sint32 update_scene(uint32 retained_s3)
     {
         object = 0x800b89f0 + 36 * i;
         /* TODO: Investigate menu dispatch beyond the native world pool */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid menu object %u count %u in %s stage %u tick %u\n", i, world_objects.count, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         const MODEL_OBJECT *item = world_objects.object + i;
         uint32 callback_type = item->kind;
         /* TODO: Investigate a menu kind outside the native callback table */
-        if (callback_type >= MODEL_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid menu kind %u slot %u in %s stage %u tick %u\n", callback_type, i, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(callback_type < MODEL_TYPE_COUNT);
         target = object_callbacks[OBJECT_CALLBACK_UPDATE][callback_type];
         if (target == &callback_helicopter_update)
         {
@@ -223,8 +214,7 @@ static uint32 menu_dim_backdrop(void)
     const TEXTURE_DESCRIPTOR *desc;
     uint32 p, i;
     uint32 desc_idx = (uint32)tex_map[(uint32)tex_grps[TEXTURE_GROUP_TITLE_ALT].first_tex];
-    if (desc_idx > TEXTURE_DESCRIPTOR_CAPACITY - 3)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(desc_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 3);
     desc = tex_desc.item + desc_idx;
     for (i = 0; i < 3; ++i, desc++)
     {
@@ -328,7 +318,7 @@ GDB_CALL sint32 menu_question_update(void)
     width = text_width(localization.text[LOCAL_TEXT_YES]);
     selection = menu.question_choice;
     text_draw_gradient(localization.text[LOCAL_TEXT_YES], 200 - (width >> 1), 108, selection == 1 ? &menu.question_gradient : &text_inactive_gradient);
-    count = (sint32)game_session.player_count;
+    count = game_session.player_count;
     if (count <= 0)
         return count;
     i = 0;
@@ -350,7 +340,7 @@ GDB_CALL sint32 menu_question_update(void)
             menu.question_choice = 0;
         if ((pad_menu.pressed[i] & 0x20u) && menu.question_choice != 1)
             menu.question_choice = 1;
-        count = (sint32)game_session.player_count;
+        count = game_session.player_count;
         i++;
     } while (i < count);
     return 0;
@@ -359,7 +349,11 @@ GDB_CALL sint32 menu_question_update(void)
 GDB_CALL sint32 menu_message_update(void)
 {
     FUNCTION_MARKER(0x80051e50u, "GAME.EXE");
-    uint32 phase = menu.message_phase, count, i, raw, pressed;
+    uint32 phase = menu.message_phase;
+    sint32 count;
+    uint32 i;
+    uint32 raw;
+    uint32 pressed;
     uint8 color;
     sint32 width;
     color = sin_table[phase] >> 11;
@@ -380,16 +374,16 @@ GDB_CALL sint32 menu_message_update(void)
     menu.message_gradient.color[2].g = color;
     menu.message_gradient.color[2].r = color;
     width = text_width(menu_text.data);
-    text_draw(menu_text.data, 160u - (uint32)(width >> 1), 78);
+    text_draw(menu_text.data, 160u - (width >> 1), 78);
     width = text_width(message_ok);
-    text_draw_gradient(message_ok, 160u - (uint32)(width >> 1), 108, &menu.message_gradient);
+    text_draw_gradient(message_ok, 160u - (width >> 1), 108, &menu.message_gradient);
     count = game_session.player_count;
-    if ((sint32)count <= 0)
+    if (count <= 0)
         return count;
     i = 0;
     do
     {
-        raw = (uint32)pad_decode_buttons(pad_game.port[i]);
+        raw = pad_decode_buttons(pad_game.port[i]);
         uint32 *edge = &pad_menu.pressed[i];
         *edge = (raw ^ pad_menu.prev[i]) & raw;
         pad_menu.prev[i] = raw;
@@ -402,7 +396,7 @@ GDB_CALL sint32 menu_message_update(void)
         }
         count = game_session.player_count;
         i++;
-    } while ((sint32)i < (sint32)count);
+    } while ((sint32)i < count);
     return 0;
 }
 
@@ -435,8 +429,7 @@ sint32 menu_update_selection_frame(uint32 *retained_s3)
     if (!character_menu.confirmed)
     {
         MENU_CALLBACK_REFERENCE ref = menu.callback;
-        if (!ref)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(ref);
         ref->update();
     }
     skip_scene = menu.skip_scene;
@@ -449,19 +442,11 @@ sint32 menu_update_selection_frame(uint32 *retained_s3)
         {
             uint32 object = 0x800b89f0 + 36 * i;
             /* TODO: Investigate menu dispatch beyond the native world pool */
-            if (i >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid menu object %u count %u in %s stage %u tick %u\n", i, world_objects.count, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(i < WORLD_OBJECT_COUNT);
             const MODEL_OBJECT *item = world_objects.object + i;
             uint32 callback_type = item->kind;
             /* TODO: Investigate a menu kind outside the native callback table */
-            if (callback_type >= MODEL_TYPE_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid menu kind %u slot %u in %s stage %u tick %u\n", callback_type, i, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(callback_type < MODEL_TYPE_COUNT);
             const OBJECT_CALLBACK *target = object_callbacks[OBJECT_CALLBACK_UPDATE][callback_type];
             if (target == &callback_helicopter_update)
             {
@@ -553,8 +538,7 @@ GDB_CALL sint32 menu_finish_selection(sint32 skip_scene)
  * The underlying GAME:80056670 sound allocator is a required WIP service. */
 sint32 menu_play_effect(sint32 id, sint32 volume)
 {
-    if (!game_services.play_effect)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.play_effect);
     return game_services.play_effect(id, volume, 0x1f00);
 }
 
@@ -620,12 +604,10 @@ GDB_CALL sint32 main_menu_update(void)
         {
             const char *text;
             const TEXT_GRADIENT *color;
-            if (mode >= MAIN_MENU_MODE_COUNT || i < 0 || i >= LOCALIZED_MAIN_ROW_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(mode < MAIN_MENU_MODE_COUNT && i >= 0 && i < LOCALIZED_MAIN_ROW_COUNT);
             text = localization.main_menu[mode][i];
-            sint32 x = (sint32)(160u - (uint32)(text_width(text) >> 1));
+            sint32 x = 160u - (text_width(text) >> 1);
             color = menu.sel_row == (uint32)i ? &menu.main_gradient : &text_inactive_gradient;
-            text = localization.main_menu[mode][i];
             text_draw_gradient(text, x, y, color);
             y += 20;
             menu_count = *counts;
@@ -642,14 +624,14 @@ GDB_CALL sint32 main_menu_update(void)
         game_settings.flags = flags ^ GAME_FLAG_EXTENDED_OPTIONS;
     }
     if (game_settings.flags & GAME_FLAG_EXTENDED_OPTIONS)
-        text_draw(cheat_text, 160u - (uint32)(text_width(cheat_text) >> 1), 200);
-    result = (sint32)game_session.player_count;
+        text_draw(cheat_text, 160u - (text_width(cheat_text) >> 1), 200);
+    result = game_session.player_count;
     if (result <= 0)
         return result;
     i = 0;
     do
     {
-        uint32 raw = (uint32)pad_decode_buttons(pad_game.port[i]);
+        uint32 raw = pad_decode_buttons(pad_game.port[i]);
         uint32 *edge = &pad_menu.pressed[i];
         uint32 buttons, selection;
         *edge = (raw ^ pad_menu.prev[i]) & raw;
@@ -677,10 +659,9 @@ GDB_CALL sint32 main_menu_update(void)
         buttons = *edge;
         if (buttons & 0x1000)
         {
-            if (!game_services.return_to_frontend)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(game_services.return_to_frontend);
             game_services.return_to_frontend();
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(0);
         }
         if (buttons & 0x4000)
         {
@@ -745,8 +726,7 @@ uint32 menu_present(void)
     uint32 result;
     if (idx != TEXT_HINT_NONE)
     {
-        if (idx < 0 || idx >= TEXT_HINT_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(idx >= 0 && idx < TEXT_HINT_COUNT);
         text_center(localization.hint[idx], 216);
     }
     DrawOTag((uint32 *)psx_addr(render_buffers.ot_addr, sizeof(uint32)));
@@ -799,9 +779,8 @@ uint32 menu_draw_title_backdrop(void)
     color_sum += disp_buffers.fade.b;
     if (color_sum)
         disp_draw_fade();
-    uint32 desc_idx = (uint32)tex_map[(uint32)tex_grps[TEXTURE_GROUP_TITLE].first_tex];
-    if (desc_idx > TEXTURE_DESCRIPTOR_CAPACITY - 3)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    uint32 desc_idx = tex_map[(uint32)tex_grps[TEXTURE_GROUP_TITLE].first_tex];
+    XASSERT(desc_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 3);
     desc = tex_desc.item + desc_idx;
     for (i = 0; i < 3; i++, desc++)
     {
@@ -929,8 +908,7 @@ uint32 menu_initialize(void)
     game_session.stage = 26;
     resource_load(31, 0x116000, NULL, TEXTURE_ARCHIVE_CAPACITY, &tex_file, NULL);
     stage = game_session.stage;
-    if (stage >= RESOURCE_STAGE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(stage < RESOURCE_STAGE_COUNT);
     tex = stage_resource_loaders[STAGE_RESOURCE_TEX][stage];
     world_object_active_types = world_object_type_grps[26];
     resource_loader_call(RESOURCE_LOADER_TEXTURE, tex);
@@ -1030,17 +1008,14 @@ static void copy_text(const char *src, uint32 src_capacity)
     uint8 byte;
     if (!src)
         return;
-    if (src_capacity > 0x7fffffff)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(src_capacity <= 0x7fffffff);
     end = memchr(src, 0, src_capacity);
-    if (!end)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(end);
     count = end - src + 1;
     if (count > menu_text.capacity)
     {
         char *data = realloc(menu_text.data, count);
-        if (!data)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(data);
         menu_text.data = data;
         menu_text.capacity = count;
     }

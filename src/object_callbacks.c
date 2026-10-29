@@ -383,7 +383,6 @@ const OBJECT_CALLBACK callback_object_ignore_callback6 = {OBJECT_CALL_VOID_NONE,
 
 const OBJECT_CALLBACK callback_item_draw_explosive = {OBJECT_CALL_VOID_MODEL, {.no_result_model = item_draw_explosive}, 0};
 
-
 GDB_CALL intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT *item, struct EFFECT *effect)
 {
     if (callback)
@@ -480,8 +479,8 @@ GDB_CALL intptr object_call(const OBJECT_CALLBACK *callback, struct MODEL_OBJECT
         }
     }
     /* TODO: Investigate missing callbacks or unsupported signatures without a raw-code fallback */
-    DIAGNOSTIC(fprintf(stderr, "Invalid native object callback %p signature %u model %p effect %p stage %u tick %u\n", (const void *)callback, callback ? (uint32)callback->signature : 0xffffffff, (void *)item, (void *)effect, game_session.stage, game_session.tick));
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(0);
+    return 0;
 }
 
 GDB_CALL void object_ignore_callback0(void)

@@ -15,7 +15,6 @@ uint32 character_name_cursor[CHARACTER_NAME_POOL_COUNT];
 /* Existing selection-name helper now resolves the owning native reference */
 const char *character_name_text(CHARACTER_NAME_ID name)
 {
-    if (name < CHARACTER_NAME_HAWK || name >= CHARACTER_NAME_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(name >= CHARACTER_NAME_HAWK && name < CHARACTER_NAME_COUNT);
     return names[name];
 }

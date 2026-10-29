@@ -42,7 +42,7 @@ sint32 sound_samples_load(sint32 archive)
         total = total - 48 + size;
         resource_io.result_size = size;
     }
-    sound_samples.spu_base = (uint32)sound_heap_allocate(total + 1024);
+    sound_samples.spu_base = sound_heap_allocate(total + 1024);
     sound_transfer_wait();
     offset = 0;
     table = files;
@@ -60,19 +60,17 @@ sint32 sound_samples_load(sint32 archive)
         size = (size + 15) & ~15;
         resource_io.result_size = size;
         /* TODO: Investigate a sample destination rejected by the SDK */
-        if (!SpuSetTransferStartAddr(base + offset) || spu_transfer_failed())
         {
-            DIAGNOSTIC(fprintf(stderr, "Sample destination rejected for %s: base %u offset %u size %u\n", name, base, offset, size));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            sint32 checked_result = SpuSetTransferStartAddr(base + offset);
+#if defined(_DEBUG)
+            sint32 transfer_failed = checked_result ? spu_transfer_failed() : 0;
+            XASSERT(checked_result && !transfer_failed);
+#endif
         }
         size = resource_io.result_size;
         available = src.storage_len - (uint32)(src.data - src.storage);
         /* TODO: Investigate an original VAG upload starting beyond its archive */
-        if (available < 48)
-        {
-            DIAGNOSTIC(fprintf(stderr, "VAG header span for %s: entry %u available %u size %u\n", name, src.byte_len, available, size));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(available >= 48);
         sound_transfer_write(src.data + 48, size - 48, available - 48);
         sound_transfer_wait();
         name = table->name;

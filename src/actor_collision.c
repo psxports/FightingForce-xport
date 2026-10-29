@@ -93,10 +93,10 @@ GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
         if (actor_col.radius[type] < dir_distance)
             continue;
         table = animation_type_banks[(uint32)type];
-        angle = (uint32)(sint32)(sint16)math_dir16(pos->x.whole, pos->z.whole, actor_positions[idx].x.whole, actor_positions[idx].z.whole);
-        dir = (sint16)(((uint32)(uint16)actor_orientation[i].yaw << 5) - angle - 0x4000u);
+        angle = (sint16)math_dir16(pos->x.whole, pos->z.whole, actor_positions[idx].x.whole, actor_positions[idx].z.whole);
+        dir = (sint16)((((uint16)actor_orientation[i].yaw) << 5) - angle - 0x4000u);
         state = i < 2 ? (sint32)playback->id : npc_base_animation(i);
-        if ((uint32)state - 147u < 2u || state == 154 || state == 191)
+        if (state - 147u < 2u || state == 154 || state == 191)
             continue;
         attack->hit_flags = (uint16)(((sint16)attack->hit_flags) | (1u << i));
         links->last_attacker = (uint8)idx;
@@ -106,17 +106,17 @@ GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
             dynamic_objects_spawn_transient(866, hit_x, hit_y, hit_z);
             blocked = 16;
         }
-        if ((uint32)state - 230u < 2u || state == 232)
+        if (state - 230u < 2u || state == 232)
         {
             dynamic_objects_spawn_transient(866, hit_x, hit_y, hit_z);
             blocked = 16;
         }
-        if (playback->id == 67 && (state == 208 || (uint32)state - 209u < 2u))
+        if (playback->id == 67 && (state == 208 || state - 209u < 2u))
         {
             dynamic_objects_spawn_transient(866, hit_x, hit_y, hit_z);
             blocked = 16;
         }
-        if (state == 57 || (uint32)state - 59u < 2u)
+        if (state == 57 || state - 59u < 2u)
         {
             dynamic_objects_spawn_transient(866, hit_x, hit_y, hit_z);
             blocked = 16;
@@ -132,8 +132,7 @@ GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
             uint32 behavior = npc_behavior_actors[i].behavior;
             NPC_BEHAVIOR_REFERENCE profile = npc_behavior_actors[i].profile;
             uint32 row_idx = (profile.first + behavior) & NPC_BEHAVIOR_ROW_MASK;
-            if (!profile.rows || row_idx >= profile.row_count)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(profile.rows && row_idx < profile.row_count);
             uint32 delay = profile.rows[row_idx].hit_delay;
             uint32 tick = game_session.tick;
             actor_status[i].deadline = tick + delay;
@@ -152,24 +151,21 @@ GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
             if (((sint8)combat->special_hits) == 2)
             {
                 dynamic_objects_spawn_transient(862, pos->x.bits, 0xff400000u, pos->z.bits);
-                if (idx < 0 || idx >= PLAYER_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(idx >= 0 && idx < PLAYER_COUNT);
                 player_scores[idx].val += 50u;
                 hud_format_score(idx);
             }
             if (((sint8)combat->special_hits) == 3)
             {
                 dynamic_objects_spawn_transient(863, pos->x.bits, 0xff400000u, pos->z.bits);
-                if (idx < 0 || idx >= PLAYER_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(idx >= 0 && idx < PLAYER_COUNT);
                 player_scores[idx].val += 100u;
                 hud_format_score(idx);
             }
             if (((sint8)combat->special_hits) == 4)
             {
                 dynamic_objects_spawn_transient(864, pos->x.bits, 0xff400000u, pos->z.bits);
-                if (idx < 0 || idx >= PLAYER_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(idx >= 0 && idx < PLAYER_COUNT);
                 player_scores[idx].val += 250u;
                 hud_format_score(idx);
             }
@@ -196,9 +192,9 @@ GDB_CALL sint32 actor_process_hits(sint32 idx, COLLISION_POINT *contact)
                 health->stun = 0;
                 animation_start(i, table, 155);
             }
-            else if ((uint32)state - 141u < 2u)
+            else if (state - 141u < 2u)
                 health->stun = 0;
-            else if (health->stun < 49 && (uint32)attack->id - 66u >= 2u)
+            else if (health->stun < 49 && attack->id - 66u >= 2u)
             {
                 if (links->captor == -1 && health->hp < 32 && health->stun >= 2 && (animation_stream(table, 234).kind != ACTOR_ANIMATION_SOURCE_NONE) && (animation_stream(table, 235).kind != ACTOR_ANIMATION_SOURCE_NONE))
                 {
@@ -240,13 +236,9 @@ GDB_CALL sint32 actor_col_event(COLLISION_REGION *obstacle, sint32 idx)
     if (animation - 180u >= 10 && animation - 147u >= 2 && animation != 154)
         return 154;
     if (!obstacle->object.present)
-        return (sint32)0x80010000u;
+        return 0x80010000u;
     /* TODO: Investigate a collision event outside the world object pool */
-    if (obstacle->object.present != 1 || obstacle->object.idx >= WORLD_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid actor collision event actor %d world %u present %u stage %u tick %u\n", idx, obstacle->object.idx, (uint32)obstacle->object.present, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(obstacle->object.present == 1 && obstacle->object.idx < WORLD_OBJECT_COUNT);
     MODEL_OBJECT *model = world_objects.object + obstacle->object.idx;
     point.pos.bits[0] = model->pos.x.bits;
     point.pos.bits[1] = 0x80010000u;
@@ -255,8 +247,7 @@ GDB_CALL sint32 actor_col_event(COLLISION_REGION *obstacle, sint32 idx)
     point.impact_sound = 0;
     playback->hit_flags |= 0x4000;
     handler_idx = obstacle->col_kind;
-    if (handler_idx < 0 || handler_idx >= COLLISION_SLOT_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(handler_idx >= 0 && handler_idx < COLLISION_SLOT_COUNT);
     target = col_callbacks[handler_idx];
     return col_call(target, obstacle, model, &point, idx);
 }
@@ -284,7 +275,10 @@ static sint32 circle_probe_distance(COLLISION_REGION *obstacle, uint32 x, uint32
 static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
 {
     FUNCTION_MARKER(0x8001a4d0, "GAME.EXE");
-    uint32 x, z, dx, dz;
+    uint32 x;
+    uint32 z;
+    sint32 dx;
+    sint32 dz;
     COLLISION_REGION *o;
     sint32 xi, zi, oldx, oldz, i, clear = 1, changed = 0;
     if (actor_lifecycle[idx].delay)
@@ -295,37 +289,39 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
     zi = (sint32)z >> 16;
     oldx = actor_positions[idx].x.whole;
     oldz = actor_positions[idx].z.whole;
-    dx = x - (uint32)oldx;
+    dx = x - oldx;
     /* TODO: Review original whole-X reuse in both Q16 differences */
-    dz = z - (uint32)oldx;
+    dz = z - oldx;
     for (i = 0, o = col_regions.data; i < (sint32)col_regions.count; i++, ++o)
     {
-        sint32 type, sn, cs;
-        if (o == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        sint32 type;
+        uint32 sn;
+        uint32 cs;
+        XASSERT(o != col_regions.data + COLLISION_REGION_COUNT);
         if (o->col_kind < 2)
             continue;
         type = o->shape;
         if (type == 1)
         {
             /* TODO: Investigate an oriented obstacle outside the world object pool */
-            if (o->object.present != 1 || o->object.idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid actor obstacle actor %d region %d world %u present %u stage %u tick %u\n", idx, i, o->object.idx, (uint32)o->object.present, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(o->object.present == 1 && o->object.idx < WORLD_OBJECT_COUNT);
             const MODEL_OBJECT *model = world_objects.object + o->object.idx;
             uint32 offset = (model->angles.yaw_bits >> 5) * 2;
-            sint32 cx, cz, lx, lz, angle, k;
+            uint32 cx;
+            uint32 cz;
+            sint32 lx;
+            sint32 lz;
+            sint32 angle;
+            sint32 k;
             uint32 rx, rz;
             cx = model->pos.x.whole;
             cs = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
-            rx = (uint32)((sint32)x >> 16) - (uint32)cx;
+            rx = ((sint32)x >> 16) - cx;
             cz = model->pos.z.whole;
             sn = sin_table[offset >> 1];
-            rz = (uint32)((sint32)z >> 16) - (uint32)cz;
-            lx = (sint32)(rx * (uint32)cs + rz * (uint32)sn) >> 15;
-            lz = (sint32)(rz * (uint32)cs - rx * (uint32)sn) >> 15;
+            rz = ((sint32)z >> 16) - cz;
+            lx = (sint32)(rx * cs + rz * sn) >> 15;
+            lz = (sint32)(rz * cs - rx * sn) >> 15;
             angle = (sint16)math_dir11(lx, lz, 0, 0);
             for (k = 0; k < 2048; k += 256)
             {
@@ -333,8 +329,8 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
                 sx = sin_table[k] >> 9;
                 sz = sin_table[MATH_QUARTER_TURN + k] >> 9;
                 hx = o->geometry.box.half_x;
-                px = (sint32)((uint32)lx + (uint32)sx);
-                pz = (sint32)((uint32)lz + (uint32)sz);
+                px = lx + (uint32)sx;
+                pz = lz + (uint32)sz;
                 if (px <= -hx || px >= hx)
                     continue;
                 hz = o->geometry.box.half_z;
@@ -367,11 +363,11 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
                     hx = o->geometry.box.half_x;
                     lx = hx - sx;
                 }
-                offset = (uint32)((-encoded_angle) >> 4) & 0xffe;
+                offset = ((-encoded_angle) >> 4) & 0xffeu;
                 cs = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
                 sn = sin_table[offset >> 1];
-                x = ((uint32)cx + (uint32)((sint32)((uint32)lx * (uint32)cs + (uint32)lz * (uint32)sn) >> 15)) << 16;
-                z = ((uint32)cz + (uint32)((sint32)((uint32)lz * (uint32)cs - (uint32)lx * (uint32)sn) >> 15)) << 16;
+                x = (cx + ((sint32)(lx * cs + lz * sn) >> 15)) << 16;
+                z = (cz + ((sint32)(lz * cs - lx * sn) >> 15)) << 16;
                 break;
             }
         }
@@ -382,14 +378,14 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
             sint32 radius = o->geometry.circle.radius;
             if (distance < radius)
             {
-                penetration = (uint32)dir_distance;
+                penetration = dir_distance;
                 sn = sin_table[offset >> 1];
-                scale = (((uint32)radius - penetration) << 1) + 256;
+                scale = ((radius - penetration) << 1) + 256;
                 cs = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
                 clear = 0;
                 changed = 1;
-                x -= (uint32)sn * scale;
-                z += (uint32)cs * scale;
+                x -= sn * scale;
+                z += cs * scale;
             }
         }
         else
@@ -412,13 +408,13 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
             else if (oldz > top)
                 side |= 8;
             if (side == 5)
-                side = side_product(bottom - oldz, (sint32)dx) < side_product((sint32)dz, left - oldx) ? 4 : 1;
+                side = side_product(bottom - oldz, dx) < side_product(dz, left - oldx) ? 4 : 1;
             else if (side == 6)
-                side = side_product(bottom - oldz, (sint32)dx) < side_product((sint32)dz, right - oldx) ? 2 : 4;
+                side = side_product(bottom - oldz, dx) < side_product(dz, right - oldx) ? 2 : 4;
             else if (side == 9)
-                side = side_product(top - oldz, (sint32)dx) < side_product((sint32)dz, left - oldx) ? 1 : 8;
+                side = side_product(top - oldz, dx) < side_product(dz, left - oldx) ? 1 : 8;
             else if (side == 10)
-                side = side_product(top - oldz, (sint32)dx) < side_product((sint32)dz, right - oldx) ? 8 : 2;
+                side = side_product(top - oldz, dx) < side_product(dz, right - oldx) ? 8 : 2;
             if (side == 1)
                 xi = left - 1;
             else if (side == 2)
@@ -437,8 +433,7 @@ static sint32 correct_obstacles(sint32 idx, uint32 *native_x, uint32 *native_z)
         for (i = 0, o = col_regions.data; i < (sint32)col_regions.count; i++, ++o)
         {
             sint32 type, reject = 0;
-            if (o == col_regions.data + COLLISION_REGION_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(o != col_regions.data + COLLISION_REGION_COUNT);
             if (o->col_kind < 2)
                 continue;
             type = o->shape;
@@ -504,7 +499,7 @@ GDB_CALL sint32 actors_resolve_overlaps(sint32 idx)
     actor_col.pass_count = count;
     if ((sint32)count >= 6)
         return -1;
-    frame = (sint32)playback->frame;
+    frame = playback->frame;
     animation = playback->id;
     react = frame != -1 && ((animation == 180 && frame < 20) || (animation == 147 && frame < 12) || animation == 148);
     for (i = 0; i < ACTOR_COUNT; i++)
@@ -512,8 +507,14 @@ GDB_CALL sint32 actors_resolve_overlaps(sint32 idx)
         ACTOR_ANIMATION *other_playback = actor_animations + i;
         FIXED_VEC3 *other_pos = actor_positions + i;
         sint32 type, radius, r, distance;
-        uint32 n, dx, dz, x, z, table;
-        sint32 ix, iz;
+        uint32 n;
+        sint32 dx;
+        sint32 dz;
+        uint32 x;
+        uint32 z;
+        uint32 table;
+        uint32 ix;
+        uint32 iz;
         if (actor_companions[idx] == i || i == idx)
             continue;
         type = actor_types[i];
@@ -528,9 +529,9 @@ GDB_CALL sint32 actors_resolve_overlaps(sint32 idx)
             radius = r;
         dx = other_pos->x.bits - pos->x.bits;
         dz = other_pos->z.bits - pos->z.bits;
-        ix = (sint32)dx >> 16;
-        iz = (sint32)dz >> 16;
-        distance = math_sqrt_odd((uint32)ix * (uint32)ix + (uint32)iz * (uint32)iz);
+        ix = dx >> 16;
+        iz = dz >> 16;
+        distance = math_sqrt_odd(ix * ix + iz * iz);
         if (!distance)
             distance = 1;
         if (distance >= radius)
@@ -543,8 +544,8 @@ GDB_CALL sint32 actors_resolve_overlaps(sint32 idx)
         }
         else
         {
-            x = pos->x.bits + (uint32)radius * (uint32)((sint32)dx / distance);
-            z = pos->z.bits + (uint32)radius * (uint32)((sint32)dz / distance);
+            x = pos->x.bits + radius * (uint32)(dx / distance);
+            z = pos->z.bits + radius * (uint32)(dz / distance);
             actor_correct_obstacles(i, &x, &z);
         }
         type = actor_types[i];
@@ -555,17 +556,17 @@ GDB_CALL sint32 actors_resolve_overlaps(sint32 idx)
                 animation_start(i, table, (sint32)(random_next() & 3) + 133);
             dx = pos->x.bits - x;
             dz = pos->z.bits - z;
-            ix = (sint32)dx >> 16;
-            iz = (sint32)dz >> 16;
-            distance = math_sqrt_odd((uint32)ix * (uint32)ix + (uint32)iz * (uint32)iz);
+            ix = dx >> 16;
+            iz = dz >> 16;
+            distance = math_sqrt_odd(ix * ix + iz * iz);
             if (!distance)
                 distance = 1;
             if (distance < radius)
             {
                 other_pos->x.bits = x;
                 other_pos->z.bits = z;
-                x += (uint32)radius * (uint32)((sint32)dx / distance);
-                z += (uint32)radius * (uint32)((sint32)dz / distance);
+                x += radius * (uint32)(dx / distance);
+                z += radius * (uint32)(dz / distance);
                 actor_correct_obstacles(idx, &x, &z);
                 pos->x.bits = x;
                 pos->z.bits = z;
@@ -589,11 +590,7 @@ static uint32 collide_vehicle(COLLISION_REGION *region, const MODEL_OBJECT *mode
         actor_x = actor_positions[i].x.whole;
         actor_z = actor_positions[i].z.whole;
         /* TODO: Investigate vehicle or movement callbacks without a native position */
-        if (!vehicle && !model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(vehicle || model);
         object_x = vehicle ? (sint32)vehicle->x >> 16 : model->pos.x.whole;
         object_z = vehicle ? (sint32)vehicle->z >> 16 : model->pos.z.whole;
         bearing = math_dir11(actor_x, actor_z, object_x, object_z);
@@ -614,11 +611,7 @@ static uint32 collide_vehicle(COLLISION_REGION *region, const MODEL_OBJECT *mode
         x = (sint32)(dx * cs + dz * sn) >> 15;
         z = (sint32)(dz * cs - dx * sn) >> 15;
         /* TODO: Investigate the original one-past region read into terrain */
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing vehicle collision region for object %p and actor slot %u\n", (const void *)model, i));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         width = region->geometry.box.half_x;
         if (x <= -width || x >= width)
             continue;
@@ -649,11 +642,7 @@ static uint32 collide_vehicle(COLLISION_REGION *region, const MODEL_OBJECT *mode
         {
             angle = 2 * (uint32)(sint32)actor_orientation[i].yaw;
             /* TODO: Investigate invalid yaw after the original hit callbacks */
-            if (angle >= 2u * MATH_ANGLE_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid vehicle push-out yaw %d for actor slot %u\n", actor_orientation[i].yaw, i));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(angle < 2u * MATH_ANGLE_COUNT);
             wave = sin_table[angle >> 1];
             pos = actor_positions[i].x.bits;
             actor_positions[i].x.bits = pos - ((uint32)wave << 7);
@@ -708,11 +697,7 @@ static sint32 projectile_impact(uint32 world_x, uint32 world_z, const MODEL_OBJE
 {
     FUNCTION_MARKER(0x800322c8u, "GAME.EXE");
     /* TODO: Investigate missing, ambiguous or unpublished projectile sources */
-    if ((!!model + !!projectile + !!effect) != 1 || (effect && (effect->payload_kind != EFFECT_PAYLOAD_MOVING_RIBBON || (effect->kind != 876 && effect->kind != 0xffffffffu))) || (model && !(model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER)))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid native projectile source model %p values %p effect %p stage %u tick %u\n", (const void *)model, (const void *)projectile, (const void *)effect, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((!!model + !!projectile + !!effect) == 1 && (!effect || effect->payload_kind == EFFECT_PAYLOAD_MOVING_RIBBON && (effect->kind == 876 || effect->kind == 0xffffffffu)) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER));
     const EFFECT_MOVING_RIBBON *ribbon = effect ? &effect->moving_ribbon : NULL;
     const FIXED_VEC3 *pos = ribbon ? &ribbon->ribbon.pos : model ? &model->pos : NULL;
     uint32 y = projectile ? projectile->height : pos->y.bits, kind, animation, state;
@@ -735,11 +720,7 @@ static sint32 projectile_impact(uint32 world_x, uint32 world_z, const MODEL_OBJE
             continue;
         actor_items_drop_on_hit(i);
         /* TODO: Investigate cross-variant projectile payload changes */
-        if ((effect && (effect->payload_kind != EFFECT_PAYLOAD_MOVING_RIBBON || (effect->kind != 876 && effect->kind != 0xffffffffu))) || (model && !(model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER)))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Projectile source changed during impact model %p effect %p\n", (const void *)model, (const void *)effect));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!effect || effect->payload_kind == EFFECT_PAYLOAD_MOVING_RIBBON && (effect->kind == 876 || effect->kind == 0xffffffffu)) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER));
         kind = projectile ? projectile->kind : (effect ? effect->kind : model->kind);
         if (kind - 499 < 5)
             actor_apply_damage(projectile ? projectile->owner : ribbon ? ribbon->owner : model && model->payload_kind == MODEL_PAYLOAD_PHYSICS ? model->physics.actor_idx : (model && model->payload_kind == MODEL_PAYLOAD_AIR_BIKE ? model->air_bike.target[1].z : (model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE ? model->scene_vehicle.voice_plus_one[0] : (model && model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER ? model->scene_helicopter.active : (model && model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER ? model->helicopter.voice_plus_one[0] : model->patrol.rotor_angle)))), i, -60);
@@ -756,25 +737,13 @@ static sint32 projectile_impact(uint32 world_x, uint32 world_z, const MODEL_OBJE
             }
         }
         /* TODO: Investigate cross-variant projectile payload changes */
-        if ((effect && (effect->payload_kind != EFFECT_PAYLOAD_MOVING_RIBBON || (effect->kind != 876 && effect->kind != 0xffffffffu))) || (model && !(model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER)))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Projectile source changed during impact model %p effect %p\n", (const void *)model, (const void *)effect));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!effect || effect->payload_kind == EFFECT_PAYLOAD_MOVING_RIBBON && (effect->kind == 876 || effect->kind == 0xffffffffu)) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER));
         owner = projectile ? projectile->owner : ribbon ? ribbon->owner : model && model->payload_kind == MODEL_PAYLOAD_PHYSICS ? model->physics.actor_idx : (model && model->payload_kind == MODEL_PAYLOAD_AIR_BIKE ? model->air_bike.target[1].z : (model && model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE ? model->scene_vehicle.voice_plus_one[0] : (model && model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER ? model->scene_helicopter.active : (model && model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER ? model->helicopter.voice_plus_one[0] : model->patrol.rotor_angle))));
         /* TODO: Investigate original hit credit outside the actor pool */
-        if (owner < 0 || owner >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid projectile hit owner %d for victim %d\n", owner, i));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(owner >= 0 && owner < ACTOR_COUNT);
         actors_rec_hit(owner, i);
         /* TODO: Investigate cross-variant projectile payload changes */
-        if ((effect && (effect->payload_kind != EFFECT_PAYLOAD_MOVING_RIBBON || (effect->kind != 876 && effect->kind != 0xffffffffu))) || (model && !(model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER)))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Projectile source changed during impact model %p effect %p\n", (const void *)model, (const void *)effect));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!effect || effect->payload_kind == EFFECT_PAYLOAD_MOVING_RIBBON && (effect->kind == 876 || effect->kind == 0xffffffffu)) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS || model->payload_kind == MODEL_PAYLOAD_AIR_BIKE || model->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE || model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER || model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER));
 
         kind = projectile ? projectile->kind : (effect ? effect->kind : model->kind);
         if (kind - 499 < 5 || kind - 504 < 2 || kind == 515)
@@ -784,9 +753,9 @@ static sint32 projectile_impact(uint32 world_x, uint32 world_z, const MODEL_OBJE
                 actor_orientation[i].yaw = (uint16)(((projectile ? projectile->angle : ribbon ? (uint16)ribbon->ribbon.delta.x : model->angles.yaw_bits) >> 5) ^ 1024);
                 dynamic_objects_spawn_transient(865, world_x, y, world_z);
                 for (j = 0; j < 4; j++)
-                    effect_spawn_actor_hit_reverse(i, world_x, y, world_z, (sint32)(projectile ? (sint16)projectile->angle : ribbon ? ribbon->ribbon.delta.x : model->angles.yaw));
+                    effect_spawn_actor_hit_reverse(i, world_x, y, world_z, projectile ? (sint16)projectile->angle : ribbon ? ribbon->ribbon.delta.x : model->angles.yaw);
                 for (j = 0; j < 12; j++)
-                    effect_spawn_actor_hit(i, world_x, y, world_z, (sint32)(projectile ? (sint16)projectile->angle : ribbon ? ribbon->ribbon.delta.x : model->angles.yaw));
+                    effect_spawn_actor_hit(i, world_x, y, world_z, projectile ? (sint16)projectile->angle : ribbon ? ribbon->ribbon.delta.x : model->angles.yaw);
                 sound_play_pain(i);
                 actor_health[i].stun = (uint16)(((uint16)actor_health[i].stun) + 32);
                 if ((projectile ? projectile->kind : (effect ? effect->kind : model->kind)) == 504)
@@ -806,7 +775,7 @@ static sint32 projectile_impact(uint32 world_x, uint32 world_z, const MODEL_OBJE
         }
         actor_x = actor_positions[i].x.whole;
         actor_z = actor_positions[i].z.whole;
-        actor_orientation[i].yaw = (uint16)((uint32)math_dir11(x, z, actor_x, actor_z) ^ 1024);
+        actor_orientation[i].yaw = (uint16)(math_dir11(x, z, actor_x, actor_z) ^ 1024);
         actor_items_drop(i);
         type = actor_types[i];
         resource = animation_type_banks[(uint32)type];
@@ -820,43 +789,36 @@ GDB_CALL sint32 npc_process_weapon_hits(sint32 idx)
 {
     FUNCTION_MARKER(0x8004930cu, "GAME.EXE");
     /* TODO: Investigate the original out-of-pool NPC operation */
-    if (idx < 0 || idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid NPC actor %d in %s stage %u tick %u\n", idx, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0 && idx < ACTOR_COUNT);
     sint32 slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
-    sint32 src_type = actor_types[idx], type, angle, dir, distance, victim_idx;
+    sint32 src_type = actor_types[idx];
+    uint32 type;
+    sint32 angle;
+    sint32 dir;
+    sint32 distance;
+    sint32 victim_idx;
     /* TODO: Investigate the original out-of-pool NPC operation */
-    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid NPC hit item actor %d slot %d in %s stage %u tick %u\n", idx, slot, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     MODEL_OBJECT *item = dynamic_objects + slot;
     uint32 kind = item->kind, debris;
     FIXED_VEC3 point;
     int i, detach;
     actor_items_calc_weapon_point(idx, 0, point.bits);
-    detach = src_type == 32 || (uint32)src_type - 49u < 2u || src_type == 48 || src_type == 14;
+    detach = src_type == 32 || src_type - 49u < 2u || src_type == 48 || src_type == 14;
     for (victim_idx = 0; victim_idx < (sint32)game_session.player_count; ++victim_idx)
     {
         /* TODO: Investigate the original out-of-pool NPC operation */
-        if (victim_idx >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid NPC hit victim %d player count %u in %s stage %u tick %u\n", victim_idx, game_session.player_count, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(victim_idx < ACTOR_COUNT);
         if (((((sint16)actor_animations[idx].hit_flags) >> (victim_idx & 31)) & 1) || actor_animation_blocks_hits(actor_animations[victim_idx].id))
             continue;
         type = actor_types[victim_idx];
         distance = math_distance_approx((sint32)point.x.bits >> 16, (sint32)point.z.bits >> 16, actor_positions[victim_idx].x.whole, actor_positions[victim_idx].z.whole);
         angle = actor_col.radius[actor_types[victim_idx]];
-        dir_distance = (uint32)distance;
+        dir_distance = distance;
         if (distance >= angle)
             continue;
         angle = (sint16)math_dir16(actor_positions[victim_idx].x.whole, actor_positions[victim_idx].z.whole, actor_positions[idx].x.whole, actor_positions[idx].z.whole);
-        dir = (sint16)(((uint32)(uint16)actor_orientation[victim_idx].yaw << 5) - (uint32)angle - 16384u);
+        dir = (sint16)(((uint32)(uint16)actor_orientation[victim_idx].yaw << 5) - angle - 16384u);
         angle = actor_orientation[victim_idx].yaw;
         dynamic_objects_spawn_transient(865, point.x.bits, point.y.bits, point.z.bits);
         actor_items_drop_on_hit(victim_idx);
@@ -868,7 +830,7 @@ GDB_CALL sint32 npc_process_weapon_hits(sint32 idx)
             sound_voice_play(113, 255, 6400);
             debris = 599 + (kind - 478) / 2;
             for (i = 0; i < 12; ++i)
-                effect_spawn_glass_fragment(debris, point.x.bits, point.y.bits, point.z.bits, (uint32)angle - 512);
+                effect_spawn_glass_fragment(debris, point.x.bits, point.y.bits, point.z.bits, angle - 512u);
         }
         actor_contacts[victim_idx].last_attacker = (uint8)idx;
         for (i = 0; i < 8; ++i)
@@ -882,19 +844,19 @@ GDB_CALL sint32 npc_process_weapon_hits(sint32 idx)
                 sound_play_heavy_hit_voice(idx);
             actor_items_drop(victim_idx);
             actors_rec_death(victim_idx);
-            animation_start(victim_idx, animation_type_banks[(uint32)type], 147);
+            animation_start(victim_idx, animation_type_banks[type], 147);
             actor_health[victim_idx].hp = 0;
         }
         else
         {
             actor_animations[idx].hit_flags = (uint16)((uint16)((sint16)actor_animations[idx].hit_flags) | (1u << (victim_idx & 31)));
             if (actor_health[victim_idx].stun < 49)
-                animation_start(victim_idx, animation_type_banks[(uint32)type], dir < 0 ? 133 : 152);
+                animation_start(victim_idx, animation_type_banks[type], dir < 0 ? 133 : 152);
             else
             {
                 if (detach)
                     sound_play_heavy_hit_voice(idx);
-                animation_start(victim_idx, animation_type_banks[(uint32)type], dir < 0 ? 147 : 154);
+                animation_start(victim_idx, animation_type_banks[type], dir < 0 ? 147 : 154);
                 actor_items_drop(victim_idx);
                 actor_health[victim_idx].stun = 0;
             }
@@ -924,12 +886,8 @@ GDB_CALL sint32 actors_apply_nearby_contact(sint32 attacker, uint32 world_x, uin
         actor_apply_damage(-1, idx, -100);
         actors_rec_hit(attacker, idx);
         /* TODO: Investigate an invalid attacker before reading its position */
-        if ((uint32)attacker >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid nearby-hit attacker %d victim %d stage %u tick %u\n", attacker, idx, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        angle = (uint32)math_dir11(actor_positions[attacker].x.whole, actor_positions[attacker].z.whole, actor_positions[idx].x.whole, actor_positions[idx].z.whole) ^ 512u;
+        XASSERT((uint32)attacker < ACTOR_COUNT);
+        angle = math_dir11(actor_positions[attacker].x.whole, actor_positions[attacker].z.whole, actor_positions[idx].x.whole, actor_positions[idx].z.whole) ^ 512u;
         actor_orientation[idx].yaw = (uint16)angle;
         actor_items_drop(idx);
         slot = actor_contacts[idx].captive;
@@ -937,31 +895,19 @@ GDB_CALL sint32 actors_apply_nearby_contact(sint32 attacker, uint32 world_x, uin
         {
             actor_contacts[idx].captive = ACTOR_SLOT_NONE;
             /* TODO: Investigate an invalid captive after the original detach store */
-            if ((uint32)slot >= ACTOR_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid nearby-hit captive %d victim %d attacker %d stage %u tick %u\n", slot, idx, attacker, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT((uint32)slot < ACTOR_COUNT);
             actor_contacts[slot].captor = ACTOR_SLOT_NONE;
             if (state == 169)
             {
                 type = actor_types[slot];
                 /* TODO: Investigate an invalid captive type after detachment */
-                if ((uint32)type >= ANIMATION_TYPE_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid nearby-hit captive type %d captive %d victim %d attacker %d stage %u tick %u\n", type, slot, idx, attacker, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
                 animation_start(slot, animation_type_banks[(uint32)type], 148);
             }
         }
         type = actor_types[idx];
         /* TODO: Investigate a changed victim type after drop and captive animation */
-        if ((uint32)type >= ANIMATION_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid nearby-hit victim type %d victim %d attacker %d stage %u tick %u\n", type, idx, attacker, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
         animation_start(idx, animation_type_banks[(uint32)type], 147);
     }
     return 0;
@@ -975,17 +921,12 @@ GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx
     COLLISION_REGION *p;
     sint32 i, type, shape, x = contact->pos.x >> 16, z = contact->pos.z >> 16;
     /* TODO: Investigate stage contact from an invalid actor slot */
-    if (idx < 0 || idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid stage contact actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0 && idx < ACTOR_COUNT);
     if ((uint16)((sint16)actor_animations[idx].hit_flags) & 0x8000u)
         return 0;
     for (i = 0; i < (sint32)col_regions.count; i++)
     {
-        if ((uint32)i >= COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT((uint32)i < COLLISION_REGION_COUNT);
         p = col_regions.data + i;
         type = p->col_kind;
         if ((type < 3 && type != 1) || p->hits < 0)
@@ -1001,19 +942,15 @@ GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx
             uint32 dx, dz, s, c;
             sint32 local_x, local_z, width, depth;
             /* TODO: Investigate an oriented region without a valid world owner */
-            if (p->object.present != 1 || p->object.idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid oriented region %d world %u present %u actor %d stage %u tick %u\n", i, p->object.idx, (uint32)p->object.present, idx, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(p->object.present == 1 && p->object.idx < WORLD_OBJECT_COUNT);
             uint32 world_idx = p->object.idx;
             const MODEL_OBJECT *model = world_objects.object + world_idx;
             target_model = world_objects.object + world_idx;
             angle = model->angles.yaw_bits >> 5;
-            dx = (uint32)x - (uint32)(sint32)model->pos.x.whole;
-            c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + angle];
-            dz = (uint32)z - (uint32)(sint32)model->pos.z.whole;
-            s = (uint32)(sint32)sin_table[angle];
+            dx = x - (uint32)(sint32)model->pos.x.whole;
+            c = sin_table[MATH_QUARTER_TURN + angle];
+            dz = z - (uint32)(sint32)model->pos.z.whole;
+            s = sin_table[angle];
             local_x = (sint32)(dx * c + dz * s) >> 15;
             local_z = (sint32)(dz * c - dx * s) >> 15;
             width = p->geometry.box.half_x;
@@ -1024,7 +961,8 @@ GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx
                 continue;
             {
                 sint32 a = (sint16)math_dir11(local_x, local_z, 0, 0);
-                sint32 b, side;
+                sint32 b;
+                uint32 side;
                 depth = p->geometry.box.half_z;
                 width = p->geometry.box.half_x;
                 b = (sint16)math_dir11(0, 0, width, -depth);
@@ -1034,7 +972,7 @@ GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx
                     side = 1;
                 else
                     side = a < b + 1024 ? 2 : 3;
-                col_regions.side = (uint32)side;
+                col_regions.side = side;
             }
         }
         else
@@ -1049,8 +987,7 @@ GDB_CALL sint32 actor_process_stage_contact(COLLISION_POINT *contact, sint32 idx
             target_model = p->object.present == 1 && p->object.idx < WORLD_OBJECT_COUNT ? world_objects.object + p->object.idx : NULL;
         actor_animations[idx].hit_flags = (uint16)(flags | 0x8000);
         sint32 handler_idx = p->col_kind;
-        if (handler_idx < 0 || handler_idx >= COLLISION_SLOT_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(handler_idx >= 0 && handler_idx < COLLISION_SLOT_COUNT);
         return col_call(col_callbacks[handler_idx], p, target_model, contact, idx);
     }
     return 0;
@@ -1062,11 +999,7 @@ GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact,
     sint32 i, type, other_x, other_z, range_type, distance, radius;
     uint32 state, x, y, z, height, offset, angle;
     /* TODO: Investigate a projectile contact without native point storage */
-    if (!contact)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing projectile contact owner %d kind %u stage %u tick %u\n", owner, kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(contact);
     x = contact->pos.bits[0];
     y = contact->pos.bits[1];
     contact->impact_sound = 0;
@@ -1094,11 +1027,7 @@ GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact,
         range_type = actor_types[i];
         distance = dir_distance;
         /* TODO: Investigate a reloaded projectile target type outside the radius table */
-        if ((uint32)range_type >= ACTOR_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid projectile radius type %d saved type %d target %d owner %d kind %u stage %u tick %u\n", range_type, type, i, owner, kind, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((uint32)range_type < ACTOR_TYPE_COUNT);
         radius = actor_col.radius[range_type];
         if (radius < distance)
             continue;
@@ -1123,11 +1052,7 @@ GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact,
             {
                 actors_rec_death(i);
                 /* TODO: Investigate a saved projectile type before death animation */
-                if ((uint32)type >= ANIMATION_TYPE_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid projectile death type %d target %d owner %d kind %u stage %u tick %u\n", type, i, owner, kind, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
                 table = animation_type_banks[(uint32)type];
                 animation_start(i, table, 147);
                 actors_detach_companion(i);
@@ -1141,11 +1066,7 @@ GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact,
                     actor_health[i].stun = 0;
                     actor_items_drop(i);
                     /* TODO: Investigate a saved projectile type before drop animation */
-                    if ((uint32)type >= ANIMATION_TYPE_COUNT)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid projectile drop type %d target %d owner %d kind %u stage %u tick %u\n", type, i, owner, kind, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
                     table = animation_type_banks[(uint32)type];
                     if ((animation_stream(table, 147).kind != ACTOR_ANIMATION_SOURCE_NONE))
                     {
@@ -1163,11 +1084,7 @@ GDB_CALL sint32 actor_projectile_contact(sint32 owner, COLLISION_POINT *contact,
                 else
                 {
                     /* TODO: Investigate a saved projectile type before reaction animation */
-                    if ((uint32)type >= ANIMATION_TYPE_COUNT)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid projectile reaction type %d target %d owner %d kind %u stage %u tick %u\n", type, i, owner, kind, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT((uint32)type < ANIMATION_TYPE_COUNT);
                     table = animation_type_banks[(uint32)type];
                     animation_start(i, table, 133);
                 }
@@ -1203,11 +1120,7 @@ GDB_CALL sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const
 {
     FUNCTION_MARKER(0x80031f64u, "GAME.EXE");
     /* TODO: Investigate a missing, ambiguous or cross-format radial source */
-    if ((!effect && !model) || (effect && model) || (effect && effect->payload_kind != EFFECT_PAYLOAD_SPRITE) || (effect && !(effect->kind - 870u < 5u || effect->kind == 877 || effect->kind == 879 || effect->kind == 880 || effect->kind - 891u < 5u || effect->kind - 575u < 2u || effect->kind - 602u < 6u) && effect->kind != 0xffffffffu) || (model && model->payload_kind != MODEL_PAYLOAD_PHYSICS))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid native radial source effect %p model %p stage %u tick %u\n", (const void *)effect, (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((effect || model) && (!effect || !model) && (!effect || effect->payload_kind == EFFECT_PAYLOAD_SPRITE) && (!effect || effect->kind - 870u < 5u || effect->kind == 877 || effect->kind == 879 || effect->kind == 880 || effect->kind - 891u < 5u || effect->kind - 575u < 2u || effect->kind - 602u < 6u || effect->kind == 0xffffffffu) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS));
     const EFFECT_SPRITE *spr = effect ? &effect->spr : NULL;
     const FIXED_VEC3 *pos = spr ? &spr->pos : &model->pos;
     uint32 y = pos->y.bits, kind, animation;
@@ -1217,11 +1130,7 @@ GDB_CALL sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const
     for (i = 0; i < ACTOR_COUNT; i++)
     {
         /* TODO: Investigate cross-format reuse during original radial damage */
-        if ((effect && effect->payload_kind != EFFECT_PAYLOAD_SPRITE) || (model && model->payload_kind != MODEL_PAYLOAD_PHYSICS))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Radial damage payload changed effect %p model %p\n", (const void *)effect, (const void *)model));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!effect || effect->payload_kind == EFFECT_PAYLOAD_SPRITE) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS));
         if ((spr ? spr->owner : model->physics.actor_idx) == i)
             continue;
         if (actor_lifecycle[i].delay)
@@ -1235,44 +1144,28 @@ GDB_CALL sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const
             continue;
         kind = effect ? effect->kind : model->kind;
         radius = (kind == 515 || kind == 574) ? 256 : 512;
-        if ((sint32)math_distance_approx(x, z, actor_positions[i].x.whole, actor_positions[i].z.whole) >= radius)
+        if (math_distance_approx(x, z, actor_positions[i].x.whole, actor_positions[i].z.whole) >= radius)
             continue;
         kind = effect ? effect->kind : model->kind;
         if (kind == 572)
-            actor_apply_damage((spr ? spr->owner : model->physics.actor_idx), i, -160);
+            actor_apply_damage(spr ? spr->owner : model->physics.actor_idx, i, -160);
         else if (kind == 574)
-            actor_apply_damage((spr ? spr->owner : model->physics.actor_idx), i, -120);
+            actor_apply_damage(spr ? spr->owner : model->physics.actor_idx, i, -120);
         else
-            object_apply_damage((spr ? spr->owner : model->physics.actor_idx), i, (effect ? effect->kind : model->kind));
+            object_apply_damage(spr ? spr->owner : model->physics.actor_idx, i, effect ? effect->kind : model->kind);
         /* TODO: Investigate cross-format reuse during original radial damage */
-        if ((effect && effect->payload_kind != EFFECT_PAYLOAD_SPRITE) || (model && model->payload_kind != MODEL_PAYLOAD_PHYSICS))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Radial damage payload changed effect %p model %p\n", (const void *)effect, (const void *)model));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!effect || effect->payload_kind == EFFECT_PAYLOAD_SPRITE) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS));
         owner = spr ? spr->owner : model->physics.actor_idx;
         /* TODO: Investigate original invalid hit-credit actor indices */
-        if (owner < 0 || owner >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid radial damage hit owner %d for effect %p model %p\n", owner, (const void *)effect, (const void *)model));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(owner >= 0 && owner < ACTOR_COUNT);
         actors_rec_hit(owner, i);
         /* TODO: Investigate cross-format reuse during original radial damage */
-        if ((effect && effect->payload_kind != EFFECT_PAYLOAD_SPRITE) || (model && model->payload_kind != MODEL_PAYLOAD_PHYSICS))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Radial damage payload changed effect %p model %p\n", (const void *)effect, (const void *)model));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT((!effect || effect->payload_kind == EFFECT_PAYLOAD_SPRITE) && (!model || model->payload_kind == MODEL_PAYLOAD_PHYSICS));
         kind = effect ? effect->kind : model->kind;
         if (kind - 499u < 5u)
         {
             /* TODO: Investigate raw item kind publication over native sprite data */
-            if (spr)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Native sprite changed to raw radial item %p kind %u\n", (const void *)effect, kind));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(!spr);
             if (actor_animations[i].id != 147)
             {
                 actor_orientation[i].yaw = (uint16)(((uint16)model->angles.yaw >> 5) ^ 1024u);
@@ -1290,7 +1183,7 @@ GDB_CALL sint32 actors_apply_radial_damage(uint32 world_x, uint32 world_z, const
             }
             return actors_detach_companion(i);
         }
-        actor_orientation[i].yaw = (uint16)((uint32)math_dir11(x, z, actor_positions[i].x.whole, actor_positions[i].z.whole) ^ 1024u);
+        actor_orientation[i].yaw = (uint16)(math_dir11(x, z, actor_positions[i].x.whole, actor_positions[i].z.whole) ^ 1024u);
         actor_items_drop(i);
         animation_start(i, animation_type_banks[(uint32)actor_types[i]], 147);
         actors_detach_companion(i);

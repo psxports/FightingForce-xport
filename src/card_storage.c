@@ -81,11 +81,12 @@ static sint32 close_file_dummy(sint32 fd)
 static void build_path(uint32 slot, const char *name, uint32 capacity)
 {
     sint32 result;
-    if (!name || !memchr(name, 0, capacity))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+#if defined(_DEBUG)
+    const void *name_end = name ? memchr(name, 0, capacity) : NULL;
+    XASSERT(name_end);
+#endif
     result = snprintf(card_files.path, sizeof(card_files.path), "bu%2.2x:%s", slot & 255, name);
-    if (result < 0 || (uint32)result >= sizeof(card_files.path))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(result >= 0 && (uint32)result < sizeof(card_files.path));
 }
 
 static sint32 write_file_dummy(sint32 fd, const uint8 *src, uint32 bytes)
@@ -133,8 +134,7 @@ GDB_CALL sint32 card_write_save(uint32 slot, const char *name, uint32 name_capac
             for (j = 0; j < 4; ++j)
                 card_files.header.icon[frame][i / 4 + j] = words[j];
         }
-    if (!data || capacity < CARD_HEADER_SIZE)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(data && capacity >= CARD_HEADER_SIZE);
     for (i = 0; i < CARD_HEADER_SIZE; i += 16)
     {
         for (j = 0; j < 4; ++j)
@@ -152,8 +152,7 @@ GDB_CALL sint32 card_write_save(uint32 slot, const char *name, uint32 name_capac
         return -2;
     if (localization.text[LOCAL_TEXT_CARD_SAVING])
         card_draw_pending_notice(notice_context);
-    if (capacity < CARD_FILE_SIZE)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(capacity >= CARD_FILE_SIZE);
     written = write_file_dummy(fd, data, CARD_FILE_SIZE);
     close_file_dummy(fd);
     return written == CARD_FILE_SIZE ? 1 : -3;
@@ -197,8 +196,7 @@ GDB_CALL sint32 card_read_save(uint32 slot, const char *name, uint32 name_capaci
     fd = open_file_dummy(card_files.path, 1);
     if (fd == -1)
         return 0;
-    if (!dst || capacity < CARD_FILE_SIZE)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(dst && capacity >= CARD_FILE_SIZE);
     count = card_backend_read(fd, dst, CARD_FILE_SIZE);
     close_file_dummy(fd);
     return count == CARD_FILE_SIZE;
@@ -218,10 +216,10 @@ GDB_CALL sint32 card_read_save_info(void)
     player_count = card_files.save.data.player_count;
     type0 = card_files.save.data.character_type[0];
     type1 = card_files.save.data.character_type[1];
-    card_storage.preview.stage = (sint8)stage;
-    card_storage.preview.player_count = (sint8)player_count;
-    card_storage.preview.character_type[0] = (sint8)type0;
-    card_storage.preview.character_type[1] = (sint8)type1;
+    card_storage.preview.stage = stage;
+    card_storage.preview.player_count = player_count;
+    card_storage.preview.character_type[0] = type0;
+    card_storage.preview.character_type[1] = type1;
     return stage;
 }
 
@@ -241,16 +239,14 @@ GDB_CALL sint32 card_scan_directory(uint32 slot, DIRENTRY *entries, uint32 capac
     memcpy(saved, buffer, 128);
     snprintf(buffer, sizeof(card_files.scan_path), "bu%2.2x:", slot);
     strcat(buffer, file_pattern);
-    if (!entries || !capacity)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(entries && capacity);
     entry = entries;
     if (card_backend_first_file(buffer, entry) == entry)
     {
         count = 1;
         do
         {
-            if (count >= capacity)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(count < capacity);
             entry = entries + count;
             if (next_file_dummy(entry) != entry)
                 break;
@@ -269,13 +265,11 @@ GDB_CALL sint32 card_list_files(uint32 slot, CARD_DIRECTORY *directory)
     uint8 saved[264];
     char *tmp = card_files.decoded_title;
     card_storage.free_blocks = CARD_BLOCK_COUNT;
-    if (!directory)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(directory);
     count = card_scan_directory(slot, directory->entry, CARD_DIRECTORY_ENTRY_COUNT);
     if (count <= 0)
         return count;
-    if (count > CARD_DIRECTORY_FILE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(count <= CARD_DIRECTORY_FILE_COUNT);
     memcpy(saved, tmp, sizeof(saved));
     for (i = 0; (sint32)i < count; ++i)
     {
@@ -283,7 +277,7 @@ GDB_CALL sint32 card_list_files(uint32 slot, CARD_DIRECTORY *directory)
         char *name = directory->titles + i * CARD_DIRECTORY_TITLE_STRIDE;
         /* Retain filename extension into the SDK attr/size prefix, not host links */
         build_path(slot, (const char *)entry, CARD_DIRECTORY_NAME_SPAN);
-        blocks = (uint32)entry->size + 1;
+        blocks = entry->size + 1u;
         blocks = (sint32)blocks / 8192;
         card_storage.free_blocks = card_storage.free_blocks - blocks;
         fd = open_file_dummy(card_files.path, 1);
@@ -303,8 +297,7 @@ GDB_CALL sint32 card_list_files(uint32 slot, CARD_DIRECTORY *directory)
         {
             const char *src = (const char *)card_files.header.bytes + 4;
             const char *end = memchr(src, 0, CARD_HEADER_SIZE - 4);
-            if (!end || end - src >= sizeof(card_files.decoded_title))
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(end && end - src < sizeof(card_files.decoded_title));
             memcpy(tmp, src, end - src + 1);
         }
         else
@@ -350,17 +343,14 @@ GDB_CALL sint32 card_encode_title(uint16 *dst, uint32 capacity, const char *src,
     for (;;)
     {
         uint32 ch;
-        if (!src || i >= src_capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(src && i < src_capacity);
         ch = (uint8)src[i];
         if (!ch)
             break;
-        if (!dst || i >= capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(dst && i < capacity);
         dst[i++] = card_encode_character(ch);
     }
-    if (!dst || i >= capacity)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(dst && i < capacity);
     dst[i] = 0;
     return 0;
 }
@@ -392,11 +382,9 @@ GDB_CALL void card_decode_title(char *dst, uint32 capacity, const uint16 *src, u
     uint32 i = 0, ch;
     for (;;)
     {
-        if (!src || i >= count)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(src && i < count);
         ch = src[i];
-        if (!dst || i >= capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(dst && i < capacity);
         if (!ch)
             break;
         dst[i++] = (uint8)card_decode_character(ch);
@@ -568,8 +556,7 @@ GDB_CALL uint32 card_poll_status(uint32 *output)
     uint32 val = card_storage.completion;
     if (!val)
         return 0;
-    if (!output)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(output);
     *output = val;
     return 1;
 }

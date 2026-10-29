@@ -4,20 +4,7 @@
 
 static void npc_actions_copy(NPC_ACTION_REFERENCE *dst, const NPC_ACTION_REFERENCE *src)
 {
-    uint32 i;
-    NPC_ACTION_REFERENCE a, b, c, d;
-    for (i = 0; i < 288; i += 4)
-    {
-        a = src[i];
-        b = src[i + 1];
-        c = src[i + 2];
-        d = src[i + 3];
-        dst[i] = a;
-        dst[i + 1] = b;
-        dst[i + 2] = c;
-        dst[i + 3] = d;
-    }
-    dst[288] = src[288];
+    memcpy(dst, src, NPC_ACTION_SLOT_COUNT * sizeof(*dst));
 }
 
 uint32 game_tables_init_resources(void)

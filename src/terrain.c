@@ -28,11 +28,7 @@ GDB_CALL uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
     const POSE_MATRIX *matrix;
     int i;
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
     for (i = 0; i < 5; i++)
         words[i] = matrix->rotation_words[i];
@@ -47,7 +43,7 @@ GDB_CALL uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
     proj_depth = geometry_workspace.scratch.depth;
     for (row = 0; row < 17; row++)
     {
-        uint32 z = (uint32)-2048 + row * 256;
+        uint32 z = (-2048) + row * 256;
         xport_gte_write_data(1, z);
         xport_gte_write_data(3, z);
         xport_gte_write_data(5, z);
@@ -98,8 +94,7 @@ GDB_CALL uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
                     poly->p[1].xy.xy = v1;
                     poly->p[2].xy.xy = v2;
                     poly->p[3].xy.xy = v3;
-                    if (tile < 0 || tile > TEXTURE_DESCRIPTOR_CAPACITY * 3 - 3)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(tile >= 0 && tile <= TEXTURE_DESCRIPTOR_CAPACITY * 3 - 3);
                     const uint32 *t = tex_desc.words + tile;
                     descriptor0 = t[0];
                     descriptor1 = t[1];
@@ -139,11 +134,7 @@ GDB_CALL uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row
     column <<= 1;
     row <<= 7;
     /* TODO: Investigate geometry entered before its current matrix is published */
-    if (!geometry_workspace.matrix)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing current geometry matrix in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
     for (i = 0; i < 5; i++)
         words[i] = matrix->rotation_words[i];
@@ -206,19 +197,17 @@ GDB_CALL uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row
                     sx[1] = xy[point_idx + 1];
                     color = 0x2d000000;
                     difference = (sint64)depth - cutoff;
-                    if (difference < -2147483647 - 1 || difference > 2147483647)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(difference >= -2147483647 - 1 && difference <= 2147483647);
                     delta = difference;
                     /* The ADDI in the rejection branch delay slot still executes */
                     difference += 2048;
-                    if (difference > 2147483647)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(difference <= 2147483647);
                     fade = difference;
                     if (delta > 0)
                         goto next_faded_tile;
                     if (fade >= 0)
                     {
-                        uint32 shade = 128 - (uint32)(fade >> 4);
+                        uint32 shade = 128 - (fade >> 4);
                         color = 0x2c000000 | shade | (shade << 8) | (shade << 16);
                     }
                     sx[2] = xy[point_idx + 17];
@@ -231,8 +220,7 @@ GDB_CALL uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row
                         poly->p[1].xy.xy = sx[1];
                         poly->p[2].xy.xy = sx[2];
                         poly->p[3].xy.xy = sx[3];
-                        if (cell > TEXTURE_DESCRIPTOR_CAPACITY * 3 - 3)
-                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        XASSERT(cell <= TEXTURE_DESCRIPTOR_CAPACITY * 3 - 3);
                         const uint32 *tex = tex_desc.words + cell;
                         uv[0] = tex[0];
                         uv[1] = tex[1];
@@ -273,31 +261,33 @@ GDB_CALL sint32 background_render_strip(void)
 {
     FUNCTION_MARKER(0x80064150, "GAME.EXE");
     uint32 parity, out_offset = 0;
-    sint32 base_x = ~(sint32)camera.pos.x.whole;
-    sint32 height = camera.pos.y.whole;
-    sint32 base_z = ~(sint32)camera.pos.z.whole;
+    uint32 base_x = ~camera.pos.x.whole;
+    uint32 height = camera.pos.y.whole;
+    uint32 base_z = ~camera.pos.z.whole;
     sint32 angle = (sint16)camera.angles.yaw_bits >> 5;
-    sint32 sn = sin_table[(uint32)angle & 2047];
-    sint32 cs = sin_table[(uint32)(angle + 512) & 2047];
-    uint32 sn160 = (uint32)sn * 160, cs160 = (uint32)cs * 160, sn256 = (uint32)sn << 8, cs256 = (uint32)cs << 8;
-    sint32 ax = (sint32)(0u - cs160 - sn256) >> 15, az = (sint32)(cs256 - sn160) >> 15;
+    uint32 sn = sin_table[angle & 2047u];
+    uint32 cs = sin_table[(angle + 512u) & 2047];
+    uint32 sn160 = sn * 160, cs160 = cs * 160, sn256 = sn << 8, cs256 = cs << 8;
+    sint32 ax = (sint32)((uint32)(-(sint64)(cs160)) - sn256) >> 15, az = (sint32)(cs256 - sn160) >> 15;
     sint32 bx = (sint32)(cs160 - sn256) >> 15, bz = (sint32)(sn160 + cs256) >> 15;
-    sint32 h = (sint32)((uint32)height << 8), row, col;
+    sint32 h = height << 8, row, col;
     parity = disp_buffers.frame & 1;
     out_offset += 320 * parity;
     for (row = 1; row < 20; row += 2)
     {
-        sint32 q, x, z;
+        sint32 q;
+        uint32 x;
+        uint32 z;
         parity = disp_buffers.frame & 1;
         q = h / (row + (sint32)parity);
         x = background_product(q, ax);
         z = background_product(q, az);
-        uint32 dx = (uint32)((sint32)(((uint32)background_product(q, bx) - (uint32)x) << 14) / 160) << 1;
-        uint32 dz = (uint32)((sint32)(((uint32)background_product(q, bz) - (uint32)z) << 14) / 160) << 1;
-        uint32 u = ((uint32)x + (uint32)base_x) << 16, v = ((uint32)z + (uint32)base_z) << 16;
+        uint32 dx = (uint32)((sint32)((background_product(q, bx) - x) << 14) / 160) << 1;
+        uint32 dz = (uint32)((sint32)((background_product(q, bz) - z) << 14) / 160) << 1;
+        uint32 u = (x + base_x) << 16, v = (z + base_z) << 16;
         for (col = 0; col < 320; col++)
         {
-            uint32 idx = ((uint32)((sint32)u >> 23) & 127) + ((uint32)((sint32)v >> 16) & 0x3f80);
+            uint32 idx = (((sint32)u >> 23) & 127u) + (((sint32)v >> 16) & 0x3f80u);
             background_img.pix[out_offset++] = terrain_map.color_flat[idx];
             u += dx;
             v += dz;
@@ -318,7 +308,7 @@ GDB_CALL sint32 terrain_draw(void)
     x = cx & 0xffffff;
     cz = camera.pos.z.bits;
     z = cz & 0xffffff;
-    dir = (uint32)((camera.angles.yaw + 2048) >> 12) & 15;
+    dir = ((camera.angles.yaw + 2048) >> 12) & 15;
     tx = (sint32)~cx >> 24;
     tz = (sint32)~cz >> 24;
     if (camera.angles.pitch < 8192)
@@ -335,7 +325,7 @@ GDB_CALL sint32 terrain_draw(void)
     for (i = 0; i < 4; i++)
     {
         transform_push();
-        transform_translate((i & 1 ? 0xf8010000u : 0x07ff0000u) - x, 0u - camera.pos.y.bits, (i & 2 ? 0xf8010000u : 0x07ff0000u) - z);
+        transform_translate((i & 1 ? 0xf8010000u : 0x07ff0000u) - x, (uint32)(-(sint64)(camera.pos.y.bits)), (i & 2 ? 0xf8010000u : 0x07ff0000u) - z);
         terrain_draw_grid(0, tx + (i & 1 ? 16 : 0), tz + (i & 2 ? 16 : 0));
         transform_pop();
     }
@@ -348,7 +338,7 @@ GDB_CALL sint32 terrain_draw(void)
     pos.size = 21;
     spr_draw_height(&pos, tex_grps[TEXTURE_GROUP_TERRAIN].first_tex + 256);
     pos.x += 256;
-    return (sint32)spr_draw_height(&pos, tex_grps[TEXTURE_GROUP_TERRAIN].first_tex + 257);
+    return spr_draw_height(&pos, tex_grps[TEXTURE_GROUP_TERRAIN].first_tex + 257);
 }
 
 /* 80063900..80063AD0: Load terrain images before map/object initialization */
@@ -359,76 +349,62 @@ RESOURCE_VIEW terrain_load_texs(const char *name)
     uint8 *dest;
     PSX_RECT *rect;
     const uint8 *pixels;
-    if (pbl.byte_len < sizeof(tex_pals.color[1]))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(pbl.byte_len >= sizeof(tex_pals.color[1]));
     pixels = pbl.data + 512;
     resource_copy_block(pbl.data, (uint8 *)tex_pals.color[1]);
     tex_pals.color[1][0] = 0;
     rect = &tex_upload_rects.terrain[TEXTURE_TERRAIN_BASE];
-    if (rect->w < 0 || rect->h < 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(rect->w >= 0 && rect->h >= 0);
     available = pbl.storage_len - (uint32)(pixels - pbl.storage);
     bytes = (uint32)rect->w * (uint32)rect->h * sizeof(uint16);
-    if (bytes > available || ((uintptr_t)pixels & 3))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (LoadImagePSX(rect, (uint32 *)pixels) != 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(bytes <= available && !((uintptr_t)pixels & 3));
+    {
+        sint32 checked_result = LoadImagePSX(rect, (uint32 *)pixels);
+        XASSERT(checked_result == 0);
+    }
     count = resource_swap32(resource_archive.dir->count_be);
     advance_bytes = 20 * count + 4;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.scratch.data || (advance_bytes) > resource_arenas.scratch.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor scratch span %u available %u context %08X stage %u tick %u\n", (uint32)(advance_bytes), resource_arenas.scratch.available, resource_arenas.scratch.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.scratch.data && (advance_bytes) <= resource_arenas.scratch.available);
     resource_arenas.scratch.data += advance_bytes;
     resource_arenas.scratch.available -= advance_bytes;
     resource_arenas.scratch.context = resource_arenas.scratch.context + advance_bytes;
     /* Decode the staging file offset without aliasing separate native allocations */
     scratch_offset = resource_arenas.scratch.context - resource_archive.relocation_base;
-    if (scratch_offset > resource_archive.byte_len || 128 * 128 > resource_archive.byte_len - scratch_offset)
-    {
-        /* TODO: Investigate a staging destination outside its actual archive owner */
-        DIAGNOSTIC(fprintf(stderr, "Terrain half staging outside archive: cursor %08X context %08X offset %u bytes %u stage %u\n", resource_arenas.scratch.context, resource_archive.relocation_base, scratch_offset, resource_archive.byte_len, game_session.stage));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate a staging destination outside its actual archive owner */
+    XASSERT(scratch_offset <= resource_archive.byte_len && 128 * 128 <= resource_archive.byte_len - scratch_offset);
     scratch_bytes = resource_archive.byte_len - scratch_offset;
     dest = (uint8 *)resource_archive.dir + scratch_offset;
     /* Original sampling continues across entries within the same WAD */
-    if (available < 127 * 512 + 127 * 2 + 1)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(available >= 127 * 512 + 127 * 2 + 1);
     for (y = 0; y < 128; y++)
         for (x = 0; x < 128; x++)
             dest[y * 128 + x] = pixels[y * 512 + x * 2];
     rect = &tex_upload_rects.terrain[TEXTURE_TERRAIN_HALF];
-    if (rect->w < 0 || rect->h < 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(rect->w >= 0 && rect->h >= 0);
     bytes = (uint32)rect->w * (uint32)rect->h * sizeof(uint16);
-    if (bytes > scratch_bytes || ((uintptr_t)dest & 3))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (LoadImagePSX(rect, (uint32 *)dest) != 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(bytes <= scratch_bytes && !((uintptr_t)dest & 3));
+    {
+        sint32 checked_result = LoadImagePSX(rect, (uint32 *)dest);
+        XASSERT(checked_result == 0);
+    }
     /* Reload the cursor after the upload, as in the original */
     scratch_offset = resource_arenas.scratch.context - resource_archive.relocation_base;
-    if (scratch_offset > resource_archive.byte_len || 64 * 64 > resource_archive.byte_len - scratch_offset)
-    {
-        /* TODO: Investigate a staging destination outside its actual archive owner */
-        DIAGNOSTIC(fprintf(stderr, "Terrain quarter staging outside archive: cursor %08X context %08X offset %u bytes %u stage %u\n", resource_arenas.scratch.context, resource_archive.relocation_base, scratch_offset, resource_archive.byte_len, game_session.stage));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    /* TODO: Investigate a staging destination outside its actual archive owner */
+    XASSERT(scratch_offset <= resource_archive.byte_len && 64 * 64 <= resource_archive.byte_len - scratch_offset);
     scratch_bytes = resource_archive.byte_len - scratch_offset;
     dest = (uint8 *)resource_archive.dir + scratch_offset;
     for (y = 0; y < 64; y++)
         for (x = 0; x < 64; x++)
             dest[y * 64 + x] = pixels[y * 1024 + x * 4];
     rect = &tex_upload_rects.terrain[TEXTURE_TERRAIN_QUARTER];
-    if (rect->w < 0 || rect->h < 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(rect->w >= 0 && rect->h >= 0);
     bytes = (uint32)rect->w * (uint32)rect->h * sizeof(uint16);
-    if (bytes > scratch_bytes || ((uintptr_t)dest & 3))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    if (LoadImagePSX(rect, (uint32 *)dest) != 0)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(bytes <= scratch_bytes && !((uintptr_t)dest & 3));
+    {
+        sint32 checked_result = LoadImagePSX(rect, (uint32 *)dest);
+        XASSERT(checked_result == 0);
+    }
     pbl.data += 512;
     pbl.context_address += 512;
     pbl.byte_len -= 512;
@@ -440,8 +416,7 @@ uint32 terrain_build_map(RESOURCE_VIEW map, RESOURCE_VIEW pixels)
 {
     uint32 i, x, y;
     uint32 available = pixels.storage_len - (uint32)(pixels.data - pixels.storage);
-    if (map.byte_len < sizeof(terrain_map.tile_flat))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(map.byte_len >= sizeof(terrain_map.tile_flat));
     /* Preserve each original group of four reads followed by four writes */
     for (i = 0; i < 8192; i += 512)
         resource_copy_block(map.data + i, (uint8 *)terrain_map.tile_flat + i);
@@ -461,8 +436,7 @@ uint32 terrain_build_map(RESOURCE_VIEW map, RESOURCE_VIEW pixels)
             {
                 uint32 offset = 32u * ((uint32)tile & 7) + 8192u * ((uint32)tile >> 3);
                 const uint8 *src;
-                if (offset > available || 5141 > available - offset)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(offset <= available && 5141 <= available - offset);
                 src = pixels.data + offset;
                 dest[0] = src[2570];
                 dest[1] = src[2580];
@@ -535,8 +509,7 @@ void terrain_build_descs(void)
     uint32 base = (uint16)tex_desc_count, i, orientation;
     TEXTURE_DESCRIPTOR *desc;
     tex_grps[TEXTURE_GROUP_TERRAIN].first_tex = base;
-    if (tex_desc_count > TEXTURE_DESCRIPTOR_CAPACITY - 258)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(tex_desc_count <= TEXTURE_DESCRIPTOR_CAPACITY - 258);
     desc = tex_desc.item + tex_desc_count;
     for (i = 0; i < 64; i++)
     {

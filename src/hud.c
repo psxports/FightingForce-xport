@@ -17,45 +17,46 @@ GDB_CALL sint32 hud_format_score(sint32 player)
 {
     FUNCTION_MARKER(0x8005e9e8, "GAME.EXE");
     uint32 started = 0;
-    sint32 val, q;
+    sint32 val;
+    uint32 q;
     uint8 digit;
     if ((uint32)player >= HUD_PLAYER_COUNT)
         return 0;
-    val = (sint32)player_scores[player].val;
+    val = player_scores[player].val;
     q = val / 100000;
-    digit = (uint32)q + 48;
+    digit = q + 48;
     if (!started && digit == 48)
         digit = 32;
     else
         started = 1;
     hud.score_text[player][0] = digit;
-    val = (uint32)val - (uint32)q * 100000u;
+    val = val - q * 100000u;
     q = val / 10000;
-    digit = (uint32)q + 48;
+    digit = q + 48;
     if (!started && digit == 48)
         digit = 32;
     else
         started = 1;
     hud.score_text[player][1] = digit;
-    val = (uint32)val - (uint32)q * 10000u;
+    val = val - q * 10000u;
     q = val / 1000;
-    digit = (uint32)q + 48;
+    digit = q + 48;
     if (!started && digit == 48)
         digit = 32;
     else
         started = 1;
     hud.score_text[player][2] = digit;
-    val = (uint32)val - (uint32)q * 1000u;
+    val = val - q * 1000u;
     q = val / 100;
-    digit = (uint32)q + 48;
+    digit = q + 48;
     if (!started && digit == 48)
         digit = 32;
     else
         started = 1;
     hud.score_text[player][3] = digit;
-    val = (uint32)val - (uint32)q * 100u;
+    val = val - q * 100u;
     q = val / 10;
-    digit = (uint32)q + 48;
+    digit = q + 48;
     if (!started && digit == 48)
         digit = 32;
     hud.score_text[player][4] = digit;
@@ -75,30 +76,21 @@ GDB_CALL uint32 hud_continue_prompt(uint32 player)
     if (game_session.player_count == 1)
         return 0;
     /* TODO: Investigate a continue prompt outside the native actor pool */
-    if (player >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid continue actor %u players %u stage %u tick %u\n", player, game_session.player_count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(player < ACTOR_COUNT);
     if (!((sint8)actor_lifecycle[player].death_ticks))
         return 0;
     /* TODO: Investigate a continue prompt whose partner is not a player */
-    if (player >= PLAYER_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid continue partner for actor %u death ticks %u players %u stage %u tick %u\n", player, (uint32)actor_lifecycle[player].death_ticks, game_session.player_count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(player < PLAYER_COUNT);
     partner = 1 - player;
     if (actor_health[partner].hp <= 0 || (sint32)level_transition.continues <= 0)
         return 0;
-    if (player >= CHARACTER_NAME_ACTOR_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(player < CHARACTER_NAME_ACTOR_COUNT);
     name = character_name_text(character_actor_names[player]);
     if (player)
     {
-        x = 314 - (uint32)text_width(name);
+        x = 314u - text_width(name);
         text_draw(name, x, 16);
-        x = (uint32)x - 10 - (uint32)text_width(hud.score_text[1]);
+        x = x - 10u - text_width(hud.score_text[1]);
         text_draw_digits(hud.score_text[1], HUD_SCORE_TEXT_CAPACITY, x, 16);
     }
     else
@@ -107,7 +99,7 @@ GDB_CALL uint32 hud_continue_prompt(uint32 player)
         text_draw_digits(hud.score_text[0], HUD_SCORE_TEXT_CAPACITY, x, 16);
     }
     sprintf(text, continue_prompt_format, localization.text[LOCAL_TEXT_CONTINUE]);
-    x = player ? (sint32)(314 - (uint32)text_width(text)) : 16;
+    x = player ? (sint32)(314u - text_width(text)) : 16;
     if (game_session.tick & 8)
         text_draw(text, x, 26);
     if (!(pad_decode_buttons(pad_game.port[player]) & 0x4000))
@@ -115,8 +107,7 @@ GDB_CALL uint32 hud_continue_prompt(uint32 player)
     level_transition.continues = level_transition.continues - 1;
     actor_health[player].hp = 380;
     actor_lifecycle[player].death_ticks = 0;
-    if (player >= PLAYER_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(player < PLAYER_COUNT);
     player_scores[player].val = 0;
     player_scores[player].continue_threshold = 50000;
     hud_format_score(player);
@@ -131,11 +122,7 @@ GDB_CALL uint32 hud_continue_prompt(uint32 player)
 static void hud_ammo(uint32 player, ACTOR_ITEM_HAND hand)
 {
     /* TODO: Investigate an ammo display outside the native player or hand domain */
-    if (player >= PLAYER_COUNT || hand < 0 || hand >= ACTOR_ITEM_HAND_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid ammo display player %u hand %d stage %u tick %u\n", player, (sint32)hand, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(player < PLAYER_COUNT && hand >= 0 && hand < ACTOR_ITEM_HAND_COUNT);
     sint32 idx = actor_items[player].slot[hand];
     uint32 type;
     int show;
@@ -145,22 +132,14 @@ static void hud_ammo(uint32 player, ACTOR_ITEM_HAND hand)
     if (idx == -1)
         return;
     /* TODO: Investigate an ammo item outside the native dynamic pool */
-    if (idx < 0 || idx >= DYNAMIC_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid ammo item player %u hand %d slot %d stage %u tick %u\n", player, (sint32)hand, idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0 && idx < DYNAMIC_OBJECT_COUNT);
     const MODEL_OBJECT *model = dynamic_objects + idx;
     type = model->kind;
     show = hand == ACTOR_ITEM_LEFT ? (type == 515 || type == 504) : (type == 515 || type == 506 || (!player && type == 505) || type - 499u < 5u);
     if (!show)
         return;
     /* TODO: Investigate a displayed weapon with a foreign native owner */
-    if (model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid ammo item owner player %u hand %d slot %d kind %u owner %u stage %u tick %u\n", player, (sint32)hand, idx, type, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     /* Original 61E0C decimal bytes in the caller's native local buffer */
     ammo = model->physics.life;
     text_format_digits(ammo, text);
@@ -175,11 +154,10 @@ GDB_CALL uint32 hud_draw_health_left(uint32 xy, uint32 idx)
     const ACTOR_HEALTH *health = actor_health + idx;
     sint32 maximum = health->max >> 2, old = health->trail >> 2;
     sint32 shown = health->shown >> 2, hp = health->hp >> 2;
-    uint32 desc_idx = (uint32)tex_map[(59 + ((uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))];
-    if (desc_idx >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    uint32 desc_idx = tex_map[(59u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))];
+    XASSERT(desc_idx < TEXTURE_DESCRIPTOR_CAPACITY);
     const TEXTURE_DESCRIPTOR *d = tex_desc.item + desc_idx;
-    uint32 x = xy & 65535, y = (uint32)((sint32)xy >> 16), p, bucket, prev, i;
+    uint32 x = xy & 65535, y = (sint32)xy >> 16, p, bucket, prev, i;
     int wide = maximum > 128, special;
     POLY_G4 *poly;
     POLY_F4 *flash;
@@ -223,7 +201,7 @@ GDB_CALL uint32 hud_draw_health_left(uint32 xy, uint32 idx)
         setRGB0(flash, fade, 0, 0);
         for (i = 0; i < 4; i++)
         {
-            flash->p[i].x = x + (uint32)(i < 2 ? shown : old);
+            flash->p[i].x = x + (i < 2 ? shown : old);
             flash->p[i].y = y + 2 + ((i & 1) ? 4 : 0);
         }
         render_ot_insert(render_buffers.ot_addr + 8188, p);
@@ -257,7 +235,7 @@ GDB_CALL uint32 hud_draw_health_right(uint32 xy, uint32 idx)
     const ACTOR_HEALTH *health = actor_health + idx;
     sint32 maximum = health->max >> 2, old = health->trail >> 2;
     sint32 shown = health->shown >> 2, hp = health->hp >> 2;
-    uint32 x = xy & 65535, y = (uint32)((sint32)xy >> 16), p, result, i;
+    uint32 x = xy & 65535, y = (sint32)xy >> 16, p, result, i;
     PROJECTION_POINT pos = {.v = {(sint32)x, (sint32)y, 0, 0}};
     int wide = maximum > 128, special;
     POLY_G4 *poly;
@@ -303,15 +281,15 @@ GDB_CALL uint32 hud_draw_health_right(uint32 xy, uint32 idx)
         setRGB0(flash, fade, 0, 0);
         for (i = 0; i < 4; i++)
         {
-            flash->p[i].x = x - (uint32)(i < 2 ? shown : old);
+            flash->p[i].x = x - (i < 2 ? shown : old);
             flash->p[i].y = y + 2 + ((i & 1) ? 4 : 0);
         }
         result = render_ot_insert(render_buffers.ot_addr + 8188, p);
     }
     for (i = maximum >> 3; (sint32)i > 0; i--)
     {
-        pos.x = (sint32)((uint32)pos.x - 8u);
-        result = spr_draw(&pos, tex_map[(59 + ((uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))]);
+        pos.x = pos.x - 8u;
+        result = spr_draw(&pos, tex_map[(59u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))]);
     }
     return result;
 }
@@ -355,7 +333,7 @@ GDB_CALL uint32 hud_draw(void)
         ACTOR_CONTACT *contact = actor_contacts + i;
         if (actor_types[i] == ACTOR_TYPE_NONE)
             continue;
-        mode = (sint32)game_session.mode;
+        mode = game_session.mode;
         if ((i && game_session.player_count != 2) || !(mode == 2 || (mode < 2 && health->hp > 0)))
         {
             hud_continue_prompt(i);
@@ -370,7 +348,7 @@ GDB_CALL uint32 hud_draw(void)
         if (mode < 2)
         {
             if (i)
-                x = (uint32)x - 10 - (uint32)text_width(hud.score_text[1]);
+                x = x - 10u - text_width(hud.score_text[1]);
             text_draw_digits(hud.score_text[i], HUD_SCORE_TEXT_CAPACITY, x, 16);
         }
         if (i)
@@ -383,17 +361,12 @@ GDB_CALL uint32 hud_draw(void)
         if (contact->target_ticks && idx != -1)
         {
             /* TODO: Investigate a retained HUD target outside the actor pool */
-            if (idx < 0 || idx >= ACTOR_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid HUD target player %u target %d ticks %u stage %u tick %u\n", i, idx, (uint32)contact->target_ticks, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx >= 0 && idx < ACTOR_COUNT);
             if (actor_health[idx].hp <= 0 || actor_types[idx] == ACTOR_TYPE_NONE)
                 contact->target_ticks = 0;
             else
             {
-                if (idx < 0 || idx >= CHARACTER_NAME_ACTOR_COUNT)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(idx >= 0 && idx < CHARACTER_NAME_ACTOR_COUNT);
                 name = character_name_text(character_actor_names[idx]);
                 text_draw(name, i ? 314 - text_width(name) : 16, 36);
                 if (i)
@@ -416,14 +389,14 @@ GDB_CALL uint32 hud_draw(void)
             text_center(localization.text[LOCAL_TEXT_CHOOSE_ROUTE], 40);
         camera_update_focus();
         text_gradient_update();
-        angle = (sint16)math_dir16(-1536, 512, camera.tracking.center.x.whole, (sint32)(0 - camera.tracking.center.z.bits) >> 16);
+        angle = (sint16)math_dir16(-1536, 512, camera.tracking.center.x.whole, (sint32)((uint32)(-(sint64)(camera.tracking.center.z.bits))) >> 16);
         choice = angle < -8192 ? 0 : angle >= 8193 ? 1 : 2;
         width = text_width(localization.text[LOCAL_TEXT_ROUTE_BRONX]);
-        width = (sint32)(300 - (uint32)width - (uint32)text_width(localization.text[LOCAL_TEXT_ROUTE_PARK])) >> 1;
+        width = (sint32)(300u - width - text_width(localization.text[LOCAL_TEXT_ROUTE_PARK])) >> 1;
         text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_BRONX], width, 75, choice == 0 ? &text_active_gradient : &text_inactive_gradient);
         x = text_width(localization.text[LOCAL_TEXT_ROUTE_BRONX]);
-        text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_PARK], (uint32)width + (uint32)x + 30, 75, choice == 1 ? &text_active_gradient : &text_inactive_gradient);
-        x = (sint32)(320 - (uint32)text_width(localization.text[LOCAL_TEXT_ROUTE_MALL])) >> 1;
+        text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_PARK], width + (uint32)x + 30, 75, choice == 1 ? &text_active_gradient : &text_inactive_gradient);
+        x = (sint32)(320u - text_width(localization.text[LOCAL_TEXT_ROUTE_MALL])) >> 1;
         text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_MALL], x, 55, choice == 2 ? &text_active_gradient : &text_inactive_gradient);
         level_transition.route_choice = (uint8)choice;
     }
@@ -437,10 +410,10 @@ GDB_CALL uint32 hud_draw(void)
         text_gradient_update();
         choice = (sint32)camera.tracking.center.x.bits > 0x14000000;
         width = text_width(localization.text[LOCAL_TEXT_ROUTE_NAVAL_BASE]);
-        width = (sint32)(320 - (uint32)width - (uint32)text_width(localization.text[LOCAL_TEXT_ROUTE_AIRBASE])) >> 1;
+        width = (sint32)(320u - width - text_width(localization.text[LOCAL_TEXT_ROUTE_AIRBASE])) >> 1;
         text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_AIRBASE], width, 54, !choice ? &text_active_gradient : &text_inactive_gradient);
         x = text_width(localization.text[LOCAL_TEXT_ROUTE_AIRBASE]);
-        text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_NAVAL_BASE], (uint32)width + (uint32)x + 10, 54, choice ? &text_active_gradient : &text_inactive_gradient);
+        text_draw_gradient(localization.text[LOCAL_TEXT_ROUTE_NAVAL_BASE], width + (uint32)x + 10, 54, choice ? &text_active_gradient : &text_inactive_gradient);
     }
     {
         uint32 transition = level_transition.finish_tick, result = transition & 8;
@@ -451,7 +424,7 @@ GDB_CALL uint32 hud_draw(void)
                 text_center(localization.text[LOCAL_TEXT_STAGE_CLEARED], 60);
             text_center(localization.text[LOCAL_TEXT_DESTRUCTION_BONUS], 100);
             sprintf(text, continue_count_format, localization.text[LOCAL_TEXT_CONTINUE], (sint32)level_transition.continues);
-            x = 160 - (uint32)(text_width(text) >> 1);
+            x = 160 - (text_width(text) >> 1);
             text_draw(text, x, 190);
             if (actor_health[0].hp > 0)
             {
@@ -461,12 +434,12 @@ GDB_CALL uint32 hud_draw(void)
             result = 2;
             if (game_session.player_count == 2)
             {
-                result = (uint32)(sint32)actor_health[1].hp;
+                result = actor_health[1].hp;
                 if ((sint32)result > 0)
                 {
                     sprintf(text, destruction_format, (sint16)actor_bonus_counts[1], 250 * (sint16)actor_bonus_totals[1]);
-                    x = 314 - (uint32)text_width(text);
-                    result = (uint32)text_draw(text, x, 120);
+                    x = 314u - text_width(text);
+                    result = text_draw(text, x, 120);
                 }
             }
         }

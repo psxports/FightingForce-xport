@@ -98,11 +98,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
         for (i = 0; i < 3; i++, idx++)
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xc000;
             item->pos.x.bits = 0x50000000;
@@ -136,11 +132,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     if (newtype)
     {
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         item->pos.x.bits = x;
         item->pos.z.bits = z;
@@ -153,11 +145,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
         item->angles.yaw_bits = (uint16)angle;
         uint32 prev_idx = idx - 1;
         /* TODO: Investigate construction beyond the native world pool */
-        if (prev_idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", prev_idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(prev_idx < WORLD_OBJECT_COUNT);
         MODEL_OBJECT *prev = world_objects.object + prev_idx;
         prev->angles.yaw_bits = (uint16)angle;
         return 1;
@@ -168,11 +156,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
         for (i = 0; i < 7; i++, idx++)
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->pos.x.bits = x;
             item->pos.z.bits = z;
@@ -183,13 +167,9 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     if (type == 663)
     {
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
-        item->pos.x.bits = 0u - x;
+        item->pos.x.bits = (uint32)(-(sint64)(x));
         item->pos.z.bits = z;
         item->angles.yaw_bits = 0x8000;
         item->kind = 663;
@@ -201,11 +181,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     {
         idx--;
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         item->angles.yaw_bits = 0xc000;
     }
@@ -215,11 +191,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     {
         idx--;
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         item->kind = 813;
         item->angles.yaw_bits = types_sequence7[2 + type - 911];
@@ -229,11 +201,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     if (newtype)
     {
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         item->pos.x.bits = x;
         item->pos.z.bits = z;
@@ -243,11 +211,7 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     if (type == 429 || type == 431)
     {
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         item->pos.x.bits = x;
         item->pos.z.bits = z;
@@ -260,8 +224,8 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
         else
         {
             /* TODO: Investigate reusing a concrete foreign payload as a lab tank */
-            DIAGNOSTIC(fprintf(stderr, "Foreign lab tank construction slot %u payload %u stage %u tick %u\n", idx, item->payload_kind, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+            XASSERT(0);
         }
         item->payload_kind = MODEL_PAYLOAD_LAB_TANK;
         item->lab_tank = tank;
@@ -273,33 +237,21 @@ GDB_CALL uint32 world_objects_expand(uint32 next_idx, uint32 type, uint32 x, uin
     {
         uint32 prev_idx = idx - 1;
         /* TODO: Investigate construction beyond the native world pool */
-        if (prev_idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", prev_idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(prev_idx < WORLD_OBJECT_COUNT);
         world_objects.tracked[6] = (WORLD_OBJECT_REFERENCE){prev_idx, 1};
     }
     if (type == 138)
     {
         uint32 prev_idx = idx - 1;
         /* TODO: Investigate construction beyond the native world pool */
-        if (prev_idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", prev_idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(prev_idx < WORLD_OBJECT_COUNT);
         world_objects.tracked[7] = (WORLD_OBJECT_REFERENCE){prev_idx, 1};
     }
     if (type == 341)
     {
         uint32 prev_idx = idx - 1;
         /* TODO: Investigate construction beyond the native world pool */
-        if (prev_idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", prev_idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(prev_idx < WORLD_OBJECT_COUNT);
         level_script_scene.object = (SCENE_OBJECT_REFERENCE){prev_idx, SCENE_OBJECT_WORLD};
     }
     return 0;
@@ -315,11 +267,7 @@ GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uin
         for (i = 0; i < 3; i++, idx++)
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             /* Expanded slots start in the original whole-map zeroed pool */
             if (item->payload_kind == MODEL_PAYLOAD_UNMIGRATED)
@@ -328,11 +276,7 @@ GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uin
                 item->payload_kind = MODEL_PAYLOAD_PATROL_HELICOPTER;
             }
             /* TODO: Investigate expansion over a foreign native model owner */
-            if (item->payload_kind != MODEL_PAYLOAD_PATROL_HELICOPTER)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid patrol expansion slot %u payload %u stage %u tick %u\n", idx, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER);
             item->pos.x.bits = i == 2 ? 0xf3800000u : x;
             item->pos.z.bits = z;
             item->patrol.mode = (uint16)i;
@@ -343,11 +287,7 @@ GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uin
     if (type == 359)
     {
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         item->pos.x.bits = 0x1f400000;
         item->pos.z.bits = 0x1c200000;
@@ -356,18 +296,10 @@ GDB_CALL uint32 world_objects_adjust(uint32 next_idx, uint32 type, uint32 x, uin
     if (type == 781)
     {
         /* TODO: Investigate construction beyond the native world pool */
-        if (idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(idx < WORLD_OBJECT_COUNT);
         item = world_objects.object + idx;
         /* TODO: Investigate army truck access without its native owner */
-        if (!item || item->payload_kind != MODEL_PAYLOAD_ARMY_TRUCK)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid army truck payload object %08X callback %s stage %u tick %u\n", 0x800b89f0 + 36u * idx, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(item && item->payload_kind == MODEL_PAYLOAD_ARMY_TRUCK);
         item->angles.yaw_bits = 0xc000;
         world_objects.relative_scene = (WORLD_OBJECT_REFERENCE){idx, 1};
     }
@@ -379,17 +311,13 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
     FUNCTION_MARKER(0x800406C4, "GAME.EXE");
     uint32 idx = next_idx - 1, angle_idx, coord;
     MODEL_OBJECT *item;
-    sint32 sample;
+    uint32 sample;
     switch (type)
     {
         case 832:
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->pos.x.bits = 0xf0000000;
             item->pos.y.bits = 0xdc000000;
@@ -402,11 +330,7 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
         case 833:
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->pos.x.bits = 0x01000000;
             item->pos.y.bits = 0xef000000;
@@ -418,206 +342,122 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
         }
         case 835:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0x2000;
             break;
         case 836:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xd000;
             break;
         case 739:
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xed00;
             sample = sin_table[360];
             coord = item->pos.x.bits;
             /* TODO: Investigate a path origin store with a foreign native owner */
-            if (item->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid moving emitter origin slot %u kind %u owner %u stage %u tick %u\n", idx, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
-            item->oscillation.base_x = (uint16)((sint32)(coord - ((uint32)sample << 14)) >> 16);
+            XASSERT(item->payload_kind == MODEL_PAYLOAD_OSCILLATION);
+            item->oscillation.base_x = (uint16)((sint32)(coord - (sample << 14)) >> 16);
             angle_idx = item->angles.yaw_bits >> 5;
             sample = sin_table[angle_idx];
             coord = item->pos.z.bits;
-            item->oscillation.base_z = (uint16)((sint32)(coord - ((uint32)sample << 14)) >> 16);
+            item->oscillation.base_z = (uint16)((sint32)(coord - (sample << 14)) >> 16);
             break;
         }
         case 405:
         case 754:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             if (type == 405)
             {
                 /* TODO: Investigate scripted motion with a foreign native owner */
-                if (!item || item->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion owner %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item && item->payload_kind == MODEL_PAYLOAD_OSCILLATION);
                 item->oscillation.door_height = 0;
                 item->oscillation.door_phase = 0;
             }
             else
             {
                 /* TODO: Investigate scripted motion with a foreign native owner */
-                if (!item || item->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion owner %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(item && item->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
                 item->scene_vehicle.speed = 0;
                 item->scene_vehicle.motion_active = 0;
             }
             break;
         case 168:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             /* TODO: Investigate a scene vehicle with a foreign native owner */
-            if (!item || item->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scene vehicle owner in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item && item->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
             item->scene_vehicle.start_tick = -1;
             item->scene_vehicle.voice_plus_one[1] = -1;
             break;
         case 166:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0x7c00;
             /* TODO: Investigate a scene vehicle with a foreign native owner */
-            if (!item || item->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scene vehicle owner in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item && item->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
             item->scene_vehicle.start_tick = -1;
             break;
         case 175:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xc000;
             break;
         case 160:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xc000;
             /* TODO: Investigate a scene vehicle with a foreign native owner */
-            if (!item || item->payload_kind != MODEL_PAYLOAD_SCENE_VEHICLE)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scene vehicle owner in %s stage %u tick %u\n", __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item && item->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE);
             item->scene_vehicle.start_tick = -1;
             break;
         case 687:
         {
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->pos.z.bits = 0x40000000;
             /* TODO: Investigate combat helicopter initialization with a foreign owner */
-            if (item->payload_kind != MODEL_PAYLOAD_COMBAT_HELICOPTER)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid combat helicopter init slot %u payload %u stage %u tick %u\n", idx, item->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER);
             item->helicopter.voice_plus_one[0] = 0;
             break;
         }
         case 199:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xf000;
-            if (item->payload_kind != MODEL_PAYLOAD_UNMIGRATED)
-            {
-                /* TODO: Investigate latent speed initialization over a concrete owner */
-                DIAGNOSTIC(fprintf(stderr, "Invalid pending world speed slot %u kind %u payload %u stage %u tick %u\n", idx, item->kind, item->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            /* TODO: Investigate latent speed initialization over a concrete owner */
+            XASSERT(item->payload_kind == MODEL_PAYLOAD_UNMIGRATED);
             item->pending_motion.speed = 20;
             break;
         case 202:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0xf000;
             break;
         case 205:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0x1000;
             break;
         case 689:
         case 690:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->angles.yaw_bits = 0x1800;
             break;
@@ -627,18 +467,10 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
         {
             uint32 phase = random_next() & 31;
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             /* TODO: Investigate item initialization with a foreign native owner */
-            if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid item phase owner slot %u kind %u requested %u owner %u stage %u tick %u\n", idx, item->kind, type, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
             item->physics.spin = (uint16)phase;
             break;
         }
@@ -649,24 +481,16 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
             sample = sin_table[angle_idx];
             uint32 prev_idx = idx - 1;
             /* TODO: Investigate construction beyond the native world pool */
-            if (prev_idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", prev_idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(prev_idx < WORLD_OBJECT_COUNT);
             MODEL_OBJECT *prev = world_objects.object + prev_idx;
             coord = prev->pos.x.bits;
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
-            item->pos.x.bits = ((uint32)sample << 6) + coord;
+            item->pos.x.bits = (sample << 6) + coord;
             sample = sin_table[MATH_QUARTER_TURN + angle_idx];
             coord = prev->pos.z.bits;
-            item->pos.z.bits = ((uint32)sample << 6) + coord;
+            item->pos.z.bits = (sample << 6) + coord;
             item->kind = 473;
             item->payload_kind = MODEL_PAYLOAD_BOUNCING_DROP;
             item->drop = (BOUNCING_DROP){0};
@@ -677,21 +501,13 @@ GDB_CALL uint32 world_objects_init_special(uint32 next_idx, uint32 type)
             item->drop.released = 0;
             /* The original modulo32 multiply reduces to4 * idx, then signed>>2 */
             /* TODO: Investigate construction of a linked child for a foreign parent */
-            if (prev->payload_kind != MODEL_PAYLOAD_ROTATION)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid rotation parent slot %u kind %u payload %u stage %u tick %u\n", prev_idx, prev->kind, prev->payload_kind, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(prev->payload_kind == MODEL_PAYLOAD_ROTATION);
             prev->rotation.linked = (WORLD_OBJECT_REFERENCE){idx, 1};
             return 1;
         }
         case 702:
             /* TODO: Investigate construction beyond the native world pool */
-            if (idx >= WORLD_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid world construction slot %u kind %u in %s stage %u tick %u\n", idx, type, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(idx < WORLD_OBJECT_COUNT);
             item = world_objects.object + idx;
             item->kind = 701;
             item->angles.yaw_bits = 0x8000;
@@ -712,45 +528,33 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
     world_objects.count = 0;
     world_objects.tracked_count = 0;
     memset(world_objects.object, 0, sizeof(world_objects.object));
-    if (!map.data || cursor >= map.byte_len)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(map.data && cursor < map.byte_len);
     tag = map.data[cursor];
     more = (sint8)tag != -1;
     while (more)
     {
         sint32 code = (sint8)tag;
         ++cursor;
-        if (map.byte_len - cursor < 4)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(map.byte_len - cursor >= 4);
         const WORLD_OBJECT_TYPE_GROUP *types;
         uint32 type, x, z, n;
-        if (world_object_active_types < WORLD_OBJECT_TYPES_NONE || world_object_active_types >= WORLD_OBJECT_TYPES_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(world_object_active_types >= WORLD_OBJECT_TYPES_NONE && world_object_active_types < WORLD_OBJECT_TYPES_COUNT);
         types = world_object_type_defs + world_object_active_types;
-        if (code < 1 || (uint32)code > types->count)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(code >= 1 && (uint32)code <= types->count);
         type = types->model[code - 1];
-        x = 0u - ((uint32)read_coord(map.data + cursor) << 19);
-        z = 0u - ((uint32)read_coord(map.data + cursor + 2) << 19);
+        x = (uint32)(-(sint64)((uint32)read_coord(map.data + cursor) << 19));
+        z = (uint32)(-(sint64)((uint32)read_coord(map.data + cursor + 2) << 19));
         cursor += 4;
         if (type - 477u < 86 || type - 587u < 10)
         {
             sint32 slot = type - 477u < 86 ? dynamic_objects_spawn_item(type, x, 0, z, 0) : dynamic_objects_spawn(type, x, 0, z);
             uint16 angle = 2u * random_next();
             /* TODO: Investigate the original pre-pool write when MPD item allocation fails */
-            if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid MPD item allocation %d for kind %u at record %u stage %u\n", slot, type, cursor - 5u, game_session.stage));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
             dynamic_objects[slot].angles.yaw_bits = angle;
             goto next_mpd_object;
         }
-        if (object_idx > WORLD_OBJECT_COUNT - 8)
-        {
-            DIAGNOSTIC(fprintf(stderr, "MPD world reserve exceeded slot %u kind %u record %u stage %u\n", object_idx, type, cursor - 5, game_session.stage));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(object_idx <= WORLD_OBJECT_COUNT - 8);
         MODEL_OBJECT *item = world_objects.object + object_idx;
         item->pos.x.bits = x;
         item->pos.z.bits = z;
@@ -808,11 +612,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
             n = world_objects.tracked_count;
             world_objects.tracked_count = n + 1;
             /* TODO: Investigate original tracked-list overflow before adjacent state is written */
-            if (n >= WORLD_TRACKED_COUNT)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Tracked world list overflow %u for kind %u at record %u\n", n, type, cursor - 5u));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(n < WORLD_TRACKED_COUNT);
             world_objects.tracked[n] = (WORLD_OBJECT_REFERENCE){object_idx, 1};
         }
         if (type == 466)
@@ -831,8 +631,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
         object_idx += n;
         world_objects.count = world_objects.count + n;
     next_mpd_object:
-        if (cursor >= map.byte_len)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(cursor < map.byte_len);
         tag = map.data[cursor];
         more = (sint8)map.data[cursor] != -1;
     }
@@ -842,11 +641,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
         uint32 n;
         WORLD_OBJECT_REFERENCE linked;
         /* TODO: Investigate MPD world slots outside the native pool */
-        if (object_idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid MPD world slot %u cursor %u count %u stage %u tick %u\n", object_idx, cursor, world_objects.count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(object_idx < WORLD_OBJECT_COUNT);
         MODEL_OBJECT *item = world_objects.object + object_idx;
         item->pos.z.bits = 0x00180000;
         item->kind = 123;
@@ -855,11 +650,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
         n = world_objects.tracked_count;
         world_objects.tracked_count = n + 1;
         /* TODO: Investigate original tracked-list overflow on the stage1 append */
-        if (n >= WORLD_TRACKED_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Tracked world stage1 append overflow %u\n", n));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(n < WORLD_TRACKED_COUNT);
         world_objects.tracked[n] = linked;
         stage = game_session.stage;
     }
@@ -867,31 +658,22 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
     {
         EFFECT *marker = effect_alloc();
         /* TODO: Investigate the original unchecked marker allocation before a low-RAM write */
-        if (!marker)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid lift marker allocation %p\n", (void *)marker));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(marker);
         marker->kind = 5;
         marker->payload_kind = EFFECT_PAYLOAD_PARTICLE;
     }
-    object_count = (sint32)world_objects.count;
+    object_count = world_objects.count;
     if (object_count > 0)
-        object_count = (sint32)world_objects.count;
+        object_count = world_objects.count;
     for (i = 0; (sint32)i < object_count; i++)
     {
         /* TODO: Investigate MPD world slots outside the native pool */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid MPD world slot %u cursor %u count %u stage %u tick %u\n", i, cursor, world_objects.count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         MODEL_OBJECT *item = world_objects.object + i;
         uint32 type = item->kind;
         if (type - 473u >= 2 && type != 475)
         {
-            if (type >= MODEL_TYPE_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(type < MODEL_TYPE_COUNT);
             item->pos.y.bits = (uint32)world_object_height[type] << 16;
         }
     }
@@ -901,8 +683,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
     col_regions.named[1] = 0;
     col_regions.named[0] = 0;
     col_regions.count = 0;
-    if (cursor >= map.byte_len)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(cursor < map.byte_len);
     tag = map.data[cursor];
     more = (sint8)tag != -1;
     while (more)
@@ -987,16 +768,13 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
                 kind = 0;
                 break;
         }
-        if (region >= col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region < col_regions.data + COLLISION_REGION_COUNT);
         region->trigger_kind = kind;
-        if (kind < 0 || kind >= WORLD_REGION_KIND_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(kind >= 0 && kind < WORLD_REGION_KIND_COUNT);
         mode = world_region_kinds[kind].mode;
         region->shape = mode;
         region->col_kind = world_region_kinds[kind].flags;
-        if (map.byte_len - cursor < 8)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(map.byte_len - cursor >= 8);
         a = -8 * read_coord(map.data + cursor);
         b = -8 * read_coord(map.data + cursor + 2);
         c = -8 * read_coord(map.data + cursor + 4);
@@ -1011,17 +789,13 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
         }
         else
         {
-            object_count = (sint32)world_objects.count;
+            object_count = world_objects.count;
             if (object_count > 0)
-                object_count = (sint32)world_objects.count;
+                object_count = world_objects.count;
             for (i = 0; (sint32)i < object_count; i++)
             {
                 /* TODO: Investigate MPD world slots outside the native pool */
-                if (i >= WORLD_OBJECT_COUNT)
-                {
-                    DIAGNOSTIC(fprintf(stderr, "Invalid MPD world slot %u cursor %u count %u stage %u tick %u\n", i, cursor, world_objects.count, game_session.stage, game_session.tick));
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                }
+                XASSERT(i < WORLD_OBJECT_COUNT);
                 const MODEL_OBJECT *item = world_objects.object + i;
                 sint32 x = item->pos.x.whole, z = item->pos.z.whole;
                 if (x >= c && z >= d && a >= x && b >= z)
@@ -1036,8 +810,7 @@ GDB_CALL uint32 world_objects_load_map(RESOURCE_VIEW map)
         region->geometry.coord[2] = a;
         region->geometry.coord[3] = b;
         col_regions.count = col_regions.count + 1;
-        if (cursor >= map.byte_len)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(cursor < map.byte_len);
         tag = map.data[cursor];
         more = (sint8)map.data[cursor] != -1;
         ++region;
@@ -1050,15 +823,10 @@ GDB_CALL uint32 world_objects_bob(MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002e7f0u, "GAME.EXE");
     uint32 tick = game_session.tick, type, height, delta;
     /* TODO: Investigate common UPDATE fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid UPDATE model object %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     item->angles.yaw_bits = (uint16)(2u * (uint16)sin_table[tick & 2047u]);
     type = item->kind;
-    if (type >= MODEL_TYPE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(type < MODEL_TYPE_COUNT);
     height = (uint32)world_object_height[type] << 16;
     delta = (uint32)(sint32)sin_table[((tick << 5) & 0xfe0u) >> 1] << 5;
     item->pos.y.bits = height + delta;
@@ -1073,26 +841,20 @@ GDB_CALL sint32 world_objects_draw(void)
     uint32 type, x, y, z;
     const OBJECT_CALLBACK *target;
     transform_reset();
-    count = (sint32)world_objects.count;
+    count = world_objects.count;
     if (count <= 0)
         return count;
     i = 0;
     do
     {
         /* TODO: Investigate world counts that exceed the object pool */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid world draw slot %d count %d stage %u tick %u\n", i, count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         const MODEL_OBJECT *item = world_objects.object + i;
         type = item->kind;
         if (type != 55)
         {
-            if (type >= MODEL_TYPE_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            if (!model_refs[type].header)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__); /* Original fatal loop */
+            XASSERT(type < MODEL_TYPE_COUNT);
+            XASSERT(model_refs[type].header); /* Original fatal loop */
             transform_push();
             x = item->pos.x.bits;
             x -= camera.pos.x.bits;
@@ -1107,7 +869,7 @@ GDB_CALL sint32 world_objects_draw(void)
             transform_pop();
         }
         i++;
-        count = (sint32)world_objects.count;
+        count = world_objects.count;
     } while (i < count);
     return 0;
 }
@@ -1120,18 +882,23 @@ GDB_CALL void world_objects_roll(MODEL_OBJECT *item)
     uint32 radius, x, z, result, coord, angle, step, kind;
     COLLISION_POINT point;
     uint32 count = col_regions.count, i = 0;
-    sint32 dx, dz, object_x, object_z, region_x, region_z, speed, s, c, owner, angle_idx;
+    uint32 dx;
+    uint32 dz;
+    sint32 object_x;
+    sint32 object_z;
+    sint32 region_x;
+    sint32 region_z;
+    sint32 speed;
+    uint32 s;
+    uint32 c;
+    sint32 owner;
+    sint32 angle_idx;
     result = count;
     for (; (sint32)i < (sint32)count; i++, ++region)
     {
-        if (i >= COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(i < COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && item == world_objects.object + region->object.idx)
             break;
     }
@@ -1140,23 +907,11 @@ GDB_CALL void world_objects_roll(MODEL_OBJECT *item)
     if (i == result)
         return;
     /* TODO: Investigate common UPDATE fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid UPDATE model object %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     /* TODO: Investigate a rolling object with a foreign native payload */
-    if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rolling payload object %p kind %u owner %u stage %u tick %u\n", (void *)item, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
     /* TODO: Investigate the original inactive-region read for a negative count */
-    if ((sint32)count < 0 || i >= COLLISION_REGION_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rolling region slot %u count %d object %p stage %u tick %u\n", i, (sint32)count, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((sint32)count >= 0 && i < COLLISION_REGION_COUNT);
     speed = item->physics.speed;
     if (speed <= 0)
         return;
@@ -1166,26 +921,18 @@ GDB_CALL void world_objects_roll(MODEL_OBJECT *item)
     object_z = item->pos.z.whole;
     region_z = region->geometry.axis.min_z;
     dz = object_z - region_z;
-    radius = (uint32)math_sqrt_odd((uint32)dx * (uint32)dx + (uint32)dz * (uint32)dz) << 1;
+    radius = (uint32)math_sqrt_odd(dx * dx + dz * dz) << 1;
     angle_idx = item->physics.heading;
     /* TODO: Investigate rolling headings outside the original Q15 table */
-    if (angle_idx < 0 || angle_idx >= MATH_SIN_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rolling sine index %d object %p stage %u tick %u\n", angle_idx, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(angle_idx >= 0 && angle_idx < MATH_SIN_COUNT);
     s = sin_table[angle_idx];
     x = item->pos.x.bits;
-    x += (uint32)s * radius;
+    x += s * radius;
     /* TODO: Investigate rolling headings outside the original Q15 table */
-    if (angle_idx < -MATH_QUARTER_TURN || angle_idx >= MATH_ANGLE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rolling cosine index %d object %p stage %u tick %u\n", angle_idx, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(angle_idx >= -MATH_QUARTER_TURN && angle_idx < MATH_ANGLE_COUNT);
     c = sin_table[MATH_QUARTER_TURN + angle_idx];
     z = item->pos.z.bits;
-    z -= (uint32)c * radius;
+    z -= c * radius;
     point.pos.bits[0] = x;
     point.pos.bits[1] = item->pos.y.bits;
     point.pos.bits[2] = z;
@@ -1206,26 +953,18 @@ GDB_CALL void world_objects_roll(MODEL_OBJECT *item)
     item->angles.yaw_bits = angle + step;
     angle_idx = item->physics.heading;
     /* TODO: Investigate rolling headings outside the original Q15 table */
-    if (angle_idx < 0 || angle_idx >= MATH_SIN_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rolling sine index %d object %p stage %u tick %u\n", angle_idx, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(angle_idx >= 0 && angle_idx < MATH_SIN_COUNT);
     s = sin_table[angle_idx];
     speed = item->physics.speed;
     x = item->pos.x.bits;
-    item->pos.x.bits = x + (uint32)s * (uint32)speed;
+    item->pos.x.bits = x + s * speed;
     angle_idx = item->physics.heading;
     /* TODO: Investigate rolling headings outside the original Q15 table */
-    if (angle_idx < -MATH_QUARTER_TURN || angle_idx >= MATH_ANGLE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid rolling cosine index %d object %p stage %u tick %u\n", angle_idx, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(angle_idx >= -MATH_QUARTER_TURN && angle_idx < MATH_ANGLE_COUNT);
     c = sin_table[MATH_QUARTER_TURN + angle_idx];
     speed = item->physics.speed;
     z = item->pos.z.bits;
-    item->pos.z.bits = z - (uint32)c * (uint32)speed;
+    item->pos.z.bits = z - c * speed;
     step = (uint16)item->physics.speed;
     item->physics.speed = step - 1;
     coord = (uint16)item->pos.x.whole;
@@ -1244,11 +983,7 @@ static sint32 update_exit_doors(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x800300bcu, "GAME.EXE");
     /* TODO: Investigate an exit-door sound flag without its native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid exit-door owner object %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_OSCILLATION);
     sint32 angle, step;
     MODEL_OBJECT *tracked;
     if (!(uint8)level_transition.exit_requested)
@@ -1257,11 +992,7 @@ static sint32 update_exit_doors(MODEL_OBJECT *item)
         return 0;
     }
     /* TODO: Investigate absent or invalid tracked references before object access */
-    if (world_objects.tracked[6].present != 1 || world_objects.tracked[6].idx >= WORLD_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(6), world_objects.tracked[6].idx, (uint32)world_objects.tracked[6].present));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(world_objects.tracked[6].present == 1 && world_objects.tracked[6].idx < WORLD_OBJECT_COUNT);
     tracked = world_objects.object + world_objects.tracked[6].idx;
     angle = tracked->angles.yaw;
     if (angle < 16384)
@@ -1282,27 +1013,15 @@ static sint32 update_exit_doors(MODEL_OBJECT *item)
         disp_buffers.shake_ticks = 8;
         angle = 16384;
         /* TODO: Investigate an exit-door release without its named collision region */
-        if (!col_regions.named[0])
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing exit-door region object %p angle %d stage %u tick %u\n", (void *)item, angle, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(col_regions.named[0]);
         col_regions.named[0]->col_kind = 0;
     }
     /* TODO: Investigate absent or invalid tracked references before object access */
-    if (world_objects.tracked[6].present != 1 || world_objects.tracked[6].idx >= WORLD_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(6), world_objects.tracked[6].idx, (uint32)world_objects.tracked[6].present));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(world_objects.tracked[6].present == 1 && world_objects.tracked[6].idx < WORLD_OBJECT_COUNT);
     tracked = world_objects.object + world_objects.tracked[6].idx;
     tracked->angles.yaw_bits = (uint16)angle;
     /* TODO: Investigate absent or invalid tracked references before object access */
-    if (world_objects.tracked[7].present != 1 || world_objects.tracked[7].idx >= WORLD_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid tracked world reference %u slot %u present %u\n", (uint32)(7), world_objects.tracked[7].idx, (uint32)world_objects.tracked[7].present));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(world_objects.tracked[7].present == 1 && world_objects.tracked[7].idx < WORLD_OBJECT_COUNT);
     tracked = world_objects.object + world_objects.tracked[7].idx;
     tracked->angles.yaw_bits = (uint16)-angle;
     return -angle;
@@ -1321,15 +1040,10 @@ GDB_CALL uint32 world_objects_build_regions(void)
         return result;
     do
     {
-        if (col_regions.count >= COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(col_regions.count < COLLISION_REGION_COUNT);
         region = col_regions.data + col_regions.count;
         /* TODO: Investigate original region creation beyond the world pool */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid region world slot %u stage %u\n", i, game_session.stage));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         region->object = (WORLD_OBJECT_REFERENCE){i, 1};
         const MODEL_OBJECT *item = world_objects.object + i;
         coord = (uint16)item->pos.x.whole;
@@ -1352,33 +1066,20 @@ GDB_CALL uint32 world_objects_update_traffic(MODEL_OBJECT *model)
     FUNCTION_MARKER(0x8002f59cu, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
     uint32 i, x, step;
-    sint32 count = (sint32)col_regions.count;
+    sint32 count = col_regions.count;
     int wrap;
     for (i = 0; (sint32)i < count; i++, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }
     /* TODO: Investigate the original unmatched search selecting an inactive region */
-    if (count <= 0 || (sint32)i >= count)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Unmatched traffic collision region object %p index %u count %d stage %u tick %u\n", (void *)model, i, count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(count > 0 && (sint32)i < count);
     /* TODO: Investigate traffic callbacks without the matching native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_TRAFFIC)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid traffic payload object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_TRAFFIC);
     TRAFFIC_VEHICLE *traffic = &model->traffic;
     if (model->angles.yaw == 16384)
     {
@@ -1400,14 +1101,10 @@ GDB_CALL uint32 world_objects_update_traffic(MODEL_OBJECT *model)
     }
     if (wrap)
     {
-        model->kind = (uint32)(sint32)traffic_wrap_kinds[random_next() & 15];
+        model->kind = traffic_wrap_kinds[random_next() & 15];
         traffic->speed = 128 + (random_next() & 63);
         /* TODO: Investigate wrapping a vehicle without a writable collision region */
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing wrap vehicle region object %p count %u stage %u tick %u\n", (void *)model, col_regions.count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         col_region_configure(region, model->kind);
         col_regions.count = col_regions.count - 1u;
     }
@@ -1418,11 +1115,7 @@ GDB_CALL uint32 world_objects_draw_tank(const MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002a7dcu, "GAME.EXE");
     /* TODO: Investigate a tank draw without the matching native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_TANK)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid tank model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_TANK);
     transform_yaw(item->angles.yaw);
     model_draw_static(model_refs[776], 0, 0);
     transform_translate(0, 0x016a0000, -10485760);
@@ -1434,26 +1127,16 @@ GDB_CALL uint32 object_draw_base_compressed(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b404u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     /* TODO: Investigate compression draw without the matching native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compression draw object %p callback %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 phase = item->oscillation.phase, height, angle;
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_OSCILLATION);
+    sint32 phase = item->oscillation.phase;
+    uint32 height;
+    sint32 angle;
     if (phase >= 3)
         phase = 2;
     /* TODO: Investigate a negative compression phase before the sine table */
-    if (phase < 0)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compression phase %d object %p stage %u tick %u\n", phase, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(phase >= 0);
     height = sin_table[phase << 8] >> 9;
     item->oscillation.pitch_speed = 0;
     item->oscillation.roll_speed = 0;
@@ -1461,7 +1144,7 @@ GDB_CALL uint32 object_draw_base_compressed(MODEL_OBJECT *item)
     if (angle)
         transform_yaw(angle);
     model_draw_static(model_refs[68], 0, 8192);
-    transform_translate(0, (64u - (uint32)height) << 16, 0);
+    transform_translate(0, (64u - height) << 16, 0);
     angle = item->angles.roll;
     if (angle)
         transform_roll(angle);
@@ -1475,33 +1158,23 @@ GDB_CALL uint32 object_draw_compressed(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b598u, "GAME.EXE");
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     /* TODO: Investigate compression draw without the matching native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compression draw object %p callback %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 phase = item->oscillation.phase, height, angle;
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_OSCILLATION);
+    sint32 phase = item->oscillation.phase;
+    uint32 height;
+    sint32 angle;
     if (phase >= 3)
         phase = 2;
     /* TODO: Investigate a negative compression phase before the sine table */
-    if (phase < 0)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compression phase %d object %p stage %u tick %u\n", phase, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(phase >= 0);
     height = (5 * sin_table[phase << 8]) >> 12;
     item->oscillation.pitch_speed = 0;
     item->oscillation.roll_speed = 0;
     angle = item->angles.yaw;
     if (angle)
         transform_yaw(angle);
-    transform_translate(0, (40u - (uint32)height) << 16, 0);
+    transform_translate(0, (40u - height) << 16, 0);
     angle = item->angles.roll;
     if (angle)
         transform_roll(angle);
@@ -1515,25 +1188,15 @@ GDB_CALL uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8005b178u, "GAME.EXE");
     /* TODO: Investigate a model callback outside its native object domain */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model receiver %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     /* TODO: Investigate compression draw without the matching native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compression draw object %p callback %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    sint32 phase = item->oscillation.phase, height, angle;
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_OSCILLATION);
+    sint32 phase = item->oscillation.phase;
+    uint32 height;
+    sint32 angle;
     uint32 offset = (uint32)(phase < 3 ? phase : 2) << 9;
     /* TODO: Investigate a negative compression phase before the native sine table */
-    if (phase < 0)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compression phase %d object %p stage %u tick %u\n", phase, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(phase >= 0);
     height = (sin_table[offset >> 1] * 5) >> 12;
     item->oscillation.pitch_speed = 0;
     item->oscillation.roll_speed = 0;
@@ -1541,7 +1204,7 @@ GDB_CALL uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item)
     if (angle)
         transform_yaw(angle);
     model_draw_static(model_refs[106], 0, 8192);
-    transform_translate(0, (40u - (uint32)height) << 16, 0);
+    transform_translate(0, (40u - height) << 16, 0);
     angle = item->angles.roll;
     if (angle)
         transform_roll(angle);
@@ -1555,22 +1218,14 @@ GDB_CALL uint32 world_objects_draw_compressed_car(MODEL_OBJECT *item)
     transform_translate(0, 5963776, -9437184);
     phase = item->oscillation.phase;
     /* TODO: Investigate a panel phase outside the native sine table */
-    if (phase < 0 || (uint32)phase > ((MATH_SIN_COUNT - 1u) >> 7))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid panel phase %d object %p stage %u tick %u\n", phase, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(phase >= 0 && (uint32)phase <= ((MATH_SIN_COUNT - 1u) >> 7));
     transform_pitch(sin_table[(uint32)phase << 7] >> 2);
     model_draw_static(model_refs[1 + (item->kind)], 0, 0);
     transform_pop();
     transform_translate(0, 5767168, 14286848);
     phase = item->oscillation.phase;
     /* TODO: Investigate a panel phase outside the native sine table */
-    if (phase < 0 || (uint32)phase > ((MATH_SIN_COUNT - 1u) >> 7))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid panel phase %d object %p stage %u tick %u\n", phase, (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(phase >= 0 && (uint32)phase <= ((MATH_SIN_COUNT - 1u) >> 7));
     transform_pitch((-sin_table[(uint32)phase << 7]) >> 2);
     return model_draw_static(model_refs[2 + (item->kind)], 0, 0);
 }
@@ -1579,11 +1234,7 @@ GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8005ae3cu, "GAME.EXE");
     /* TODO: Investigate drawing common fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     uint32 original_kind = model->kind, phase, shade, color, result;
     PROJECTION_POINT pos;
     sint32 angle;
@@ -1600,11 +1251,7 @@ GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model)
         transform_pitch(angle);
     model_draw_static(model_refs[model->kind], 0, 0);
     /* TODO: Investigate car lights without the matching native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid car lights object %p callback %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_OSCILLATION);
     if (!model->oscillation.voice_plus_one)
         return 0;
     phase = game_session.tick & 15u;
@@ -1613,51 +1260,51 @@ GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model)
     result = 0;
     if (original_kind == 94)
     {
-        result = (uint32)proj_local(80, 36, -376, &pos);
+        result = proj_local(80, 36, -376, &pos);
         if (!result)
         {
-            pos.depth = (sint32)((uint32)pos.depth - 32u);
+            pos.depth = pos.depth - 32u;
             pos.size = 640;
             render_style.color.rgbc = color;
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
-        result = (uint32)proj_local(-80, 36, -376, &pos);
+        result = proj_local(-80, 36, -376, &pos);
         if (!result)
         {
-            pos.depth = (sint32)((uint32)pos.depth - 32u);
+            pos.depth = pos.depth - 32u;
             pos.size = 640;
             render_style.color.rgbc = color;
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
-        result = (uint32)proj_local(128, 36, 384, &pos);
+        result = proj_local(128, 36, 384, &pos);
         if (!result)
         {
-            pos.depth = (sint32)((uint32)pos.depth - 32u);
+            pos.depth = pos.depth - 32u;
             pos.size = 640;
             render_style.color.rgbc = color;
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
-        result = (uint32)proj_local(-128, 36, 384, &pos);
+        result = proj_local(-128, 36, 384, &pos);
         if (!result)
         {
-            pos.depth = (sint32)((uint32)pos.depth - 32u);
+            pos.depth = pos.depth - 32u;
             pos.size = 640;
             render_style.color.rgbc = color;
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
     }
-    result = (uint32)proj_local(140, 68, -176, &pos);
+    result = proj_local(140, 68, -176, &pos);
     if (!result)
     {
-        pos.depth = (sint32)((uint32)pos.depth - 48u);
+        pos.depth = pos.depth - 48u;
         pos.size = 640;
         render_style.color.rgbc = color;
         result = spr_draw_scaled(&pos, tex_map[66]);
     }
-    result = (uint32)proj_local(-140, 68, -176, &pos);
+    result = proj_local(-140, 68, -176, &pos);
     if (!result)
     {
-        pos.depth = (sint32)((uint32)pos.depth - 48u);
+        pos.depth = pos.depth - 48u;
         pos.size = 640;
         render_style.color.rgbc = color;
         result = spr_draw_scaled(&pos, tex_map[66]);
@@ -1668,27 +1315,19 @@ GDB_CALL uint32 world_objects_draw_car(const MODEL_OBJECT *model)
 GDB_CALL sint32 world_objects_start_army_trucks(void)
 {
     FUNCTION_MARKER(0x8003efecu, "GAME.EXE");
-    sint32 count = (sint32)world_objects.count;
+    sint32 count = world_objects.count;
     uint32 i = 0;
     if (count <= 0)
         return count;
     do
     {
         /* TODO: Investigate a scene object count beyond native capacity */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene scan slot %u count %u stage %u tick %u\n", i, world_objects.count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         MODEL_OBJECT *item = world_objects.object + i;
         if (item->kind == 781)
         {
             /* TODO: Investigate army truck access without its native owner */
-            if (!item || item->payload_kind != MODEL_PAYLOAD_ARMY_TRUCK)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid army truck payload object %08X callback %s stage %u tick %u\n", 0x800b89f0 + 36u * i, __FUNCTION__, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(item && item->payload_kind == MODEL_PAYLOAD_ARMY_TRUCK);
             item->truck.active = 1;
             sound_voice_play(110, 255, 5936);
         }
@@ -1703,22 +1342,20 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
     COLLISION_REGION *region;
     FIXED_VEC3 point;
     uint32 offset, x, z, y, variant, angle, unsigned_turn;
-    sint32 turn, count, speed, s, c, coord_x, coord_z;
+    sint32 turn;
+    sint32 count;
+    sint32 speed;
+    uint32 s;
+    uint32 c;
+    sint32 coord_x;
+    sint32 coord_z;
     int i;
     /* TODO: Investigate army truck access without its native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_ARMY_TRUCK)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid army truck payload object %p callback %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_ARMY_TRUCK);
     if (model->truck.active)
     {
         /* TODO: Investigate common motion fields outside the native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid moving model object %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         angle = model->angles.yaw_bits;
         unsigned_turn = (uint16)model->truck.turn_step;
         turn = model->truck.turn_step;
@@ -1730,18 +1367,14 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
         s = sin_table[angle >> 5];
         angle = model->angles.yaw_bits;
         /* TODO: Investigate vehicle or movement callbacks without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         x = model->pos.x.bits;
-        offset = ((uint32)(((sint16)angle >> 5) + 512) & 2047) * 2;
-        model->pos.x.bits = x + (uint32)speed * (uint32)s;
+        offset = ((((sint16)angle >> 5) + 512) & 2047) * 2;
+        model->pos.x.bits = x + speed * s;
         speed = model->truck.speed;
         c = sin_table[offset >> 1];
         z = model->pos.z.bits;
-        z -= (uint32)speed * (uint32)c;
+        z -= speed * c;
         model->pos.z.bits = z;
         if ((sint32)z > (sint32)0xede00000u)
         {
@@ -1751,7 +1384,7 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
         }
         else
         {
-            speed = (sint16)(uint16)((uint32)(uint16)model->truck.speed - 5);
+            speed = (sint16)(uint16)(((uint16)model->truck.speed) - 5u);
             model->truck.speed = (sint16)speed;
             if (speed < 0)
             {
@@ -1774,7 +1407,7 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
                 transform_pitch(32768);
                 transform_yaw(model->angles.yaw);
                 transform_point(0x00c80000u, 0, 0xfebb0000, point.bits);
-                y = (0u - (random_next() & 63u)) << 16;
+                y = ((uint32)(-(sint64)(random_next() & 63u))) << 16;
                 variant = random_next() & 3u;
                 x = model->pos.x.bits;
                 z = model->pos.z.bits;
@@ -1783,7 +1416,7 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
                 transform_pitch(32768);
                 transform_yaw(model->angles.yaw);
                 transform_point(0xff380000u, 0, 0xfebb0000, point.bits);
-                y = (0u - (random_next() & 63u)) << 16;
+                y = ((uint32)(-(sint64)(random_next() & 63u))) << 16;
                 variant = random_next() & 3u;
                 x = model->pos.x.bits;
                 z = model->pos.z.bits;
@@ -1798,27 +1431,18 @@ GDB_CALL sint32 world_objects_update_army_truck(MODEL_OBJECT *model)
     }
     if (!model->truck.speed)
         return 0;
-    count = (sint32)col_regions.count;
+    count = col_regions.count;
     region = col_regions.data;
     for (i = 0; i < count; i++, ++region)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
     }
     /* TODO: Investigate the original collision call without a matching region */
-    if (i >= count)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing army truck region object %p count %d stage %u tick %u\n", (void *)model, count, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(i < count);
     return actors_collide_vehicle(region, model);
 }
 
@@ -1826,29 +1450,17 @@ GDB_CALL uint32 world_objects_update_army_truck_wreck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f388u, "GAME.EXE");
     /* TODO: Investigate common motion fields outside the native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid moving model object %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     /* TODO: Investigate army truck access without its native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_ARMY_TRUCK)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid army truck payload object %p callback %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    uint32 angle = ((uint16)model->angles.yaw >> 5) * 2u, speed = (uint32)(sint32)model->truck.speed, delta, result, z;
-    delta = speed * (uint32)(sint32)sin_table[angle >> 1];
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_ARMY_TRUCK);
+    uint32 angle = ((uint16)model->angles.yaw >> 5) * 2u, speed = model->truck.speed, delta, result, z;
+    delta = speed * (sin_table[angle >> 1]);
     /* TODO: Investigate vehicle or movement callbacks without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     uint32 x = model->pos.x.bits;
-    speed = (uint32)(sint32)model->truck.speed;
+    speed = model->truck.speed;
     model->pos.x.bits = x + delta;
-    delta = speed * (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (angle >> 1)];
+    delta = speed * (sin_table[MATH_QUARTER_TURN + (angle >> 1)]);
     result = (uint16)model->truck.speed - 8u;
     z = model->pos.z.bits;
     model->truck.speed = (sint16)result;
@@ -1868,17 +1480,13 @@ GDB_CALL sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachmen
     actor_attachment_pos(idx, attachment, point.bits);
     x = point.x.whole;
     z = point.z.whole;
-    count = (sint32)world_objects.count;
+    count = world_objects.count;
     if (count <= 0)
         return count;
     do
     {
         /* TODO: Investigate world count growth beyond the native pool */
-        if (i >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid attachment destruction world slot %d count %u stage %u tick %u\n", i, world_objects.count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(i < WORLD_OBJECT_COUNT);
         MODEL_OBJECT *world = world_objects.object + i;
         kind = world->kind;
         if (kind - 584u < 2u)
@@ -1900,18 +1508,10 @@ GDB_CALL sint32 world_objects_break_near_attachment(sint32 idx, sint32 attachmen
                     disp_buffers.shake_ticks = 8;
                     slot = dynamic_objects_spawn_item(527, spawn_x, spawn_y, spawn_z, 0);
                     /* TODO: Investigate item pool exhaustion after attachment destruction */
-                    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid attachment destruction item actor %d attachment %d world %d slot %d stage %u tick %u\n", idx, attachment, i, slot, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
                     MODEL_OBJECT *item = dynamic_objects + slot;
                     /* TODO: Investigate a spawned item without the matching native owner */
-                    if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-                    {
-                        DIAGNOSTIC(fprintf(stderr, "Invalid attachment item owner actor %d world %d item %d kind %u owner %u stage %u tick %u\n", idx, i, slot, item->kind, (uint32)item->payload_kind, game_session.stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
                     item->physics.speed = 64;
                     item->physics.vertical_speed = 32;
                     world->angles.yaw_bits = world->kind == 584 ? 0xc000 : 0x8000;
@@ -1933,23 +1533,15 @@ GDB_CALL uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model)
     uint32 tick, factor, offset, base, x, y, z, volume, pan, result, angle;
     sint32 voice, slot;
     /* TODO: Investigate common fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     /* TODO: Investigate a moving emitter with a foreign native payload */
-    if (model->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid moving emitter payload %p kind %u owner %u stage %u tick %u\n", (void *)model, model->kind, (uint32)model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model->payload_kind == MODEL_PAYLOAD_OSCILLATION);
     if (!model->oscillation.voice_plus_one)
         model->oscillation.voice_plus_one = (uint16)(sound_voice_play(145, 0, 6144) + 1u);
     tick = game_session.tick;
     base = (uint32)(sint32)model->oscillation.base_x << 16;
     factor = tick & 256u ? 256u - (tick & 255u) : (uint8)game_session.tick;
-    offset = ((uint32)((model->angles.yaw >> 5) + 512) & 2047u) * 2u;
+    offset = (((model->angles.yaw >> 5) + 512) & 2047u) * 2u;
     x = base + factor * ((uint32)(sint32)sin_table[offset >> 1] << 7);
     model->pos.x.bits = x;
     base = (uint32)(sint32)model->oscillation.base_z << 16;
@@ -1975,18 +1567,10 @@ GDB_CALL uint32 world_objects_update_moving_emitter(MODEL_OBJECT *model)
     z = model->pos.z.bits;
     slot = dynamic_objects_spawn_randomized(497, x, y, z, angle);
     /* TODO: Investigate original writes after projectile allocation failure */
-    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid moving-object projectile slot %d object %p stage %u tick %u\n", slot, (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     MODEL_OBJECT *projectile = dynamic_objects + slot;
     /* TODO: Investigate an item transfer with a foreign native owner */
-    if (projectile->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid item transfer owner slot %d kind %u owner %u phase emitter497 stage %u tick %u\n", slot, projectile->kind, (uint32)projectile->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(projectile->payload_kind == MODEL_PAYLOAD_PHYSICS);
     projectile->physics.life = 90;
     projectile->physics.speed = 190;
     return 190;
@@ -1997,11 +1581,7 @@ GDB_CALL uint32 world_objects_draw_moving_emitter(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x800454e0u, "GAME.EXE");
     sint32 angle;
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_yaw(item->angles.yaw);
     angle = item->angles.roll;
     if (angle)
@@ -2030,36 +1610,24 @@ GDB_CALL intptr world_objects_update_burning_bin(MODEL_OBJECT *model)
     FUNCTION_MARKER(0x800419d4u, "GAME.EXE");
     uint32 volume, pan, random, offset, x, z, result;
     /* TODO: Investigate a burning bin with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid burning bin owner object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_OSCILLATION);
     if (model->oscillation.voice_plus_one)
     {
         /* TODO: Investigate emitter operands outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         sound_spatial(&model->pos, &volume, &pan);
         volume = sound_volume_adjust(volume, -48);
         sound_voice_pan(model->oscillation.voice_plus_one - 1, volume, pan);
     }
     else
-        model->oscillation.voice_plus_one = (uint16)((uint32)sound_voice_play(156, 0, 6144) + 1u);
+        model->oscillation.voice_plus_one = (uint16)(sound_voice_play(156, 0, 6144) + 1u);
     random = random_next();
     offset = (random & 2047u) * 2u;
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    x = model->pos.x.bits + (uint32)(sint32)sin_table[offset >> 1] * (random & 31u);
-    z = model->pos.z.bits - (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (offset >> 1)] * (random & 31u);
-    effect_spawn_motion(876, x, model->pos.y.bits - BURNING_BIN_FLAME_HEIGHT, z, 0, 0u - BURNING_BIN_FLAME_SPEED, 0);
+    XASSERT(model);
+    x = model->pos.x.bits + (sin_table[offset >> 1]) * (random & 31u);
+    z = model->pos.z.bits - (sin_table[MATH_QUARTER_TURN + (offset >> 1)]) * (random & 31u);
+    effect_spawn_motion(876, x, model->pos.y.bits - BURNING_BIN_FLAME_HEIGHT, z, 0, (uint32)(-(sint64)(BURNING_BIN_FLAME_SPEED)), 0);
     result = game_session.tick & 3u;
     if (result)
         return result;
@@ -2084,23 +1652,15 @@ GDB_CALL sint32 world_objects_update_water_cannon(MODEL_OBJECT *model)
     uint32 x, y, z;
     sint32 yaw;
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     y = model->pos.y.bits;
     yaw = model->angles.yaw;
     x = model->pos.x.bits;
     z = model->pos.z.bits;
     effect_spawn_velocity(874, x, y - 0x500000u, z, yaw, 8192, 32);
     /* TODO: Investigate a water-cannon phase read with a foreign native owner */
-    if (model->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid water cannon owner object %p kind %u payload %u stage %u tick %u\n", (void *)model, model->kind, model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    angle = ((uint32)(uint16)model->oscillation.spray_phase + 8u) & 2047u;
+    XASSERT(model->payload_kind == MODEL_PAYLOAD_OSCILLATION);
+    angle = (((uint16)model->oscillation.spray_phase) + 8u) & 2047u;
     model->oscillation.spray_phase = (uint16)angle;
     result = (sin_table[angle] >> 2) + 1024;
     model->angles.yaw_bits = (uint16)result;
@@ -2114,43 +1674,27 @@ GDB_CALL intptr world_objects_update_truck_fire(MODEL_OBJECT *model)
     uint32 slot, offset, x, y, z;
     if (game_session.tick & 1u)
         return 1;
-    random = (sint32)random_next();
+    random = random_next();
     divisor = TRUCK_FIRE_POINT_COUNT;
     /* TODO: Investigate invalid original emitter divisors */
-    if (!divisor || (divisor == -1 && (uint32)random == 0x80000000u))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter divisor %d random %08X object %p stage %u tick %u\n", divisor, (uint32)random, (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    slot = 3u * (uint32)(random % divisor);
+    XASSERT(divisor && (divisor != -1 || (uint32)random != 0x80000000u));
+    slot = 3u * (random % divisor);
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     /* TODO: Investigate a truck-fire selection store with a foreign native owner */
-    if (model->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid truck fire owner object %p kind %u payload %u stage %u tick %u\n", (void *)model, model->kind, model->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model->payload_kind == MODEL_PAYLOAD_OSCILLATION);
     model->oscillation.point_word = (uint16)slot;
     offset = (sint32)(slot << 16) >> 14;
     x = model->pos.x.bits;
     /* TODO: Investigate a selected point outside the original immutable table */
-    if (offset >= TRUCK_FIRE_POINT_COUNT * 12u || offset % 12u)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid truck fire offset %08X word %u random %08X object %p stage %u tick %u\n", offset, slot, (uint32)random, (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(offset < TRUCK_FIRE_POINT_COUNT * 12u && !(offset % 12u));
     const uint32 *point = truck_fire_offsets[offset / 12u];
     x += point[0];
     y = model->pos.y.bits;
     y += point[1];
     z = model->pos.z.bits;
     z += point[2];
-    y += ((uint32)(random >> 8) & 63u) << 16;
+    y += ((random >> 8) & 63u) << 16;
     return (intptr)effect_spawn_timed(880, x, y, z, 0, 0, 0);
 }
 
@@ -2158,21 +1702,13 @@ GDB_CALL sint32 world_objects_update_falling_door(MODEL_OBJECT *item)
 {
     FUNCTION_MARKER(0x8002e37cu, "GAME.EXE");
     /* TODO: Investigate common fields outside the native model pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid sequence model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     /* TODO: Investigate a falling door with a foreign native owner */
-    if (item->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid falling door owner object %p kind %u payload %u stage %u tick %u\n", (void *)item, item->kind, item->payload_kind, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    uint32 speed = (uint32)(uint16)item->physics.pitch_speed + 64u;
+    XASSERT(item->payload_kind == MODEL_PAYLOAD_PHYSICS);
+    uint32 speed = ((uint16)item->physics.pitch_speed) + 64u;
     sint32 result, count;
     item->physics.pitch_speed = (uint16)speed;
-    item->angles.pitch_bits = (uint16)((uint32)(uint16)item->angles.pitch - speed);
+    item->angles.pitch_bits = (uint16)(((uint16)item->angles.pitch) - speed);
     if (item->angles.pitch >= -16384)
         return 0;
     count = item->physics.impact_count;
@@ -2197,11 +1733,7 @@ GDB_CALL uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e444u, "GAME.EXE");
     /* TODO: Investigate a bus wreck with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid bus wreck owner object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     sint32 state = model->physics.blast_tick;
     uint32 x = 0, volume = 0, result, kind;
     int i;
@@ -2252,11 +1784,7 @@ GDB_CALL uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model)
     {
         sound_voice_play(19, 255, 6144);
         /* TODO: Investigate a scripted object without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scripted object position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         effect_spawn(892, model->pos.x.bits, 0xff000000, model->pos.z.bits);
         effect_spawn(603, model->pos.x.bits, 0, model->pos.z.bits);
         disp_buffers.shake_ticks = 16;
@@ -2274,7 +1802,7 @@ GDB_CALL uint32 world_objects_update_bus_wreck(MODEL_OBJECT *model)
         level_wave.paused = 0;
         model->kind = 270;
     }
-    result = (uint32)(uint16)model->physics.blast_tick + 1;
+    result = ((uint16)model->physics.blast_tick) + 1;
     model->physics.blast_tick = (uint16)result;
     return result;
 }
@@ -2289,19 +1817,11 @@ GDB_CALL sint32 world_objects_update_lifting_door(MODEL_OBJECT *model)
     if (!game_session.scene_phase && !players_past_z(-0x89b0000))
         return 0;
     /* TODO: Investigate scripted motion with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_OSCILLATION)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion owner %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_OSCILLATION);
     if (!model->oscillation.door_phase)
     {
         /* TODO: Investigate a missing original door collision region */
-        if (!col_regions.named[1])
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing lifting-door region 1 object %p phase %d height %d stage %u tick %u\n", (void *)model, model->oscillation.door_phase, model->oscillation.door_height, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(col_regions.named[1]);
         col_regions.named[1]->col_kind = 3;
         game_session.scene_phase = 1;
         model->oscillation.door_phase = 1;
@@ -2317,11 +1837,7 @@ GDB_CALL sint32 world_objects_update_lifting_door(MODEL_OBJECT *model)
         if (state == 1 && model->oscillation.door_height > 320)
         {
             /* TODO: Investigate a missing original door collision region */
-            if (!col_regions.named[2])
-            {
-                DIAGNOSTIC(fprintf(stderr, "Missing lifting-door region 2 object %p phase %d height %d stage %u tick %u\n", (void *)model, model->oscillation.door_phase, model->oscillation.door_height, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(col_regions.named[2]);
             col_regions.named[2]->col_kind = 0;
             model->oscillation.door_phase = 2;
         }
@@ -2330,32 +1846,20 @@ GDB_CALL sint32 world_objects_update_lifting_door(MODEL_OBJECT *model)
             model->oscillation.door_height = 768;
             model->oscillation.door_phase = 3;
         }
-        y = (0u - (uint32)(sint32)model->oscillation.door_height) << 16;
+        y = ((uint32)(-(sint64)(model->oscillation.door_height))) << 16;
         /* TODO: Investigate emitter operands outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->pos.y.bits = y;
         return y;
     }
     if (model->oscillation.door_phase == 3 && players_past_z(-0x5d00000))
     {
         /* TODO: Investigate a missing original door collision region */
-        if (!col_regions.named[2])
-        {
-            DIAGNOSTIC(fprintf(stderr, "Missing lifting-door region 2 object %p phase %d height %d stage %u tick %u\n", (void *)model, model->oscillation.door_phase, model->oscillation.door_height, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(col_regions.named[2]);
         col_regions.named[2]->col_kind = 3;
         game_session.scene_phase = 2;
         /* TODO: Investigate common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid emitter model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->kind = 55;
         return 55;
     }
@@ -2366,22 +1870,14 @@ GDB_CALL uint32 world_objects_update_aircraft(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8003f410u, "GAME.EXE");
     /* TODO: Investigate an aircraft timer/phase access with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PHYSICS)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid aircraft owner object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PHYSICS);
     sint32 state = model->physics.flight_phase;
     uint32 result, y;
     uint16 count;
     if (!state)
     {
         /* TODO: Investigate vehicle or movement callbacks without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         uint32 x = model->pos.x.bits;
         y = model->pos.y.bits;
         model->pos.x.bits = x - 0x780000u;
@@ -2406,11 +1902,7 @@ GDB_CALL uint32 world_objects_update_aircraft(MODEL_OBJECT *model)
     if (count)
         return 0x1c200000;
     /* TODO: Investigate vehicle or movement callbacks without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid vehicle or movement position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     model->pos.x.bits = 0x1c200000;
     model->pos.z.bits = 0x1c200000;
     model->physics.flight_phase = 0;
@@ -2423,11 +1915,7 @@ GDB_CALL uint32 world_objects_update_scrolling_wall(MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8002e7c4u, "GAME.EXE");
     /* TODO: Investigate an object operation without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid oscillation or emitter position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     uint32 result = model->pos.z.bits - 0x00600000u;
     model->pos.z.bits = result;
     if ((sint32)result <= -536870912)
@@ -2443,11 +1931,7 @@ GDB_CALL uint32 world_objects_update_radar(MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002e870u, "GAME.EXE");
     sint32 result = sin_table[((game_session.tick << 4) & 0xff0u) >> 1] >> 1;
     /* TODO: Investigate common fields outside the native model pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid sequence model %p in %s stage %u tick %u\n", (void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     item->angles.yaw_bits = (uint16)result;
     return result;
 }
@@ -2457,11 +1941,7 @@ GDB_CALL struct EFFECT *world_objects_update_hydrant_spray(const MODEL_OBJECT *m
     FUNCTION_MARKER(0x80041d60u, "GAME.EXE");
     uint32 x = (random_next() & 31u) << 16, z;
     /* TODO: Investigate emitter operands outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter position %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     x += model->pos.x.bits;
     z = (random_next() & 31u) << 16;
     z += model->pos.z.bits;

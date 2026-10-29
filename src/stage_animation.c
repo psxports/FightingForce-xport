@@ -8,7 +8,9 @@ void stage_animation_update_stage14(void)
     static const uint32 limits[3] = {0xed180000, 0xfa610000, 0x07c10000};
     uint32 state = game_session.scene_phase, next, val;
     COLLISION_REGION *region, *region0, *region1, *region2;
-    sint32 step0 = -2, step1 = -2, z;
+    sint32 step0 = -2;
+    sint32 step1 = -2;
+    uint32 z;
     int i, sound = 0;
     if (state < 3)
     {
@@ -27,15 +29,15 @@ void stage_animation_update_stage14(void)
         if (actor_health[i].hp > 0)
         {
             z = actor_positions[i].z.whole;
-            if ((uint32)z + 4862u < 894u || (uint32)z - 1986u < 958u)
+            if (z + 4862u < 894u || z - 1986u < 958u)
                 step0 = 2;
-            if ((uint32)z + 1438u < 926u)
+            if (z + 1438u < 926u)
                 step1 = 2;
         }
     val = stage_animation.phase[0];
     if ((!val && step0 > 0) || (val == 64 && step0 < 0))
         sound = 2;
-    val = stage_animation.phase[0] + (uint32)step0;
+    val = stage_animation.phase[0] + step0;
     stage_animation.phase[0] = val;
     if ((sint32)val < 0)
         stage_animation.phase[0] = 0;
@@ -44,7 +46,7 @@ void stage_animation_update_stage14(void)
     val = stage_animation.phase[1];
     if ((!val && step1 > 0) || (val == 64 && step1 < 0))
         sound = 1;
-    val = stage_animation.phase[1] + (uint32)step1;
+    val = stage_animation.phase[1] + step1;
     stage_animation.phase[1] = val;
     if ((sint32)val < 0)
         stage_animation.phase[1] = 0;
@@ -103,7 +105,7 @@ GDB_CALL uint32 stage_animation_update_stage4(void)
             x = (r0 & 127) + (r1 & 63) - 96;
             r0 = random_next();
             r1 = random_next();
-            y = (0u - (r0 & 511) - (r1 & 255)) << 16;
+            y = ((uint32)(-(sint64)(r0 & 511)) - (r1 & 255)) << 16;
             effect_spawn_point(x << 19, y, 0x0dc80000, x & 2047);
         } while (i < 96);
         i = 0;
@@ -123,7 +125,7 @@ GDB_CALL uint32 stage_animation_update_stage4(void)
             r1 = random_next();
             x = (r0 & 127) + (r1 & 63) - 96;
             kind = (sint32)random_next() % 3 + 675;
-            y = (0u - (random_next() & 511)) << 16;
+            y = ((uint32)(-(sint64)(random_next() & 511))) << 16;
             dynamic_objects_spawn(kind, x << 19, y, 0x08000000);
         } while (i < 16);
     }
@@ -136,11 +138,11 @@ GDB_CALL uint32 stage_animation_update_stage4(void)
     r0 = random_next();
     r1 = random_next();
     x = ((r0 & 127) + (r1 & 63) - 96) << 19;
-    y = (0u - (random_next() & 511)) << 16;
+    y = ((uint32)(-(sint64)(random_next() & 511))) << 16;
     dynamic_objects_spawn(kind, x, y, 0x08000000);
     kind = (random_next() & 1) + 128;
     result = (random_next() & 511) + 5888;
-    return (uint32)sound_voice_play(kind, 255, result);
+    return sound_voice_play(kind, 255, result);
 }
 
 static uint32 draw_slide_x(const MODEL_OBJECT *item)
@@ -148,13 +150,9 @@ static uint32 draw_slide_x(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x80032aa4u, "GAME.EXE");
     uint32 offset = stage_animation.phase[0] << 3;
     /* TODO: Investigate a model callback outside its native object domain */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model receiver %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     if (item->kind == 467)
-        offset = 0u - offset;
+        offset = (uint32)(-(sint64)(offset));
     transform_translate(offset << 16, 0, 0);
     return model_draw_static(model_refs[item->kind], 0, 256);
 }
@@ -164,13 +162,9 @@ static uint32 draw_slide_z(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x80032b20u, "GAME.EXE");
     uint32 offset = stage_animation.phase[0] << 3;
     /* TODO: Investigate a model callback outside its native object domain */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model receiver %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     if (item->kind == 470)
-        offset = 0u - offset;
+        offset = (uint32)(-(sint64)(offset));
     transform_translate(0, 0, offset << 16);
     return model_draw_static(model_refs[item->kind], 0, 256);
 }
@@ -183,11 +177,7 @@ static uint32 draw_double_slide_z(const MODEL_OBJECT *item)
     offset <<= 19;
     transform_translate(0, 0, offset);
     /* TODO: Investigate a model callback outside its native object domain */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid model receiver %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     model_draw_static(model_refs[item->kind], 0, 256);
     transform_pop();
     transform_yaw(32768);
@@ -198,11 +188,9 @@ static uint32 draw_double_slide_z(const MODEL_OBJECT *item)
 static uint32 scroll_four_uv(sint16 tex0, const sint16 *table)
 {
     sint32 tex_idx = (sint32)(table - tex_map) + tex0;
-    if (tex_idx < 0 || tex_idx >= TEXTURE_MAP_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(tex_idx >= 0 && tex_idx < TEXTURE_MAP_COUNT);
     uint32 idx = (uint32)tex_map[tex_idx];
-    if (idx > TEXTURE_DESCRIPTOR_CAPACITY - 4)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(idx <= TEXTURE_DESCRIPTOR_CAPACITY - 4);
     TEXTURE_DESCRIPTOR *uv = tex_desc.item + idx;
     uint32 i, val, offset;
     for (i = 0; i < 4; i++, uv++)
@@ -223,16 +211,14 @@ GDB_CALL uint32 stage_animation_scroll_stage0(void)
 {
     FUNCTION_MARKER(0x800580ac, "GAME.EXE");
     sint32 map_idx = tex_grps[70].first_tex + 6;
-    if (map_idx < 0 || map_idx >= TEXTURE_MAP_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(map_idx >= 0 && map_idx < TEXTURE_MAP_COUNT);
     sint32 desc_idx = tex_map[map_idx];
-    if (desc_idx < 0 || desc_idx > TEXTURE_DESCRIPTOR_CAPACITY - 2)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(desc_idx >= 0 && desc_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 2);
     TEXTURE_DESCRIPTOR *uv = tex_desc.item + desc_idx;
     uint32 i, v;
     for (i = 0; i < 2; i++, uv++)
     {
-        v = (uint32)(sint32)tex_base_v[i];
+        v = tex_base_v[i];
         v += stage_animation.phase[0];
         uv->uv1.v = (uint8)v;
         uv->uv0.v = (uint8)v;
@@ -246,13 +232,11 @@ GDB_CALL uint32 stage_animation_scroll_stage1(void)
 {
     FUNCTION_MARKER(0x8005813cu, "GAME.EXE");
     sint32 map_idx = tex_grps[8].first_tex + 62;
-    if (map_idx < 0 || map_idx >= TEXTURE_MAP_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(map_idx >= 0 && map_idx < TEXTURE_MAP_COUNT);
     sint32 desc_idx = tex_map[map_idx];
-    if (desc_idx < 0 || desc_idx >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(desc_idx >= 0 && desc_idx < TEXTURE_DESCRIPTOR_CAPACITY);
     TEXTURE_DESCRIPTOR *uv = tex_desc.item + desc_idx;
-    uint32 val = (uint32)(sint32)tex_base_v[0] + stage_animation.phase[0];
+    uint32 val = (tex_base_v[0]) + stage_animation.phase[0];
     uv->uv1.v = (uint8)val;
     uv->uv0.v = (uint8)val;
     val += 31;
@@ -278,11 +262,9 @@ GDB_CALL sint32 stage_animation_scroll_stage14(void)
     FUNCTION_MARKER(0x80058374u, "GAME.EXE");
     sint32 tex0 = tex_grps[20].first_tex;
     sint32 src_map = tex0 + 144, dst_map = tex0 + 152;
-    if (src_map < 0 || src_map >= TEXTURE_MAP_COUNT || dst_map < 0 || dst_map >= TEXTURE_MAP_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(src_map >= 0 && src_map < TEXTURE_MAP_COUNT && dst_map >= 0 && dst_map < TEXTURE_MAP_COUNT);
     sint32 src_idx = tex_map[src_map], dst_idx = tex_map[dst_map];
-    if (src_idx < 0 || src_idx > TEXTURE_DESCRIPTOR_CAPACITY - 6 || dst_idx < 0 || dst_idx > TEXTURE_DESCRIPTOR_CAPACITY - 6)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(src_idx >= 0 && src_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 6 && dst_idx >= 0 && dst_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 6);
     TEXTURE_DESCRIPTOR *src = tex_desc.item + src_idx, *dst = tex_desc.item + dst_idx;
     uint32 v[4], phase;
     int i, j;
@@ -305,7 +287,7 @@ GDB_CALL sint32 stage_animation_scroll_stage14(void)
     tex_desc.words[3 * dst_idx + 17] = v[1];
     for (i = 0; i < 6; i++, src++, dst++)
     {
-        phase = (uint32)(sint32)tex_base_v[i] + stage_animation.phase[i < 3 ? 0 : 1];
+        phase = (tex_base_v[i]) + stage_animation.phase[i < 3 ? 0 : 1];
         src->uv1.v = (uint8)phase;
         src->uv0.v = (uint8)phase;
         src->uv3.v = (uint8)(phase + 31u);
@@ -324,17 +306,15 @@ GDB_CALL sint32 stage_animation_scroll_stage17(void)
     FUNCTION_MARKER(0x80058524u, "GAME.EXE");
     sint32 tex0 = tex_grps[23].first_tex;
     sint32 src_map = tex0 + 92, dst_map = tex0 + 100;
-    if (src_map < 0 || src_map >= TEXTURE_MAP_COUNT || dst_map < 0 || dst_map >= TEXTURE_MAP_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(src_map >= 0 && src_map < TEXTURE_MAP_COUNT && dst_map >= 0 && dst_map < TEXTURE_MAP_COUNT);
     sint32 src_idx = tex_map[src_map], dst_idx = tex_map[dst_map];
-    if (src_idx < 0 || src_idx > TEXTURE_DESCRIPTOR_CAPACITY - 2 || dst_idx < 0 || dst_idx > TEXTURE_DESCRIPTOR_CAPACITY - 2)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(src_idx >= 0 && src_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 2 && dst_idx >= 0 && dst_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 2);
     TEXTURE_DESCRIPTOR *src = tex_desc.item + src_idx, *dst = tex_desc.item + dst_idx;
     uint32 i, v;
     uint8 u;
     for (i = 0; i < 2; i++, src++, dst++)
     {
-        v = (uint32)(sint32)tex_base_v[i];
+        v = tex_base_v[i];
         v += stage_animation.phase[0];
         src->uv1.v = (uint8)v;
         src->uv0.v = (uint8)v;
@@ -350,7 +330,7 @@ GDB_CALL sint32 stage_animation_scroll_stage17(void)
         dst->uv0.v = (uint8)(v + 32);
         dst->uv3.v = (uint8)(v + 63);
         dst->uv2.v = (uint8)(v + 63);
-        dst->tpage = (uint16)(sint16)src->tpage;
+        dst->tpage = (sint16)src->tpage;
     }
     return 0;
 }

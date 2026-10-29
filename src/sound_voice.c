@@ -40,8 +40,7 @@ GDB_CALL SpuVoiceAttr *sound_voice_next_attributes(void)
     sound_attributes.cur = next;
     if ((sint32)next >= SOUND_VOICE_ATTRIBUTE_COUNT)
         sound_attributes.cur = 0;
-    if (old >= SOUND_VOICE_ATTRIBUTE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(old < SOUND_VOICE_ATTRIBUTE_COUNT);
     return &sound_attributes.packet[old].attr;
 }
 
@@ -59,24 +58,21 @@ GDB_CALL sint32 sound_voice_play(sint32 effect, sint32 volume, sint32 pitch)
         if ((sint32)voice >= SOUND_VOICE_COUNT)
             sound_voices.cur = 0;
         voice = sound_voices.cur;
-        if (voice >= SOUND_VOICE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(voice < SOUND_VOICE_COUNT);
     } while (sound_voices.voice[voice].mode == 2);
-    if (effect < 0 || effect >= SOUND_SAMPLE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(effect >= 0 && effect < SOUND_SAMPLE_COUNT);
     const SOUND_SAMPLE *sample_desc = sound_samples.sample + effect;
     sample = sample_desc->offset;
     if (sample == 0xffffffffu)
         sound_voice_stop(voice);
     else
     {
-        sint32 level = (sint32)((uint32)(volume >> 1) * master) >> 8;
-        sint32 scaled = (sint32)((uint32)pitch * 1536u);
-        uint32 note = (uint32)(scaled / 1024) - 1536u;
+        sint32 level = (sint32)((volume >> 1) * master) >> 8;
+        sint32 scaled = pitch * 1536u;
+        uint32 note = (scaled / 1024) - 1536u;
         sound_voices.voice[voice].mode = sample_desc->mode;
         voice = sound_voices.cur;
-        if (voice >= SOUND_VOICE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(voice < SOUND_VOICE_COUNT);
         SOUND_VOICE *channel = sound_voices.voice + voice;
         channel->right = level;
         channel->left = level;
@@ -90,24 +86,21 @@ GDB_CALL sint32 sound_voice_play(sint32 effect, sint32 volume, sint32 pitch)
         sample = sound_samples.spu_base;
         sample += sample_desc->offset;
         attr->addr = sample;
-        if (!game_services.spu_key_on_attributes)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(game_services.spu_key_on_attributes);
         game_services.spu_key_on_attributes(attr);
     }
-    return (sint32)sound_voices.cur;
+    return sound_voices.cur;
 }
 
 /* Clear mode before muting and key-off */
 GDB_CALL sint32 sound_voice_stop(sint32 voice)
 {
     FUNCTION_MARKER(0x800567f8, "GAME.EXE");
-    if (voice < 0 || voice >= SOUND_VOICE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(voice >= 0 && voice < SOUND_VOICE_COUNT);
     sound_voices.voice[voice].mode = 0;
     sound_voice_volume(voice, 0);
-    if (!game_services.spu_key)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    return (sint32)game_services.spu_key(0, 1u << ((uint32)voice & 31));
+    XASSERT(game_services.spu_key);
+    return game_services.spu_key(0, 1u << (voice & 31u));
 }
 
 /* Divide the wrapped signed pitch product toward zero */
@@ -115,12 +108,11 @@ GDB_CALL sint32 sound_voice_pitch(sint32 voice, sint32 pitch)
 {
     FUNCTION_MARKER(0x80056840u, "GAME.EXE");
     SpuVoiceAttr *attr = sound_voice_next_attributes();
-    uint32 note = (uint32)((sint32)((uint32)pitch * 1536u) / 1024) - 1536u;
-    attr->voice = 1u << ((uint32)voice & 31);
+    uint32 note = ((sint32)(pitch * 1536u) / 1024) - 1536u;
+    attr->voice = 1u << (voice & 31u);
     attr->mask = 32;
     attr->note = ((note << 1) & 0xffffff00u) + (note & 127);
-    if (!game_services.spu_voice_attributes)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.spu_voice_attributes);
     return game_services.spu_voice_attributes(attr);
 }
 
@@ -131,21 +123,19 @@ GDB_CALL sint32 sound_voice_pan(sint32 voice_idx, sint32 volume, sint32 pan)
     uint32 master = sound_settings.effects_volume;
     SpuVoiceAttr *attr = sound_voice_next_attributes();
     uint32 idx = (uint32)pan << 2;
-    sint32 left = (sint32)((uint32)(sint32)sin_table[idx] * (uint32)volume) >> 15;
-    sint32 right = (sint32)((uint32)(sint32)sin_table[MATH_QUARTER_TURN + idx] * (uint32)volume) >> 15;
-    left = (sint32)((uint32)left * master) >> 8;
-    right = (sint32)((uint32)right * master) >> 8;
-    if (voice_idx < 0 || voice_idx >= SOUND_VOICE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    sint32 left = (sint32)((sin_table[idx]) * (uint32)volume) >> 15;
+    sint32 right = (sint32)((sin_table[MATH_QUARTER_TURN + idx]) * (uint32)volume) >> 15;
+    left = (sint32)(left * master) >> 8;
+    right = (sint32)(right * master) >> 8;
+    XASSERT(voice_idx >= 0 && voice_idx < SOUND_VOICE_COUNT);
     SOUND_VOICE *voice = sound_voices.voice + voice_idx;
     voice->left = left;
     voice->right = right;
     attr->mask = 3;
-    attr->voice = 1u << ((uint32)voice_idx & 31);
+    attr->voice = 1u << (voice_idx & 31u);
     attr->volume.left = (uint32)left << 6;
     attr->volume.right = (uint32)right << 6;
-    if (!game_services.spu_voice_attributes)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.spu_voice_attributes);
     return game_services.spu_voice_attributes(attr);
 }
 
@@ -154,8 +144,7 @@ GDB_CALL void sound_voices_stop_all(void)
 {
     FUNCTION_MARKER(0x80056ecc, "GAME.EXE");
     uint32 i;
-    if (!game_services.spu_key)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.spu_key);
     game_services.spu_key(0, 0xffffffu);
     for (i = 0; i < SOUND_VOICE_COUNT; i++)
         sound_voices.voice[i].mode = 0;
@@ -165,18 +154,16 @@ GDB_CALL void sound_voices_stop_all(void)
 GDB_CALL sint32 sound_voice_volume(sint32 voice_idx, sint32 volume)
 {
     FUNCTION_MARKER(0x80056f08, "GAME.EXE");
-    sint32 product = (sint32)((uint32)volume * sound_settings.effects_volume), result;
+    sint32 product = (uint32)volume * sound_settings.effects_volume, result;
     SpuVoiceAttr *attr = sound_voice_next_attributes();
     uint32 level = (uint32)(product >> 8) << 6;
     attr->mask = 3;
-    attr->voice = 1u << ((uint32)voice_idx & 31);
+    attr->voice = 1u << (voice_idx & 31u);
     attr->volume.left = level;
     attr->volume.right = level;
-    if (!game_services.spu_voice_attributes)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.spu_voice_attributes);
     result = game_services.spu_voice_attributes(attr);
-    if (voice_idx < 0 || voice_idx >= SOUND_VOICE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(voice_idx >= 0 && voice_idx < SOUND_VOICE_COUNT);
     SOUND_VOICE *voice = sound_voices.voice + voice_idx;
     voice->left = product >> 9;
     voice->right = product >> 9;
@@ -190,18 +177,16 @@ GDB_CALL sint32 sound_voice_restore_volume(sint32 voice_idx, sint32 unused, sint
     uint32 master = sound_settings.effects_volume;
     SpuVoiceAttr *attr;
     sint32 left_product, right_product, result;
-    left_product = (uint32)right * master;
+    left_product = right * master;
     attr = sound_voice_next_attributes();
-    right_product = (uint32)(left_product >> 8) * master;
+    right_product = (left_product >> 8) * master;
     attr->mask = 3;
     attr->volume.left = (uint32)(left_product >> 8) << 6;
-    attr->voice = 1u << ((uint32)voice_idx & 31);
+    attr->voice = 1u << (voice_idx & 31u);
     attr->volume.right = (uint32)(right_product >> 8) << 6;
-    if (!game_services.spu_voice_attributes)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.spu_voice_attributes);
     result = game_services.spu_voice_attributes(attr);
-    if (voice_idx < 0 || voice_idx >= SOUND_VOICE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(voice_idx >= 0 && voice_idx < SOUND_VOICE_COUNT);
     SOUND_VOICE *voice = sound_voices.voice + voice_idx;
     voice->left = left_product >> 9;
     voice->right = right_product >> 9;
@@ -225,8 +210,7 @@ GDB_CALL sint32 sound_voices_pause(void)
             attr->voice = 1u << i;
             attr->volume.right = 0;
             attr->volume.left = 0;
-            if (!game_services.spu_voice_attributes)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(game_services.spu_voice_attributes);
             game_services.spu_voice_attributes(attr);
         }
     }
@@ -267,8 +251,7 @@ sint32 sound_voice_defaults(SpuVoiceAttr *desc)
     desc->sr = 0;
     desc->rr = 0;
     desc->sl = 0;
-    if (!game_services.spu_voice_attributes || !game_services.spu_key)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.spu_voice_attributes && game_services.spu_key);
     game_services.spu_voice_attributes(desc);
     for (i = 0; i < SOUND_VOICE_COUNT; i++)
         game_services.spu_key(0, 1u << i);

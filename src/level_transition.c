@@ -38,7 +38,7 @@ GDB_CALL sint32 level_transition_at_exit(void)
                 if ((uint32)(coord - 3073) < 0xfffu)
                     result = 0;
             }
-        coord = (sint32)level_transition.route_exit_tick;
+        coord = level_transition.route_exit_tick;
         if (!coord && result == 1)
         {
             level_transition.route_exit_tick = 1;
@@ -72,7 +72,7 @@ GDB_CALL sint32 level_transition_at_exit(void)
                         result = 0;
                     break;
                 case 6:
-                    if ((uint32)(actor_positions[i].x.bits + 0x0c4fffffu) <= 0x0c27fffeu && (sint32)actor_positions[i].z.bits <= 0x04a7ffff)
+                    if ((actor_positions[i].x.bits + 0x0c4fffffu) <= 0x0c27fffeu && (sint32)actor_positions[i].z.bits <= 0x04a7ffff)
                         result = 0;
                     break;
                 case 7:
@@ -108,18 +108,22 @@ GDB_CALL sint32 level_transition_continue_prompt(void)
     uint32 val = level_transition.continue_phase, step, buttons;
     const TEXT_GRADIENT *pal;
     char text[128];
-    sint32 r = 0, g, timer, width, x;
+    sint32 r = 0;
+    sint32 g;
+    sint32 timer;
+    uint32 width;
+    sint32 x;
     if ((sint32)val <= 0)
         return val;
     step = val - 128u;
     if ((sint32)step < 0)
         step = 0;
-    g = 0u - (step << 1);
+    g = (uint32)(-(sint64)(step << 1));
     if (g < -256)
         g = -256;
     if ((sint32)step >= 65)
     {
-        r = 0u - ((step - 64u) << 1);
+        r = (uint32)(-(sint64)((step - 64u) << 1));
         if (r < -256)
             r = -256;
     }
@@ -135,9 +139,9 @@ GDB_CALL sint32 level_transition_continue_prompt(void)
     text_gradient_update();
     sprintf(text, "%s ?", localization.text[LOCAL_TEXT_CONTINUE]);
     text_center(text, 100);
-    timer = (sint32)level_transition.continue_timer;
-    sprintf(text, "%d", (sint32)(10u - (uint32)(timer / 30)));
-    timer = (sint32)level_transition.continue_timer;
+    timer = level_transition.continue_timer;
+    sprintf(text, "%d", (sint32)(10u - (timer / 30)));
+    timer = level_transition.continue_timer;
     if (timer % 30 < 4)
         text_center_gradient(text, 130);
     else
@@ -147,19 +151,19 @@ GDB_CALL sint32 level_transition_continue_prompt(void)
     else
     {
         const char *label = localization.text[LOCAL_TEXT_CONTINUE];
-        uint32 continues = level_transition.continues;
-        sprintf(text, continue_count_format, label, (sint32)continues);
+        sint32 continues = level_transition.continues;
+        sprintf(text, continue_count_format, label, continues);
     }
     text_center(text, 190);
     width = text_width(localization.text[LOCAL_TEXT_NO]);
     x = text_width(localization.text[LOCAL_TEXT_YES]);
-    x = (sint32)(320u - (uint32)width - (uint32)x) >> 1;
+    x = (sint32)(320u - width - x) >> 1;
     pal = level_transition.continue_choice ? &text_inactive_gradient : &text_active_gradient;
     text_draw_gradient(localization.text[LOCAL_TEXT_YES], x, 160, pal);
     pal = level_transition.continue_choice == 1 ? &text_active_gradient : &text_inactive_gradient;
     width = text_width(localization.text[LOCAL_TEXT_YES]);
-    text_draw_gradient(localization.text[LOCAL_TEXT_NO], (uint32)x + (uint32)width + 10u, 160, pal);
-    buttons = (uint32)pad_decode_buttons(pad_game.port[0]);
+    text_draw_gradient(localization.text[LOCAL_TEXT_NO], x + width + 10u, 160, pal);
+    buttons = pad_decode_buttons(pad_game.port[0]);
     if (game_session.player_count == 2)
         buttons |= (uint32)pad_decode_buttons(pad_game.port[1]);
     if (buttons & 128)
@@ -204,12 +208,8 @@ GDB_CALL sint32 level_transition_update(void)
                 stage = game_session.stage;
                 for (i = 0; (sint32)i < (sint32)players; i++)
                 {
-                    if (i >= ACTOR_COUNT)
-                    {
-                        /* TODO: Investigate finish recovery outside the native actor pool */
-                        DIAGNOSTIC(fprintf(stderr, "Invalid finish recovery slot %u player count %u stage %u tick %u\n", i, players, stage, game_session.tick));
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-                    }
+                    /* TODO: Investigate finish recovery outside the native actor pool */
+                    XASSERT(i < ACTOR_COUNT);
                     sint32 hp = actor_health[i].hp, maximum, next;
                     if (hp <= 0)
                         continue;
@@ -237,8 +237,7 @@ GDB_CALL sint32 level_transition_update(void)
                 do
                 {
                     /* TODO: Investigate unsupported finish-phase player counts */
-                    if (i >= ACTOR_COUNT)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(i < ACTOR_COUNT);
                     if (actor_health[i].hp > 0)
                     {
                         sint32 count = (sint16)actor_bonus_counts[i];
@@ -246,14 +245,12 @@ GDB_CALL sint32 level_transition_update(void)
                         if (count > 0)
                         {
                             actor_bonus_counts[i] = count - 1;
-                            if (i >= PLAYER_COUNT)
-                                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                            XASSERT(i < PLAYER_COUNT);
                             player_scores[i].val += 250;
                             changed = 1;
                             hud_format_score(i);
                         }
-                        if (i >= PLAYER_COUNT)
-                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        XASSERT(i < PLAYER_COUNT);
                         score = player_scores[i].val;
                         if ((sint32)player_scores[i].continue_threshold < (sint32)score)
                         {

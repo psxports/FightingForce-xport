@@ -2,8 +2,7 @@
 
 static uint32 checked_word(sint64 val)
 {
-    if (val < -2147483647LL - 1 || val > 2147483647LL)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(val >= -2147483647LL - 1 && val <= 2147483647LL);
     return val;
 }
 
@@ -24,11 +23,18 @@ GDB_CALL uint32 spr_draw(const PROJECTION_POINT *pos, sint32 spr_idx)
     uint32 packet = render_buffers.packet_addr;
     const TEXTURE_DESCRIPTOR *desc;
     sint32 x = (sint16)pos->x, y = (sint16)pos->y;
-    uint32 uv_clut, mode, end, semitrans, uv, delta, ot, bucket, next;
+    uint32 uv_clut;
+    uint32 mode;
+    uint32 end;
+    uint32 semitrans;
+    uint32 uv;
+    uint32 delta;
+    sint32 ot;
+    uint32 bucket;
+    uint32 next;
     const sint16 *depth_offsets;
     sint32 depth;
-    if (spr_idx < 0 || spr_idx >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(spr_idx >= 0 && spr_idx < TEXTURE_DESCRIPTOR_CAPACITY);
     desc = tex_desc.item + spr_idx;
     uv_clut = desc->words[0];
     mode = desc->words[1];
@@ -52,7 +58,7 @@ GDB_CALL uint32 spr_draw(const PROJECTION_POINT *pos, sint32 spr_idx)
         depth_idx = 0;
     else if (depth_idx >= DEPTH_TABLE_COUNT)
         depth_idx = DEPTH_TABLE_COUNT - 1;
-    bucket = checked_word((sint64)(sint32)ot + depth_offsets[depth_idx]);
+    bucket = checked_word((sint64)ot + depth_offsets[depth_idx]);
     uint32 *ot_entry = psx_addr(bucket, sizeof(*ot_entry));
     spr->tag = *ot_entry | 0x04000000;
     next = checked_word((sint64)(sint32)packet + 20);
@@ -76,8 +82,7 @@ GDB_CALL uint32 spr_draw_quad(const PROJECTION_POINT *pos, uint32 tex)
     uint32 uv_clut, uv_tpage, uv_end, semitrans, uv, extent, right, bottom, ot, link, next;
     const sint16 *depth_offsets;
     sint64 difference;
-    if (tex >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(tex < TEXTURE_DESCRIPTOR_CAPACITY);
     const TEXTURE_DESCRIPTOR *desc = tex_desc.item + tex;
     uv_clut = desc->words[0];
     uv_tpage = desc->words[1];
@@ -85,11 +90,10 @@ GDB_CALL uint32 spr_draw_quad(const PROJECTION_POINT *pos, uint32 tex)
     semitrans = uv_clut & 1;
     uv = uv_clut - semitrans;
     difference = (sint64)(uv_end >> 16) - (sint32)uv;
-    if (difference < -2147483647LL - 1 || difference > 2147483647LL)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(difference >= -2147483647LL - 1 && difference <= 2147483647LL);
     extent = (uint32)difference & 65535;
-    right = (extent & 255) + (uint32)x;
-    bottom = (extent >> 8) + (uint32)y;
+    right = (extent & 255) + x;
+    bottom = (extent >> 8) + y;
     POLY_FT4 *poly = psx_addr(packet, sizeof(*poly));
     poly->p[0].uv_attr = uv;
     poly->p[1].uv_attr = uv_tpage;
@@ -124,12 +128,22 @@ GDB_CALL uint32 spr_draw_quad(const PROJECTION_POINT *pos, uint32 tex)
 GDB_CALL uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
 {
     FUNCTION_MARKER(0x80012594, "GAME.EXE");
-    uint32 packet = render_buffers.packet_addr, next_packet, uv, mode, end, color, semitrans, delta, width, height, bucket, ot;
+    uint32 packet = render_buffers.packet_addr;
+    uint32 next_packet;
+    uint32 uv;
+    uint32 mode;
+    uint32 end;
+    uint32 color;
+    uint32 semitrans;
+    uint32 delta;
+    uint32 width;
+    uint32 height;
+    uint32 bucket;
+    sint32 ot;
     const sint16 *depth_offsets;
     sint32 x = (sint16)pos->x, y = (sint16)pos->y, dx, dy, depth;
     uint32 size, right, bottom, left, top;
-    if (spr < 0 || spr >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(spr >= 0 && spr < TEXTURE_DESCRIPTOR_CAPACITY);
     const TEXTURE_DESCRIPTOR *desc = tex_desc.item + spr;
     uv = desc->words[0];
     mode = desc->words[1];
@@ -147,9 +161,9 @@ GDB_CALL uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
     poly->p[3].uv.uv = end >> 16;
     poly->rgbc.rgbc = (semitrans << 25) | color;
     depth = pos->depth;
-    size = (uint32)pos->size;
-    dx = divide((sint32)(width * size), depth);
-    dy = width == height ? dx : divide((sint32)(height * size), depth);
+    size = pos->size;
+    dx = divide(width * size, depth);
+    dy = width == height ? dx : divide(height * size, depth);
     right = checked_word((sint64)x + dx);
     bottom = checked_word((sint64)y + dy);
     left = checked_word((sint64)x - dx);
@@ -172,7 +186,7 @@ GDB_CALL uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
         depth_idx = 0;
     else if (depth_idx >= DEPTH_TABLE_COUNT)
         depth_idx = DEPTH_TABLE_COUNT - 1;
-    bucket = checked_word((sint64)(sint32)ot + depth_offsets[depth_idx]);
+    bucket = checked_word((sint64)ot + depth_offsets[depth_idx]);
     uint32 *ot_entry = psx_addr(bucket, sizeof(*ot_entry));
     poly->tag = *ot_entry | 0x09000000u;
     next_packet = checked_word((sint64)(sint32)packet + 40);
@@ -185,12 +199,11 @@ GDB_CALL uint32 spr_draw_scaled(const PROJECTION_POINT *pos, sint32 spr)
 GDB_CALL void spr_set_gradient_quad(uint32 packet, sint32 spr, sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80012a00u, "GAME.EXE");
-    if (spr < 0 || spr >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(spr >= 0 && spr < TEXTURE_DESCRIPTOR_CAPACITY);
     const TEXTURE_DESCRIPTOR *desc = tex_desc.item + spr;
     uint32 uv = desc->words[0], mode = desc->words[1], end = desc->words[2];
     uint32 delta = ((end >> 16) - uv) & 65535u;
-    uint16 right = (uint16)((uint32)x + (delta & 255)), bottom = (uint32)y + (delta >> 8);
+    uint16 right = (uint16)(x + (delta & 255)), bottom = y + (delta >> 8);
     POLY_GT4 *poly = psx_addr(packet, sizeof(*poly));
     poly->p[0].uv_attr = uv;
     poly->p[1].uv_attr = mode;
@@ -210,14 +223,19 @@ GDB_CALL void spr_set_gradient_quad(uint32 packet, sint32 spr, sint32 x, sint32 
 GDB_CALL uint32 spr_draw_ribbon(const PROJECTION_POINT *a, const PROJECTION_POINT *b, sint32 spr)
 {
     FUNCTION_MARKER(0x8006a1b4u, "GAME.EXE");
-    uint32 packet = render_buffers.packet_addr, depth = (uint32)((sint32)((uint32)a->depth + (uint32)b->depth) >> 3), color, tex_flags;
+    uint32 packet = render_buffers.packet_addr, depth = (sint32)(a->depth + (uint32)b->depth) >> 3, color, tex_flags;
     SVECTOR dir;
     VECTOR delta;
-    sint32 numerator, width, dx, dy, ot, uv_end, uv_start;
+    sint32 numerator;
+    uint32 width;
+    uint32 dx;
+    uint32 dy;
+    uint32 ot;
+    sint32 uv_end;
+    sint32 uv_start;
     uint32 pass;
     const PROJECTION_POINT *point;
-    if (spr < 0 || spr >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(spr >= 0 && spr < TEXTURE_DESCRIPTOR_CAPACITY);
     const TEXTURE_DESCRIPTOR *tex = tex_desc.item + spr;
     tex_flags = tex->words[0];
     color = render_style.color.rgbc;
@@ -229,8 +247,8 @@ GDB_CALL uint32 spr_draw_ribbon(const PROJECTION_POINT *a, const PROJECTION_POIN
     render_style.color.rgbc = 0x2d000000;
     if (depth >= 2048)
         return 0;
-    delta.vx = (sint32)((uint32)b->x - (uint32)a->x);
-    delta.vy = (sint32)((uint32)b->y - (uint32)a->y);
+    delta.vx = b->x - (uint32)a->x;
+    delta.vy = b->y - (uint32)a->y;
     delta.vz = 0;
     delta.pad = 0;
     /* Preserve the original image-dependent zero-vector coefficient */
@@ -254,25 +272,33 @@ GDB_CALL uint32 spr_draw_ribbon(const PROJECTION_POINT *a, const PROJECTION_POIN
         uv_end = (sint8)(pass ? tex->uv3.u : tex->uv1.u);
         uv_start = (sint8)(pass ? tex->uv2.u : tex->uv0.u);
         width = (uv_end - uv_start) >> 1;
-        numerator = (uint32)width * (uint32)point->size;
-        if (!point->depth || (point->depth == -1 && (uint32)numerator == 0x80000000u))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        numerator = width * point->size;
+        XASSERT(point->depth && (point->depth != -1 || (uint32)numerator != 0x80000000u));
         width = numerator / point->depth;
-        dx = (sint32)((uint32)width * (uint32)(sint32)dir.vy) >> 12;
-        dy = (sint32)((uint32)width * (uint32) - (sint32)dir.vx) >> 12;
-        edge[0].xy.x = (uint32)point->x - (uint32)dx;
-        edge[0].xy.y = (uint32)point->y - (uint32)dy;
-        edge[1].xy.x = (uint32)point->x + (uint32)dx;
-        edge[1].xy.y = (uint32)point->y + (uint32)dy;
+        dx = (sint32)(width * (dir.vy)) >> 12;
+        dy = (sint32)(width * (-dir.vx)) >> 12;
+        edge[0].xy.x = point->x - dx;
+        edge[0].xy.y = point->y - dy;
+        edge[1].xy.x = point->x + dx;
+        edge[1].xy.y = point->y + dy;
     }
     ot = depth_table[depth] >> 2;
-    return render_ot_insert_flags(render_buffers.ot_addr + 4u * (uint32)ot, packet, 0x09000000);
+    return render_ot_insert_flags(render_buffers.ot_addr + 4u * ot, packet, 0x09000000);
 }
 
 GDB_CALL uint32 spr_draw_height(const PROJECTION_POINT *pos, sint32 spr)
 {
     FUNCTION_MARKER(0x800128f4, "GAME.EXE");
-    uint32 packet, uv, mode, end, color, semitrans, depth, height, bucket, ot;
+    uint32 packet;
+    uint32 uv;
+    uint32 mode;
+    uint32 end;
+    uint32 color;
+    uint32 semitrans;
+    sint32 depth;
+    sint32 height;
+    uint32 bucket;
+    uint32 ot;
     const sint16 *depth_offsets;
     uint32 next_packet;
     sint32 x, y;
@@ -281,8 +307,7 @@ GDB_CALL uint32 spr_draw_height(const PROJECTION_POINT *pos, sint32 spr)
     packet = render_buffers.packet_addr;
     x = (sint16)pos->x;
     y = (sint16)pos->y;
-    if (spr < 0 || spr >= TEXTURE_DESCRIPTOR_CAPACITY)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(spr >= 0 && spr < TEXTURE_DESCRIPTOR_CAPACITY);
     const TEXTURE_DESCRIPTOR *desc = tex_desc.item + spr;
     uv = desc->words[0];
     mode = desc->words[1];
@@ -291,24 +316,22 @@ GDB_CALL uint32 spr_draw_height(const PROJECTION_POINT *pos, sint32 spr)
     semitrans = uv & 1;
     uv -= semitrans;
     diff = (sint64)(end >> 16) - (sint32)uv;
-    if (diff < -2147483647LL - 1 || diff > 2147483647LL)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(diff >= -2147483647LL - 1 && diff <= 2147483647LL);
     POLY_FT4 *poly = psx_addr(packet, sizeof(*poly));
     poly->p[0].uv_attr = uv;
     poly->p[1].uv_attr = mode;
     poly->p[2].uv.uv = end;
     poly->p[3].uv.uv = end >> 16;
     poly->rgbc.rgbc = color | (semitrans << 25);
-    depth = (uint32)pos->depth;
-    height = (uint32)pos->size;
+    depth = pos->depth;
+    height = pos->size;
     poly->p[0].xy.x = x;
     poly->p[2].xy.x = x;
     poly->p[0].xy.y = y;
     poly->p[1].xy.y = y;
-    right = (uint32)x + ((uint32)diff & 255) + 1;
-    bottom = (sint64)(sint32)height + y;
-    if (bottom < -2147483647LL - 1 || bottom > 2147483647LL)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    right = x + ((uint32)diff & 255) + 1;
+    bottom = (sint64)height + y;
+    XASSERT(bottom >= -2147483647LL - 1 && bottom <= 2147483647LL);
     poly->p[1].xy.x = right;
     poly->p[3].xy.x = right;
     poly->p[2].xy.y = bottom;
@@ -316,7 +339,7 @@ GDB_CALL uint32 spr_draw_height(const PROJECTION_POINT *pos, sint32 spr)
     ot = render_buffers.ot_addr;
     depth_offsets = depth_table;
     /* Clamp the lookup index only; original out-of-range reachability is unproven */
-    sint32 depth_idx = (sint32)depth >> 2;
+    sint32 depth_idx = depth >> 2;
     if (depth_idx < 0)
         depth_idx = 0;
     else if (depth_idx >= DEPTH_TABLE_COUNT)

@@ -47,8 +47,7 @@ static const DIRECTION_QUADRANT quadrants[DIRECTION_QUADRANT_COUNT] = {
 
 sint32 math_divide(sint32 dividend, sint32 divisor)
 {
-    if (!divisor || (divisor == -1 && (uint32)dividend == 0x80000000u))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(divisor && (divisor != -1 || (uint32)dividend != 0x80000000u));
     return dividend / divisor;
 }
 
@@ -76,29 +75,29 @@ GDB_CALL sint32 math_sqrt_odd(uint32 val)
 GDB_CALL sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1)
 {
     FUNCTION_MARKER(0x8001614c, "GAME.EXE");
-    sint32 dy = (sint32)((uint32)y1 - (uint32)y0), dx = (uint32)x1 - (uint32)x0;
+    sint32 dy = y1 - (uint32)y0, dx = x1 - (uint32)x0;
     uint32 q = 0, val;
     if (dy < 0)
     {
-        dy = 0u - (uint32)dy;
+        dy = (uint32)(-(sint64)(dy));
         q = 1;
     }
     if (dx < 0)
     {
-        dx = 0u - (uint32)dx;
+        dx = (uint32)(-(sint64)(dx));
         q += 2;
     }
     if (dy < dx)
     {
-        dir_distance = (uint32)(dy >> 1) + (uint32)dx;
-        val = (uint32)math_divide((uint32)dy << 13, dx) ^ 0x3fff;
+        dir_distance = (dy >> 1) + (uint32)dx;
+        val = math_divide((uint32)dy << 13, dx) ^ 0x3fffu;
     }
     else
     {
-        dir_distance = (uint32)(dx >> 1) + (uint32)dy;
+        dir_distance = (dx >> 1) + (uint32)dy;
         if (!dy)
             dy = 1;
-        val = (uint32)math_divide((uint32)dx << 13, dy);
+        val = math_divide((uint32)dx << 13, dy);
     }
     return (sint16)((val + quadrants[q].bias) ^ quadrants[q].mask);
 }
@@ -107,24 +106,23 @@ GDB_CALL sint32 math_dir16(sint32 x0, sint32 y0, sint32 x1, sint32 y1)
 GDB_CALL sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 {
     FUNCTION_MARKER(0x8001627c, "GAME.EXE");
-    uint32 x = (uint32)x1 - (uint32)x0, z = (uint32)z1 - (uint32)z0, q = 0, n, d, v;
+    uint32 x = x1 - (uint32)x0, z = z1 - (uint32)z0, q = 0, n, d, v;
     int major;
     if ((sint32)z < 0)
     {
-        z = 0u - z;
+        z = (uint32)(-(sint64)(z));
         q = 1;
     }
     if ((sint32)x < 0)
     {
-        x = 0u - x;
+        x = (uint32)(-(sint64)(x));
         q += 2;
     }
     major = (sint32)z < (sint32)x;
-    dir_distance = major ? x + (uint32)((sint32)z >> 1) : z + (uint32)((sint32)x >> 1);
+    dir_distance = major ? x + ((sint32)z >> 1) : z + ((sint32)x >> 1);
     n = (major ? z : x) << 13;
     d = major ? x : (z ? z : 1);
-    if (!d || (d == 0xffffffffu && n == 0x80000000u))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(d && (d != 0xffffffffu || n != 0x80000000u));
     v = (sint32)n / (sint32)d;
     if (major)
         v ^= 0x3fff;
@@ -136,23 +134,23 @@ GDB_CALL sint32 math_dir11(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 GDB_CALL sint32 math_distance_approx(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 {
     FUNCTION_MARKER(0x800163f4, "GAME.EXE");
-    uint32 x = (uint32)x1 - (uint32)x0, z = (uint32)z1 - (uint32)z0;
+    uint32 x = x1 - (uint32)x0, z = z1 - (uint32)z0;
     if ((sint32)x < 0)
-        x = 0u - x;
+        x = (uint32)(-(sint64)(x));
     if ((sint32)z < 0)
-        z = 0u - z;
-    return (sint32)z < (sint32)x ? x + (uint32)((sint32)z >> 1) : z + (uint32)((sint32)x >> 1);
+        z = (uint32)(-(sint64)(z));
+    return (sint32)z < (sint32)x ? x + ((sint32)z >> 1) : z + ((sint32)x >> 1);
 }
 
 /* Wrap both squared components before taking the four-step root */
 GDB_CALL sint32 math_distance_newton(sint32 x0, sint32 z0, sint32 x1, sint32 z1)
 {
     FUNCTION_MARKER(0x80016478, "GAME.EXE");
-    uint32 x = (uint32)x1 - (uint32)x0, z = (uint32)z1 - (uint32)z0;
+    uint32 x = x1 - (uint32)x0, z = z1 - (uint32)z0;
     if ((sint32)x < 0)
-        x = 0u - x;
+        x = (uint32)(-(sint64)(x));
     if ((sint32)z < 0)
-        z = 0u - z;
+        z = (uint32)(-(sint64)(z));
     return math_sqrt_newton(x * x + z * z);
 }
 
@@ -162,10 +160,11 @@ GDB_CALL sint32 math_sqrt_newton(sint32 val)
     FUNCTION_MARKER(0x800164cc, "GAME.EXE");
     uint32 mask = 0x80000000;
     int bit = 31, i;
-    sint32 guess, q;
+    sint32 guess;
+    uint32 q;
     if (!val)
         return 0;
-    while (!(mask & (uint32)val))
+    while (!(mask & val))
     {
         mask = (sint32)mask >> 1;
         bit--;
@@ -174,10 +173,9 @@ GDB_CALL sint32 math_sqrt_newton(sint32 val)
     guess = bit | (1 << bit);
     for (i = 0; i < 4; i++)
     {
-        if (!guess || (guess == -1 && (uint32)val == 0x80000000u))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(guess && (guess != -1 || (uint32)val != 0x80000000u));
         q = val / guess;
-        guess = (sint32)((uint32)guess + (uint32)q) >> 1;
+        guess = (sint32)(guess + q) >> 1;
     }
     return guess;
 }
@@ -185,8 +183,7 @@ GDB_CALL sint32 math_sqrt_newton(sint32 val)
 uint32 math_add_checked(uint32 val, sint32 delta)
 {
     sint64 n = (sint64)(sint32)val + delta;
-    if (n < -2147483647LL - 1 || n > 2147483647LL)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(n >= -2147483647LL - 1 && n <= 2147483647LL);
     return n;
 }
 

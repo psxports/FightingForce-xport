@@ -34,11 +34,7 @@ GDB_CALL uint32 scene_load_resources0(void)
     arena = resource_arenas.persistent.context;
     byte_len = resource_io.file_size;
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;
@@ -114,11 +110,7 @@ GDB_CALL uint32 scene_load_resources1(void)
     arena = resource_arenas.persistent.context;                           /* 80039A30 */
     byte_len = resource_io.file_size;                                     /* 80039A38 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 80039A48 */
@@ -171,11 +163,7 @@ GDB_CALL uint32 scene_load_resources2(void)
     arena = resource_arenas.persistent.context;                           /* 80039CA8 */
     byte_len = resource_io.file_size;                                     /* 80039CB0 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 80039CC0 */
@@ -213,11 +201,7 @@ GDB_CALL uint32 scene_load_resources3(void)
     arena = resource_arenas.persistent.context;                           /* 80039E38 */
     byte_len = resource_io.file_size;                                     /* 80039E40 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 80039E50 */
@@ -254,11 +238,7 @@ GDB_CALL uint32 scene_load_resources4(void)
     arena = resource_arenas.persistent.context;                           /* 80039FFC */
     byte_len = resource_io.file_size;                                     /* 8003A004 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 8003A014 */
@@ -295,11 +275,7 @@ GDB_CALL uint32 scene_load_resources5(void)
     arena = resource_arenas.persistent.context;                           /* 8003A14C */
     byte_len = resource_io.file_size;                                     /* 8003A154 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 8003A164 */
@@ -338,11 +314,7 @@ GDB_CALL uint32 scene_load_resources6(void)
     arena = resource_arenas.persistent.context;                           /* 8003A2E0 */
     byte_len = resource_io.file_size;                                     /* 8003A2E8 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 8003A2F8 */
@@ -389,11 +361,7 @@ GDB_CALL uint32 scene_load_resources7(void)
     arena = resource_arenas.persistent.context;                           /* 8003A4F4 */
     byte_len = resource_io.file_size;                                     /* 8003A4FC */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len;                 /* 8003A50C */
@@ -435,11 +403,7 @@ GDB_CALL uint32 scene_load_resources8(void)
     arena = resource_arenas.persistent.context;                           /* 8003A680 */
     byte_len = resource_io.file_size;                                     /* 8003A688 */
     /* TODO: Investigate allocation beyond the actual native resource owner */
-    if (!resource_arenas.persistent.data || (byte_len) > resource_arenas.persistent.available)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Resource cursor persistent span %u available %u context %08X stage %u tick %u\n", (uint32)(byte_len), resource_arenas.persistent.available, resource_arenas.persistent.context, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(resource_arenas.persistent.data && (byte_len) <= resource_arenas.persistent.available);
     resource_arenas.persistent.data += byte_len;
     resource_arenas.persistent.available -= byte_len;
     resource_arenas.persistent.context = arena + byte_len; /* 8003A698 */
@@ -452,22 +416,18 @@ GDB_CALL sint32 scene_apply_camera_frame(sint32 frame)
 {
     FUNCTION_MARKER(0x8004799c, "GAME.EXE");
     uint32 yaw;
-    sint32 limit = (sint32)scene_playback.camera_frames;
+    sint32 limit = scene_playback.camera_frames;
     if (frame >= limit)
-        frame = (uint32)limit - 1;
+        frame = limit - 1u;
     const SCENE_STREAM *clip = scene_playback.stream;
     /* TODO: Investigate original CCT reads outside the resource entry */
-    if (!clip->data || ((uintptr_t)clip->data & 1) || clip->byte_len < 2u + 10u || frame < 0 || (uint32)frame > (clip->byte_len - 2u - 10u) / sizeof(SCENE_FRAME))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid CCT camera frame %d bytes %u stage %u tick %u\n", frame, clip->byte_len, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(clip->data && !((uintptr_t)clip->data & 1) && clip->byte_len >= 2u + 10u && frame >= 0 && (uint32)frame <= (clip->byte_len - 2u - 10u) / sizeof(SCENE_FRAME));
     const SCENE_FRAME *src = (const SCENE_FRAME *)(clip->data + 2u + sizeof(SCENE_FRAME) * (uint32)frame);
     camera.pos.x.bits = (uint32)src->x << 16;
-    camera.pos.y.bits = (0u - src->y) << 16;
-    camera.pos.z.bits = (0u - src->z) << 16;
+    camera.pos.y.bits = ((uint32)(-(sint64)(src->y))) << 16;
+    camera.pos.z.bits = ((uint32)(-(sint64)(src->z))) << 16;
     camera.angles.yaw_bits = src->yaw;
-    yaw = 0u - src->pitch;
+    yaw = (uint32)(-(sint64)(src->pitch));
     camera.angles.pitch_bits = yaw;
     return yaw;
 }
@@ -478,29 +438,17 @@ GDB_CALL uint32 scene_apply_object_frame(sint32 frame, uint32 object_idx, uint32
     FUNCTION_MARKER(0x80047a40, "GAME.EXE");
     uint32 result;
     /* TODO: Investigate original source-table indices outside its eight slots */
-    if (stream >= SCENE_STREAM_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid CCT stream %u frame %d stage %u tick %u\n", stream, frame, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(stream < SCENE_STREAM_COUNT);
     const SCENE_STREAM *clip = scene_playback.stream + stream;
     /* TODO: Investigate original CCT reads outside the resource entry */
-    if (!clip->data || ((uintptr_t)clip->data & 1) || clip->byte_len < 2u + 12u || frame < 0 || (uint32)frame > (clip->byte_len - 2u - 12u) / sizeof(SCENE_FRAME))
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid CCT frame %d stream %u bytes %u stage %u tick %u\n", frame, stream, clip->byte_len, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(clip->data && !((uintptr_t)clip->data & 1) && clip->byte_len >= 2u + 12u && frame >= 0 && (uint32)frame <= (clip->byte_len - 2u - 12u) / sizeof(SCENE_FRAME));
     const SCENE_FRAME *src = (const SCENE_FRAME *)(clip->data + 2u + sizeof(SCENE_FRAME) * (uint32)frame);
     /* TODO: Investigate CCT destinations outside the native world pool */
-    if (object_idx >= WORLD_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid CCT world slot %u frame %d stream %u stage %u tick %u\n", object_idx, frame, stream, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(object_idx < WORLD_OBJECT_COUNT);
     MODEL_OBJECT *item = world_objects.object + object_idx;
     item->pos.x.bits = (uint32)src->x << 16;
-    item->pos.y.bits = (0u - src->y) << 16;
-    item->pos.z.bits = (0u - src->z) << 16;
+    item->pos.y.bits = ((uint32)(-(sint64)(src->y))) << 16;
+    item->pos.z.bits = ((uint32)(-(sint64)(src->z))) << 16;
     item->angles.yaw_bits = src->yaw;
     item->angles.pitch_bits = src->pitch;
     result = src->roll;
@@ -566,7 +514,7 @@ GDB_CALL uint32 scene_update_hovercraft_fleet(sint32 frame)
 GDB_CALL uint32 scene_update_wing(sint32 frame)
 {
     FUNCTION_MARKER(0x8003aa00u, "GAME.EXE");
-    camera.angles.pitch_bits = (uint16)((uint32)(uint16)camera.angles.pitch - 2048u);
+    camera.angles.pitch_bits = (uint16)(((uint16)camera.angles.pitch) - 2048u);
     world_objects.count = 17;
     world_objects.object[16].kind = 856;
     return scene_apply_object_frame(frame, 16, 1);
@@ -591,7 +539,7 @@ GDB_CALL uint32 scene_update_island_fleet(sint32 frame)
 GDB_CALL sint32 scene_update_traffic_explosions(uint32 frame)
 {
     FUNCTION_MARKER(0x8003a700u, "GAME.EXE");
-    camera.pos.y.bits = (uint32)((sint32)camera.pos.y.bits >> 1);
+    camera.pos.y.bits = (sint32)camera.pos.y.bits >> 1;
     if ((sint32)game_session.tick >= (sint32)scene_playback.camera_frames)
         return 0;
     world_objects.count = 33;
@@ -854,7 +802,7 @@ GDB_CALL uint32 scene_update_tower_destruction(uint32 frame)
 GDB_CALL uint32 scene_update_intro_helicopter(sint32 frame)
 {
     FUNCTION_MARKER(0x8003a6acu, "GAME.EXE");
-    camera.angles.pitch_bits = (uint16)((uint32)(uint16)camera.angles.pitch - 1024u);
+    camera.angles.pitch_bits = (uint16)(((uint16)camera.angles.pitch) - 1024u);
     world_objects.count = 65;
     world_objects.object[64].kind = 118;
     return scene_apply_object_frame(frame, 64, 1);
@@ -869,22 +817,14 @@ static sint32 draw_characters(void)
     transform_identity();
     transform_pitch(camera.angles.pitch);
     transform_yaw(camera.angles.yaw);
-    result = (sint32)game_session.player_count;
+    result = game_session.player_count;
     for (i = 0; (sint32)i < (sint32)game_session.player_count; i++)
     {
         /* TODO: Investigate a scene character outside the native actor pool */
-        if (i >= ACTOR_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene character %u players %u stage %u tick %u\n", i, game_session.player_count, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        type = (uint32)actor_types[i];
+        XASSERT(i < ACTOR_COUNT);
+        type = actor_types[i];
         /* TODO: Investigate a scene character without a valid animation type */
-        if (type >= ANIMATION_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene animation type %u actor %u stage %u tick %u\n", type, i, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(type < ANIMATION_TYPE_COUNT);
         table = animation_type_banks[type];
         actor_orientation[i].yaw = 512;
         if (actor_animations[i].frame == 0xffffffffu)
@@ -892,29 +832,21 @@ static sint32 draw_characters(void)
         if (actor_animations[i].frame != 0xffffffffu)
             animation_update_motion(i);
         transform_push();
-        type = (uint32)actor_types[i];
+        type = actor_types[i];
         /* TODO: Investigate a changed scene character type before height access */
-        if (type >= MODEL_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene height type %u actor %u stage %u tick %u\n", type, i, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(type < MODEL_TYPE_COUNT);
         transform_translate(actor_positions[i].x.bits - camera.pos.x.bits, actor_positions[i].y.bits + model_height[type] - camera.pos.y.bits, actor_positions[i].z.bits - camera.pos.z.bits);
-        transform_yaw((sint32)(sint16)(0u - 32u * (uint32)(sint32)actor_orientation[i].yaw) + 32768);
+        transform_yaw(((sint16)((uint32)(-(sint64)(32u * (actor_orientation[i].yaw))))) + 32768);
         transform_translate(0, actor_animations[i].motion.bits[0], actor_animations[i].motion.forward_offset_bits);
-        type = (uint32)actor_types[i];
+        type = actor_types[i];
         /* TODO: Investigate a changed scene character type before model access */
-        if (type >= MODEL_TYPE_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene model type %u actor %u stage %u tick %u\n", type, i, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(type < MODEL_TYPE_COUNT);
         model_draw_pose(model_refs[type], &actor_poses[i]);
         transform_pop();
         transform_push();
-        transform_translate(actor_positions[i].x.bits - camera.pos.x.bits, 0u - camera.pos.y.bits, actor_positions[i].z.bits - camera.pos.z.bits);
+        transform_translate(actor_positions[i].x.bits - camera.pos.x.bits, (uint32)(-(sint64)(camera.pos.y.bits)), actor_positions[i].z.bits - camera.pos.z.bits);
         transform_pitch(32768);
-        transform_yaw((sint16)(32u * (uint32)(sint32)actor_orientation[i].yaw));
+        transform_yaw((sint16)(32u * (actor_orientation[i].yaw)));
         model_draw_menu(model_refs[860], 0, 0);
         transform_pop();
         result = (sint32)(i + 1) < (sint32)game_session.player_count;
@@ -933,19 +865,15 @@ GDB_CALL sint32 sequence_run(sint32 sequence, void (*prepare_frame)(void))
     sint32 track = 8;
     FUNCTION_MARKER(0x80015720, "GAME.EXE");
     /* TODO: Investigate an original index reading beyond the eight scene steps */
-    if (sequence < 0 || sequence >= SCENE_SEQUENCE_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene sequence %d stage %u tick %u\n", sequence, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(sequence >= 0 && sequence < SCENE_SEQUENCE_COUNT);
     steps = loading_steps[sequence];
     old_stage = game_session.stage;
     loading_begin(steps);
-    game_session.stage = (uint32)sequence + 27;
+    game_session.stage = sequence + 27u;
     resource_arenas.persistent = resource_arenas.text_end;
     level_reset();
     character_resources_begin();
-    resource_load((uint32)sequence + 32, 0x116000, NULL, TEXTURE_ARCHIVE_CAPACITY, &tex_file, NULL);
+    resource_load(sequence + 32u, 0x116000, NULL, TEXTURE_ARCHIVE_CAPACITY, &tex_file, NULL);
     types = world_object_type_grps[27 + sequence];
     tex = stage_resource_loaders[STAGE_RESOURCE_TEX][27 + sequence];
     world_object_active_types = types;
@@ -1172,7 +1100,7 @@ GDB_CALL sint32 scene_run_ending_disp(void)
         poly->p[3].y = 256;
         render_ot_insert(render_buffers.ot_addr, packet);
         transform_identity();
-        transform_translate(0, 0, ((uint32)((sint32)phase >> 9) + 136u) << 16);
+        transform_translate(0, 0, (((sint32)phase >> 9) + 136u) << 16);
         transform_pitch(32768);
         transform_roll(phase);
         model_draw_static(model_refs[450], 0, 0);

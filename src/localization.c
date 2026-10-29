@@ -15,17 +15,12 @@ static uint32 next_line(void)
     uint32 context = resource_arenas.text_end.context + 1;
     for (;;)
     {
-        if (p >= localization.file.byte_len)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(p < localization.file.byte_len);
         if (!localization.file.data[p])
             return context;
         localization.cursor = next;
         /* TODO: Investigate allocation beyond the actual native resource owner */
-        if (!resource_arenas.text_end.data || (1) > resource_arenas.text_end.available)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Resource cursor text_end span %u available %u context %08X stage %u tick %u\n", (uint32)(1), resource_arenas.text_end.available, resource_arenas.text_end.context, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(resource_arenas.text_end.data && (1) <= resource_arenas.text_end.available);
         resource_arenas.text_end.data += 1;
         resource_arenas.text_end.available -= 1;
         resource_arenas.text_end.context = context;
@@ -37,16 +32,11 @@ static uint32 next_line(void)
             context = resource_arenas.text_end.context + 1;
             localization.cursor = next;
             /* TODO: Investigate allocation beyond the actual native resource owner */
-            if (!resource_arenas.text_end.data || (1) > resource_arenas.text_end.available)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Resource cursor text_end span %u available %u context %08X stage %u tick %u\n", (uint32)(1), resource_arenas.text_end.available, resource_arenas.text_end.context, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(resource_arenas.text_end.data && (1) <= resource_arenas.text_end.available);
             resource_arenas.text_end.data += 1;
             resource_arenas.text_end.available -= 1;
             resource_arenas.text_end.context = context;
-            if (p >= localization.file.byte_len)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(p < localization.file.byte_len);
             localization.file.data[p] = 0;
             return context;
         }
@@ -243,8 +233,7 @@ GDB_CALL uint32 localization_load(void)
         if (padding)
         {
             /* TODO: Investigate text alignment outside the native allocation */
-            if (!resource_arenas.text_end.data || padding > resource_arenas.text_end.available)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(resource_arenas.text_end.data && padding <= resource_arenas.text_end.available);
             resource_arenas.text_end.data += padding;
             resource_arenas.text_end.available -= padding;
         }

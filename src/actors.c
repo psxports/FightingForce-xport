@@ -77,11 +77,7 @@ uint32 actors_reset(void)
         type = actor_types[i];
         if (type == -1)
             continue;
-        if (type < 0 || type > 4)
-        {
-            DIAGNOSTIC(fprintf(stderr, "WIP: invalid actor type during reset\n"));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(type >= 0 && type <= 4);
         npc_behavior_actors[i].profile = (NPC_BEHAVIOR_REFERENCE){npc_behavior_rows, NPC_BEHAVIOR_ROW_COUNT, first};
         npc_behavior_actors[i].behavior = 0;
         npc_behavior_rows[first].damage_out = damage_out[type];
@@ -129,7 +125,9 @@ GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage
     int has_attacker = 0;
     NPC_BEHAVIOR_REFERENCE base;
     uint16 hp;
-    sint32 coefficient, difficulty, partner;
+    sint32 coefficient;
+    uint32 difficulty;
+    sint32 partner;
     if ((uint32)victim >= ACTOR_COUNT)
         return 0;
     ACTOR_HEALTH *health = actor_health + victim;
@@ -137,18 +135,16 @@ GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage
     if (damage > 0)
     {
         has_attacker = 1;
-        if ((uint32)attacker >= NPC_BEHAVIOR_ACTOR_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT((uint32)attacker < NPC_BEHAVIOR_ACTOR_COUNT);
         if (attacker < 2 && victim >= 2)
         {
             entry = npc_behavior_actors[attacker].behavior;
             base = npc_behavior_actors[attacker].profile;
             difficulty = game_settings.difficulty;
             entry = (base.first + entry) & NPC_BEHAVIOR_ROW_MASK;
-            if (!base.rows || entry >= base.row_count)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(base.rows && entry < base.row_count);
             coefficient = base.rows[entry].damage_out;
-            coefficient = (sint32)((uint32)coefficient * (256 + ((1 - (uint32)difficulty) << 7))) >> 8;
+            coefficient = (sint32)(coefficient * (256 + ((1 - difficulty) << 7))) >> 8;
         }
         else if (attacker >= 2 && victim < 2)
         {
@@ -156,31 +152,28 @@ GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage
             entry = npc_behavior_actors[attacker].behavior;
             base = npc_behavior_actors[attacker].profile;
             entry = (base.first + entry) & NPC_BEHAVIOR_ROW_MASK;
-            if (!base.rows || entry >= base.row_count)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(base.rows && entry < base.row_count);
             coefficient = base.rows[entry].damage_out;
-            coefficient = (sint32)((uint32)coefficient * (256 - ((1 - (uint32)difficulty) << 7))) >> 8;
+            coefficient = (sint32)(coefficient * (256 - ((1 - difficulty) << 7))) >> 8;
         }
         else
         {
             entry = npc_behavior_actors[attacker].behavior;
             base = npc_behavior_actors[attacker].profile;
             entry = (base.first + entry) & NPC_BEHAVIOR_ROW_MASK;
-            if (!base.rows || entry >= base.row_count)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(base.rows && entry < base.row_count);
             coefficient = base.rows[entry].damage_out;
         }
         if (coefficient <= 0)
             coefficient = 1;
-        amount = (sint32)((uint32)damage * (uint32)coefficient) >> 8;
+        amount = (sint32)(damage * (uint32)coefficient) >> 8;
     }
     else
-        amount = 0 - (uint32)damage;
+        amount = (uint32)(-(sint64)(damage));
     entry = npc_behavior_actors[victim].behavior;
     base = npc_behavior_actors[victim].profile;
     entry = (base.first + entry) & NPC_BEHAVIOR_ROW_MASK;
-    if (!base.rows || entry >= base.row_count)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(base.rows && entry < base.row_count);
     amount = (sint32)(amount * base.rows[entry].damage_in) >> 8;
     if ((sint32)amount <= 0)
         amount = 1;
@@ -202,7 +195,7 @@ GDB_CALL uint32 actor_apply_damage(sint32 attacker, sint32 victim, sint32 damage
         return 0xfffffff0;
     actor_contacts[(uint32)partner].captor = ACTOR_SLOT_NONE;
     contact->captive = ACTOR_SLOT_NONE;
-    return 244 * (uint32)partner;
+    return 244u * partner;
 }
 
 /* Record the last target and preserve attacker death bookkeeping */
@@ -223,8 +216,8 @@ GDB_CALL sint32 actors_capture_pair_offset(sint32 idx, sint32 partner)
 {
     FUNCTION_MARKER(0x800235c4u, "GAME.EXE");
     ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
-    uint32 dx = (uint32)((sint32)actor_positions[partner].x.whole - actor_positions[idx].x.whole), dz = (sint32)actor_positions[partner].z.whole - actor_positions[idx].z.whole;
-    uint32 angle = 2u * (uint32)(sint32)actor_orientation[idx].yaw, s = (uint32)(sint32)sin_table[angle >> 1], c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (angle >> 1)];
+    uint32 dx = actor_positions[partner].x.whole - actor_positions[idx].x.whole, dz = actor_positions[partner].z.whole - actor_positions[idx].z.whole;
+    uint32 angle = 2u * (actor_orientation[idx].yaw), s = sin_table[angle >> 1], c = sin_table[MATH_QUARTER_TURN + (angle >> 1)];
     sint32 x = (sint32)(dx * c + dz * s) >> 15, z = (sint32)(dz * c - dx * s) >> 15;
     pair->x = (uint16)x;
     pair->z = (uint16)z;
@@ -236,11 +229,11 @@ GDB_CALL uint32 actors_apply_pair_offset(sint32 idx, sint32 partner)
     FUNCTION_MARKER(0x80023664u, "GAME.EXE");
     const ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
     uint32 x, z, angle, s, c, dx, dz, v;
-    x = (uint32)(sint32)pair->x;
-    z = (uint32)(sint32)pair->z;
-    angle = 2 * ((0 - (uint32)(sint32)actor_orientation[idx].yaw) & 2047);
-    s = (uint32)(sint32)sin_table[angle >> 1];
-    c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (angle >> 1)];
+    x = pair->x;
+    z = pair->z;
+    angle = 2 * (((uint32)(-(sint64)(actor_orientation[idx].yaw))) & 2047);
+    s = sin_table[angle >> 1];
+    c = sin_table[MATH_QUARTER_TURN + (angle >> 1)];
     dx = (x * c + z * s) << 1;
     dz = (z * c - x * s) << 1;
     actor_positions[partner].x.bits = dx + actor_positions[idx].x.bits;
@@ -255,7 +248,12 @@ GDB_CALL sint32 actors_update_pair_motion(sint32 idx)
     FUNCTION_MARKER(0x80023c80, "GAME.EXE");
     const ACTOR_PAIR_MOTION *pair = actor_pair_motion + idx;
     uint32 angle, center;
-    sint32 frame = (sint32)actor_animations[idx].frame, len, phase, distance, amplitude, trig;
+    sint32 frame = actor_animations[idx].frame;
+    sint32 len;
+    sint32 phase;
+    uint32 distance;
+    uint32 amplitude;
+    uint32 trig;
     if (frame < 0)
         return 0;
     len = pair->duration;
@@ -263,22 +261,21 @@ GDB_CALL sint32 actors_update_pair_motion(sint32 idx)
         return 0;
     phase = 1040 * frame;
     len = pair->duration;
-    if (!len || (len == -1 && (uint32)phase == 0x80000000))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(len && (len != -1 || (uint32)phase != 0x80000000));
     phase /= len;
     if (phase > 1024)
         phase = 1024;
     amplitude = pair->span;
     trig = sin_table[MATH_QUARTER_TURN + (uint32)phase];
-    distance = ((sint32)((uint32)amplitude * (uint32)trig)) >> 15;
+    distance = ((sint32)(amplitude * trig)) >> 15;
     center = (uint32)(sint32)pair->x << 16;
-    angle = 2u * (uint32)(sint32)actor_orientation[idx].yaw;
+    angle = 2u * (actor_orientation[idx].yaw);
     trig = sin_table[angle >> 1];
-    actor_positions[idx].x.bits = center - ((uint32)trig * (uint32)distance);
+    actor_positions[idx].x.bits = center - (trig * distance);
     center = (uint32)(sint32)pair->z << 16;
-    angle = 2u * (uint32)(sint32)actor_orientation[idx].yaw;
+    angle = 2u * (actor_orientation[idx].yaw);
     trig = sin_table[MATH_QUARTER_TURN + (angle >> 1)];
-    actor_positions[idx].z.bits = center + ((uint32)trig * (uint32)distance);
+    actor_positions[idx].z.bits = center + (trig * distance);
     return 1;
 }
 
@@ -295,30 +292,18 @@ GDB_CALL sint32 actors_update_grapple(sint32 idx, sint32 victim)
     state = actor_animations[victim].id;
     if (state == 172 || state == 77)
         return 77;
-    if (actor_types[idx] < 0 || actor_types[idx] >= ACTOR_TYPE_COUNT)
-    {
-        /* TODO: Investigate grapple types outside the original distance table */
-        DIAGNOSTIC(fprintf(stderr, "Invalid grapple type %d actor %d victim %d stage %u tick %u\n", actor_types[idx], idx, victim, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    distance = (uint32)(sint32)actor_grapple_distance[actor_types[idx]];
+    /* TODO: Investigate grapple types outside the original distance table */
+    XASSERT(actor_types[idx] >= 0 && actor_types[idx] < ACTOR_TYPE_COUNT);
+    distance = actor_grapple_distance[actor_types[idx]];
     actor_orientation[victim].yaw = (uint16)((uint16)actor_orientation[idx].yaw ^ 1024u);
     yaw = actor_orientation[idx].yaw;
-    if (yaw < 0 || yaw >= MATH_SIN_COUNT)
-    {
-        /* TODO: Investigate grapple headings outside the original sine table */
-        DIAGNOSTIC(fprintf(stderr, "Invalid grapple sine heading %d actor %d victim %d stage %u tick %u\n", yaw, idx, victim, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    s = (uint32)(sint32)sin_table[yaw];
+    /* TODO: Investigate grapple headings outside the original sine table */
+    XASSERT(yaw >= 0 && yaw < MATH_SIN_COUNT);
+    s = sin_table[yaw];
     yaw = actor_orientation[idx].yaw;
-    if (yaw < -MATH_QUARTER_TURN || yaw >= MATH_ANGLE_COUNT)
-    {
-        /* TODO: Investigate grapple headings outside the original cosine view */
-        DIAGNOSTIC(fprintf(stderr, "Invalid grapple cosine heading %d actor %d victim %d stage %u tick %u\n", yaw, idx, victim, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw];
+    /* TODO: Investigate grapple headings outside the original cosine view */
+    XASSERT(yaw >= -MATH_QUARTER_TURN && yaw < MATH_ANGLE_COUNT);
+    c = sin_table[MATH_QUARTER_TURN + yaw];
     original_x = x = actor_positions[idx].x.bits + distance * s;
     original_z = z = actor_positions[idx].z.bits - distance * c;
     actor_correct_obstacles(victim, &x, &z);
@@ -383,8 +368,7 @@ GDB_CALL uint32 actors_emit_arc(sint32 idx)
     actor_attachment_pos(idx, rule->attachment0, start.bits);
     actor_attachment_pos(idx, rule->attachment1, end.bits);
     effect_spawn_line(rule->type, start.x.bits, start.y.bits, start.z.bits, end.x.bits, end.y.bits, end.z.bits, 0x02000200u, 0x00c0c0c0u);
-    if ((uint32)idx >= ACTOR_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)idx < ACTOR_COUNT);
     light = actor_lighting + idx;
     v = light->bits;
     mask = rule->flash_mask;
@@ -409,14 +393,12 @@ GDB_CALL intptr actors_emit_link(sint32 idx, sint32 other_idx)
     actor_attachment_pos(idx, rule->attachment0, start.bits);
     actor_attachment_pos(other_idx, rule->attachment1, end.bits);
     effect_spawn_line(rule->type, start.x.bits, start.y.bits, start.z.bits, end.x.bits, end.y.bits, end.z.bits, 0x02000200u, 0x028090f0u);
-    if ((uint32)idx >= ACTOR_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)idx < ACTOR_COUNT);
     light = actor_lighting + idx;
     flags = light->bits;
     mask = rule->flash_mask;
     light->bits = flags | mask;
-    if ((uint32)other_idx >= ACTOR_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT((uint32)other_idx < ACTOR_COUNT);
     other_light = actor_lighting + other_idx;
     flags = other_light->bits;
     mask = rule->flash_mask;
@@ -430,11 +412,7 @@ GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
 {
     FUNCTION_MARKER(0x80049864, "GAME.EXE");
     /* TODO: Investigate a facing search outside the native actor pool */
-    if (idx < 0 || idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid facing actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0 && idx < ACTOR_COUNT);
     const FIXED_VEC3 *pos = actor_positions + idx;
     uint32 i, type, angle;
     sint32 reach = 0x2400000, cone = 16384, front = 0x7fffffff, rear = 0x7fffffff, slot, dx, dz, distance, mode;
@@ -447,11 +425,7 @@ GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
     if (slot != -1)
     {
         /* TODO: Investigate a facing-search item outside the native pool */
-        if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid facing item actor %d slot %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
         const MODEL_OBJECT *item = dynamic_objects + slot;
         type = item->kind;
         if (type - 505u < 2u)
@@ -467,7 +441,7 @@ GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
         const FIXED_VEC3 *other_pos = actor_positions + i;
         if (i == (uint32)idx)
             continue;
-        mode = (sint32)game_session.mode;
+        mode = game_session.mode;
         if (mode < 2 && i < 2)
             continue;
         if (mode == 2 && i >= 2)
@@ -477,20 +451,20 @@ GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
             continue;
         dx = pos->x.bits - other_pos->x.bits;
         if (dx < 0)
-            dx = 0u - (uint32)dx;
+            dx = (uint32)(-(sint64)(dx));
         dz = pos->z.bits - other_pos->z.bits;
         if (dz < 0)
-            dz = 0u - (uint32)dz;
-        distance = dz < dx ? (sint32)((uint32)dx + (uint32)(dz >> 1)) : (sint32)((uint32)dz + (uint32)(dx >> 1));
+            dz = (uint32)(-(sint64)(dz));
+        distance = dz < dx ? (sint32)(dx + (uint32)(dz >> 1)) : (sint32)(dz + (uint32)(dx >> 1));
         if (distance >= reach)
             continue;
-        angle = (uint32)math_dir16(pos->x.whole, pos->z.whole, other_pos->x.whole, other_pos->z.whole) - 32u * (uint32)(uint16)actor_orientation[idx].yaw;
+        angle = math_dir16(pos->x.whole, pos->z.whole, other_pos->x.whole, other_pos->z.whole) - 32u * ((uint16)actor_orientation[idx].yaw);
         if (distance < front && (sint16)angle < cone && -cone < (sint16)angle)
         {
             front = distance;
             actor_targeting.front.available = 1;
             actor_targeting.actor_idx = i;
-            actor_targeting.front.angle = (sint16)((uint16)angle);
+            actor_targeting.front.angle = (uint16)angle;
             actor_targeting.near_distance = distance >> 16;
             actor_targeting.rear.available = 0;
         }
@@ -499,7 +473,7 @@ GDB_CALL uint32 actors_find_facing_targets(sint32 idx)
             rear = distance;
             actor_targeting.rear.available = 1;
             actor_targeting.actor_idx = i;
-            actor_targeting.rear.angle = (sint16)((uint16)(angle - 32768u));
+            actor_targeting.rear.angle = (uint16)(angle - 32768u);
         }
     }
     return 0;
@@ -509,18 +483,14 @@ GDB_CALL sint32 actors_detach_companion(sint32 idx)
 {
     FUNCTION_MARKER(0x8001ce14, "GAME.EXE");
     sint32 type = actor_types[idx], partner;
-    if ((uint32)(uint16)type - 44u >= 2u && type != 46)
+    if (((uint16)type) - 44u >= 2u && type != 46)
         return 0;
     partner = actor_companions[idx];
     if (partner == -1)
         return 0;
     actor_companions[idx] = ACTOR_SLOT_NONE;
     /* TODO: Investigate invalid original companion writes */
-    if (partner < 0 || partner >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid detached companion %d for actor slot %d\n", partner, idx));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(partner >= 0 && partner < ACTOR_COUNT);
     actor_companions[partner] = ACTOR_SLOT_NONE;
     animation_start(idx, animation_type_banks[(uint32)type], 281);
     return 1;
@@ -537,7 +507,7 @@ GDB_CALL struct EFFECT *actors_emit_running_attack(sint32 idx)
     {
         if (kind == 2)
         {
-            combat->run_voice = (uint16)((uint32)sound_voice_play(91, 80, 6144) + 1);
+            combat->run_voice = (uint16)(sound_voice_play(91, 80, 6144) + 1u);
             sound_voice_play(92, 255, 6144);
         }
         else
@@ -618,7 +588,7 @@ GDB_CALL sint32 actors_rec_death(sint32 idx)
     FUNCTION_MARKER(0x8001b8dc, "GAME.EXE");
     uint32 wave, val, points, age;
     PLAYER_SCORE *score;
-    sint32 result = ((sint8)actor_lifecycle[idx].death_ticks), credit, partner, type;
+    sint32 result = (sint8)actor_lifecycle[idx].death_ticks, credit, partner, type;
     actor_health[idx].hp = 0;
     if (result)
         return result;
@@ -647,7 +617,7 @@ GDB_CALL sint32 actors_rec_death(sint32 idx)
     if (partner == -1)
         return -16;
     actor_contacts[(uint32)partner].captive = ACTOR_SLOT_NONE;
-    return 244u * (uint32)partner;
+    return 244u * partner;
 }
 
 /* 49B78 inline distance metric: preserve wrapped ABS including INT_MIN */
@@ -655,9 +625,9 @@ static sint32 target_distance(uint32 x, uint32 z, uint32 ox, uint32 oz)
 {
     uint32 dx = x - ox, dz = z - oz;
     if ((sint32)dx < 0)
-        dx = 0u - dx;
+        dx = (uint32)(-(sint64)(dx));
     if ((sint32)dz < 0)
-        dz = 0u - dz;
+        dz = (uint32)(-(sint64)(dz));
     return (sint32)dz < (sint32)dx ? dx + (uint32)((sint32)dz >> 1) : dz + (uint32)((sint32)dx >> 1);
 }
 
@@ -666,18 +636,14 @@ GDB_CALL sint32 actors_find_nearest_targets(sint32 idx)
     FUNCTION_MARKER(0x80049b78u, "GAME.EXE");
     const FIXED_VEC3 *pos = actor_positions + idx;
     uint32 x, z, yaw, ox, oz, s, c;
-    sint32 i, distance, count = (sint32)game_session.player_count;
+    sint32 i, distance, count = game_session.player_count;
     actor_targeting.player_distance = 0x7fffffff;
     actor_targeting.player_idx = 0xffffffff;
     i = 0;
     while (i < count)
     {
-        if (i >= ACTOR_COUNT)
-        {
-            /* TODO: Investigate a targeting player loop outside the actor pool */
-            DIAGNOSTIC(fprintf(stderr, "Invalid targeting player slot %d count %d actor %d stage %u tick %u\n", i, count, idx, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        /* TODO: Investigate a targeting player loop outside the actor pool */
+        XASSERT(i < ACTOR_COUNT);
         const FIXED_VEC3 *other_pos = actor_positions + i;
         if (actor_health[i].hp > 0)
         {
@@ -689,30 +655,22 @@ GDB_CALL sint32 actors_find_nearest_targets(sint32 idx)
             if (distance < actor_targeting.player_distance)
             {
                 actor_targeting.player_distance = distance;
-                actor_targeting.player_idx = (uint32)i;
+                actor_targeting.player_idx = i;
             }
         }
-        count = (sint32)game_session.player_count;
+        count = game_session.player_count;
         ++i;
     }
-    yaw = (uint32)(sint32)actor_orientation[idx].yaw;
+    yaw = actor_orientation[idx].yaw;
     x = pos->x.bits;
     actor_targeting.near_distance = 0x7fffffff;
-    if (yaw >= MATH_SIN_COUNT)
-    {
-        /* TODO: Investigate targeting headings outside the original sine table */
-        DIAGNOSTIC(fprintf(stderr, "Invalid targeting sine heading %d actor %d stage %u tick %u\n", (sint32)yaw, idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    s = (uint32)(sint32)sin_table[yaw];
+    /* TODO: Investigate targeting headings outside the original sine table */
+    XASSERT(yaw < MATH_SIN_COUNT);
+    s = sin_table[yaw];
     z = pos->z.bits;
-    if (yaw >= MATH_ANGLE_COUNT)
-    {
-        /* TODO: Investigate targeting headings outside the original cosine view */
-        DIAGNOSTIC(fprintf(stderr, "Invalid targeting cosine heading %d actor %d stage %u tick %u\n", (sint32)yaw, idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    c = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + yaw];
+    /* TODO: Investigate targeting headings outside the original cosine view */
+    XASSERT(yaw < MATH_ANGLE_COUNT);
+    c = sin_table[MATH_QUARTER_TURN + yaw];
     x += s << 8;
     z -= c << 8;
     for (i = 2; i < ACTOR_COUNT; i++)
@@ -768,11 +726,7 @@ GDB_CALL intptr actor_process_attack_effects(sint32 idx)
         z = actor_positions[idx].z.bits;
         shockwave = effect_spawn(604, x, 0, z);
         /* TODO: Investigate the original low-RAM write after allocation failure */
-        if (!shockwave || shockwave->payload_kind != EFFECT_PAYLOAD_SPRITE || shockwave->kind != 604)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid allocated shockwave %p for actor %d\n", (void *)shockwave, idx));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(shockwave && shockwave->payload_kind == EFFECT_PAYLOAD_SPRITE && shockwave->kind == 604);
         shockwave->spr.owner = idx;
         sound_voice_play(19, 128, 6144);
         disp_buffers.shake_ticks = 16;
@@ -799,11 +753,7 @@ GDB_CALL intptr actor_process_shock_attack(sint32 idx)
         z = actor_positions[idx].z.bits;
         shockwave = effect_spawn(604, x, 0, z);
         /* TODO: Investigate the original low-RAM write after allocation failure */
-        if (!shockwave || shockwave->payload_kind != EFFECT_PAYLOAD_SPRITE || shockwave->kind != 604)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid allocated shockwave %p for actor %d\n", (void *)shockwave, idx));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(shockwave && shockwave->payload_kind == EFFECT_PAYLOAD_SPRITE && shockwave->kind == 604);
         shockwave->spr.owner = idx;
         sound_voice_play(19, 128, 6144);
         disp_buffers.shake_ticks = 16;
@@ -960,8 +910,7 @@ GDB_CALL uint32 actor_apply_animation_damage(uint32 attacker, uint32 victim, uin
 {
     FUNCTION_MARKER(0x8001f41cu, "GAME.EXE");
     uint32 damage;
-    if (state >= ANIMATION_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(state < ANIMATION_COUNT);
     damage = animation_flags[state] >> 8;
     if (attacker < 9u && victim < 9u)
         return actor_apply_damage(attacker, victim, damage);

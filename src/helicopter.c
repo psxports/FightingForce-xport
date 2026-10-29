@@ -6,20 +6,16 @@ static sint32 move_toward(MODEL_OBJECT *item, sint32 target_x, sint32 target_z)
 {
     FUNCTION_MARKER(0x80041f5cu, "GAME.EXE");
     /* TODO: Investigate a missing native helicopter object */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing native helicopter movement object %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     sint32 yaw = (sint16)item->angles.yaw_bits >> 5, pitch = item->angles.pitch, roll = item->angles.roll, error, distance, speed;
     sint32 x, z, trig;
     uint32 delta, result, offset, pos;
     x = item->pos.x.whole;
     z = item->pos.z.whole;
-    delta = (uint32)math_dir16(x, z, target_x, target_z) - ((uint32)yaw << 5);
+    delta = math_dir16(x, z, target_x, target_z) - ((uint32)yaw << 5);
     if ((uint16)(delta + 8192) >= 16385)
     {
-        result = item->angles.yaw_bits + (uint32)((sint16)delta >> 4);
+        result = item->angles.yaw_bits + ((sint16)delta >> 4);
         item->angles.yaw_bits = (uint16)result;
         return result;
     }
@@ -30,18 +26,18 @@ static sint32 move_toward(MODEL_OBJECT *item, sint32 target_x, sint32 target_z)
         error = -4096;
     roll -= (roll + error) >> 4;
     yaw = (yaw - (roll >> 8)) & 2047;
-    distance = (uint32)dir_distance - 3072;
+    distance = dir_distance - 3072u;
     if (distance > 3072)
         distance = 3072;
-    pitch = (uint32)pitch + (uint32)((sint32)(((uint32)distance << 2) - (uint32)pitch) >> 4);
-    speed = sin_table[((uint32)(pitch >> 4) & 0xffe) >> 1] >> 7;
-    offset = (uint32)yaw * 2;
+    pitch = pitch + (uint32)((sint32)(((uint32)distance << 2) - pitch) >> 4);
+    speed = sin_table[((pitch >> 4) & 0xffeu) >> 1] >> 7;
+    offset = yaw * 2u;
     trig = sin_table[offset >> 1];
     pos = item->pos.x.bits;
-    item->pos.x.bits = pos + (uint32)(speed * trig);
+    item->pos.x.bits = pos + (speed * trig);
     trig = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
     pos = item->pos.z.bits;
-    item->pos.z.bits = pos - (uint32)(speed * trig);
+    item->pos.z.bits = pos - (speed * trig);
     result = (uint32)yaw << 5;
     item->angles.yaw_bits = (uint16)result;
     item->angles.pitch_bits = (uint16)pitch;
@@ -54,23 +50,15 @@ GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *r
     FUNCTION_MARKER(0x800420f8u, "GAME.EXE");
     sint32 player_x = actor_positions[0].x.whole, player_z = actor_positions[0].z.whole, state, delta, distance, pitch, volume, voice, x, z;
     uint32 angle, phase, bob_phase, height, dx, dz, speed, sample, result, volume_word, pan, world_x, world_z;
-    sint32 s;
+    uint32 s;
     if ((sint32)game_session.scene_phase < 3)
         return 1;
     /* TODO: Investigate a combat helicopter with a foreign native owner */
-    if (!item || item->payload_kind != MODEL_PAYLOAD_COMBAT_HELICOPTER)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid combat helicopter owner object %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item && item->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER);
     if (item->helicopter.voice_plus_one[0])
     {
         /* TODO: Investigate spatial sound from a helicopter outside both native pools */
-        if (!item)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid helicopter sound position %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(item);
         sound_spatial(&item->pos, &volume_word, &pan);
         volume = sound_volume_adjust(volume_word, 128);
         sound_voice_pan(item->helicopter.voice_plus_one[0] - 1, volume, pan);
@@ -82,11 +70,7 @@ GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *r
 
     {
         /* TODO: Investigate scene publication from an invalid native object operand */
-        if (!item)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid helicopter scene object %p stage %u tick %u\n", (void *)item, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(item);
         SCENE_OBJECT_REFERENCE ref = {0};
         uint32 slot;
         for (slot = 0; slot < WORLD_OBJECT_COUNT; slot++)
@@ -103,11 +87,7 @@ GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *r
                     break;
                 }
         /* TODO: Investigate scene publications outside both native object pools */
-        if (!ref.pool)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scene object publication %p\n", (void *)item));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ref.pool);
         level_script_scene.object = ref;
     }
     state = item->helicopter.phase;
@@ -138,7 +118,7 @@ GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *r
         item->helicopter.bob_phase = (uint16)bob_phase;
         height = (uint32)(sint32)item->helicopter.hover_height << 16;
         s = sin_table[bob_phase];
-        item->pos.y.bits = height + ((uint32)s << 4);
+        item->pos.y.bits = height + (s << 4);
         if ((uint16)(delta + 1023) < 2047)
         {
             item->helicopter.phase = 2;
@@ -164,16 +144,16 @@ GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *r
         item->helicopter.bob_phase = (uint16)bob_phase;
         height = (uint32)(sint32)item->helicopter.hover_height << 16;
         s = sin_table[bob_phase];
-        item->pos.y.bits = height + ((uint32)s << 4);
+        item->pos.y.bits = height + (s << 4);
         if (!(game_session.tick & 1))
         {
             PROJECTILE_SOURCE projectile;
             speed = (uint16)item->helicopter.shot_distance;
-            dx = ((uint32)(sint32)(sint16)speed * (uint32)(sint32)sin_table[phase]) << 1;
-            dz = ((uint32)(sint32)(sint16)speed * (uint32)(sint32)sin_table[MATH_QUARTER_TURN + phase]) << 1;
+            dx = (((sint16)speed) * (uint32)(sint32)sin_table[phase]) << 1;
+            dz = (((sint16)speed) * (uint32)(sint32)sin_table[MATH_QUARTER_TURN + phase]) << 1;
             item->helicopter.shot_distance = (uint16)(speed + 128);
             distance = dir_distance;
-            if ((sint32)((uint32)(distance >> 1) + (uint32)distance) < (sint16)(speed + 128))
+            if ((sint32)((distance >> 1) + (uint32)distance) < (sint16)(speed + 128))
             {
                 item->helicopter.shot_distance = (uint16)(distance >> 1);
                 item->helicopter.shot_passes = (uint16)((uint16)item->helicopter.shot_passes + 1);
@@ -223,16 +203,16 @@ GDB_CALL uint32 helicopter_update(MODEL_OBJECT *item, const PROJECTILE_SOURCE *r
         if (delta < -4096)
             delta = -4096;
         item->angles.yaw_bits = (uint16)(item->angles.yaw_bits + (delta >> 3));
-        distance = (uint32)dir_distance - 3072;
+        distance = dir_distance - 3072u;
         if (distance > 3072)
             distance = 3072;
         pitch = item->angles.pitch;
-        item->angles.pitch_bits = (uint16)((uint32)pitch + (uint32)((sint32)(((uint32)distance << 2) - (uint32)pitch) >> 4));
+        item->angles.pitch_bits = (uint16)(pitch + (uint32)((sint32)(((uint32)distance << 2) - pitch) >> 4));
         bob_phase = ((uint16)item->helicopter.bob_phase + 32) & 2047;
         item->helicopter.bob_phase = (uint16)bob_phase;
         height = (uint32)(sint32)item->helicopter.hover_height << 16;
         s = sin_table[bob_phase];
-        item->pos.y.bits = height + ((uint32)s << 4);
+        item->pos.y.bits = height + (s << 4);
         if ((uint16)(delta + 1023) < 2047)
         {
             item->helicopter.phase = 0;
@@ -285,46 +265,38 @@ GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
     FUNCTION_MARKER(0x8002a168u, "GAME.EXE");
     COLLISION_REGION *region = col_regions.data;
     uint32 i = 0, yaw, pitch, roll, angle, target, val, offset, result, volume, pan, height, velocity, wave, pos;
-    sint32 count = (sint32)col_regions.count, vertical, difference, speed, turn, x, z, target_x, target_z, voice;
+    sint32 count = col_regions.count;
+    sint32 vertical;
+    sint32 difference;
+    uint32 speed;
+    sint32 turn;
+    sint32 x;
+    sint32 z;
+    sint32 target_x;
+    sint32 target_z;
+    sint32 voice;
     while ((sint32)i < count)
     {
-        if (region == col_regions.data + COLLISION_REGION_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(region != col_regions.data + COLLISION_REGION_COUNT);
         /* TODO: Investigate a corrupt native world reference before region matching */
-        if (region->object.present > 1 || (region->object.present && region->object.idx >= WORLD_OBJECT_COUNT))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid vehicle region world slot %u present %u stage %u tick %u\n", region->object.idx, (uint32)region->object.present, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(region->object.present <= 1 && (!region->object.present || region->object.idx < WORLD_OBJECT_COUNT));
         if (region->object.present && model == world_objects.object + region->object.idx)
             break;
         ++i;
         ++region;
     }
     /* TODO: Investigate a scene helicopter outside its native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_HELICOPTER)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid emitter model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER);
     yaw = model->angles.yaw_bits;
     pitch = model->angles.pitch_bits;
     roll = model->angles.roll_bits;
     if (game_session.stage == 15 && game_session.scene_phase == 2 && level_script_scene.event_timer == 1)
     {
         /* TODO: Investigate an absent or invalid relative-scene object before access */
-        if (world_objects.relative_scene.present != 1 || world_objects.relative_scene.idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid relative-scene reference slot %u present %u\n", world_objects.relative_scene.idx, (uint32)world_objects.relative_scene.present));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(world_objects.relative_scene.present == 1 && world_objects.relative_scene.idx < WORLD_OBJECT_COUNT);
         regions_disable_object(world_objects.object + world_objects.relative_scene.idx);
         /* TODO: Investigate an absent or invalid relative-scene object before access */
-        if (world_objects.relative_scene.present != 1 || world_objects.relative_scene.idx >= WORLD_OBJECT_COUNT)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid relative-scene reference slot %u present %u\n", world_objects.relative_scene.idx, (uint32)world_objects.relative_scene.present));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(world_objects.relative_scene.present == 1 && world_objects.relative_scene.idx < WORLD_OBJECT_COUNT);
         world_objects.object[world_objects.relative_scene.idx].kind = 55;
     }
     if (model->scene_helicopter.voice_plus_one)
@@ -342,11 +314,7 @@ GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
     if (vertical == -1)
         vertical = 0;
     /* TODO: Investigate the original collision write without a matching region */
-    if ((sint32)i >= count || i >= COLLISION_REGION_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing scene helicopter collision region object %p count %d slot %u stage %u tick %u\n", (void *)model, count, i, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT((sint32)i < count && i < COLLISION_REGION_COUNT);
     if ((sint32)model->pos.y.bits > (sint32)0xff400000u)
     {
         region->col_kind = 3;
@@ -358,15 +326,15 @@ GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
     z = model->pos.z.whole;
     target_x = level_script_scene.target_x;
     target_z = level_script_scene.target_z;
-    angle = (uint32)math_dir16(x, z, target_x, target_z);
+    angle = math_dir16(x, z, target_x, target_z);
     target = 0xfd000000;
     if (dir_distance < 2304 && !vertical)
         target = (uint16)(yaw - 0x3801) < 0xfff ? 0 : 0xfe800000;
     height = model->pos.y.bits;
     velocity = level_script_scene.height_velocity;
-    val = velocity + (uint32)((sint32)(target - height - velocity) >> 4);
+    val = velocity + ((sint32)(target - height - velocity) >> 4);
     level_script_scene.height_velocity = val;
-    val = (uint32)((sint32)(val + 16) >> 5) + model->pos.y.bits;
+    val = ((sint32)(val + 16) >> 5) + model->pos.y.bits;
     model->pos.y.bits = val;
     if ((sint32)val <= (sint32)0xfd800000u)
     {
@@ -377,18 +345,18 @@ GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
             difference = -8192;
         roll -= (uint32)(((sint16)roll + difference) >> 4);
         yaw -= (uint32)((sint16)roll >> 4);
-        difference = (uint32)dir_distance - 2048;
+        difference = dir_distance - 2048u;
         if (difference > 2048)
             difference = 2048;
-        pitch += (uint32)((sint32)((uint32)difference - (uint32)(sint32)(sint16)pitch) >> 5);
+        pitch += (uint32)((sint32)(difference - (uint32)(sint32)(sint16)pitch) >> 5);
         speed = sin_table[((pitch >> 1) & 0xffe) >> 1] >> 8;
         offset = (yaw >> 4) & 0xffe;
-        wave = (uint32)(sint32)sin_table[offset >> 1];
+        wave = sin_table[offset >> 1];
         pos = model->pos.x.bits;
-        model->pos.x.bits = pos + (uint32)speed * wave;
-        wave = (uint32)(sint32)sin_table[MATH_QUARTER_TURN + (offset >> 1)];
+        model->pos.x.bits = pos + speed * wave;
+        wave = sin_table[MATH_QUARTER_TURN + (offset >> 1)];
         pos = model->pos.z.bits;
-        model->pos.z.bits = pos - (uint32)speed * wave;
+        model->pos.z.bits = pos - speed * wave;
     }
     else
     {
@@ -426,7 +394,7 @@ GDB_CALL uint32 helicopter_update_scene(MODEL_OBJECT *model)
         yaw += (uint32)(((sint16)turn + 16) >> 5);
     }
     level_script_scene.ox = model->pos.x.whole;
-    result = (uint32)(sint32)model->pos.z.whole;
+    result = model->pos.z.whole;
     level_script_scene.oz = result;
     model->angles.yaw_bits = (uint16)yaw;
     model->angles.pitch_bits = (uint16)pitch;
@@ -442,36 +410,24 @@ GDB_CALL void helicopter_draw_scene(const MODEL_OBJECT *model)
     if (game_session.stage == 18)
     {
         /* TODO: Investigate a compound draw without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         if (model->pos.x.val < (sint32)0xe5300000u)
             return;
     }
     transform_push();
     transform_translate(0, 0x02000000, 0);
     /* TODO: Investigate compound draw fields outside both native object pools */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw model %p in %s stage %u tick %u\n", (const void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     transform_yaw(model->angles.yaw);
     transform_roll(-model->angles.roll);
     transform_pitch(model->angles.pitch);
     /* TODO: Investigate a compound draw without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
-    amplitude = (sint32)(0u - model->pos.y.bits) >> 18;
+    XASSERT(model);
+    amplitude = (sint32)((uint32)(-(sint64)(model->pos.y.bits))) >> 18;
     if (amplitude > 64)
         amplitude = 64;
     offset = (game_session.tick << 4) & 0xff0u;
-    transform_translate(0, (uint32)(sint32)sin_table[offset >> 1] * (uint32)amplitude, 0);
+    transform_translate(0, (sin_table[offset >> 1]) * (uint32)amplitude, 0);
     model_draw_static(model_refs[341], 0, 0);
     transform_translate(0, 0x00100000, 0);
     transform_yaw((uint32)(uint16)game_session.tick << 12);
@@ -492,11 +448,7 @@ GDB_CALL void helicopter_draw(const MODEL_OBJECT *model)
 {
     FUNCTION_MARKER(0x8004277cu, "GAME.EXE");
     /* TODO: Investigate object drawing without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scene or spinning draw position %p stage %u tick %u\n", (const void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     if (model->pos.y.val <= (sint32)0xe0000000u)
         return;
     transform_push();
@@ -515,52 +467,36 @@ GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
     uint32 volume, pan, tick, yaw, pitch, roll, delta, offset, val;
     sint32 angle, target, speed;
     /* TODO: Investigate an intro helicopter with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_SCENE_HELICOPTER)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid intro helicopter owner object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER);
     if (model->scene_helicopter.voice_plus_one)
     {
         /* TODO: Investigate scripted motion without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         sound_spatial(&model->pos, &volume, &pan);
         volume = sound_volume_adjust(volume, 160);
         sound_voice_pan(model->scene_helicopter.voice_plus_one - 1, volume, pan);
         sound_voice_pitch(model->scene_helicopter.voice_plus_one - 1, 2 * model->scene_helicopter.speed + 6144);
     }
     else
-        model->scene_helicopter.voice_plus_one = (uint16)((uint32)sound_voice_play(214, 0, 6144) + 1);
+        model->scene_helicopter.voice_plus_one = (uint16)(sound_voice_play(214, 0, 6144) + 1u);
     tick = game_session.tick;
     if (tick - 420u < 210u)
     {
         /* TODO: Investigate scripted common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scripted model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        yaw = (uint32)(uint16)model->angles.yaw << 5;
+        XASSERT(model);
+        yaw = ((uint16)model->angles.yaw) << 5;
         angle = ((sint16)(16384u - yaw)) >> 5;
         target = model->scene_helicopter.yaw_step;
         target += (angle - target) >> 4;
         model->scene_helicopter.yaw_step = (uint16)target;
-        yaw = ((yaw + (uint32)target) << 16) >> 21;
+        yaw = ((yaw + target) << 16) >> 21;
         model->angles.yaw_bits = (uint16)yaw;
         if (yaw - 481u < 63u)
         {
             /* TODO: Investigate scripted motion without a native position */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             val = model->pos.x.bits;
-            model->pos.x.bits = val + (uint32)((sint32)(0xfe800000u - val) >> 5);
+            model->pos.x.bits = val + ((sint32)(0xfe800000u - val) >> 5);
             target = -((sint32)(0x13780000u - model->pos.z.bits) >> 13);
             angle = model->angles.roll;
             angle += (target - angle) >> 4;
@@ -577,11 +513,7 @@ GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
         if ((sint32)tick < 2)
         {
             /* TODO: Investigate scripted motion without a native position */
-            if (!model)
-            {
-                DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-            }
+            XASSERT(model);
             model->pos.x.bits = 0x30000000;
             model->pos.z.bits = 0x60000000;
             level_script_scene.target_x = -4096;
@@ -605,21 +537,13 @@ GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
             level_script_scene.target_z = 24576;
         }
         /* TODO: Investigate scripted common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scripted model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         yaw = (uint16)model->angles.yaw;
         pitch = (uint16)model->angles.pitch;
         roll = (uint16)model->angles.roll;
         /* TODO: Investigate scripted motion without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        delta = (uint32)math_dir16(model->pos.x.whole, model->pos.z.whole, level_script_scene.target_x, level_script_scene.target_z) - (yaw << 5);
+        XASSERT(model);
+        delta = math_dir16(model->pos.x.whole, model->pos.z.whole, level_script_scene.target_x, level_script_scene.target_z) - (yaw << 5);
         angle = (sint16)delta;
         if (angle > 8192)
             angle = 8192;
@@ -628,13 +552,13 @@ GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
         if (game_session.tick - 361u < 239u)
             angle = 0;
         roll -= (uint32)(((sint16)roll + angle) >> 4);
-        yaw = (yaw - (uint32)((sint16)roll >> 10)) & 2047;
-        target = (uint32)dir_distance - 1024u;
+        yaw = (yaw - ((sint16)roll >> 10)) & 2047;
+        target = dir_distance - 1024u;
         if (target > 1024)
             target = 1024;
         if (game_session.tick - 270u >= 360u)
             target = (uint32)target << 1;
-        pitch += (uint32)((sint32)((uint32)target - (uint32)(sint32)(sint16)pitch) >> 5);
+        pitch += (uint32)((sint32)(target - (uint32)(sint32)(sint16)pitch) >> 5);
         speed = sin_table[((pitch >> 4) & 0xffe) >> 1] >> 5;
         model->scene_helicopter.speed = (uint16)speed;
         offset = yaw * 2;
@@ -646,16 +570,12 @@ GDB_CALL uint32 helicopter_update_intro(MODEL_OBJECT *model)
     }
     tick = game_session.tick;
     /* TODO: Investigate scripted motion without a native position */
-    if (!model)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid scripted motion position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model);
     model->pos.y.bits = ((uint32)(sint32)sin_table[((tick << 4) & 0xff0) >> 1] << 4) + 0xfe900000u;
     if (tick == 1050)
     {
         model->kind = 55;
-        return (uint32)sound_voice_stop(model->scene_helicopter.voice_plus_one - 1);
+        return sound_voice_stop(model->scene_helicopter.voice_plus_one - 1);
     }
     return 55;
 }
@@ -665,11 +585,7 @@ GDB_CALL void helicopter_draw_intro(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8002cac4u, "GAME.EXE");
     transform_push();
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_yaw((uint32)(sint32)item->angles.yaw << 5);
     transform_roll(-item->angles.roll);
     transform_pitch(item->angles.pitch);
@@ -693,19 +609,11 @@ GDB_CALL uint32 helicopter_update_patrol(MODEL_OBJECT *model)
     uint32 volume, pan, offset, result;
     sint32 mode, phase, angle, speed;
     /* TODO: Investigate a patrol helicopter with a foreign native owner */
-    if (!model || model->payload_kind != MODEL_PAYLOAD_PATROL_HELICOPTER)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid patrol helicopter object %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(model && model->payload_kind == MODEL_PAYLOAD_PATROL_HELICOPTER);
     if (model->patrol.voice_plus_one)
     {
         /* TODO: Investigate an object update without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid orbit or pickup drop position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         sound_spatial(&model->pos, &volume, &pan);
         sound_voice_pan(model->patrol.voice_plus_one - 1, volume, pan);
     }
@@ -715,33 +623,21 @@ GDB_CALL uint32 helicopter_update_patrol(MODEL_OBJECT *model)
     if (mode == 1)
     {
         /* TODO: Investigate physics common fields outside both native object pools */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid physics model %p in %s stage %u tick %u\n", (void *)model, __FUNCTION__, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         angle = (model->angles.yaw + 24576) >> 5;
         /* TODO: Investigate an object update without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid orbit or pickup drop position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->pos.y.bits = 0xfa240000;
-        speed = sin_table[(uint32)angle & 2047u];
-        model->pos.x.bits = actor_positions[0].x.bits + (uint32)(25000 * sin_table[(uint32)(angle + 512) & 2047u]);
+        speed = sin_table[angle & 2047u];
+        model->pos.x.bits = actor_positions[0].x.bits + (25000u * sin_table[(angle + 512) & 2047u]);
         model->angles.roll_bits = 63488;
         model->angles.yaw_bits = (uint16)((uint16)model->angles.yaw + 64u);
-        model->pos.z.bits = actor_positions[0].z.bits + (uint32)(25000 * speed);
+        model->pos.z.bits = actor_positions[0].z.bits + (25000 * speed);
     }
     else if (mode == 2)
     {
         /* TODO: Investigate an object update without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid orbit or pickup drop position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         uint32 x = model->pos.x.bits;
         model->pos.y.bits = 0xfa240000;
         model->pos.x.bits = x + 0x00780000u;
@@ -753,11 +649,7 @@ GDB_CALL uint32 helicopter_update_patrol(MODEL_OBJECT *model)
     {
         phase = model->patrol.phase;
         /* TODO: Investigate an object update without a native position */
-        if (!model)
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid orbit or pickup drop position %p stage %u tick %u\n", (void *)model, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(model);
         model->pos.y.bits = 0xf4480000;
         model->patrol.speed = 200;
         if (phase < 2)
@@ -788,10 +680,10 @@ GDB_CALL uint32 helicopter_update_patrol(MODEL_OBJECT *model)
         speed = model->patrol.speed;
         uint32 x = model->pos.x.bits;
         uint32 z = model->pos.z.bits;
-        model->pos.x.bits = x + (uint32)(speed * sin_table[(uint32)angle & 2047u]);
-        model->pos.z.bits = z - (uint32)(speed * sin_table[(uint32)(angle + 512) & 2047u]);
+        model->pos.x.bits = x + (speed * sin_table[angle & 2047u]);
+        model->pos.z.bits = z - (speed * sin_table[(angle + 512) & 2047u]);
     }
-    result = (uint32)(uint16)model->patrol.rotor_angle + 256u;
+    result = ((uint16)model->patrol.rotor_angle) + 256u;
     model->patrol.rotor_angle = (uint16)result;
     return result;
 }
@@ -802,11 +694,7 @@ GDB_CALL void helicopter_draw_patrol(const MODEL_OBJECT *item)
     sint32 angle;
     transform_push();
     /* TODO: Investigate common draw fields outside both native object pools */
-    if (!item)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid compound model %p in %s stage %u tick %u\n", (const void *)item, __FUNCTION__, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(item);
     transform_yaw(item->angles.yaw);
     angle = item->angles.roll;
     if (angle)

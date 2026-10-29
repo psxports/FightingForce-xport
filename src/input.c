@@ -23,14 +23,12 @@ typedef char PAD_INPUT_LAYOUT_CHECK[sizeof(PAD_INPUT_STREAM) == 8 && offsetof(PA
 GDB_CALL uint32 pad_stream_play(PAD_INPUT_STREAM *data, uint32 byte_len)
 {
     FUNCTION_MARKER(0x8005f058, "GAME.EXE");
-    if (!data || ((uintptr_t)data & 3u) || byte_len < sizeof(*data))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(data && !((uintptr_t)data & 3u) && byte_len >= sizeof(*data));
     pad_stream.mode = PAD_STREAM_PLAY;
     pad_stream.data = data;
     pad_stream.capacity = (byte_len - sizeof(*data)) / sizeof(PAD_INPUT_FRAME);
     random_seed = data->seed;
-    if (pad_stream.data->count > pad_stream.capacity + 1)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(pad_stream.data->count <= pad_stream.capacity + 1);
     pad_stream.count = pad_stream.data->count;
     pad_stream.cursor = 1;
     return pad_stream.count;
@@ -46,8 +44,7 @@ GDB_CALL uint32 pad_stream_rec(PAD_INPUT_STREAM *data, uint32 byte_len)
 {
     FUNCTION_MARKER(0x8005f0d8, "GAME.EXE");
     uint32 random;
-    if (!data || ((uintptr_t)data & 3u) || byte_len < sizeof(*data))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(data && !((uintptr_t)data & 3u) && byte_len >= sizeof(*data));
     pad_stream.mode = PAD_STREAM_RECORD;
     pad_stream.data = data;
     pad_stream.capacity = (byte_len - sizeof(*data)) / sizeof(PAD_INPUT_FRAME);
@@ -103,13 +100,11 @@ GDB_CALL uint32 pad_game_poll(void)
         pad_game.sample[1] = val;
         pad_game.sample[1] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
         idx = pad_stream.count;
-        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(pad_stream.data && idx && idx <= pad_stream.capacity);
         val = pad_game.sample[0];
         pad_stream.data->frame[idx - 1].sample[0] = val;
         idx = pad_stream.count;
-        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(pad_stream.data && idx && idx <= pad_stream.capacity);
         val = pad_game.sample[1];
         pad_stream.data->frame[idx - 1].sample[1] = val;
         val = pad_stream.count + 1;
@@ -126,13 +121,11 @@ GDB_CALL uint32 pad_game_poll(void)
             pad_game.sample[1] = 0;
             goto playback_exit;
         }
-        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(pad_stream.data && idx && idx <= pad_stream.capacity);
         val = pad_stream.data->frame[idx - 1].sample[0];
         pad_game.sample[0] = val;
         idx = pad_stream.cursor;
-        if (!pad_stream.data || !idx || idx > pad_stream.capacity)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(pad_stream.data && idx && idx <= pad_stream.capacity);
         val = pad_stream.data->frame[idx - 1].sample[1];
         pad_game.sample[1] = val;
         pad_stream.cursor = pad_stream.cursor + 1;
@@ -157,10 +150,9 @@ playback_exit:
     sound_voices_stop_all();
     text_hint = TEXT_HINT_NONE;
     pad_decode.reset_blocked = 1;
-    if (!game_services.return_to_frontend)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(game_services.return_to_frontend);
     game_services.return_to_frontend();
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(0);
     return 0;
 }
 
@@ -269,7 +261,7 @@ GDB_CALL uint32 pad_menu_poll(sint32 player)
     FUNCTION_MARKER(0x80068114, "GAME.EXE");
     if (game_services.audit_input_event)
         game_services.audit_input_event(2);
-    uint32 raw = (uint32)pad_decode_buttons(pad_game.port[player]);
+    uint32 raw = pad_decode_buttons(pad_game.port[player]);
     pad_menu.pressed[player] = (raw ^ pad_menu.prev[player]) & raw;
     pad_menu.prev[player] = raw;
     return pad_menu.pressed[player];
@@ -350,7 +342,7 @@ GDB_CALL sint16 pad_decode_buttons(sint32 port)
         }
         else
         {
-            x = (sint32)((uint32)pad_decode.x + 32);
+            x = pad_decode.x + 32u;
             pad_decode.x = x;
             if (x > 0)
                 pad_decode.x = 0;
@@ -358,21 +350,21 @@ GDB_CALL sint16 pad_decode_buttons(sint32 port)
         y = pad_decode.y;
         if (y > 0)
         {
-            y = (sint32)((uint32)y - 32);
+            y = y - 32u;
             pad_decode.y = y;
             if (y < 0)
                 pad_decode.y = 0;
         }
         else
         {
-            y = (sint32)((uint32)pad_decode.y + 32);
+            y = pad_decode.y + 32u;
             pad_decode.y = y;
             if (y > 0)
                 pad_decode.y = 0;
         }
-        x = (sint32)((uint32)pad_decode.x * 341) >> 8;
+        x = (sint32)(pad_decode.x * 341u) >> 8;
         pad_decode.x = x;
-        y = (sint32)((uint32)pad_decode.y * 341) >> 8;
+        y = (sint32)(pad_decode.y * 341u) >> 8;
         pad_decode.y = y;
     }
     else
@@ -397,10 +389,9 @@ GDB_CALL sint16 pad_decode_buttons(sint32 port)
             sound_voices_stop_all();
             text_hint = TEXT_HINT_NONE;
             pad_decode.reset_blocked = 1;
-            if (!game_services.return_to_frontend)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(game_services.return_to_frontend);
             game_services.return_to_frontend();
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(0);
         }
     }
     else
@@ -418,7 +409,7 @@ GDB_CALL void demo_select_next(void)
     if (divisor == 0 || (divisor == -1 && numerator == (sint32)0x80000000))
     {
         /* Original division raises BREAK7 or BREAK6 before any table access */
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(0);
         return;
     }
     type1 = demo_config[idx].player_type[1];

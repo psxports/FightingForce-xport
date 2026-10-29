@@ -43,16 +43,8 @@ sint32 sound_reverb_reset(void)
         uintptr_t ptr = (uintptr_t)sound_heap.records;
         uintptr_t base = (uintptr_t)sound_heap_recs;
         uint32 capacity = sizeof(sound_heap_recs);
-        if (sound_heap.count >= PSX_DRAM_SIZE / sizeof(SpuMallocRecord) || (ptr & 3))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid reverb heap count %u records %p stage %u tick %u\n", sound_heap.count, (void *)sound_heap.records, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        if (!base || ptr < base || ptr - base > capacity || (sound_heap.count + 1) * sizeof(SpuMallocRecord) > capacity - (ptr - base))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid reverb heap span count %u records %p capacity %u stage %u tick %u\n", sound_heap.count, (void *)sound_heap.records, capacity, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(sound_heap.count < PSX_DRAM_SIZE / sizeof(SpuMallocRecord) && !(ptr & 3));
+        XASSERT(base && ptr >= base && ptr - base <= capacity && (sound_heap.count + 1) * sizeof(SpuMallocRecord) <= capacity - (ptr - base));
         binding.entries = (uint32 *)sound_heap.records;
         binding.last_index = &sound_heap.last_index;
         binding.capacity = sound_heap.count + 1;
@@ -62,14 +54,13 @@ sint32 sound_reverb_reset(void)
         spu_reverb_export(&reverb);
         binding.reserved_bytes = reverb.reserved ? (0x10000u - reverb.work_address) << SPU_RAM_ADDRESS_SHIFT : 0;
     }
-    else if (sound_heap.count || sound_heap.last_index)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing reverb heap records count %u last %u stage %u tick %u\n", sound_heap.count, sound_heap.last_index, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    else
+        XASSERT(!sound_heap.count && !sound_heap.last_index);
     xport_audio_lock();
-    if (!spu_bind_heap(binding.entries ? &binding : NULL))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        sint32 checked_result = spu_bind_heap(binding.entries ? &binding : NULL);
+        XASSERT(checked_result);
+    }
     xport_audio_unlock();
     SpuSetReverbModeParam(&attr);
     result = SpuSetReverb(0);
@@ -105,16 +96,8 @@ sint32 sound_reverb_configure(void)
         uintptr_t ptr = (uintptr_t)sound_heap.records;
         uintptr_t base = (uintptr_t)sound_heap_recs;
         uint32 capacity = sizeof(sound_heap_recs);
-        if (sound_heap.count >= PSX_DRAM_SIZE / sizeof(SpuMallocRecord) || (ptr & 3))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid reverb heap count %u records %p stage %u tick %u\n", sound_heap.count, (void *)sound_heap.records, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
-        if (!base || ptr < base || ptr - base > capacity || (sound_heap.count + 1) * sizeof(SpuMallocRecord) > capacity - (ptr - base))
-        {
-            DIAGNOSTIC(fprintf(stderr, "Invalid reverb heap span count %u records %p capacity %u stage %u tick %u\n", sound_heap.count, (void *)sound_heap.records, capacity, game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(sound_heap.count < PSX_DRAM_SIZE / sizeof(SpuMallocRecord) && !(ptr & 3));
+        XASSERT(base && ptr >= base && ptr - base <= capacity && (sound_heap.count + 1) * sizeof(SpuMallocRecord) <= capacity - (ptr - base));
         binding.entries = (uint32 *)sound_heap.records;
         binding.last_index = &sound_heap.last_index;
         binding.capacity = sound_heap.count + 1;
@@ -124,14 +107,13 @@ sint32 sound_reverb_configure(void)
         spu_reverb_export(&reverb);
         binding.reserved_bytes = reverb.reserved ? (0x10000u - reverb.work_address) << SPU_RAM_ADDRESS_SHIFT : 0;
     }
-    else if (sound_heap.count || sound_heap.last_index)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Missing reverb heap records count %u last %u stage %u tick %u\n", sound_heap.count, sound_heap.last_index, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    else
+        XASSERT(!sound_heap.count && !sound_heap.last_index);
     xport_audio_lock();
-    if (!spu_bind_heap(binding.entries ? &binding : NULL))
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    {
+        sint32 checked_result = spu_bind_heap(binding.entries ? &binding : NULL);
+        XASSERT(checked_result);
+    }
     xport_audio_unlock();
     SpuSetReverbModeParam(&attr);
     attr.mask = 6;
@@ -150,13 +132,13 @@ sint32 sound_reverb_configure(void)
 GDB_CALL sint32 sound_reverb_enable_channels(void)
 {
     FUNCTION_MARKER(0x80056b78u, "GAME.EXE");
-    return (sint32)SpuSetReverbVoice(1, 0xffffff);
+    return SpuSetReverbVoice(1, 0xffffff);
 }
 
 sint32 sound_reverb_disable_channels(void)
 {
     FUNCTION_MARKER(0x80056ba0, "GAME.EXE");
-    return (sint32)SpuSetReverbVoice(0, 0xffffff);
+    return SpuSetReverbVoice(0, 0xffffff);
 }
 
 sint32 sound_output_init(void)

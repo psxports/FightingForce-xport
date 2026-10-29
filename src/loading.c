@@ -42,7 +42,7 @@ uint32 loading_begin(uint32 steps)
     loading_draw();
     disp_set_fade(-256, -256, -256);
     loading.bar_x = 77;
-    loading.total = (sint16)(uint16)(steps - 1);
+    loading.total = (uint16)(steps - 1);
     loading.count = 0;
     return 77;
 }
@@ -54,9 +54,8 @@ uint32 loading_draw(void)
     uint32 i, p;
     SPRT *spr;
     disp_begin_frame();
-    uint32 desc_idx = (uint32)tex_map[(uint32)tex_grps[TEXTURE_GROUP_TITLE_ALT].first_tex];
-    if (desc_idx > TEXTURE_DESCRIPTOR_CAPACITY - 3)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    uint32 desc_idx = tex_map[(uint32)tex_grps[TEXTURE_GROUP_TITLE_ALT].first_tex];
+    XASSERT(desc_idx <= TEXTURE_DESCRIPTOR_CAPACITY - 3);
     desc = tex_desc.item + desc_idx;
     for (i = 0; i < 3; i++, desc++)
     {

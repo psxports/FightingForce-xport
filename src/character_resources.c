@@ -24,11 +24,7 @@ GDB_CALL uint32 character_load_hawk(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy.context_address), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy.context_address};
     }
     resource_load_character("HAWK.ACH", 0, 36);
@@ -43,11 +39,7 @@ GDB_CALL uint32 character_load_hawk2(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy.context_address), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy.context_address};
     }
     resource_load_character("HAWK2.ACH", 4, 40);
@@ -62,11 +54,7 @@ GDB_CALL uint32 character_load_mace(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy.context_address), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy.context_address};
     }
     resource_load_character("MACE.ACH", 1, 37);
@@ -81,11 +69,7 @@ GDB_CALL uint32 character_load_smasher(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy.context_address), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy.context_address};
     }
     resource_load_character("SMASHER.ACH", 2, 38);
@@ -100,11 +84,7 @@ GDB_CALL uint32 character_load_alana(void)
     {
         uintptr_t ptr = (uintptr_t)dummy.data, base = (uintptr_t)resource_storage.data;
         /* TODO: Investigate a DUMMY cursor outside its actual native resource allocation */
-        if (ptr < base || ptr - base > RESOURCE_STORAGE_CAPACITY)
-        {
-            DIAGNOSTIC(fprintf(stderr, "DUMMY resource cursor outside native storage context %08X stage %u tick %u\n", (uint32)(dummy.context_address), game_session.stage, game_session.tick));
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-        }
+        XASSERT(ptr >= base && ptr - base <= RESOURCE_STORAGE_CAPACITY);
         resource_arenas.scratch = (RESOURCE_CURSOR){dummy.data, RESOURCE_STORAGE_CAPACITY - (uint32)(ptr - base), dummy.context_address};
     }
     resource_load_character("ALANA.ACH", 3, 39);
@@ -355,8 +335,7 @@ GDB_CALL uint32 character_load_players(void)
 
     if (type != -1)
     {
-        if (type < 0 || type >= PLAYER_RESOURCE_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(type >= 0 && type < PLAYER_RESOURCE_COUNT);
         resource_loader_call(RESOURCE_LOADER_PLAYER, player_resource_loaders[type]);
     }
     if (game_session.player_count != 2)
@@ -364,7 +343,6 @@ GDB_CALL uint32 character_load_players(void)
     type = actor_types[1];
     if (type == -1)
         return 0xfffffffcu; /* BEQ delay slot SLL */
-    if (type < 0 || type >= PLAYER_RESOURCE_COUNT)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+    XASSERT(type >= 0 && type < PLAYER_RESOURCE_COUNT);
     return resource_loader_call(RESOURCE_LOADER_PLAYER, player_resource_loaders[type]);
 }

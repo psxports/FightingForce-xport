@@ -50,7 +50,6 @@ const ACTOR_EVENT actor_event_release_item = {ACTOR_EVENT_SINT32, {.s32_idx = ac
 
 const ACTOR_EVENT actor_event_shock_attack = {ACTOR_EVENT_INTPTR, {.intptr_idx = actor_process_shock_attack}};
 
-
 /* Existing animation-event dispatch, with results discarded by all callers */
 void actor_event_call(const ACTOR_EVENT *event, sint32 idx)
 {
@@ -79,14 +78,14 @@ void actor_event_call(const ACTOR_EVENT *event, sint32 idx)
         }
     }
     /* TODO: Investigate an invalid native event instead of calling an encoded address */
-    DIAGNOSTIC(fprintf(stderr, "Invalid native actor event %p index %d stage %u tick %u\n", (const void *)event, idx, game_session.stage, game_session.tick));
-    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+
+    XASSERT(0);
 }
 
 GDB_CALL sint32 actor_hit_effects(sint32 idx)
 {
     FUNCTION_MARKER(0x800455e4u, "GAME.EXE");
-    if (((sint16)actor_animations[idx].event_step))
+    if ((sint16)actor_animations[idx].event_step)
         effect_spawn_at_attachment(idx);
     else
     {
@@ -169,8 +168,8 @@ GDB_CALL sint32 actor_hit_begin_event(sint32 idx)
     FUNCTION_MARKER(0x80033488u, "GAME.EXE");
     uint32 x, z, state;
     sint32 attacker;
-    if (((sint16)actor_animations[idx].event_step))
-        return (sint32)effect_spawn_at_attachment(idx);
+    if ((sint16)actor_animations[idx].event_step)
+        return effect_spawn_at_attachment(idx);
     x = actor_positions[idx].x.bits;
     z = actor_positions[idx].z.bits;
     effect_spawn(606, x, 0, z);
@@ -186,11 +185,11 @@ GDB_CALL sint32 actor_hit_begin_event(sint32 idx)
 GDB_CALL sint32 actor_heavy_hit_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033534u, "GAME.EXE");
-    uint32 angle = (uint32)(sint32)actor_orientation[idx].yaw, x = actor_positions[idx].x.bits, y = actor_positions[idx].y.bits, z = actor_positions[idx].z.bits;
+    uint32 angle = actor_orientation[idx].yaw, x = actor_positions[idx].x.bits, y = actor_positions[idx].y.bits, z = actor_positions[idx].z.bits;
     uint32 state, effect_x, effect_z;
     sint32 attacker;
     int i;
-    if (((sint16)actor_animations[idx].event_step))
+    if ((sint16)actor_animations[idx].event_step)
         effect_spawn_at_attachment(idx);
     else
     {
@@ -250,7 +249,7 @@ GDB_CALL sint32 actor_hit_attachment_event(sint32 idx)
     uint32 state, effect_x, effect_z;
     sint32 attacker;
     int i;
-    if (((sint16)actor_animations[idx].event_step))
+    if ((sint16)actor_animations[idx].event_step)
         effect_spawn_at_attachment(idx);
     else
     {
@@ -262,7 +261,7 @@ GDB_CALL sint32 actor_hit_attachment_event(sint32 idx)
         actor_attachment_pos(idx, 1, point.bits);
         sound_voice_play(95, 255, 6144);
         dynamic_objects_spawn_transient(865, point.x.bits, point.y.bits, point.z.bits);
-        angle = (uint32)(sint32)actor_orientation[idx].yaw;
+        angle = actor_orientation[idx].yaw;
         for (i = 0; i < 4; i++)
             effect_spawn_actor_hit_reverse(idx, point.x.bits, point.y.bits, point.z.bits, angle);
         for (i = 0; i < 12; i++)
@@ -283,7 +282,7 @@ GDB_CALL sint32 actor_hit_impact_event(sint32 idx)
     uint32 state, effect_x, effect_z;
     sint32 attacker;
     int i;
-    if (((sint16)actor_animations[idx].event_step))
+    if ((sint16)actor_animations[idx].event_step)
         return effect_spawn_at_attachment(idx);
     effect_x = actor_positions[idx].x.bits;
     effect_z = actor_positions[idx].z.bits;
@@ -317,7 +316,7 @@ GDB_CALL sint32 actor_hit_flash_event(sint32 idx)
     uint32 state, effect_x, effect_z;
     sint32 attacker, attacker_type, sample;
     int i;
-    if (((sint16)actor_animations[idx].event_step))
+    if ((sint16)actor_animations[idx].event_step)
         effect_spawn_at_attachment(idx);
     else
     {
@@ -329,7 +328,7 @@ GDB_CALL sint32 actor_hit_flash_event(sint32 idx)
             sample = actor_animations[idx].id == 142 && attacker_type == 49 ? 172 : 78;
             sound_voice_play(sample, 255, 6144);
             dynamic_objects_spawn_transient(865, point.x.bits, point.y.bits, point.z.bits);
-            angle = (uint32)(sint32)actor_orientation[idx].yaw;
+            angle = actor_orientation[idx].yaw;
             for (i = 0; i < 4; i++)
                 effect_spawn_actor_hit_reverse(idx, point.x.bits, point.y.bits, point.z.bits, angle);
             for (i = 0; i < 12; i++)
@@ -361,7 +360,7 @@ GDB_CALL sint32 actor_attack_attachment_event(sint32 idx)
     actor_attachment_pos(idx, 4, point.bits);
     sound_voice_play(95, 255, 6144);
     dynamic_objects_spawn_transient(865, point.x.bits, point.y.bits, point.z.bits);
-    angle = (uint32)(sint32)actor_orientation[idx].yaw;
+    angle = actor_orientation[idx].yaw;
     for (i = 0; i < 4; i++)
         effect_spawn_actor_hit_reverse(actor_contacts[idx].last_target, point.x.bits, point.y.bits, point.z.bits, angle);
     for (i = 0; i < 12; i++)
@@ -372,14 +371,14 @@ GDB_CALL sint32 actor_attack_attachment_event(sint32 idx)
 GDB_CALL uint32 actor_attachment_impact_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033d7cu, "GAME.EXE");
-    sint32 count = ((sint16)actor_animations[idx].event_step);
-    return count ? (uint32)count : effect_spawn_attachment_particle(idx, 577);
+    sint32 count = (sint16)actor_animations[idx].event_step;
+    return count ? count : effect_spawn_attachment_particle(idx, 577);
 }
 
 GDB_CALL sint32 actor_impact_voice_event(sint32 idx)
 {
     FUNCTION_MARKER(0x80033dc8u, "GAME.EXE");
-    sint32 val = ((sint16)actor_animations[idx].event_step);
+    sint32 val = (sint16)actor_animations[idx].event_step;
     return val ? val : sound_voice_play(28, 255, 6144);
 }
 
@@ -404,7 +403,7 @@ GDB_CALL intptr actor_burst_attachment_event(sint32 idx)
         return (intptr)actor_emit_ground_effect(idx);
     actor_attachment_pos(idx, 8, point.bits);
     dynamic_objects_spawn_transient(865, point.x.bits, point.y.bits, point.z.bits);
-    angle = (uint32)(sint32)actor_orientation[idx].yaw;
+    angle = actor_orientation[idx].yaw;
     for (i = 0; i < 4; i++)
         effect_spawn_actor_hit_reverse(idx, point.x.bits, point.y.bits, point.z.bits, angle);
     for (i = 0; i < 12; i++)
@@ -417,23 +416,15 @@ GDB_CALL sint32 actor_release_item_event(sint32 idx)
     FUNCTION_MARKER(0x800341a0u, "GAME.EXE");
     sint32 slot;
     /* TODO: Investigate an item release outside the native actor pool */
-    if (idx < 0 || idx >= ACTOR_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid release actor %d stage %u tick %u\n", idx, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(idx >= 0 && idx < ACTOR_COUNT);
     if (!(actor_animations[idx].motion.events & 0x800u))
         return sound_voice_play(123, 255, 6144);
     slot = actor_items[idx].slot[ACTOR_ITEM_RIGHT];
     if (slot == -1)
         return -1;
     /* TODO: Investigate an item release outside the native dynamic pool */
-    if (slot < 0 || slot >= DYNAMIC_OBJECT_COUNT)
-    {
-        DIAGNOSTIC(fprintf(stderr, "Invalid release actor %d slot %d stage %u tick %u\n", idx, slot, game_session.stage, game_session.tick));
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
-    }
+    XASSERT(slot >= 0 && slot < DYNAMIC_OBJECT_COUNT);
     MODEL_OBJECT *item = dynamic_objects + slot;
     item->kind = item->kind + 1u;
-    return (sint32)actor_items_drop(idx);
+    return actor_items_drop(idx);
 }

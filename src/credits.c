@@ -15,7 +15,7 @@ GDB_CALL uint32 credits_run(void)
     cd_music_start_track(12);
     for (;; ++frame)
     {
-        fade = (sint32)(frame & 255) - 192;
+        fade = (frame & 255) - 192;
         if (fade < 0)
             fade = 0;
         fade *= 2;
@@ -50,7 +50,7 @@ GDB_CALL uint32 credits_run(void)
         pos.y = 128;
         pos.depth = 256;
         pos.size = 128;
-        shade = 128u - (uint32)fade;
+        shade = 128u - fade;
         shade = (shade << 16) + (shade << 8) + 0x2c000000u + shade;
         render_style.color.rgbc = shade;
         spr_draw_scaled(&pos, spr);
@@ -59,7 +59,7 @@ GDB_CALL uint32 credits_run(void)
         spr_draw_scaled(&pos, spr + 1);
         pos.x -= 127;
         next = slide == 4 ? tex_map[(uint32)tex_grps[1].first_tex] : spr + 2;
-        shade = ((uint32)fade << 16) + ((uint32)fade << 8) + 0x2c000000u + (uint32)fade;
+        shade = ((uint32)fade << 16) + ((uint32)fade << 8) + 0x2c000000u + fade;
         render_style.color.rgbc = shade;
         spr_draw_scaled(&pos, next);
         pos.x += 127;
@@ -73,20 +73,17 @@ GDB_CALL uint32 credits_run(void)
         y = 256 - ((sint32)scroll >> 1);
         for (;;)
         {
-            if (src == end)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(src != end);
             c = *src;
             if (c == '<')
                 break;
             dst = 0;
             do
             {
-                if (dst >= sizeof(line))
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(dst < sizeof(line));
                 line[dst++] = (char)c;
                 ++src;
-                if (src == end)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(src != end);
                 c = *src;
             } while (c != 10 && c != '<');
             c = *src;
@@ -94,20 +91,20 @@ GDB_CALL uint32 credits_run(void)
             if (c == '<')
                 break;
             line[dst - 1] = 0; /* Strip CR before LF, as5A5B4 */
-            if ((uint32)y + 9u < 265u)
+            if (y + 9u < 265u)
             {
                 if ((sint8)line[0] == '@')
                     text_center_gradient(line + 1, y);
                 else
                     text_center(line, y);
             }
-            y = (uint32)y + 10;
+            y = y + 10u;
         }
         menu_present();
         if (scroll == 2062)
             for (i = 0; i < (sint32)game_session.player_count; ++i)
             {
-                result = (uint32)pad_decode_buttons(pad_game.port[i]) & 0x4008;
+                result = pad_decode_buttons(pad_game.port[i]) & 0x4008;
                 if (result)
                 {
                     return result;

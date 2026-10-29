@@ -40,31 +40,27 @@ static const NPC_BEHAVIOR_ACTION actions[NPC_BEHAVIOR_ACTION_COUNT] = {
 GDB_CALL void npc_behavior_load(void)
 {
     FUNCTION_MARKER(0x8004c1cc, "GAME.EXE");
-    uint32 p = 0, end, table_idx = 0, block_end, count, initial_count;
+    uint32 p = 0; uint32 end; uint32 table_idx = 0; uint32 block_end; uint32 count; sint32 initial_count;
     uint32 code_offset, j, q, flags, size, val;
     uint32 *choices;
     resource_load(game_session.stage + 120, 0x116000, npc_behavior_file, sizeof(npc_behavior_file), NULL, NULL);
     size = resource_io.file_size;
     if ((sint32)size > 0)
     {
-        if (size > sizeof(npc_ai_storage))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(size <= sizeof(npc_ai_storage));
         /* Keep bytes beyond the loaded MVS prefix */
         memcpy(npc_ai_storage, npc_behavior_file, size);
     }
     size = resource_io.file_size;
-    if (size >= 0x1801)
-        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__); /* Original infinite loop at4C224 */
+    XASSERT(size < 0x1801); /* Original infinite loop at4C224 */
     size = resource_io.file_size;
     end = size >> 2;
     while (p < end)
     {
-        if (table_idx >= NPC_AI_CAPABILITY_COUNT || p > NPC_AI_STORAGE_WORD_COUNT - 2)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(table_idx < NPC_AI_CAPABILITY_COUNT && p <= NPC_AI_STORAGE_WORD_COUNT - 2);
         NPC_AI_CAPABILITY *table = npc_ai_capabilities + table_idx;
         block_end = (p + npc_ai_storage[p]) & NPC_AI_WORD_MASK;
-        if (block_end <= p || block_end > NPC_AI_STORAGE_WORD_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(block_end > p && block_end <= NPC_AI_STORAGE_WORD_COUNT);
         ++p;
         count = npc_ai_storage[p];
         table->choice_count = count;
@@ -72,36 +68,31 @@ GDB_CALL void npc_behavior_load(void)
         initial_count = table->choice_count;
         ++p;
         code_offset = (p + count) & NPC_AI_WORD_MASK;
-        if (p > NPC_AI_STORAGE_WORD_COUNT || code_offset > NPC_AI_STORAGE_WORD_COUNT)
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(p <= NPC_AI_STORAGE_WORD_COUNT && code_offset <= NPC_AI_STORAGE_WORD_COUNT);
         table->choices = npc_ai_storage + p;
         table->choice_capacity = NPC_AI_STORAGE_WORD_COUNT - p;
         table->weapon_flags = 0;
         table->code = npc_ai_storage + code_offset;
         table->code_capacity = NPC_AI_STORAGE_WORD_COUNT - code_offset;
         j = 0;
-        if ((sint32)initial_count > 0)
+        if (initial_count > 0)
         {
             do
             {
                 choices = table->choices;
-                if (!choices || j >= table->choice_capacity)
-                    diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                XASSERT(choices && j < table->choice_capacity);
                 val = choices[j];
                 q = (code_offset + val) & NPC_AI_WORD_MASK;
                 do
                 {
-                    if (q > NPC_AI_STORAGE_WORD_COUNT - 3)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(q <= NPC_AI_STORAGE_WORD_COUNT - 3);
                     flags = npc_ai_storage[q];
-                    if (flags >= NPC_BEHAVIOR_ACTION_COUNT)
-                        diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                    XASSERT(flags < NPC_BEHAVIOR_ACTION_COUNT);
                     flags = actions[flags].weapon_flags;
                     if (flags)
                     {
                         choices = table->choices;
-                        if (!choices || j >= table->choice_capacity)
-                            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+                        XASSERT(choices && j < table->choice_capacity);
                         val = choices[j];
                         choices[j] = (flags << 16) | val | 0x80000000;
                     }
@@ -116,13 +107,11 @@ GDB_CALL void npc_behavior_load(void)
         {
             flags = npc_ai_storage[q];
             val = table->weapon_flags;
-            if (flags >= NPC_BEHAVIOR_ACTION_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(flags < NPC_BEHAVIOR_ACTION_COUNT);
             flags = actions[flags].weapon_flags;
             table->weapon_flags = val | flags;
             flags = npc_ai_storage[q];
-            if (flags >= NPC_BEHAVIOR_ACTION_COUNT)
-                diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+            XASSERT(flags < NPC_BEHAVIOR_ACTION_COUNT);
             npc_ai_storage[q] = actions[flags].animation;
         }
         ++table_idx;
@@ -132,8 +121,7 @@ GDB_CALL void npc_behavior_load(void)
     size = resource_io.file_size;
     if ((sint32)size > 0)
     {
-        if (size > sizeof(npc_behavior_rows))
-            diagnostic_stop(__FUNCTION__, __FILE__, __LINE__);
+        XASSERT(size <= sizeof(npc_behavior_rows));
         /* Preserve the untouched tail of shorter AII files */
         memcpy(npc_behavior_rows, npc_behavior_file, size);
     }
