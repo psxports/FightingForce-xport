@@ -1,4 +1,5 @@
 #include "game.h"
+#include "hd.h"
 
 static sint32 query_actor(uint32 world_x, uint32 world_z, const MODEL_OBJECT *model, const PROJECTILE_SOURCE *projectile)
 {
@@ -333,6 +334,7 @@ void projectile_draw_glow(const struct MODEL_OBJECT *item)
     transform_push();
     object_transform_camera(item, NULL);
     proj_local(0, 0, 0, &pos);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0}, game_session.tick & 1u ? 704.0f : 512.0f, 0, tex_map[66], 0x2cffffffu);
     if (!pos.status)
     {
         pos.size = game_session.tick & 1u ? 704 : 512;

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 
 const NPC_ATTACK_GEOMETRY npc_attack_geometry_defaults = {
     .origin = {.x = {.val = -1179648}, .y = {.val = 1114112}, .z = {.val = -2424832}},
@@ -2056,6 +2057,7 @@ sint32 npc_create(sint32 type, uint32 x, uint32 z, sint32 yaw, sint32 flag, sint
     }
     if (idx == ACTOR_COUNT)
         return -1;
+    hd_actor_reset(idx);
     actor_animations[idx].src = (ACTOR_ANIMATION_SOURCE){ACTOR_ANIMATION_SOURCE_NONE, {0}};
     actor_animations[idx].frame = 0;
     actor_animations[idx].selector = 0;

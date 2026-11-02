@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 sint32 lab_tank_level;
 
@@ -166,6 +167,14 @@ static uint32 draw_effect(const EFFECT *effect)
     z = ((uint32)(sint32)sin_table[((phase << 5) & 0xfe0u) >> 1] << 5) + particle->pos.z.bits;
     transform_translate(x - camera.pos.x.bits, particle->pos.y.bits - camera.pos.y.bits, z - camera.pos.z.bits);
     proj_local(0, 0, 0, &point);
+    const MATRIXF *view = hd_transform_current(geometry_workspace.matrix);
+    if (view && view->t[2] >= 1 && view->t[2] <= RENDER_FADE_CUTOFF)
+    {
+        float fade = view->t[2] - (RENDER_FADE_CUTOFF - 2048.0f);
+        uint32 shade = fade < 0 ? 16 : 16 - ((uint32)fade >> 7);
+        HD_PARTICLE_SHAPE shape = view->t[2] > 2560 ? HD_PARTICLE_POINT : view->t[2] < 1536 ? HD_PARTICLE_QUAD : HD_PARTICLE_LINE;
+        hd_collect_particle(geometry_workspace.matrix, (VECTORF){0}, 0, shade * 1057u, shape);
+    }
     transform_pop();
     if (point.status)
         return point.status;

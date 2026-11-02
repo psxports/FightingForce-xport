@@ -1,4 +1,5 @@
 #include "game.h"
+#include "hd.h"
 
 LEVEL_START level_starts[LEVEL_START_COUNT];
 
@@ -6,6 +7,7 @@ LEVEL_START level_starts[LEVEL_START_COUNT];
 uint32 level_start_players(void)
 {
     FUNCTION_MARKER(0x80014808, "GAME.EXE");
+    hd_history_reset();
     uint32 stage = game_session.stage;
     uint32 x;
     uint32 z;
@@ -65,6 +67,7 @@ uint32 level_start_players(void)
 void level_reset(void)
 {
     FUNCTION_MARKER(0x80018318, "GAME.EXE");
+    hd_history_reset();
     uint32 i, stage, shade;
     col_regions.sel = 0;
     level_transition.restart_timer = 0;

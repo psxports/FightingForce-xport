@@ -113,6 +113,16 @@ typedef union TEXTURE_DESCRIPTORS
 extern TEXTURE_DESCRIPTORS tex_desc;
 extern sint16 tex_base_v[6];
 
+/* Source image bounds precede descriptor UV animation and packed command flags */
+typedef struct TEXTURE_IMAGE
+{
+    uint16 x, y, width, height;
+    uint8 mode;
+    uint8 uploaded;
+} TEXTURE_IMAGE;
+
+extern TEXTURE_IMAGE tex_images[TEXTURE_DESCRIPTOR_CAPACITY];
+
 extern sint16 tex_map[TEXTURE_MAP_COUNT];
 extern uint32 tex_count;
 extern uint32 tex_desc_count;

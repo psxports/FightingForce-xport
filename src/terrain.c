@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 TERRAIN_MAP terrain_map;
 BACKGROUND_IMAGE background_img;
@@ -30,6 +31,7 @@ uint32 terrain_draw_grid(sint32 unused, sint32 tile_x, sint32 tile_z)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
+    hd_collect_terrain(terrain_map.tile, (uint32)tile_x, (uint32)tile_z, matrix, render_style.color.rgbc, 0);
     for (i = 0; i < 5; i++)
         words[i] = matrix->rotation_words[i];
     for (i = 0; i < 5; i++)
@@ -136,6 +138,7 @@ uint32 terrain_draw_faded_grid(uint32 unused, uint32 column, uint32 row)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
+    hd_collect_terrain(terrain_map.tile, column >> 1, row >> 7, matrix, render_style.color.rgbc, 1);
     for (i = 0; i < 5; i++)
         words[i] = matrix->rotation_words[i];
     for (i = 0; i < 5; i++)
@@ -332,6 +335,7 @@ sint32 terrain_draw(void)
     if (game_session.stage == 0xffffffff)
         return -1;
     background_render_strip();
+    hd_collect_ground(terrain_map.color_flat, (sint32)camera.pos.x.bits / 65536.0f, (sint32)camera.pos.y.bits / 65536.0f, (sint32)camera.pos.z.bits / 65536.0f, camera.angles.yaw_bits, hd_horizon(), (uint32)depth_table[8191] >> 2, 1);
     pos.x = 0;
     pos.y = proj_horizon;
     pos.depth = 32767;
@@ -519,6 +523,7 @@ void terrain_build_descs(void)
         for (orientation = 0; orientation < 4; ++orientation)
         {
             terrain_desc(desc, orientation);
+            tex_images[base + 4 * i + orientation] = (TEXTURE_IMAGE){u, v, 32, 32, 1, 1};
             desc++;
         }
         tex_desc_count = tex_desc_count + 4;

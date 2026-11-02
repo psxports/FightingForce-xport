@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 /* Serialized CCT frame after the little-endian count halfword */
 typedef struct SCENE_FRAME
@@ -476,6 +477,8 @@ sint32 scene_update_prison_ending(uint32 frame)
         world_objects.object[6].kind = 452;
         return scene_apply_object_frame(frame, 6, 6);
     }
+    if (tick == 300)
+        hd_history_reset();
     scene_playback.stream[0] = scene_playback.stream[7];
     scene_apply_camera_frame(tick - 300u);
     world_objects.count = 2;
@@ -952,9 +955,6 @@ sint32 sequence_run(sint32 sequence, void (*prepare_frame)(void))
     if (stage != 34)
         loading_clear();
     cd_music_start_scene(track);
-    if (game_session.stage == 28)
-        for (i = 0; i < 13; i++)
-            VSync(2);
     loading_clear();
     disp_fade_from_origin(0);
 
@@ -1016,8 +1016,6 @@ sint32 sequence_run(sint32 sequence, void (*prepare_frame)(void))
         disp_fade_from_origin(0);
     }
     loading_clear();
-    for (i = 0; i < 30; i++)
-        VSync(2);
     sound_voices_stop_all();
     if (game_session.stage == 34)
         credits_run();
@@ -1030,7 +1028,9 @@ uint32 scene_step(void)
 {
     uint32 frame, stage;
     FUNCTION_MARKER(0x8001559c, "GAME.EXE");
-    scene_apply_camera_frame(game_session.tick);
+    /* the prison handler replaces all camera fields from its second clip */
+    if (game_session.stage != 34 || game_session.tick < 300)
+        scene_apply_camera_frame(game_session.tick);
     stage = game_session.stage;
     if (stage == 27)
     {
@@ -1098,6 +1098,8 @@ sint32 scene_run_ending_disp(void)
         poly->p[2].y = 256;
         poly->p[3].x = 320;
         poly->p[3].y = 256;
+        const HD_UI_VERTEX background[4] = {{0, 0, 0, 0, 0}, {320, 0, 0, 0, 0}, {0, 256, 0, 0, 0}, {320, 256, 0, 0, 0}};
+        hd_collect_ui(background, 0, 0, 0, 0, HD_UI_BACKGROUND);
         render_ot_insert(render_buffers.ot_addr, packet);
         transform_identity();
         transform_translate(0, 0, (((sint32)phase >> 9) + 136u) << 16);

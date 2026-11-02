@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 enum
 {
@@ -25,6 +26,7 @@ EFFECT *effect_alloc(void)
         if (effects[i].kind == 0xffffffffu)
         {
             EFFECT *effect = effects + i;
+            hd_object_reset(HD_OBJECT_EFFECT, i);
             *effect = (EFFECT){0};
             return effect;
         }
@@ -39,6 +41,7 @@ EFFECT *effect_alloc_rotating(void)
     EFFECT *effect;
     effect_rotate_cursor = i;
     effect = effects + EFFECT_COUNT - EFFECT_ROTATE_COUNT + i;
+    hd_object_reset(HD_OBJECT_EFFECT, EFFECT_COUNT - EFFECT_ROTATE_COUNT + i);
     *effect = (EFFECT){0};
     return effect;
 }
@@ -897,10 +900,12 @@ sint32 effects_draw(void)
             continue;
         XASSERT(type < MODEL_TYPE_COUNT);
         target = object_callbacks[OBJECT_CALLBACK_EFFECT_DRAW][type];
+        hd_object_begin(HD_OBJECT_EFFECT, i, type);
         if (target)
             object_call(target, NULL, effects + i);
         else
             effect_draw_model(effects + i);
+        hd_object_end();
     }
     return 0;
 }
@@ -1030,6 +1035,7 @@ void effect_draw_line(const struct EFFECT *effect)
     b.size = line->size1;
     /* TODO: Investigate original adjacent texture-map reads */
     XASSERT(line->tex >= 0 && line->tex < TEXTURE_MAP_COUNT);
+    hd_collect_ribbon(geometry_workspace.matrix, (VECTORF){0}, (VECTORF){line->delta.x, line->delta.y, line->delta.z}, (float)a.size, (float)b.size, -32, tex_map[line->tex], render_style.color.rgbc, render_style.blend_mode);
     spr_draw_ribbon(&a, &b, tex_map[line->tex]);
     transform_pop();
 }
@@ -1051,12 +1057,14 @@ void effect_draw_ribbon(const struct EFFECT *effect)
     b.size = 256;
     /* TODO: Investigate original adjacent texture-map reads */
     XASSERT(ribbon->frame >= -106 && ribbon->frame < TEXTURE_MAP_COUNT - 106);
+    hd_collect_ribbon(geometry_workspace.matrix, (VECTORF){ribbon->delta.x, ribbon->delta.y, ribbon->delta.z}, (VECTORF){0}, (float)b.size, (float)a.size, 0, tex_map[106 + ribbon->frame], render_style.color.rgbc, render_style.blend_mode);
     spr_draw_ribbon(&b, &a, tex_map[106 + ribbon->frame]);
     render_style.color.rgbc = 0x2c181820;
     a.size = 176;
     b.size = 336;
     /* TODO: Investigate original adjacent texture-map reads */
     XASSERT(ribbon->frame >= -106 && ribbon->frame < TEXTURE_MAP_COUNT - 106);
+    hd_collect_ribbon(geometry_workspace.matrix, (VECTORF){ribbon->delta.x, ribbon->delta.y, ribbon->delta.z}, (VECTORF){0}, (float)b.size, (float)a.size, 0, tex_map[106 + ribbon->frame], render_style.color.rgbc, render_style.blend_mode);
     spr_draw_ribbon(&b, &a, tex_map[106 + ribbon->frame]);
     transform_pop();
 }
@@ -1116,6 +1124,11 @@ void effect_draw_moving_ribbon(const struct EFFECT *effect)
     transform_push();
     transform_translate(ribbon->pos.x.bits - camera.pos.x.bits, ribbon->pos.y.bits - camera.pos.y.bits, ribbon->pos.z.bits - camera.pos.z.bits);
     proj_local(0, 0, 0, &a);
+    XASSERT(ribbon->frame >= -131 && ribbon->frame < TEXTURE_MAP_COUNT - 131);
+    hd_object_part(HD_OBJECT_PRIMARY);
+    hd_collect_ribbon(geometry_workspace.matrix, (VECTORF){ribbon->delta.x, ribbon->delta.y, ribbon->delta.z}, (VECTORF){0}, 256, 128, 0, tex_map[131 + ribbon->frame], 0x2c303040, render_style.blend_mode);
+    hd_object_part(HD_OBJECT_OUTER);
+    hd_collect_ribbon(geometry_workspace.matrix, (VECTORF){ribbon->delta.x, ribbon->delta.y, ribbon->delta.z}, (VECTORF){0}, 336, 176, 0, tex_map[131 + ribbon->frame], 0x2c181820, render_style.blend_mode);
     if (!a.status)
     {
         proj_local(ribbon->delta.x, ribbon->delta.y, ribbon->delta.z, &b);
@@ -1168,8 +1181,11 @@ void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect)
     transform_push();
     object_transform_camera(item, effect);
     proj_local(0, 0, 0, &pos);
+    if (type - 862u < 3)
+        hd_collect_sprite_fixed(geometry_workspace.matrix, (VECTORF){0}, -12, -8, 0, tex_map[type - 848]);
     if (pos.status)
     {
+        hd_collect_culled_spr(item, effect, geometry_workspace.matrix, motion_sizes);
         transform_pop();
         return;
     }
@@ -1270,6 +1286,7 @@ void effect_draw_spr(struct MODEL_OBJECT *item, struct EFFECT *effect)
     /* 5CC94 repeats type879, unreachable after its earlier5C9D8 match. */
     sint32 tex_idx = (table - tex_map) + sample;
     XASSERT(tex_idx >= 0 && tex_idx < TEXTURE_MAP_COUNT);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0}, (float)pos.size, type == 877 ? -16.0f : 0.0f, tex_map[tex_idx], render_style.color.rgbc);
     spr_draw_scaled(&pos, tex_map[tex_idx]);
     transform_pop();
 }
@@ -1497,13 +1514,13 @@ void effect_draw_blast_large(const struct EFFECT *effect)
     object_transform_camera(NULL, effect);
     const EFFECT_SPRITE *spr = &effect->spr;
     proj_local(0, 0, 0, &pos);
+    tex_idx = 74 + (spr->frame >> 2);
+    XASSERT(tex_idx >= 0 && tex_idx < TEXTURE_MAP_COUNT);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0}, 4096, 0, tex_map[tex_idx], 0x2c404040);
     if (!pos.status)
     {
         pos.size = 4096;
         render_style.color.rgbc = 0x2c404040;
-        tex_idx = 74 + (spr->frame >> 2);
-        /* TODO: Investigate original reads beyond the native texture map */
-        XASSERT(tex_idx >= 0 && tex_idx < TEXTURE_MAP_COUNT);
         spr_draw_scaled(&pos, tex_map[tex_idx]);
     }
     transform_pop();
@@ -1779,11 +1796,12 @@ void effect_draw_rising_smoke(const struct EFFECT *effect)
     object_transform_camera(NULL, effect);
     const EFFECT_SPRITE *spr = &effect->spr;
     proj_local(0, 0, 0, &pos);
+    color = 64u - ((uint32)(sint32)spr->frame << 2);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0}, (float)(sint32)(((uint32)(sint32)spr->frame << 4) + 256u), 0, tex_map[73], 0x2c000000u + (color << 16) + (color << 8) + color);
     if (!pos.status)
     {
         pos.size = 256;
         render_style.color.rgbc = 0x2c404040u;
-        color = 64u - ((uint32)(sint32)spr->frame << 2);
         render_style.color.rgbc = 0x2c000000u + (color << 16) + (color << 8) + color;
         pos.size = ((uint32)(sint32)spr->frame << 4) + 256u;
         spr_draw_scaled(&pos, tex_map[73]);
@@ -1803,21 +1821,15 @@ void effect_draw_blast(const struct EFFECT *effect)
     object_transform_camera(NULL, effect);
     const EFFECT_SPRITE *spr = &effect->spr;
     proj_local(0, 0, 0, &pos);
+    kind = effect->kind;
+    sint32 size = kind == 892 ? 2048 : kind == 893 ? 1024 : kind == 894 ? 256 : kind == 895 ? 128 : 0;
+    tex_idx = 74 + (spr->frame >> 1);
+    XASSERT(tex_idx >= 0 && tex_idx < TEXTURE_MAP_COUNT);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0}, (float)size, 0, tex_map[tex_idx], 0x2c404040);
     if (!pos.status)
     {
-        kind = effect->kind;
-        if (kind == 892)
-            pos.size = 2048;
-        else if (kind == 893)
-            pos.size = 1024;
-        else if (kind == 894)
-            pos.size = 256;
-        else if (kind == 895)
-            pos.size = 128;
+        pos.size = size;
         render_style.color.rgbc = 0x2c404040u;
-        tex_idx = 74 + (spr->frame >> 1);
-        /* TODO: Investigate original reads beyond the native texture map */
-        XASSERT(tex_idx >= 0 && tex_idx < TEXTURE_MAP_COUNT);
         spr_draw_scaled(&pos, tex_map[tex_idx]);
     }
     transform_pop();
@@ -1920,14 +1932,15 @@ void effect_draw_hit_particle(const struct EFFECT *effect)
     camera_z = camera.pos.z.bits;
     transform_translate(x - camera_x, y - camera_y, z - camera_z);
     proj_local(0, 0, 0, &pos);
+    table = effect->kind == 1 ? alt_hit_colors : game_settings.language == GAME_LANGUAGE_GERMAN ? german_hit_colors : hit_colors;
+    age = (sint16)particle->age;
+    color_idx = age >> 2;
+    /* TODO: Investigate original color reads beyond the sixteen age samples */
+    XASSERT(color_idx >= 0 && color_idx < PARTICLE_COLOR_COUNT);
+    color = table[color_idx];
+    hd_collect_particle(geometry_workspace.matrix, (VECTORF){0}, 0, color, age >= 17 ? HD_PARTICLE_POINT : age >= 9 ? HD_PARTICLE_LINE : HD_PARTICLE_QUAD);
     if (!pos.status)
     {
-        table = effect->kind == 1 ? alt_hit_colors : game_settings.language == GAME_LANGUAGE_GERMAN ? german_hit_colors : hit_colors;
-        age = (sint16)particle->age;
-        color_idx = age >> 2;
-        /* TODO: Investigate original color reads beyond the sixteen age samples */
-        XASSERT(color_idx >= 0 && color_idx < PARTICLE_COLOR_COUNT);
-        color = table[color_idx];
         age = (sint16)particle->age;
         if (age >= 17)
             particle_draw_point(pos.x, pos.y, pos.depth, color);
@@ -1957,13 +1970,14 @@ void effect_draw_spark(const struct EFFECT *effect)
     camera_z = camera.pos.z.bits;
     transform_translate(x - camera_x, y - camera_y, z - camera_z);
     proj_local(0, 0, 0, &pos);
+    age = (sint16)particle->age;
+    color_idx = age >> 2;
+    /* TODO: Investigate original color reads beyond the sixteen age samples */
+    XASSERT(color_idx >= 0 && color_idx < PARTICLE_COLOR_COUNT);
+    color = spark_colors[color_idx];
+    hd_collect_particle(geometry_workspace.matrix, (VECTORF){0}, 0, color, age >= 17 ? HD_PARTICLE_POINT : age >= 9 ? HD_PARTICLE_LINE : HD_PARTICLE_QUAD);
     if (!pos.status)
     {
-        age = (sint16)particle->age;
-        color_idx = age >> 2;
-        /* TODO: Investigate original color reads beyond the sixteen age samples */
-        XASSERT(color_idx >= 0 && color_idx < PARTICLE_COLOR_COUNT);
-        color = spark_colors[color_idx];
         if (age >= 17)
             particle_draw_point(pos.x, pos.y, pos.depth, color);
         else if ((sint16)particle->age >= 9)
@@ -1985,11 +1999,12 @@ void effect_draw_point(const struct EFFECT *effect)
     transform_push();
     transform_translate(particle->pos.x.bits - camera.pos.x.bits, particle->pos.y.bits - camera.pos.y.bits, particle->pos.z.bits - camera.pos.z.bits);
     proj_local(0, 0, 0, &pos);
+    color_idx = (sint16)particle->age >> 2;
+    /* TODO: Investigate original color reads beyond the sixteen age samples */
+    XASSERT(color_idx >= 0 && color_idx < PARTICLE_COLOR_COUNT);
+    hd_collect_particle(geometry_workspace.matrix, (VECTORF){0}, 0, point_colors[color_idx], HD_PARTICLE_POINT);
     if (!pos.status)
     {
-        color_idx = (sint16)particle->age >> 2;
-        /* TODO: Investigate original color reads beyond the sixteen age samples */
-        XASSERT(color_idx >= 0 && color_idx < PARTICLE_COLOR_COUNT);
         particle_draw_point(pos.x, pos.y, pos.depth, (sint32)point_colors[color_idx]);
     }
     transform_pop();
@@ -2301,6 +2316,10 @@ void effect_draw_double_point(const struct EFFECT *effect)
     transform_push();
     transform_translate(particle->pos.x.bits - camera.pos.x.bits, particle->pos.y.bits - camera.pos.y.bits, particle->pos.z.bits - camera.pos.z.bits);
     proj_local(0, 0, 0, &pos);
+    hd_object_part(HD_OBJECT_PRIMARY);
+    hd_collect_particle(geometry_workspace.matrix, (VECTORF){0}, 0, 0x4210, HD_PARTICLE_POINT);
+    hd_object_part(HD_OBJECT_SECOND_POINT);
+    hd_collect_particle(geometry_workspace.matrix, (VECTORF){0}, 1, 0x4210, HD_PARTICLE_POINT);
     if (!pos.status)
     {
         particle_draw_point(pos.x, pos.y, pos.depth, 0x4210);

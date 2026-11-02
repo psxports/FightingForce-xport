@@ -1,5 +1,6 @@
 #include "game.h"
 #include "psx_gpu.h"
+#include "hd.h"
 
 const LOADING loading_defaults = {640, -1, 0, 0};
 LOADING loading;
@@ -12,6 +13,7 @@ uint32 loading_clear(void)
     loading.active = 0;
     /* Host uploads are synchronous; DrawSync/VSync hardware waits are omitted */
     gpu_clear_menu_surfaces();
+    hd_pages_clear();
     disp_buffers.flash_ticks = 0;
     disp_buffers.shake_ticks = 0;
     disp_buffers.fade_origin.b = (sint16)(0);
@@ -67,6 +69,10 @@ uint32 loading_draw(void)
         setWH(spr, i == 2 ? 64 : 128, 255);
         setXY0(spr, 128 * i, 0);
         setShadeTex(spr, 1);
+        float x = (float)(128 * i), width = i == 2 ? 64.0f : 128.0f;
+        float u = (float)desc->uv0.u, v = (float)desc->uv0.v;
+        const HD_UI_VERTEX image[4] = {{x, 0, u, v, 0xffffff}, {x + width, 0, u + width, v, 0xffffff}, {x, 255, u, v + 255, 0xffffff}, {x + width, 255, u + width, v + 255, 0xffffff}};
+        hd_collect_ui_image(image, desc->tpage, desc->clut, HD_TEX_TEXTURED | HD_TEX_RAW | HD_TEX_FILTERED, 1, HD_UI_BACKGROUND, tex_images + desc_idx + i);
         render_ot_insert(render_buffers.ot_addr + 4, p);
         render_insert_tex_page((sint16)desc->tpage, 1);
     }

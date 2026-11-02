@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 WORLD_OBJECTS world_objects;
 
@@ -528,6 +529,8 @@ uint32 world_objects_load_map(RESOURCE_VIEW map)
     world_objects.count = 0;
     world_objects.tracked_count = 0;
     memset(world_objects.object, 0, sizeof(world_objects.object));
+    for (uint32 slot = 0; slot < WORLD_OBJECT_COUNT; slot++)
+        hd_object_reset(HD_OBJECT_WORLD, slot);
     XASSERT(map.data && cursor < map.byte_len);
     tag = map.data[cursor];
     more = (sint8)tag != -1;
@@ -865,7 +868,9 @@ sint32 world_objects_draw(void)
             transform_translate(x, y, z);
             transform_pitch(32768);
             target = object_callbacks[OBJECT_CALLBACK_WORLD_DRAW][type];
+            hd_object_begin(HD_OBJECT_WORLD, (uint32)i, type);
             object_call(target, world_objects.object + i, NULL);
+            hd_object_end();
             transform_pop();
         }
         i++;
@@ -1261,6 +1266,8 @@ uint32 world_objects_draw_car(const MODEL_OBJECT *model)
     if (original_kind == 94)
     {
         result = proj_local(80, 36, -376, &pos);
+        hd_object_part(HD_OBJECT_LIGHT0);
+        hd_collect_sprite(geometry_workspace.matrix, (VECTORF){80, 36, -376}, 640, -32, tex_map[66], color);
         if (!result)
         {
             pos.depth = pos.depth - 32u;
@@ -1269,6 +1276,8 @@ uint32 world_objects_draw_car(const MODEL_OBJECT *model)
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
         result = proj_local(-80, 36, -376, &pos);
+        hd_object_part(HD_OBJECT_LIGHT1);
+        hd_collect_sprite(geometry_workspace.matrix, (VECTORF){-80, 36, -376}, 640, -32, tex_map[66], color);
         if (!result)
         {
             pos.depth = pos.depth - 32u;
@@ -1277,6 +1286,8 @@ uint32 world_objects_draw_car(const MODEL_OBJECT *model)
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
         result = proj_local(128, 36, 384, &pos);
+        hd_object_part(HD_OBJECT_LIGHT2);
+        hd_collect_sprite(geometry_workspace.matrix, (VECTORF){128, 36, 384}, 640, -32, tex_map[66], color);
         if (!result)
         {
             pos.depth = pos.depth - 32u;
@@ -1285,6 +1296,8 @@ uint32 world_objects_draw_car(const MODEL_OBJECT *model)
             result = spr_draw_scaled(&pos, tex_map[66]);
         }
         result = proj_local(-128, 36, 384, &pos);
+        hd_object_part(HD_OBJECT_LIGHT3);
+        hd_collect_sprite(geometry_workspace.matrix, (VECTORF){-128, 36, 384}, 640, -32, tex_map[66], color);
         if (!result)
         {
             pos.depth = pos.depth - 32u;
@@ -1294,6 +1307,8 @@ uint32 world_objects_draw_car(const MODEL_OBJECT *model)
         }
     }
     result = proj_local(140, 68, -176, &pos);
+    hd_object_part(HD_OBJECT_LIGHT4);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){140, 68, -176}, 640, -48, tex_map[66], color);
     if (!result)
     {
         pos.depth = pos.depth - 48u;
@@ -1302,6 +1317,8 @@ uint32 world_objects_draw_car(const MODEL_OBJECT *model)
         result = spr_draw_scaled(&pos, tex_map[66]);
     }
     result = proj_local(-140, 68, -176, &pos);
+    hd_object_part(HD_OBJECT_LIGHT5);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){-140, 68, -176}, 640, -48, tex_map[66], color);
     if (!result)
     {
         pos.depth = pos.depth - 48u;

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 
 GEOMETRY_WORKSPACE geometry_workspace;
 
@@ -87,6 +88,7 @@ void transform_push(void)
     for (i = 5; i < 8; i++)
         dst->t[i - 5] = words[i];
     load_gte(words);
+    hd_transform_copy(dst, src);
     geometry_workspace.matrix = dst;
 }
 
@@ -98,6 +100,7 @@ void transform_translate(sint32 x, sint32 y, sint32 z)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
+    hd_transform_translate(matrix, x, y, z);
     uint32 words[8], result[3];
     int i;
     for (i = 0; i < 8; i++)
@@ -169,6 +172,7 @@ void transform_pitch_idx(uint32 idx)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
+    hd_transform_rotate(matrix, 0, idx >> 2);
     rotation->rotation_words[0] = ONE;
     rotation->rotation_words[1] = 0;
     rotation->m[1][1] = (sint16)c;
@@ -192,6 +196,7 @@ void transform_yaw_idx(uint32 idx)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
+    hd_transform_rotate(matrix, 1, idx >> 2);
     /* Packed halfwords remain zero-extended in the original word stores */
     rotation->rotation_words[0] = (uint16)c;
     rotation->rotation_words[1] = (uint16)-s;
@@ -213,6 +218,7 @@ void transform_roll_idx(uint32 idx)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
+    hd_transform_rotate(matrix, 2, idx >> 2);
     rotation->m[0][0] = (sint16)c;
     rotation->m[0][1] = (sint16)-s;
     rotation->m[0][2] = 0;
@@ -231,6 +237,7 @@ void transform_scale(sint32 x, sint32 y, sint32 z)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
+    hd_transform_scale(matrix, x, y, z);
     uint32 row;
     for (row = 0; row < 3; row++)
     {
@@ -254,6 +261,7 @@ void transform_reset(void)
         matrix->rotation_words[i] = (i == 0 || i == 2 || i == 4) ? ONE : 0;
     for (i = 0; i < 3; i++)
         matrix->t[i] = 0;
+    hd_transform_identity(matrix);
     transform_pitch((uint16)camera.angles.pitch);
     transform_yaw((uint16)camera.angles.yaw);
 }
@@ -270,6 +278,7 @@ sint32 transform_identity(void)
         matrix->rotation_words[i] = (i == 0 || i == 2 || i == 4) ? ONE : 0;
     for (i = 0; i < 3; i++)
         matrix->t[i] = 0;
+    hd_transform_identity(matrix);
     return ONE;
 }
 
@@ -310,6 +319,7 @@ void transform_load(const POSE_MATRIX *src)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *dst = geometry_workspace.matrix;
+    hd_transform_load(dst, src);
     uint32 words[8];
     int i;
     for (i = 0; i < 8; i++)

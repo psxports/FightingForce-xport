@@ -31,6 +31,7 @@ _Static_assert(offsetof(SpuVoiceAttr, adsr2) == 60, "SPU adsr2 offset");
 
 SOUND_VOICES sound_voices;
 SOUND_ATTRIBUTE_RING sound_attributes;
+static sint16 paused_voice_volume[SOUND_VOICE_COUNT][2];
 
 /* Return the old packet after advancing and wrapping the signed cursor */
 SpuVoiceAttr *sound_voice_next_attributes(void)
@@ -205,6 +206,10 @@ sint32 sound_voices_pause(void)
             sound_voice_stop(i);
         else if (type == 2)
         {
+            SpuVoiceAttr current = {.voice = 1u << i};
+            SpuGetVoiceAttr(&current);
+            paused_voice_volume[i][0] = current.volume.left;
+            paused_voice_volume[i][1] = current.volume.right;
             attr = sound_voice_next_attributes();
             attr->mask = 3;
             attr->voice = 1u << i;
@@ -220,14 +225,18 @@ sint32 sound_voices_pause(void)
 sint32 sound_voices_resume(void)
 {
     FUNCTION_MARKER(0x800570f0, "GAME.EXE");
-    sint32 i, left, right;
+    sint32 i;
     for (i = 0; i < SOUND_VOICE_COUNT; i++)
         if (sound_voices.voice[i].mode == 2)
         {
-            const SOUND_VOICE *voice = sound_voices.voice + i;
-            left = voice->left;
-            right = voice->right;
-            sound_voice_restore_volume(i, 2 * left, 2 * right);
+            // LEGACY FIX: restore both saved channels without applying master volume again
+            SpuVoiceAttr *attr = sound_voice_next_attributes();
+            attr->voice = 1u << i;
+            attr->mask = 3;
+            attr->volume.left = paused_voice_volume[i][0];
+            attr->volume.right = paused_voice_volume[i][1];
+            XASSERT(game_services.spu_voice_attributes);
+            game_services.spu_voice_attributes(attr);
         }
     return 0;
 }

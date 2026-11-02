@@ -1,4 +1,5 @@
 #include "game.h"
+#include "hd.h"
 
 STAGE_ANIMATION stage_animation;
 
@@ -178,10 +179,12 @@ static uint32 draw_double_slide_z(const MODEL_OBJECT *item)
     transform_translate(0, 0, offset);
     /* TODO: Investigate a model callback outside its native object domain */
     XASSERT(item);
+    hd_object_part(HD_OBJECT_PRIMARY);
     model_draw_static(model_refs[item->kind], 0, 256);
     transform_pop();
     transform_yaw(32768);
     transform_translate(0, 0, offset);
+    hd_object_part(HD_OBJECT_MIRROR);
     return model_draw_static(model_refs[item->kind], 0, 256);
 }
 

@@ -6,6 +6,7 @@ uint8 game_pause_flags;
 
 static void pause_frame(void)
 {
+    pause_refresh_pad();
     frame_prepare();
     disp_draw_scene();
     hud_update();
@@ -40,14 +41,14 @@ static sint32 pause_choice(uint32 buttons, sint32 choice)
 static sint32 pause_select(uint32 player, uint32 pad)
 {
     uint32 buttons;
-    sint32 choice = 0, left, right, x, i;
+    sint32 choice = 0, left, right, x;
     do
     {
+        pause_refresh_pad();
         buttons = (uint32)pad_decode_buttons(pad);
         pause_connection(player);
         choice = pause_choice(buttons, choice);
         text_gradient_update();
-        disp_wait_vblank();
         frame_prepare();
         disp_draw_scene();
         right = text_width(localization.text[LOCAL_TEXT_QUIT]);
@@ -72,11 +73,11 @@ static sint32 pause_select(uint32 player, uint32 pad)
     }
     do
     {
+        pause_refresh_pad();
         buttons = (uint32)pad_decode_buttons(pad);
         pause_connection(player);
         choice = pause_choice(buttons, choice);
         text_gradient_update();
-        disp_wait_vblank();
         frame_prepare();
         disp_draw_scene();
         text_center(localization.text[LOCAL_TEXT_QUIT_ASK], 150);
@@ -87,11 +88,7 @@ static sint32 pause_select(uint32 player, uint32 pad)
     } while (!(buttons & 0x4000u));
     menu_play_confirm_sound();
     if (!choice)
-    {
-        for (i = 0; i < 60; i++)
-            VSync(2);
         return 1;
-    }
     return 0;
 }
 
@@ -99,9 +96,7 @@ sint32 game_pause_run(void)
 {
     FUNCTION_MARKER(0x8005DBBC, "GAME.EXE");
     uint32 player = (game_pause_flags & 2u) != 0, pad = pad_game.port[player], buttons, flags;
-    /* WIP678E8/67908: physical CD music pause/resume; preserve logical flag. */
-    ++platform_boundary_calls[1];
-    cd_music.paused = 1;
+    cd_music_pause_playback();
     sound_voices_pause();
     do
     {
@@ -131,8 +126,7 @@ sint32 game_pause_run(void)
             game_pause_flags = game_pause_flags | (4u << player);
     } while (buttons & 8u);
     pause_frame();
-    ++platform_boundary_calls[1];
-    cd_music.paused = 0;
+    cd_music_resume_playback();
     sound_voices_resume();
     return 0;
 }

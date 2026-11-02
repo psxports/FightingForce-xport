@@ -143,6 +143,7 @@ typedef struct PAD_GAME_STATE
     uint32 port[PAD_PLAYER_COUNT];
     uint32 sample[PAD_PLAYER_COUNT];
     uint32 prev[PAD_PLAYER_COUNT];
+    sint32 analog_x[PAD_PLAYER_COUNT], analog_y[PAD_PLAYER_COUNT];
 } PAD_GAME_STATE;
 
 extern PAD_GAME_STATE pad_game;
@@ -295,6 +296,9 @@ uint8 *pad_action_clear(sint32 player);
 sint32 game_cold_reset(void);
 uint32 frame_draw_scene(void);
 uint32 frame_prepare(void);
+sint32 frame_update(void);
+void frame_clock_start(void);
+void frame_clock_stop(void);
 
 sint32 pad_count_devices(void);
 sint32 pad_refresh_ports(void);

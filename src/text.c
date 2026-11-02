@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 
 sint32 text_hint = TEXT_HINT_NONE;
 TEXT_LAYOUT text_layout;
@@ -133,7 +134,10 @@ sint32 text_draw_intro(const char *text, sint32 x, sint32 y, sint32 phase)
             pos.x = x + (uint32)offset;
             pos.size = 3 * offset + 64;
             if (offset != 400)
+            {
+                hd_collect_ui_scaled_sprite(pos.x, pos.y, pos.depth, pos.size, spr, render_style.color.rgbc, (uint32)depth_table[pos.depth >> 2] >> 2, 0);
                 spr_draw_scaled(&pos, spr);
+            }
             XASSERT(letter >= 0 && letter < TEXT_FONT_WIDTH_COUNT);
             width = font_width[letter];
             x = x + (uint32)(width + (width >> 3));
@@ -175,7 +179,10 @@ sint32 text_draw_large_intro(const char *text, sint32 x, sint32 y, sint32 phase)
         pos.x = x + (uint32)offset;
         pos.size = 3 * offset + 64;
         if (offset != 400)
+        {
+            hd_collect_ui_scaled_sprite(pos.x, pos.y, pos.depth, pos.size, spr, render_style.color.rgbc, (uint32)depth_table[pos.depth >> 2] >> 2, 0);
             spr_draw_scaled(&pos, spr);
+        }
         XASSERT(letter >= 0 && letter < TEXT_LARGE_WIDTH_COUNT);
         x = (uint32)x + large_width[letter];
         character = (uint8)*text;
@@ -334,7 +341,9 @@ sint32 text_draw(const char *text, sint32 x, sint32 y)
         {
             sint32 glyph = text_glyph(ch);
             uint32 font = tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex;
-            spr_draw(&pos, (uint32)glyph + tex_map[font]);
+            uint32 texture = (uint32)glyph + tex_map[font];
+            spr_draw(&pos, texture);
+            hd_collect_ui_sprite(pos.x, pos.y, texture, (uint32)depth_table[0] >> 2);
             XASSERT(glyph >= 0 && glyph < TEXT_FONT_WIDTH_COUNT);
             pos.x = (uint32)pos.x + font_width[glyph];
         }
@@ -356,7 +365,10 @@ uint32 text_draw_logo(sint32 x, sint32 y)
 {
     FUNCTION_MARKER(0x80061c68, "GAME.EXE");
     PROJECTION_POINT pos = {.v = {x, y, 16, 0}};
-    return spr_draw(&pos, tex_map[(uint32)tex_grps[TEXTURE_GROUP_LOGO].first_tex]);
+    uint32 texture = tex_map[(uint32)tex_grps[TEXTURE_GROUP_LOGO].first_tex];
+    uint32 result = spr_draw(&pos, texture);
+    hd_collect_ui_sprite(pos.x, pos.y, texture, (uint32)depth_table[4] >> 2);
+    return result;
 }
 
 /* GAME.EXE:80012A00. Descriptor end coordinates are inclusive sprite limits;
@@ -413,6 +425,8 @@ sint32 text_draw_gradient(const char *text, sint32 x, sint32 y, const TEXT_GRADI
             setRGB1(poly, (uint8)(next[0] * 8u - 128u), (uint8)(next[1] * 8u - 128u), (uint8)(next[2] * 8u - 128u));
             setRGB2(poly, (uint8)(next[3] * 8u - 128u), (uint8)(next[4] * 8u - 128u), (uint8)(next[5] * 8u - 128u));
             setRGB3(poly, (uint8)(prev[3] * 8u - 128u), (uint8)(prev[4] * 8u - 128u), (uint8)(prev[5] * 8u - 128u));
+            uint32 ui_colors[4] = {(uint8)(prev[0] * 8u - 128u) | ((uint32)(uint8)(prev[1] * 8u - 128u) << 8) | ((uint32)(uint8)(prev[2] * 8u - 128u) << 16), (uint8)(next[0] * 8u - 128u) | ((uint32)(uint8)(next[1] * 8u - 128u) << 8) | ((uint32)(uint8)(next[2] * 8u - 128u) << 16), (uint8)(next[3] * 8u - 128u) | ((uint32)(uint8)(next[4] * 8u - 128u) << 8) | ((uint32)(uint8)(next[5] * 8u - 128u) << 16), (uint8)(prev[3] * 8u - 128u) | ((uint32)(uint8)(prev[4] * 8u - 128u) << 8) | ((uint32)(uint8)(prev[5] * 8u - 128u) << 16)};
+            hd_collect_ui_gradient(x + advance, y, (uint32)glyph + tex_map[(uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex], ui_colors, 2047);
             spr_set_gradient_quad(packet, (uint32)glyph + tex_map[(uint32)tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex], x + advance, y);
             XASSERT(glyph >= 0 && glyph < TEXT_FONT_WIDTH_COUNT);
             advance += font_width[glyph];
@@ -443,7 +457,9 @@ uint32 text_draw_digits(const char *text, uint32 capacity, sint32 x, sint32 y)
             else
             {
                 digit -= 48;
-                spr_draw(&pos, digit + tex_map[(38u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))]);
+                uint32 texture = digit + tex_map[(38u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))];
+                spr_draw(&pos, texture);
+                hd_collect_ui_sprite(pos.x, pos.y, texture, (uint32)depth_table[0] >> 2);
                 XASSERT(idx < capacity);
                 uint32 pair = 10u * digit + ((uint8)text[idx] & 15);
                 XASSERT(pair < TEXT_DIGIT_WIDTH_COUNT);

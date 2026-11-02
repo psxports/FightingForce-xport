@@ -27,6 +27,7 @@ TEXTURE_ALLOCATOR tex_allocator;
 TEXTURE_PALETTES tex_pals;
 RESOURCE_FILE tex_file;
 TEXTURE_DESCRIPTORS tex_desc;
+TEXTURE_IMAGE tex_images[TEXTURE_DESCRIPTOR_CAPACITY];
 sint16 tex_base_v[6];
 typedef char TEXTURE_DESCRIPTOR_LAYOUT[(sizeof(TEXTURE_DESCRIPTOR) == 12 && offsetof(TEXTURE_DESCRIPTOR, clut) == 2 && offsetof(TEXTURE_DESCRIPTOR, tpage) == 6 && offsetof(TEXTURE_DESCRIPTOR, uv2) == 8 && offsetof(TEXTURE_DESCRIPTOR, uv3) == 10) ? 1 : -1];
 static const uint32 blend_mode[4] = {3, 1, 0, 2};
@@ -41,6 +42,7 @@ uint32 tex_allocator_reset(void)
 {
     FUNCTION_MARKER(0x80066EF4, "GAME.EXE");
     uint32 i;
+    memset(tex_images, 0, sizeof(tex_images));
     memset(tex_allocator.used, 0, sizeof(tex_allocator.used));
     memset(tex_allocator.row_used, 0, sizeof(tex_allocator.row_used));
     for (i = 0; i < 32; i++)
@@ -249,6 +251,7 @@ TEXTURE_DESCRIPTOR *tex_build_desc(uint32 width, uint32 height, uint32 mode, uin
     y = (uint8)tex_allocator.y;
     desc->uv1.v = (uint8)y;
     desc->uv0.v = (uint8)y;
+    tex_images[desc_idx] = (TEXTURE_IMAGE){(uint16)x, (uint16)y, (uint16)width, (uint16)height, (uint8)mode, (uint8)allocated};
     x = (uint8)tex_allocator.x + width - 1;
     desc->uv3.u = (uint8)x;
     desc->uv1.u = (uint8)x;

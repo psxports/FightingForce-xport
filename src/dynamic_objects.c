@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 _Static_assert(sizeof(ITEM_PROPERTIES) == 4, "Item property word size");
 _Static_assert(offsetof(ITEM_PROPERTIES, capabilities) == 0, "Item capability offset");
@@ -448,7 +449,9 @@ sint32 dynamic_objects_draw(void)
             continue;
         XASSERT(type < MODEL_TYPE_COUNT);
         target = object_callbacks[OBJECT_CALLBACK_DYNAMIC_DRAW][type];
+        hd_object_begin(HD_OBJECT_DYNAMIC, i, type);
         object_call(target ? target : &callback_default_model_draw, dynamic_objects + i, NULL);
+        hd_object_end();
     }
     return 0;
 }
@@ -1536,6 +1539,7 @@ sint32 dynamic_objects_allocate(void)
     for (i = 0; i < DYNAMIC_OBJECT_COUNT; i++)
         if (dynamic_objects[i].kind == 0xffffffffu)
         {
+            hd_object_reset(HD_OBJECT_DYNAMIC, i);
             dynamic_objects[i] = (MODEL_OBJECT){0};
             return i;
         }

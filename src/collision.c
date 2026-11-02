@@ -1205,8 +1205,17 @@ static sint32 damage_compound_pair(COLLISION_REGION *obstacle, MODEL_OBJECT *mod
     sint32 spread, slot;
     sint16 health;
     int i;
+    uint32 engine_voice = 0;
     if (obstacle->hits < 0)
     {
+        if (model && model->payload_kind == MODEL_PAYLOAD_OSCILLATION)
+        {
+            // LEGACY FIX: the van engine belongs to the body, not the adjacent shell
+            engine_voice = (uint16)model->oscillation.voice_plus_one;
+            if (engine_voice)
+                sound_voice_stop(engine_voice - 1);
+            model->oscillation.voice_plus_one = 0;
+        }
         /* An absent actor would make the original write low RAM at 0x8A */
         if (actor_idx != -1)
             ++actor_bonus_counts[actor_idx];
@@ -1247,7 +1256,8 @@ static sint32 damage_compound_pair(COLLISION_REGION *obstacle, MODEL_OBJECT *mod
         /* TODO: Investigate damage common fields outside the native object pools */
         XASSERT(model);
         model->kind = 861;
-        sound_voice_stop(v);
+        if (!engine_voice)
+            sound_voice_stop(v);
         sound_voice_play(19, 255, 6144);
         /* TODO: Investigate damage without a native model object */
         XASSERT(model);
@@ -1345,6 +1355,11 @@ static sint32 damage_compound_pair(COLLISION_REGION *obstacle, MODEL_OBJECT *mod
     }
     if (kind == 64)
     {
+        if (model->oscillation.voice_plus_one)
+        {
+            sound_voice_stop(model->oscillation.voice_plus_one - 1);
+            model->oscillation.voice_plus_one = 0;
+        }
         MODEL_OBJECT *next_model5 = NULL;
         uint32 next_idx5;
         for (next_idx5 = 0; next_idx5 + 1 < WORLD_OBJECT_COUNT; next_idx5++)

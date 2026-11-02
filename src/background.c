@@ -1,10 +1,29 @@
 #include "game.h"
+#include "hd.h"
 
 BACKGROUND background;
 
 static const sint8 lightning_pattern[40] = {
     1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1,
 };
+
+static void collect_gradient(float top, float bottom, uint32 top_color, uint32 bottom_color)
+{
+    const HD_UI_VERTEX vertices[4] = {{0, top, 0, 0, top_color}, {320, top, 0, 0, top_color}, {0, bottom, 0, 0, bottom_color}, {320, bottom, 0, 0, bottom_color}};
+    HD_UI_LAYOUT previous = hd_ui_layout(HD_UI_STRETCH);
+    hd_collect_ui(vertices, 0, 0, 0, 0, HD_UI_BACKGROUND);
+    hd_ui_layout(previous);
+}
+
+static uint32 background_color(uint16 color)
+{
+    return (uint8)(color << 3) | ((uint32)(uint8)((color >> 2) & ~7) << 8) | ((uint32)(uint8)((color >> 7) & ~7) << 16);
+}
+
+static void collect_sky_gradient(float top, float bottom, int clamp_top)
+{
+    hd_collect_background_gradient(top, bottom, 0, background_color((uint16)background.first_color), HD_BACKGROUND_SKY_GRADIENT, HD_HORIZON_TOP | HD_HORIZON_BOTTOM | (clamp_top ? HD_HORIZON_CLAMP_TOP : 0));
+}
 
 static uint32 draw_black_quad(uint16 top, uint16 bottom, int horizon)
 {
@@ -80,6 +99,7 @@ static void draw_wave_occluder(void)
 {
     static const uint32 xs[4] = {0xfe000000u, 0x02000000, 0xfa000000u, 0x06000000};
     PROJECTION_POINT points[4];
+    HD_MASK_VERTEX mask[4] = {0};
     uint32 i, p;
     POLY_F4 *poly;
     transform_identity();
@@ -94,6 +114,9 @@ static void draw_wave_occluder(void)
         if (i < 2)
             camera_z = camera.pos.z.bits;
         transform_translate(xs[i] - camera_x, (uint32)(-(sint64)(camera_y)), i < 2 ? 0x07000000 - camera_z : 0x0fff0000);
+        const MATRIXF *view = hd_transform_current(geometry_workspace.matrix);
+        if (view)
+            mask[i] = (HD_MASK_VERTEX){view->t[0], view->t[1], view->t[2], i < 2 ? -1.0f : 0};
         proj_local(0, 0, 0, &points[i]);
         transform_pop();
     }
@@ -108,12 +131,14 @@ static void draw_wave_occluder(void)
         poly->p[i].y = (uint32)points[i].y - (i < 2 ? 1 : 0);
     }
     render_ot_insert(render_buffers.ot_addr, p);
+    hd_collect_mask(mask, 0, HD_BACKGROUND_MASK_WAVE);
 }
 
 static uint32 draw_occluder(uint32 left, uint32 right)
 {
     FUNCTION_MARKER(0x80064d34u, "GAME.EXE");
     PROJECTION_POINT points[4];
+    HD_MASK_VERTEX mask[4] = {0};
     uint32 i, p;
     POLY_F4 *poly;
     transform_identity();
@@ -126,6 +151,9 @@ static uint32 draw_occluder(uint32 left, uint32 right)
         camera_x = camera.pos.x.bits;
         camera_y = camera.pos.y.bits;
         transform_translate(((i & 1) ? right : left) - camera_x, (uint32)(-(sint64)(camera_y)), i < 2 ? 0x7fff0000 : 0x0fff0000);
+        const MATRIXF *view = hd_transform_current(geometry_workspace.matrix);
+        if (view)
+            mask[i] = (HD_MASK_VERTEX){view->t[0], view->t[1], view->t[2], 0};
         proj_local(0, 0, 0, &points[i]);
         transform_pop();
     }
@@ -139,6 +167,7 @@ static uint32 draw_occluder(uint32 left, uint32 right)
         poly->p[i].x = points[i].x;
         poly->p[i].y = points[i].y;
     }
+    hd_collect_mask(mask, 0, left ? HD_BACKGROUND_MASK_LEFT : HD_BACKGROUND_MASK_RIGHT);
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
@@ -181,6 +210,7 @@ uint32 background_draw_ground(void)
     poly->p[2].y = horizon;
     poly->p[3].x = 320;
     poly->p[3].y = horizon;
+    hd_collect_background_gradient(hd_horizon(), hd_horizon() + 26, 0, 0, HD_BACKGROUND_GROUND_COVER, HD_HORIZON_TOP | HD_HORIZON_BOTTOM);
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
@@ -213,9 +243,12 @@ uint32 background_draw_gradient_sky(void)
         }
         render_ot_insert(render_buffers.ot_addr, a);
     }
+    float sky_horizon = hd_horizon() + (game_session.stage == 4 ? 132 : 0);
+    collect_sky_gradient(sky_horizon - 288, sky_horizon - 128, 0);
     x = (camera.angles.yaw >> 5) + 160u;
     v = (x & 256u) >> 1;
     x &= 255u;
+    hd_collect_sky(x + (camera.angles.yaw & 31) / 32.0f, sky_horizon - 128, 128, (uint8)(128u - v), (uint8)v);
     for (i = 0; i < 3; i++)
     {
         a = render_buffers.packet_addr;
@@ -242,12 +275,14 @@ uint32 background_draw_gradient_sky(void)
 uint32 background_draw_black_to_horizon(void)
 {
     FUNCTION_MARKER(0x80064c1cu, "GAME.EXE");
+    hd_collect_background_gradient(0, hd_horizon() + 20, 0, 0, HD_BACKGROUND_HORIZON_COVER, HD_HORIZON_BOTTOM);
     return draw_black_quad(0, 0, 1);
 }
 
 uint32 background_draw_lower_black(void)
 {
     FUNCTION_MARKER(0x80064cacu, "GAME.EXE");
+    collect_gradient(160, 255, 0, 0);
     return draw_black_quad(160, 255, 0);
 }
 
@@ -273,7 +308,9 @@ uint32 background_draw_tall_sky(void)
     }
     if ((sint32)(proj_horizon - bias) > 0)
         draw_gradient(0, 0, bias, 1);
+    collect_sky_gradient(hd_horizon() - 256, hd_horizon() - bias + 1, 0);
     scroll = ((uint16)camera.angles.yaw >> 5) & 255;
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f, hd_horizon() - bias, 256, 0, 0);
     for (i = 0; i < 3; ++i)
         draw_spr(scroll + 256 * i - 256, bias, 0, 256, 1);
     return render_insert_tex_page(142, 0);
@@ -293,9 +330,13 @@ uint32 background_draw_split_sky(void)
     if ((sint32)middle > 0)
         draw_gradient(top, middle, 0, 0);
     draw_black_quad((uint16)horizon, 256, 0);
+    float sky_horizon = hd_horizon() + (game_session.stage - 8 < 2 ? 24 : 0);
+    collect_sky_gradient(sky_horizon - 256, sky_horizon - 128, 1);
+    hd_collect_background_gradient(sky_horizon, 256, 0, 0, HD_BACKGROUND_LOWER_FILL, HD_HORIZON_TOP);
     angle = (camera.angles.yaw >> 5) + 160;
     scroll = angle & 255;
     v = (angle & 256) >> 1;
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f, sky_horizon - 128, 128, (uint8)(128 - v), (uint8)v);
     for (i = 0; i < 3; ++i)
     {
         uint32 p = render_buffers.packet_addr;
@@ -317,17 +358,22 @@ uint32 background_draw_two_row_sky(void)
 {
     FUNCTION_MARKER(0x800655c0u, "GAME.EXE");
     uint32 scroll = ((camera.angles.yaw >> 5) + 160) & 255, i;
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f, hd_horizon() - 128, 128, 128, 128);
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f, hd_horizon() - 256, 128, 0, 0);
     for (i = 0; i < 3; ++i)
         draw_spr(scroll + 256 * i - 256, 128, 128, 128, 1);
     if ((sint32)(proj_horizon - 128) > 0)
+    {
         for (i = 0; i < 3; ++i)
             draw_spr(scroll + 256 * i - 256, 256, 0, 128, 1);
+    }
     return render_insert_tex_page(142, 0);
 }
 
 uint32 background_draw_black_to_horizon_alt(void)
 {
     FUNCTION_MARKER(0x80065918u, "GAME.EXE");
+    hd_collect_background_gradient(0, hd_horizon() + 20, 0, 0, HD_BACKGROUND_HORIZON_COVER, HD_HORIZON_BOTTOM);
     return draw_black_quad(0, 0, 1);
 }
 
@@ -345,6 +391,7 @@ sint32 background_draw_lightning(void)
     poly->p[1].xy = 320;
     poly->p[2].xy = 160u << 16;
     poly->p[3].xy = (160u << 16) | 320;
+    collect_gradient(0, 160, 0, 0);
     render_ot_insert(render_buffers.ot_addr, p);
     phase = (game_session.tick & 511) - 472;
     if (phase >= 0 && lightning_pattern[phase])
@@ -360,6 +407,10 @@ sint32 background_draw_lightning(void)
         poly->p[3].xy = (256u << 16) | 320;
         render_ot_insert(render_buffers.ot_addr + 8188, p);
         render_insert_tex_page(206, 2047);
+        const HD_UI_VERTEX overlay[4] = {{0, 0, 0, 0, 0x808080}, {320, 0, 0, 0, 0x808080}, {0, 256, 0, 0, 0x808080}, {320, 256, 0, 0, 0x808080}};
+        HD_UI_LAYOUT previous = hd_ui_layout(HD_UI_STRETCH);
+        hd_collect_ui(overlay, 206, 0, HD_TEX_SEMI, 2047, HD_UI_OVERLAY);
+        hd_ui_layout(previous);
         volume = 255;
     }
     return sound_voice_volume(stage_audio_slots[1].voice, volume);
@@ -386,6 +437,7 @@ uint32 background_draw_wave_sky(void)
     horizon = proj_horizon;
     if ((sint32)(horizon - 84) > 0)
         draw_gradient(horizon - 212, horizon - 84, 0, 0);
+    collect_sky_gradient(hd_horizon() - 212, hd_horizon() - 84, 0);
     r = (uint8)background.last_color << 3;
     color = background.last_color;
     g = (color >> 2) & ~7;
@@ -396,10 +448,13 @@ uint32 background_draw_wave_sky(void)
     setPolyF4(poly);
     setRGB0(poly, r, g, b);
     setXY4(poly, 0, (uint16)(horizon + 44), 320, (uint16)(horizon + 44), 0, 255, 320, 255);
+    uint32 fill = r | ((uint32)g << 8) | ((uint32)b << 16);
+    hd_collect_background_gradient(hd_horizon() + 44, 255, fill, fill, HD_BACKGROUND_LOWER_FILL, HD_HORIZON_TOP);
     render_ot_insert(render_buffers.ot_addr, p);
     angle = (camera.angles.yaw >> 5) + (uint32)(sint32)(sint16)(background.wave_phase >> 16);
     scroll = angle & 255;
     v = (angle & 256) >> 1;
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f + (background.wave_phase & 65535) / 65536.0f, hd_horizon() - 84, 128, (uint8)(128 - v), (uint8)v);
     for (i = 0; i < 3; ++i)
         draw_spr(scroll + 256 * i - 256, horizon - 84, i == 1 ? 128 - v : v, 128, 0);
     return render_insert_tex_page(142, 0);
@@ -408,6 +463,7 @@ uint32 background_draw_wave_sky(void)
 uint32 background_draw_black(void)
 {
     FUNCTION_MARKER(0x800660dcu, "GAME.EXE");
+    collect_gradient(0, 256, 0, 0);
     return draw_black_quad(0, 256, 0);
 }
 
@@ -452,9 +508,12 @@ uint32 background_draw_lift_sky(void)
         poly0->p[3].xy.y = middle;
         render_ot_insert(render_buffers.ot_addr, p);
     }
+    float sky_height = (sint32)lift.travel / 512.0f + 64 + hd_horizon();
+    collect_sky_gradient(sky_height - 256, sky_height - 128, 1);
     angle = (camera.angles.yaw >> 5) + 256;
     scroll = angle & 255;
     v = (angle & 256) >> 1;
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f, sky_height - 128, 128, (uint8)(128 - v), (uint8)v);
     for (i = 0; i < 3; ++i)
     {
         p = render_buffers.packet_addr;
@@ -480,6 +539,8 @@ uint32 background_draw_lift_sky(void)
     setPolyF4(poly1);
     setRGB0(poly1, r, g, b);
     setXY4(poly1, 0, 256, 320, 256, 0, (uint16)(height - 256), 320, (uint16)(height - 256));
+    uint32 fill = r | ((uint32)g << 8) | ((uint32)b << 16);
+    hd_collect_background_gradient(256, sky_height - 256, fill, fill, HD_BACKGROUND_LOWER_FILL, HD_HORIZON_BOTTOM);
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
@@ -489,7 +550,9 @@ uint32 background_draw_high_sky(void)
     uint32 scroll, i;
     if ((sint32)(proj_horizon - 128) > 0)
         draw_gradient(0, 0, 128, 2);
+    collect_sky_gradient(hd_horizon() - 256, hd_horizon() - 128, 0);
     scroll = ((uint16)camera.angles.yaw >> 5) & 255;
+    hd_collect_sky(scroll + (camera.angles.yaw & 31) / 32.0f, hd_horizon() - 128, 256, 0, 0);
     for (i = 0; i < 3; ++i)
         draw_spr(scroll + 256 * i - 256, 128, 0, 256, 1);
     return render_insert_tex_page(142, 0);
@@ -515,6 +578,7 @@ uint32 background_draw_fixed_gradient(void)
     poly->p[2].xy.y = 128;
     poly->p[3].xy.x = 320;
     poly->p[3].xy.y = 128;
+    collect_gradient(0, 128, 0x200000, 0x102040);
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
@@ -549,6 +613,8 @@ uint32 background_draw_parallax_sky(void)
         poly->p[3].y = horizon;
         render_ot_insert(render_buffers.ot_addr, a);
     }
+    uint32 fill = background_color((uint16)background.first_color);
+    hd_collect_background_gradient(0, hd_horizon() - 256, fill, fill, HD_BACKGROUND_HORIZON_COVER, HD_HORIZON_BOTTOM);
     a = render_buffers.packet_addr;
     render_buffers.packet_addr = a + 20;
     spr = psx_addr(a, sizeof(*spr));
@@ -561,6 +627,7 @@ uint32 background_draw_parallax_sky(void)
     setUV0(spr, 0, 0);
     setWH(spr, 256, 256);
     render_ot_insert(render_buffers.ot_addr, a);
+    hd_collect_parallax(hd_horizon() - 256);
     a = render_buffers.packet_addr;
     render_buffers.packet_addr = a + 12;
     mode = psx_addr(a, sizeof(*mode));

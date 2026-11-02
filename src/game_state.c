@@ -5,6 +5,7 @@
 #include "game.h"
 #include "sound_device.h"
 #include "psx_spu.h"
+#include "hd.h"
 
 /* Reset native game owners and device workspaces for a cold start */
 sint32 game_cold_reset(void)
@@ -13,6 +14,7 @@ sint32 game_cold_reset(void)
     const LINE_F2 terminal = {.tag = 0x03ffffffu, .rgbc = {.rgbc = 0x40000000u}};
     _Static_assert(sizeof(terminal) == 16, "OT terminal device packet size");
     uint32 i;
+    hd_reset();
     memset(DRAM, 0, sizeof(DRAM));
     sound_heap = (SpuMallocState){0};
     memset(sound_heap_recs, 0, sizeof(sound_heap_recs));
@@ -181,6 +183,7 @@ sint32 game_cold_reset(void)
     tex_upload_rects = tex_upload_rect_defaults;
     memset(tex_map, 0, sizeof(tex_map));
     memset(tex_desc.words, 0, sizeof(tex_desc.words));
+    memset(tex_images, 0, sizeof(tex_images));
     memset(tex_base_v, 0, sizeof(tex_base_v));
     memset(&tex_pals, 0, sizeof(tex_pals));
     memset(&tex_effect_pals, 0, sizeof(tex_effect_pals));

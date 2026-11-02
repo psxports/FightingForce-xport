@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 ITEM_PICKUP item_pickup;
 
@@ -166,7 +167,8 @@ void item_pickup_draw(MODEL_OBJECT *item)
         flags = item->truck.flags;
     else
         flags = item && item->payload_kind == MODEL_PAYLOAD_AIR_BIKE ? item->air_bike.target[0].x : (item && item->payload_kind == MODEL_PAYLOAD_SCENE_VEHICLE ? item->scene_vehicle.flags : (item && item->payload_kind == MODEL_PAYLOAD_SCENE_HELICOPTER ? item->scene_helicopter.flags : (item && item->payload_kind == MODEL_PAYLOAD_COMBAT_HELICOPTER ? item->helicopter.bob_phase : item->patrol.voice_plus_one)));
-    if (flags < 0 && (flags & 2))
+    // LEGACY FIX: gate angular velocity is not an expiring-item blink counter
+    if (flags < 0 && (flags & 2) && item->payload_kind != MODEL_PAYLOAD_GATE_FRAGMENT && item->payload_kind != MODEL_PAYLOAD_GATE_FALL)
     {
         transform_pop();
         return;
@@ -254,6 +256,12 @@ uint32 item_draw_explosive_countdown(const MODEL_OBJECT *item)
     proj_local(0, 0, 0, &pos);
     if (pos.depth >= 65)
         pos.depth = pos.depth - 64u;
+    const MATRIXF *view = hd_transform_current(geometry_workspace.matrix);
+    if (view)
+    {
+        hd_object_part(HD_OBJECT_COUNTDOWN);
+        hd_collect_sprite_fixed(geometry_workspace.matrix, (VECTORF){0}, 0, 0, view->t[2] >= 65 ? -64.0f : 0.0f, tex_map[121u + grp]);
+    }
     if (pos.status)
         return (uint32)grp << 1;
     return spr_draw(&pos, tex_map[(121u + (grp))]);
@@ -273,6 +281,7 @@ void item_draw_explosive(const MODEL_OBJECT *item)
     if ((item->physics.life) > 0)
     {
         proj_local(0, 64, 0, &pos);
+        hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0, 64, 0}, game_session.tick & 1u ? 448.0f : 256.0f, 0, tex_map[66], 0x2cffffffu);
         if (!pos.status)
         {
             pos.size = game_session.tick & 1u ? 448 : 256;

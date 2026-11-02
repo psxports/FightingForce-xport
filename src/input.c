@@ -72,15 +72,54 @@ void pad_stream_reset(void)
 uint32 pad_game_buttons(uint32 pad)
 {
     FUNCTION_MARKER(0x8005f558, "GAME.EXE");
-    uint32 val;
+    uint32 val, player;
     if (pad == pad_game.port[0])
-        val = pad_game.sample[0];
+        player = 0;
     else if (pad == pad_game.port[1])
-        val = pad_game.sample[1];
+        player = 1;
     else
         return 0;
+    val = pad_game.sample[player];
     pad_decode.type = (uint8)(val >> 16);
+    // LEGACY FIX: restore this player's sampled stick instead of the last polled pad
+    if (pad_decode.type == 22 && pad_stream.mode != PAD_STREAM_PLAY)
+    {
+        pad_decode.x = pad_game.analog_x[player];
+        pad_decode.y = pad_game.analog_y[player];
+    }
     return val & 65535;
+}
+
+static void sample_axes(uint32 player)
+{
+    sint32 x = 0, y = 0;
+    if (pad_decode.type == 22)
+    {
+        const PAD_REPORT *report = pad_reports + (pad_game.port[player] != 0);
+        sint32 raw_x = report->left_x - 128, raw_y = report->left_y - 128;
+        uint32 squared = raw_x * raw_x + raw_y * raw_y;
+        uint32 radius = SquareRoot0(squared);
+        /* refine the PsyQ lookup estimate at stick-scale rounding boundaries */
+        while (radius * radius > squared)
+            --radius;
+        while ((radius + 1) * (radius + 1) <= squared)
+            ++radius;
+        // LEGACY FIX: compensate the original directional speed loss on circular sticks
+        if (radius > 32)
+        {
+            sint32 amount = radius >= 127 ? 128 : (radius - 32) * 128 / 95;
+            sint32 norm = math_distance_approx(0, 0, raw_x, raw_y);
+            x = raw_x * amount / norm;
+            y = raw_y * amount / norm;
+            sint32 remainder = amount - math_distance_approx(0, 0, x, y);
+            if (abs(raw_x) >= abs(raw_y))
+                x += raw_x < 0 ? -remainder : remainder;
+            else
+                y += raw_y < 0 ? -remainder : remainder;
+        }
+    }
+    pad_game.analog_x[player] = x;
+    pad_game.analog_y[player] = y;
 }
 
 /* Original normal, recording and playback input paths */
@@ -96,9 +135,11 @@ uint32 pad_game_poll(void)
         val = (uint16)pad_decode_buttons(pad_game.port[0]);
         pad_game.sample[0] = val;
         pad_game.sample[0] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+        sample_axes(0);
         val = (uint16)pad_decode_buttons(pad_game.port[1]);
         pad_game.sample[1] = val;
         pad_game.sample[1] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+        sample_axes(1);
         idx = pad_stream.count;
         XASSERT(pad_stream.data && idx && idx <= pad_stream.capacity);
         val = pad_game.sample[0];
@@ -140,10 +181,12 @@ uint32 pad_game_poll(void)
     val = (uint16)pad_decode_buttons(pad_game.port[0]);
     pad_game.sample[0] = val;
     pad_game.sample[0] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+    sample_axes(0);
     pad_decode.reset_blocked = (uint8)((sint32)game_session.player_count < 2 || actor_types[1] == ACTOR_TYPE_NONE || actor_health[1].hp <= 0);
     val = (uint16)pad_decode_buttons(pad_game.port[1]);
     pad_game.sample[1] = val;
     pad_game.sample[1] = val | ((uint32)(sint32)(sint8)pad_decode.type << 16);
+    sample_axes(1);
     pad_decode.reset_blocked = 0;
     return val;
 playback_exit:
@@ -229,12 +272,12 @@ PAD_DECODE_STATE pad_decode;
 typedef char PAD_REPORT_LAYOUT_CHECK[sizeof(PAD_REPORT) == 34 && offsetof(PAD_REPORT, buttons) == 2 && offsetof(PAD_REPORT, left_x) == 6 && offsetof(PAD_REPORT, left_y) == 7 ? 1 : -1];
 PAD_MENU_STATE pad_menu;
 
-/* InitPAD host boundary: register neutral disconnected buffers; host frame
- * polling supplies actual digital input before any game input decoder runs. */
+/* register native packets and start the SDK controller service */
 void pad_host_init(void)
 {
     PadInit(0);
     PadInitDirect((uint8 *)&pad_reports[0], (uint8 *)&pad_reports[1]);
+    PadStartCom();
     pad_host.enabled = 1;
 }
 
@@ -245,6 +288,11 @@ void pad_host_publish(uint32 connected, uint32 buttons0, uint32 buttons1)
         return;
     for (i = 0; i < 2; ++i)
     {
+        /* keep keyboard and d-pad movement digital alongside analog sticks */
+        sint32 port = i << 4;
+        sint32 mode = (buttons[i] & 0xf0u) == 0;
+        if (connected > i && (pad_reports[i].id >> 4) != (mode ? 7 : 4) && PadInfoMode(port, 2, 0) == 7)
+            PadSetMainMode(port, mode, 0);
         pad_publish(i, connected > i, ~buttons[i]);
     }
 }

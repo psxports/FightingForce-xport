@@ -140,6 +140,9 @@ sint32 animation_update_motion(sint32 idx)
     prev_distance = math_distance_newton(actor_positions[0].x.whole, actor_positions[0].z.whole, actor_positions[1].x.whole, actor_positions[1].z.whole);
     side = motion->bits[1];
     forward = motion->bits[2];
+    // LEGACY FIX: reverse forward wrench drift before the first grip alignment
+    if (playback->id == 130 && !playback->event_step)
+        forward = 0u - forward;
     actor_pose_decode(model_refs[(uint32)actor_types[idx]], idx, &actor_poses[idx]);
     state = animation_movement_state(playback->id);
     if (actor_contacts[idx].captor != -1 && state != 139 && state != 172 && state != 77)

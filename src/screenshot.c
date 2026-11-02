@@ -114,6 +114,10 @@ static uint32 file_write(uint32 handle, const uint8 *src, uint32 bytes)
 uint32 screenshot_capture(void)
 {
     FUNCTION_MARKER(0x80067940u, "GAME.EXE");
+    /* Developer capture reads software VRAM and is available only in OG */
+    XASSERT(!xport_hd);
+    if (xport_hd)
+        return 0;
     uint32 handle = file_create((const char *)screenshot.filename, sizeof(screenshot.filename)), block, row, offset, val;
     uint32 words[4], idx, capture_bytes;
     uint8 *pix, *src, *dst;

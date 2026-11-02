@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 
 static const sint32 effects_preview_voice = 19;
 
@@ -540,6 +541,8 @@ uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
         poly->p[2].xy.y = (uint16)(uy + 1);
         poly->p[3].xy.x = (uint16)(ux + width + 1);
         poly->p[3].xy.y = (uint16)(uy + 5);
+        const HD_UI_VERTEX fill[4] = {{(sint16)(ux + 1), (sint16)(uy + 1), 0, 0, 0xff0000}, {(sint16)(ux + width + 1), (sint16)(uy + 1), 0, 0, 0x00ffff}, {(sint16)(ux + 1), (sint16)(uy + 5), 0, 0, 0xff0000}, {(sint16)(ux + width + 1), (sint16)(uy + 5), 0, 0, 0x00ffff}};
+        hd_collect_ui(fill, 0, 0, 0, 2047, HD_UI_OVERLAY);
         render_ot_insert(render_buffers.ot_addr + 8188, a);
     }
     a = render_buffers.packet_addr;
@@ -554,5 +557,7 @@ uint32 options_draw_slider(sint32 x, sint32 y, sint32 val)
         poly->p[i].x = (uint16)(ux + (i < 2 ? 66 : 0));
         poly->p[i].y = (uint16)(uy + (i & 1 ? 6 : 0));
     }
+    const HD_UI_VERTEX border[4] = {{(sint16)ux, (sint16)uy, 0, 0, 0}, {(sint16)(ux + 66), (sint16)uy, 0, 0, 0}, {(sint16)ux, (sint16)(uy + 6), 0, 0, 0}, {(sint16)(ux + 66), (sint16)(uy + 6), 0, 0, 0}};
+    hd_collect_ui(border, 0, 0, 0, 2047, HD_UI_OVERLAY);
     return render_ot_insert(render_buffers.ot_addr + 8188, a);
 }

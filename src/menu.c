@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 #include "psx_gpu.h"
 #include "platform.h"
 
@@ -72,6 +73,10 @@ uint32 language_menu_draw(void)
         spr->rgbc.r = 128;
         spr->rgbc.g = 128;
         spr->rgbc.b = 128;
+        float x = (float)(128 * i), width = i == 2 ? 64.0f : 128.0f;
+        float u = (float)desc->uv0.u, v = (float)desc->uv0.v;
+        const HD_UI_VERTEX image[4] = {{x, -7, u, v, 0x808080}, {x + width, -7, u + width, v, 0x808080}, {x, 248, u, v + 255, 0x808080}, {x + width, 248, u + width, v + 255, 0x808080}};
+        hd_collect_ui_image(image, desc->tpage, desc->clut, HD_TEX_TEXTURED | HD_TEX_FILTERED, 1, HD_UI_BACKGROUND, tex_images + desc_idx + i);
         render_ot_insert(render_buffers.ot_addr + 4, p);
         render_insert_tex_page((sint32)(sint16)desc->tpage, 1);
     }
@@ -90,6 +95,8 @@ uint32 language_menu_draw(void)
     poly->p[2].y = 256;
     poly->p[3].x = 320;
     poly->p[3].y = 256;
+    const HD_UI_VERTEX background[4] = {{0, 0, 0, 0, 0}, {320, 0, 0, 0, 0}, {0, 256, 0, 0, 0}, {320, 256, 0, 0, 0}};
+    hd_collect_ui(background, 0, 0, 0, 0, HD_UI_BACKGROUND);
     render_ot_insert(render_buffers.ot_addr, p);
     pal = game_settings.language == GAME_LANGUAGE_ENGLISH ? &text_active_gradient : &text_inactive_gradient;
     text_draw_gradient(language_english, 24, 175, pal);
@@ -231,6 +238,10 @@ static uint32 menu_dim_backdrop(void)
         spr->rgbc.r = 32;
         spr->rgbc.g = 32;
         spr->rgbc.b = 32;
+        float x = (float)(128 * i), width = i == 2 ? 64.0f : 128.0f;
+        float u = (float)desc->uv0.u, v = (float)desc->uv0.v;
+        const HD_UI_VERTEX image[4] = {{x, -7, u, v, 0x202020}, {x + width, -7, u + width, v, 0x202020}, {x, 248, u, v + 255, 0x202020}, {x + width, 248, u + width, v + 255, 0x202020}};
+        hd_collect_ui_image(image, desc->tpage, desc->clut, HD_TEX_TEXTURED | HD_TEX_FILTERED, 1, HD_UI_BACKGROUND, tex_images + desc_idx + i);
         render_ot_insert(render_buffers.ot_addr + 4, p);
         render_insert_tex_page((sint32)(sint16)desc->tpage, 1);
     }
@@ -250,6 +261,8 @@ static uint32 menu_dim_backdrop(void)
     poly->p[2].y = 256;
     poly->p[3].x = 320;
     poly->p[3].y = 256;
+    const HD_UI_VERTEX background[4] = {{0, 0, 0, 0, 0}, {320, 0, 0, 0, 0}, {0, 256, 0, 0, 0}, {320, 256, 0, 0, 0}};
+    hd_collect_ui(background, 0, 0, 0, 0, HD_UI_BACKGROUND);
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 
@@ -730,8 +743,8 @@ uint32 menu_present(void)
         text_center(localization.hint[idx], 216);
     }
     DrawOTag((uint32 *)psx_addr(render_buffers.ot_addr, sizeof(uint32)));
-    if (!loading.active)
-        gpu_present();
+    hd_collect_seal(disp_buffers.env[disp_buffers.frame & 1].screen.x, disp_buffers.env[disp_buffers.frame & 1].screen.y);
+    hd_frame_end(!loading.active, disp_buffers.frame & 1);
     result = disp_buffers.frame + 1;
     disp_buffers.frame = result;
     if (game_services.frontend_frame)
@@ -745,6 +758,7 @@ uint32 menu_present_dim(void)
     uint32 p;
     POLY_F4 *poly;
     disp_begin_frame();
+    hd_collect_partial();
     p = render_buffers.packet_addr;
     render_buffers.packet_addr = p + 24;
     poly = psx_addr(p, sizeof(*poly));
@@ -797,6 +811,10 @@ uint32 menu_draw_title_backdrop(void)
         spr->rgbc.r = 128;
         spr->rgbc.g = 128;
         spr->rgbc.b = 128;
+        float x = (float)(128 * i), width = i == 2 ? 64.0f : 128.0f;
+        float u = (float)desc->uv0.u, v = (float)desc->uv0.v;
+        const HD_UI_VERTEX image[4] = {{x, -7, u, v, 0x808080}, {x + width, -7, u + width, v, 0x808080}, {x, 248, u, v + 255, 0x808080}, {x + width, 248, u + width, v + 255, 0x808080}};
+        hd_collect_ui_image(image, desc->tpage, desc->clut, HD_TEX_TEXTURED | HD_TEX_FILTERED, 1, HD_UI_BACKGROUND, tex_images + desc_idx + i);
         render_ot_insert(render_buffers.ot_addr + 4, p);
         render_insert_tex_page((sint16)desc->tpage, 1);
     }
@@ -817,6 +835,8 @@ uint32 menu_draw_title_backdrop(void)
     poly->p[2].y = 256;
     poly->p[3].x = 320;
     poly->p[3].y = 256;
+    const HD_UI_VERTEX background[4] = {{0, 0, 0, 0, 0}, {320, 0, 0, 0, 0}, {0, 256, 0, 0, 0}, {320, 256, 0, 0, 0}};
+    hd_collect_ui(background, 0, 0, 0, 0, HD_UI_BACKGROUND);
     return render_ot_insert(render_buffers.ot_addr, p);
 }
 

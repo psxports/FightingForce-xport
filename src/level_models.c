@@ -18,15 +18,15 @@ sint32 level_run(void)
     FUNCTION_MARKER(0x80014a34, "GAME.EXE");
     level_initialize();
     level_start_playback();
+    frame_clock_start();
     for (;;)
     {
-        result = game_update_frame_prefix();
+        result = frame_update();
         if (result)
-            return result;
-        result = level_transition_update();
-        if (result)
-            return result;
+            break;
     }
+    frame_clock_stop();
+    return result;
 }
 
 /* 14808: initial player positions/orientation and camera origin. */

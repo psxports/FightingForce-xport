@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 /* Signed projected Y retains full word bits for wrapped background arithmetic */
 uint32 proj_horizon;
@@ -41,6 +42,7 @@ void proj_update_horizon(void)
     PROJECTION_POINT pos;
     transform_identity();
     transform_pitch(camera.angles.pitch);
+    hd_collect_horizon(geometry_workspace.matrix);
     proj_local(0, 0, 32767, &pos);
     proj_horizon = (uint32)pos.y;
 }

@@ -1,6 +1,7 @@
 #include "game.h"
 #include "platform.h"
 #include "psx_gpu.h"
+#include "hd.h"
 
 DISPLAY_BUFFERS disp_buffers;
 
@@ -39,6 +40,7 @@ void disp_setup(void)
 static void vblank_callback(void)
 {
     FUNCTION_MARKER(0x8006467c, "GAME.EXE");
+    hd_vblank();
 }
 
 /* 5717C. IRQ/card BIOS lifecycle calls do not execute on Windows; card events
@@ -76,6 +78,7 @@ void disp_initialize(void)
 {
     FUNCTION_MARKER(0x8005748C, "GAME.EXE");
     game_init_devices();
+    hd_vblank_reset();
     psx_bios_vsync_callback(vblank_callback);
     cd_music_init();
     disp_setup();
@@ -112,6 +115,7 @@ uint32 disp_begin_frame(void)
     uint32 parity;
     DISPENV *disp;
     sint32 offset_x, offset_y;
+    hd_frame_begin(0);
     DrawSync(0);
     if (!loading.active)
         VSync(2);
@@ -127,7 +131,9 @@ uint32 disp_begin_frame(void)
     offset_y = disp->screen.y;
     gpu_display_offset(offset_x, offset_y);
     render_buffers_select();
-    return render_ot_init(render_buffers.ot_addr);
+    uint32 result = render_ot_init(render_buffers.ot_addr);
+    hd_collect_begin((float)(xport_gte_read_control(26) & 65535u), (sint32)xport_gte_read_control(24) / 65536.0f, (sint32)xport_gte_read_control(25) / 65536.0f, disp->disp.w, disp->disp.h);
+    return result;
 }
 
 /* 80011CCC: NEG/ADDI are trapping instructions; retain that domain explicitly */
@@ -183,6 +189,14 @@ static uint32 finish_overlay(uint32 p, uint16 page)
     return render_insert_tex_page(page, 2047);
 }
 
+static void collect_overlay(uint32 color, uint16 page)
+{
+    const HD_UI_VERTEX vertices[4] = {{0, 0, 0, 0, color}, {320, 0, 0, 0, color}, {0, 256, 0, 0, color}, {320, 256, 0, 0, color}};
+    HD_UI_LAYOUT previous = hd_ui_layout(HD_UI_STRETCH);
+    hd_collect_ui(vertices, page, 0, HD_TEX_SEMI, 2047, HD_UI_OVERLAY);
+    hd_ui_layout(previous);
+}
+
 uint32 disp_draw_fade(void)
 {
     uint32 p;
@@ -190,6 +204,7 @@ uint32 disp_draw_fade(void)
     p = begin_overlay();
     POLY_F4 *poly = psx_addr(p, sizeof(*poly));
     setRGB0(poly, (uint8)disp_buffers.fade.r, (uint8)disp_buffers.fade.g, (uint8)disp_buffers.fade.b);
+    collect_overlay((uint8)disp_buffers.fade.r | ((uint32)(uint8)disp_buffers.fade.g << 8) | ((uint32)(uint8)disp_buffers.fade.b << 16), 206);
     return finish_overlay(p, 206);
 }
 
@@ -203,6 +218,7 @@ uint32 disp_draw_flash(void)
     p = begin_overlay();
     POLY_F4 *poly = psx_addr(p, sizeof(*poly));
     setRGB0(poly, color, color, color);
+    collect_overlay(color | ((uint32)color << 8) | ((uint32)color << 16), 174);
     return finish_overlay(p, 174);
 }
 

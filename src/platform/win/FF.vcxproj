@@ -123,6 +123,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\xport\src\xport_trace.c" />
     <ClCompile Include="..\..\game_state.c" />
+    <ClCompile Include="..\..\hd.c" />
+    <ClInclude Include="..\..\hd.h" />
     <ClCompile Include="..\..\text.c" />
     <ClCompile Include="..\..\hud.c" />
     <ClCompile Include="..\..\input.c" />

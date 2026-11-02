@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 ITEM_CORRECTION item_corrections[DYNAMIC_ITEM_TYPE_COUNT];
 
@@ -26,6 +27,7 @@ sint32 character_trail_clear(sint32 resource)
         vertices[i].vy = 0;
         vertices[i].vz = 0;
     }
+    hd_trail_reset((uint32)resource);
     return 0;
 }
 
@@ -102,6 +104,7 @@ uint32 character_trail_append(sint32 idx, sint32 attachment)
         vertices[17].vy = v[1].vy;
         vertices[17].vz = v[1].vz;
     }
+    hd_trail_append(867 + (idx & 1u), (sint16)trail->phase == 1);
     age = ((sint16)trail->phase) >> 2;
     if (age >= 8)
     {
@@ -367,11 +370,13 @@ static void actor_trail(uint32 idx)
     uint32 color = render_style.color.rgbc;
     render_style.color.rgbc = color | 0x02000000;
     render_style.blend_mode = 4;
+    hd_actor_part(idx, HD_ACTOR_GHOST1);
     model_draw_pose(model_refs[(uint32)actor_types[idx]], &actor_poses[ACTOR_POSE_TRAIL1]);
     if (!(sint8)game_pause_flags && !(game_session.tick & 1))
         actor_pose_copy(&actor_poses[ACTOR_POSE_TRAIL1], &actor_poses[ACTOR_POSE_TRAIL0]);
     render_style.color.rgbc = color | 0x02000000;
     render_style.blend_mode = 1;
+    hd_actor_part(idx, HD_ACTOR_GHOST0);
     model_draw_pose(model_refs[(uint32)actor_types[idx]], &actor_poses[ACTOR_POSE_TRAIL0]);
     if (!(sint8)game_pause_flags)
     {
@@ -381,6 +386,7 @@ static void actor_trail(uint32 idx)
             light->flags &= 247;
     }
     render_style.color.rgbc = color;
+    hd_actor_part(idx, HD_ACTOR_BODY);
 }
 
 static void actor_van(uint32 idx)
@@ -399,17 +405,22 @@ static void actor_van(uint32 idx)
     transform_translate(x - camera_x, y + height - camera_y, z - camera_z);
     transform_pitch(32768);
     transform_yaw((sint16)((uint32)(sint32)orientation->yaw << 5));
+    hd_actor_part(idx, HD_ACTOR_VAN_FRONT);
     model_draw_static(model_refs[65], 0, 0);
     transform_push();
     transform_roll(orientation->roll);
     transform_translate(0, 4194304, 0);
+    hd_actor_part(idx, HD_ACTOR_VAN_BODY);
     model_draw_static(model_refs[17], 0, 0);
     transform_pop();
+    hd_actor_part(idx, HD_ACTOR_VAN_BACK);
     model_draw_static(model_refs[68], 0, 4096);
     transform_translate(0, 0, 30408704);
     transform_yaw(16384);
+    hd_actor_part(idx, HD_ACTOR_VAN_MARKER);
     model_draw_pulsing_marker();
     transform_pop();
+    hd_actor_part_end();
 }
 
 static void actor_body(uint32 idx, sint32 type, int player)
@@ -421,6 +432,7 @@ static void actor_body(uint32 idx, sint32 type, int player)
     ACTOR_FRAME_MOTION *motion;
     uint32 color, x, y, z, camera_x, camera_y, camera_z, height;
     sint32 yaw, scale;
+    hd_actor_part(idx, HD_ACTOR_BODY);
     transform_push();
     x = pos->x.bits;
     camera_x = camera.pos.x.bits;
@@ -447,10 +459,12 @@ static void actor_body(uint32 idx, sint32 type, int player)
         if (!player && type == 14 && (light->flags & 8))
             actor_trail(idx);
         model_draw_pose(model_refs[(uint32)actor_types[idx]], &actor_poses[idx]);
+        hd_actor_part(idx, HD_ACTOR_RIGHT);
         if (player)
             player_right_item(idx, color);
         else
             actor_other_item(idx, color, 0, 0);
+        hd_actor_part(idx, HD_ACTOR_LEFT);
         actor_other_item(idx, color, 1, player);
         transform_pop();
         transform_push();
@@ -462,6 +476,7 @@ static void actor_body(uint32 idx, sint32 type, int player)
         transform_translate(x - camera_x, (uint32)(-(sint64)(camera_y)), z - camera_z);
         yaw = (sint16)((uint32)(-(sint64)((uint32)(sint32)orientation->yaw << 5))) + 32768;
         transform_yaw(yaw);
+        hd_actor_part(idx, HD_ACTOR_SHADOW);
         if (player)
             model_draw_static(model_refs[860], 0, 0);
         else
@@ -479,8 +494,12 @@ static void actor_body(uint32 idx, sint32 type, int player)
         }
     }
     else
+    {
         status->flags = player ? (status->flags | ACTOR_CULLED) : 2u;
+        hd_collect_culled_actor(idx, type, player, geometry_workspace.matrix);
+    }
     transform_pop();
+    hd_actor_part_end();
 }
 
 /* 593FC: character, held-item, trail, van and shadow rendering. */

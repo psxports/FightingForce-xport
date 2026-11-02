@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "hd.h"
 
 LIFT lift;
 
@@ -85,6 +86,7 @@ static void draw_marker(const struct EFFECT *effect)
     transform_push();
     object_transform_camera(NULL, effect);
     proj_local(0, 0, 0, &pos);
+    hd_collect_sprite(geometry_workspace.matrix, (VECTORF){0}, 512, 0, tex_map[66], render_style.color.rgbc);
     if (!pos.status)
     {
         pos.size = 512;

@@ -1,4 +1,5 @@
 #include "game.h"
+#include "hd.h"
 
 uint32 credits_run(void)
 {
@@ -44,6 +45,8 @@ uint32 credits_run(void)
         poly->p[2].y = 256;
         poly->p[3].x = 320;
         poly->p[3].y = 256;
+        const HD_UI_VERTEX background[4] = {{0, 0, 0, 0, 0}, {320, 0, 0, 0, 0}, {0, 256, 0, 0, 0}, {320, 256, 0, 0, 0}};
+        hd_collect_ui(background, 0, 0, 0, 0, HD_UI_BACKGROUND);
         render_ot_insert(render_buffers.ot_addr, p);
         spr = tex_map[(uint32)tex_grps[slide + 1].first_tex];
         pos.x = 96;
@@ -53,17 +56,21 @@ uint32 credits_run(void)
         shade = 128u - fade;
         shade = (shade << 16) + (shade << 8) + 0x2c000000u + shade;
         render_style.color.rgbc = shade;
+        hd_collect_ui_scaled_sprite(pos.x, pos.y, pos.depth, pos.size, spr, shade, (uint32)depth_table[pos.depth >> 2] >> 2, 1);
         spr_draw_scaled(&pos, spr);
         pos.x += 127;
         render_style.color.rgbc = shade;
+        hd_collect_ui_scaled_sprite(pos.x, pos.y, pos.depth, pos.size, spr + 1, shade, (uint32)depth_table[pos.depth >> 2] >> 2, 1);
         spr_draw_scaled(&pos, spr + 1);
         pos.x -= 127;
         next = slide == 4 ? tex_map[(uint32)tex_grps[1].first_tex] : spr + 2;
         shade = ((uint32)fade << 16) + ((uint32)fade << 8) + 0x2c000000u + fade;
         render_style.color.rgbc = shade;
+        hd_collect_ui_scaled_sprite(pos.x, pos.y, pos.depth, pos.size, next, shade, (uint32)depth_table[pos.depth >> 2] >> 2, 1);
         spr_draw_scaled(&pos, next);
         pos.x += 127;
         render_style.color.rgbc = shade;
+        hd_collect_ui_scaled_sprite(pos.x, pos.y, pos.depth, pos.size, next + 1, shade, (uint32)depth_table[pos.depth >> 2] >> 2, 1);
         spr_draw_scaled(&pos, next + 1);
         if ((sint32)scroll < 2062)
             ++scroll;

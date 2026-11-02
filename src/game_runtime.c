@@ -7,6 +7,7 @@
 #include "movies.h"
 #include "xport.h"
 #include "platform.h"
+#include "hd.h"
 
 GAME_SESSION game_session;
 
@@ -15,6 +16,76 @@ static jmp_buf gameplay_exit;
 static int gameplay_exit_active;
 static uint32 menu_scene_context = 0xffffffff;
 
+static struct
+{
+    uint64 field;
+    int active, paused, hd;
+} frame_clock;
+
+void frame_clock_start(void)
+{
+    frame_clock.field = xport_frame();
+    frame_clock.active = 1;
+    frame_clock.paused = 0;
+    frame_clock.hd = xport_hd;
+    hd_history_reset();
+}
+
+void frame_clock_stop(void)
+{
+    frame_clock.active = 0;
+}
+
+static float frame_clock_sample(uint64 *field)
+{
+    float phase = xport_frame_fract(field);
+    if (frame_clock.paused || frame_clock.hd != xport_hd || *field < frame_clock.field)
+    {
+        frame_clock.field = *field;
+        frame_clock.paused = 0;
+        frame_clock.hd = xport_hd;
+        hd_history_reset();
+    }
+    else if (*field - frame_clock.field > 16)
+    {
+        /* retain at most eight pending steps after a long host stall */
+        frame_clock.field = *field - 16;
+        hd_history_reset();
+    }
+    return phase;
+}
+
+sint32 frame_update(void)
+{
+    uint64 field;
+    sint32 result;
+    /* service SDK events without an automatic software presentation */
+    gpu_frame_begin();
+    psx_native_poll_events();
+    gpu_frame_end();
+    xport_poll();
+    if (xport_isquit())
+    {
+        frame_clock_stop();
+        longjmp(menu_exit, 1);
+    }
+    float phase = frame_clock_sample(&field);
+    for (uint32 steps = 0; steps < 8 && field - frame_clock.field >= 2; steps++)
+    {
+        frame_clock.field += 2;
+        result = game_update_frame_prefix();
+        if (result)
+            return result;
+        result = level_transition_update();
+        if (result)
+            return result;
+        phase = frame_clock_sample(&field);
+    }
+    phase = ((float)(field - frame_clock.field) + phase) * 0.5f;
+    hd_present(phase > 1 ? 1 : phase);
+    return 0;
+}
+
 enum
 {
     FRONTEND_GAME_READY = 2
@@ -22,6 +93,7 @@ enum
 
 static void return_to_frontend(void)
 {
+    frame_clock_stop();
     if (gameplay_exit_active)
         longjmp(gameplay_exit, 1);
     longjmp(menu_exit, 2);
@@ -31,18 +103,35 @@ static void poll_host_pads(void)
 {
     uint32 pad0 = PadRead(0), pad1 = PadRead(1);
     if (xport_isquit())
+    {
+        frame_clock_stop();
         longjmp(menu_exit, 1);
+    }
     pad_host_publish(2, ((pad0 & 255) << 8) | ((pad0 >> 8) & 255), ((pad1 & 255) << 8) | ((pad1 >> 8) & 255));
 }
 
 void pause_refresh_pad(void)
 {
+    /* service paused fields now so SDK audio and callbacks cannot accumulate */
+    gpu_frame_begin();
+    psx_native_poll_events();
+    gpu_frame_end();
+    xport_poll();
     poll_host_pads();
 }
 
 static void title_host_frame(void)
 {
     poll_host_pads();
+}
+
+static void run_high_scores(uint32 score0, uint32 score1)
+{
+    void (*frame)(void) = game_services.frontend_frame;
+    /* gameplay menus need the same host pad publisher as the frontend */
+    game_services.frontend_frame = title_host_frame;
+    high_scores_run(score0, score1);
+    game_services.frontend_frame = frame;
 }
 
 uint32 frame_prepare(void)
@@ -52,16 +141,26 @@ uint32 frame_prepare(void)
     PSX_RECT effects_rect = {0, 499, TEXTURE_PAL_COLORS, 1};
     FUNCTION_MARKER(0x80058634, "GAME.EXE");
     poll_host_pads();
+    hd_frame_begin(1);
     DrawSync(0);
     if (LoadImagePSX(&effects_rect, tex_pals.words + TEXTURE_PAL_EFFECTS * TEXTURE_PAL_WORDS) != 0)
+    {
+        frame_clock_stop();
         longjmp(menu_exit, 1);
+    }
     DrawSync(0);
     PSX_RECT *strip_rect = &tex_upload_rects.terrain_strip;
     if (strip_rect->w < 0 || strip_rect->h < 0 || strip_rect->w * (uint32)strip_rect->h > sizeof(background_img.pix) / sizeof(uint16) || LoadImagePSX(strip_rect, background_img.words) != 0)
+    {
+        frame_clock_stop();
         longjmp(menu_exit, 1);
+    }
     cd_music_poll();
     render_ot_compact();
-    VSync(2);
+    if (!frame_clock.active)
+        hd_vsync();
+    if (frame_clock.active && game_pause_flags)
+        frame_clock.paused = 1;
     parity = disp_buffers.frame & 1;
     disp = disp_buffers.env + parity;
     PutDispEnv(disp);
@@ -71,8 +170,10 @@ uint32 frame_prepare(void)
     gpu_draw_env(0x800b8938 + 92 * parity, 320 * parity, 0);
     DrawOTag((uint32 *)psx_addr(render_buffers.prev_ot_addr, sizeof(uint32)));
     gpu_display_offset(disp->screen.x, disp->screen.y);
-    gpu_present();
+    hd_collect_seal(disp->screen.x, disp->screen.y);
+    hd_frame_end(frame_clock.active && !game_pause_flags && !frame_clock.paused ? HD_PRESENT_DEFERRED : 1, parity);
     render_ot_init(render_buffers.ot_addr);
+    hd_collect_begin((float)(xport_gte_read_control(26) & 65535u), (sint32)xport_gte_read_control(24) / 65536.0f, (sint32)xport_gte_read_control(25) / 65536.0f, disp->disp.w, disp->disp.h);
     return frame_draw_scene();
 }
 
@@ -147,7 +248,7 @@ static int gameplay_continue(int result)
                         sequence_run(7, sequence_prepare_frame);
                         score0 = player_scores[0].val;
                         score1 = player_scores[1].val;
-                        high_scores_run(score0, score1);
+                        run_high_scores(score0, score1);
                         game_session.stage = 25;
                         card_dialog.settings_only = 0;
                         card_save_dialog();
@@ -171,7 +272,7 @@ static int gameplay_continue(int result)
         {
             score0 = player_scores[0].val;
             score1 = player_scores[1].val;
-            high_scores_run(score0, score1);
+            run_high_scores(score0, score1);
             return 1;
         }
         actors_reset_health();
@@ -354,6 +455,7 @@ frontend_ready:
         }
     }
 done:
+    frame_clock_stop();
     game_services.frontend_frame = NULL;
     xport_audio_shutdown();
     return result;

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 #include "sound_device.h"
 
 static const char continue_prompt_format[] = "]%s";
@@ -104,6 +105,7 @@ uint32 hud_continue_prompt(uint32 player)
         text_draw(text, x, 26);
     if (!(pad_decode_buttons(pad_game.port[player]) & 0x4000))
         return 0;
+    hd_actor_reset(player);
     level_transition.continues = level_transition.continues - 1;
     actor_health[player].hp = 380;
     actor_lifecycle[player].death_ticks = 0;
@@ -151,6 +153,8 @@ static void hud_ammo(uint32 player, ACTOR_ITEM_HAND hand)
 uint32 hud_draw_health_left(uint32 xy, uint32 idx)
 {
     FUNCTION_MARKER(0x80063100, "GAME.EXE");
+    HD_UI_LAYOUT previous_layout = hd_ui_layout(HD_UI_LEFT);
+    HD_UI_VERTEX ui[4];
     const ACTOR_HEALTH *health = actor_health + idx;
     sint32 maximum = health->max >> 2, old = health->trail >> 2;
     sint32 shown = health->shown >> 2, hp = health->hp >> 2;
@@ -178,13 +182,18 @@ uint32 hud_draw_health_left(uint32 xy, uint32 idx)
     special = actor_types[idx] == 53;
     for (i = 0; i < 4; i++)
     {
-        poly->p[i].rgbc.r = i < 2 ? (wide ? 0 : 128) : 255;
-        poly->p[i].rgbc.g = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
-        poly->p[i].rgbc.b = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
+        uint8 r = i < 2 ? (wide ? 0 : 128) : 255;
+        uint8 g = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
+        uint8 b = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
+        poly->p[i].rgbc.r = r;
+        poly->p[i].rgbc.g = g;
+        poly->p[i].rgbc.b = b;
         poly->p[i].xy.x = x + (i < 2 ? 0 : (uint32)shown);
         poly->p[i].xy.y = y + 2 + ((i & 1) ? 4 : 0);
+        ui[i] = (HD_UI_VERTEX){(sint16)(x + (i < 2 ? 0 : (uint32)shown)), (sint16)(y + 2 + ((i & 1) ? 4 : 0)), 0, 0, r | ((uint32)g << 8) | ((uint32)b << 16)};
     }
     render_ot_insert(render_buffers.ot_addr + 8188, p);
+    hd_collect_ui(ui, 0, 0, 0, 2047, HD_UI_OVERLAY);
     delta = old - hp;
     if (delta < 0)
         delta = -delta;
@@ -203,8 +212,10 @@ uint32 hud_draw_health_left(uint32 xy, uint32 idx)
         {
             flash->p[i].x = x + (i < 2 ? shown : old);
             flash->p[i].y = y + 2 + ((i & 1) ? 4 : 0);
+            ui[i] = (HD_UI_VERTEX){(sint16)(x + (i < 2 ? shown : old)), (sint16)(y + 2 + ((i & 1) ? 4 : 0)), 0, 0, (uint8)fade};
         }
         render_ot_insert(render_buffers.ot_addr + 8188, p);
+        hd_collect_ui(ui, 0, 0, 0, 2047, HD_UI_OVERLAY);
     }
     p = render_buffers.packet_addr;
     render_buffers.packet_addr = p + sizeof(*border);
@@ -216,15 +227,19 @@ uint32 hud_draw_health_left(uint32 xy, uint32 idx)
     border->p[3].uv = d->uv3;
     for (i = 0; i < 4; i++)
     {
+        uint16 uv = i == 0 ? d->uv0.uv & 65534u : i == 1 ? d->uv1.uv : i == 2 ? d->uv2.uv : d->uv3.uv;
         border->p[i].xy.x = x + ((i & 1) ? (uint32)maximum : 0);
         border->p[i].xy.y = y + (i < 2 ? 0 : 11);
+        ui[i] = (HD_UI_VERTEX){(sint16)(x + ((i & 1) ? (uint32)maximum : 0)), (sint16)(y + (i < 2 ? 0 : 11)), (uv & 255) + 0.5f, (uv >> 8) + 0.5f, 0x808080};
     }
+    hd_collect_ui(ui, d->tpage, d->clut, HD_TEX_TEXTURED | HD_TEX_RAW, 2047, HD_UI_OVERLAY);
     /* Preserve the full OT link and OR its existing tag bits with length */
     bucket = render_buffers.ot_addr + 8188;
     ot = psx_addr(bucket, sizeof(*ot));
     prev = *ot;
     *ot = p;
     border->tag = prev | 0x09000000;
+    hd_ui_layout(previous_layout);
     return prev;
 }
 
@@ -232,6 +247,8 @@ uint32 hud_draw_health_left(uint32 xy, uint32 idx)
 uint32 hud_draw_health_right(uint32 xy, uint32 idx)
 {
     FUNCTION_MARKER(0x8006351c, "GAME.EXE");
+    HD_UI_LAYOUT previous_layout = hd_ui_layout(HD_UI_RIGHT);
+    HD_UI_VERTEX ui[4];
     const ACTOR_HEALTH *health = actor_health + idx;
     sint32 maximum = health->max >> 2, old = health->trail >> 2;
     sint32 shown = health->shown >> 2, hp = health->hp >> 2;
@@ -255,16 +272,23 @@ uint32 hud_draw_health_right(uint32 xy, uint32 idx)
     special = actor_types[idx] == 53;
     for (i = 0; i < 4; i++)
     {
-        poly->p[i].rgbc.r = i < 2 ? (wide ? 0 : 128) : 255;
-        poly->p[i].rgbc.g = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
-        poly->p[i].rgbc.b = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
+        uint8 r = i < 2 ? (wide ? 0 : 128) : 255;
+        uint8 g = i < 2 ? (wide ? 128 : 0) : (special ? 128 : 255);
+        uint8 b = i < 2 ? (special ? 128 : 0) : (special ? 255 : 128);
+        poly->p[i].rgbc.r = r;
+        poly->p[i].rgbc.g = g;
+        poly->p[i].rgbc.b = b;
+        ui[i] = (HD_UI_VERTEX){0, 0, 0, 0, r | ((uint32)g << 8) | ((uint32)b << 16)};
     }
     for (i = 0; i < 4; i++)
     {
         poly->p[i].xy.x = x - (i < 2 ? 0 : (uint32)shown);
         poly->p[i].xy.y = y + 2 + ((i & 1) ? 4 : 0);
+        ui[i].x = (sint16)(x - (i < 2 ? 0 : (uint32)shown));
+        ui[i].y = (sint16)(y + 2 + ((i & 1) ? 4 : 0));
     }
     result = render_ot_insert(render_buffers.ot_addr + 8188, p);
+    hd_collect_ui(ui, 0, 0, 0, 2047, HD_UI_OVERLAY);
     delta = old - hp;
     if (delta < 0)
         delta = -delta;
@@ -283,14 +307,18 @@ uint32 hud_draw_health_right(uint32 xy, uint32 idx)
         {
             flash->p[i].x = x - (i < 2 ? shown : old);
             flash->p[i].y = y + 2 + ((i & 1) ? 4 : 0);
+            ui[i] = (HD_UI_VERTEX){(sint16)(x - (i < 2 ? shown : old)), (sint16)(y + 2 + ((i & 1) ? 4 : 0)), 0, 0, (uint8)fade};
         }
         result = render_ot_insert(render_buffers.ot_addr + 8188, p);
+        hd_collect_ui(ui, 0, 0, 0, 2047, HD_UI_OVERLAY);
     }
     for (i = maximum >> 3; (sint32)i > 0; i--)
     {
         pos.x = pos.x - 8u;
         result = spr_draw(&pos, tex_map[(59u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))]);
+        hd_collect_ui_sprite(pos.x, pos.y, tex_map[(59u + (tex_grps[TEXTURE_GROUP_GAME_FONT].first_tex))], (uint32)depth_table[0] >> 2);
     }
+    hd_ui_layout(previous_layout);
     return result;
 }
 
@@ -333,10 +361,12 @@ uint32 hud_draw(void)
         ACTOR_CONTACT *contact = actor_contacts + i;
         if (actor_types[i] == ACTOR_TYPE_NONE)
             continue;
+        HD_UI_LAYOUT previous_layout = hd_ui_layout(i ? HD_UI_RIGHT : HD_UI_LEFT);
         mode = game_session.mode;
         if ((i && game_session.player_count != 2) || !(mode == 2 || (mode < 2 && health->hp > 0)))
         {
             hud_continue_prompt(i);
+            hd_ui_layout(previous_layout);
             continue;
         }
         name = character_name_text(character_actor_names[i]);
@@ -375,6 +405,7 @@ uint32 hud_draw(void)
                     hud_draw_health_left(0x002e0010, idx);
             }
         }
+        hd_ui_layout(previous_layout);
     }
     if (game_session.stage == 6 && game_session.scene_phase && !level_transition.finish_tick)
     {

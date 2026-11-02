@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "game.h"
+#include "hd.h"
 
 RENDER_STYLE render_style;
 
@@ -500,6 +501,7 @@ uint32 model_draw_faded(MODEL_REFERENCE model, uint32 unused, sint32 bias)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     POSE_MATRIX *matrix = geometry_workspace.matrix;
+    hd_collect_model(model, NULL, matrix, render_style.color.rgbc, render_style.blend_mode, bias, 1);
     uint32 words[8];
     uint32 *xy, *xy_output;
     sint16 *depths, *depth_output;
@@ -771,7 +773,10 @@ uint32 object_draw_visible_yaw(const MODEL_OBJECT *item)
     FUNCTION_MARKER(0x8005ab18u, "GAME.EXE");
     sint32 angle;
     if (!transform_origin_visible())
+    {
+        hd_collect_culled_object(item, geometry_workspace.matrix, HD_OBJECT_YAW);
         return 0;
+    }
     /* TODO: Investigate drawing common fields outside both native object pools */
     XASSERT(item);
     angle = item->angles.yaw;
@@ -1081,6 +1086,7 @@ void model_transform_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
             xport_gte_write_control(i, (sint32)words[i] >> 16);
         for (i = 0; i < 3; i++)
             xyz[i] = stream[1 + i];
+        hd_transform_translate(matrix, (sint32)xyz[0], (sint32)xyz[1], (sint32)xyz[2]);
         stream += 4;
         xport_gte_write_data(0, (xyz[0] >> 16) | (xyz[1] & 0xffff0000));
         xport_gte_write_data(1, (sint32)xyz[2] >> 16);
@@ -1331,6 +1337,7 @@ uint32 model_draw_pose(MODEL_REFERENCE model, ACTOR_POSE *pose)
     uint32 count;
     const MODEL_FACE_RECORD *recs;
     const MODEL_BODY_HEADER *header;
+    hd_collect_model(model, pose, geometry_workspace.matrix, render_style.color.rgbc, render_style.blend_mode, 0, 0);
     model_transform_pose(model, pose);
     transform_pop();
     header = model.header;
@@ -1360,6 +1367,7 @@ uint32 model_draw_static(MODEL_REFERENCE model, uint32 unused, sint32 bias)
     /* TODO: Investigate geometry entered before its current matrix is published */
     XASSERT(geometry_workspace.matrix);
     matrix = geometry_workspace.matrix;
+    hd_collect_model(model, NULL, matrix, render_style.color.rgbc, render_style.blend_mode, bias, 0);
     for (i = 0; i < 5; i++)
         words[i] = matrix->rotation_words[i];
     for (i = 0; i < 5; i++)
@@ -1492,7 +1500,10 @@ uint32 object_draw_visible_player_facing(MODEL_OBJECT *model)
     sint16 angle;
     sint32 object_x, object_z, player_x, player_z;
     if (!transform_origin_visible())
+    {
+        hd_collect_culled_object(model, geometry_workspace.matrix, HD_OBJECT_FACING);
         return 0;
+    }
     /* TODO: Investigate visible drawing without a native position */
     XASSERT(model);
     object_x = model->pos.x.whole;
@@ -1572,6 +1583,7 @@ void object_draw_phased_effects(const MODEL_OBJECT *model)
         transform_roll(angle);
     if (model->angles.pitch)
         transform_pitch(4096);
+    hd_object_part(HD_OBJECT_PRIMARY);
     model_draw_static(model_refs[model->kind], 0, 0);
     phase[0] = game_session.tick & 31;
     if (model->kind == 836)
@@ -1579,12 +1591,15 @@ void object_draw_phased_effects(const MODEL_OBJECT *model)
     phase[1] = (phase[0] + 8) & 31;
     phase[2] = (phase[0] + 16) & 31;
     transform_translate(-4194304, 16252928, 0);
+    hd_object_part(HD_OBJECT_ATTACHMENT0);
     if (phase[0] < 6)
         model_draw_static(model_refs[phase[0] < 2 ? 840 : phase[0] < 4 ? 839 : 838], 0, -256);
     transform_translate(4194304, 0, 0);
+    hd_object_part(HD_OBJECT_ATTACHMENT1);
     if (phase[1] < 6)
         model_draw_static(model_refs[phase[1] < 2 ? 840 : phase[1] < 4 ? 839 : 838], 0, -256);
     transform_translate(4194304, 0, 0);
+    hd_object_part(HD_OBJECT_ATTACHMENT2);
     if (phase[2] < 6)
         model_draw_static(model_refs[phase[2] < 2 ? 840 : phase[2] < 4 ? 839 : 838], 0, -256);
     transform_pop();
@@ -1593,6 +1608,7 @@ void object_draw_phased_effects(const MODEL_OBJECT *model)
     XASSERT(model);
     transform_translate(0, model->pos.y.val, 0);
     transform_yaw(model->angles.yaw);
+    hd_object_part(HD_OBJECT_MARKER);
     model_draw_menu(model_refs[837], 0, 0);
     transform_pop();
 }
@@ -1615,7 +1631,10 @@ uint32 object_draw_offset_shadow(const MODEL_OBJECT *item)
     FIXED_VEC3 pos;
     sint32 depth, shade;
     if (!transform_origin_visible())
+    {
+        hd_collect_culled_object(item, geometry_workspace.matrix, HD_OBJECT_ROADSIDE);
         return 0;
+    }
     transform_point(0, 0, 0, pos.bits);
     transform_yaw(item->angles.yaw);
     depth = (sint16)(pos.z.bits >> 16);

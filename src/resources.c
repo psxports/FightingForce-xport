@@ -5,6 +5,7 @@
 #include "game.h"
 #include "platform.h"
 #include "psx_gpu.h"
+#include "hd.h"
 
 RESOURCE_IO resource_io;
 RESOURCE_ARENAS resource_arenas;
@@ -308,6 +309,7 @@ uint32 resource_load_model(const char *name, uint32 type, uint32 tex_grp)
     XASSERT(!((uintptr_t)view.data & 3) && byte_len >= sizeof(MODEL_FILE_HEADER));
     file = (MODEL_FILE_HEADER *)view.data;
     XASSERT(type < MODEL_TYPE_COUNT);
+    hd_model_invalidate(type);
     model_height[type] = file->height;
     nv = file->mesh.vertex_count;
     nf = file->mesh.face_count;
@@ -333,8 +335,18 @@ uint32 resource_load_model(const char *name, uint32 type, uint32 tex_grp)
             sint32 grp = tex_grps[tex_grp].first_tex;
             sint32 offset = (sint16)face->tex_offset / 12;
             sint32 idx = grp + offset;
-            XASSERT(idx >= 0 && idx < TEXTURE_MAP_COUNT);
-            face->tex_offset = 12 * tex_map[idx];
+            if (idx == -118 && !strcmp(name, "NWING01.MOD") && (i == 4 || i == 13))
+            {
+                /* original malformed faces read dynamic-object 57 yaw before the texture map */
+                sint32 descriptor = dynamic_objects[57].angles.yaw;
+                XASSERT(descriptor >= 0 && descriptor < TEXTURE_DESCRIPTOR_CAPACITY);
+                face->tex_offset = 12 * descriptor;
+            }
+            else
+            {
+                XASSERT(idx >= 0 && idx < TEXTURE_MAP_COUNT);
+                face->tex_offset = 12 * tex_map[idx];
+            }
         }
     }
     model_refs[type].byte_len = byte_len - sizeof(uint32);
@@ -375,6 +387,7 @@ uint32 resource_load_character(const char *name, uint32 type, uint32 grp)
     XASSERT(!((uintptr_t)view.data & 3) && byte_len >= sizeof(CHARACTER_FILE_HEADER));
     file = (CHARACTER_FILE_HEADER *)view.data;
     XASSERT(type < MODEL_TYPE_COUNT);
+    hd_model_invalidate(type);
     model_height[type] = file->model.height;
     size = file->copy_size_or_end;
     XASSERT((sint32)size >= 0 && size >= sizeof(CHARACTER_FILE_HEADER) - sizeof(uint32) && size <= byte_len - sizeof(uint32));
